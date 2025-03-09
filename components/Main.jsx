@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import kimet from './kimet.png'
+import kimet from '@/pages/assets/img/kimet.png'
 
 export default function Main() {
     const router = useRouter();
