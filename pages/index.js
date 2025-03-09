@@ -1,4 +1,5 @@
 import Características from "@/components/Características";
+import Creditos from "@/components/Creditos";
 import FormContainer from "@/components/FormContainer";
 import Funcionamiento from "@/components/Funcionamiento";
 import Header from "@/components/Header";
@@ -12,6 +13,7 @@ export default function Home() {
       <Características />
       <Funcionamiento />
       <FormContainer />
+      <Creditos />
     </div>
   );
 }
