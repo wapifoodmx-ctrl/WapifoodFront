@@ -23,7 +23,7 @@ export default function Form() {
                 onSubmit={(values, { setSubmitting }) => {
                     setTimeout(() => {
                         console.log(JSON.stringify(values));
-                        // alert(JSON.stringify(values, null, 2));
+                        alert(JSON.stringify(values, null, 2));
                         setSubmitting(false);
                         //Aquí debemos poner la función que envía los datos al servidor
                     }, 400);

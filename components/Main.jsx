@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import imagenes from '@/pages/assets/img/imagenes'
+import kimet from './kimet.png'
 
 export default function Main() {
     const router = useRouter();
@@ -42,7 +42,7 @@ export default function Main() {
 
                 </div>
 
-                <Image src={imagenes.img2} className='h-[400px] w-[500px] shadow-xl rounded-lg md:h-[50%] md:w-[50%]  min-w-[400px]  ' />
+                <Image src={kimet} className='h-[400px] w-[500px] shadow-xl rounded-lg md:h-[50%] md:w-[50%]  min-w-[400px]  ' />
 
             </section>
         </main>
