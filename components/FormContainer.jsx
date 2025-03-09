@@ -3,7 +3,7 @@ import Form from './Form';
 
 export default function FormContainer() {
     return (
-            <section className='flex flex-col items-center justify-center py-16'>
+            <section className='flex flex-col items-center justify-center py-16 md:px-30'>
 
                 <div className='bg-[#3fe283] w-8/12 p-4 rounded-t-lg flex flex-col '>
                     <h3 className='font-bold text-xl'>

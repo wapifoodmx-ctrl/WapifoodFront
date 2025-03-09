@@ -15,9 +15,9 @@ export default function Main() {
 
     return (
         <main className="bg-[#3fe283] h-auto ">
-            <section className="py-10 flex justify-center items-center flex-col px-4">
+            <section className="py-10 flex justify-center items-center flex-col px-4  md:flex-row  md:items-center md:gap-4 md:px-10">
 
-                <div className="w-full ">
+                <div className="w-full md:w-1/2">
                     <h2 className="text-4xl text-center font-bold text-black">Gestiona tus pedidos de forma fácil y eficiente!</h2>
 
                     <p className="text-center text-black text-lg mt-4">Comandapp es la plataforma que simplifica la gestión de pedidos para tu restaurante o negocio de comida.</p>
@@ -42,7 +42,7 @@ export default function Main() {
 
                 </div>
 
-                <Image src={imagenes.img2} className='h-[400px] w-[500px] shadow-xl rounded-lg ' />
+                <Image src={imagenes.img2} className='h-[400px] w-[500px] shadow-xl rounded-lg md:h-[50%] md:w-[50%]  min-w-[400px]  ' />
 
             </section>
         </main>

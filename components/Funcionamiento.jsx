@@ -25,24 +25,27 @@ export default function Funcionamiento() {
 
     return (
 
-        <section className="flex flex-col justify-center items-center bg-gray-100 py-16">
-           
-           <h2 className="text-4xl text-black font-bold">¿Cómo funciona?</h2>
+        <section className=" bg-gray-100 py-16 flex flex-col justify-center items-center px-10 ">
 
-           {
-            data.map((item, index) => (
-                <div key={index} className="flex flex-col justify-center items-center mt-8 ">
-                    <div className="flex flex-col justify-center items-center h-[40px] w-[40px] bg-black rounded-full text-white font-bold">
-                        {item.icon}
-                    </div>
-                    <h3 className="font-bold text-black mt-4">{item.title}</h3>
-                    <p className="pt-4 w-[80%] text-center">
-                        {item.description}
-                    </p>
-                </div>
-            ))
-           }
-           
+            <h2 className="text-4xl text-black font-bold">¿Cómo funciona?</h2>
+
+            <div className="flex flex-col justify-center items-center md:flex-row md:flex-wrap gap-4">
+
+                {
+                    data.map((item, index) => (
+                        <div key={index} className="flex flex-col justify-center items-center mt-8 md:w-2/5 md:max-h-[170px] md:min-h-[170px]  ">
+                            <div className="flex flex-col justify-center items-center h-[40px] w-[40px] bg-black rounded-full text-white font-bold">
+                                {item.icon}
+                            </div>
+                            <h3 className="font-bold text-black mt-4">{item.title}</h3>
+                            <p className="pt-4 w-[80%] text-center">
+                                {item.description}
+                            </p>
+                        </div>
+                    ))
+                }
+            </div>
+
         </section>
     )
 
