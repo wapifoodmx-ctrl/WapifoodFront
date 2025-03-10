@@ -35,7 +35,7 @@ export default function Características() {
     return (
 
         // "Sección de las características principales de la aplicación";
-        < section className="py-10 flex justify-center items-center flex-col px-8" >
+        < section className="py-10 flex justify-center items-center flex-col px-8" id="caracteristicas" >
 
             <div className="w-full">
                 <h2 className="text-4xl text-center font-bold text-black w-full">Características Principales</h2>

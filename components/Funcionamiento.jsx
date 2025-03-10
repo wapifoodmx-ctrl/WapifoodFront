@@ -25,7 +25,7 @@ export default function Funcionamiento() {
 
     return (
 
-        <section className=" bg-gray-100 py-16 flex flex-col justify-center items-center px-10 ">
+        <section className=" bg-gray-100 py-16 flex flex-col justify-center items-center px-10 " id="funcionamiento">
 
             <h2 className="text-4xl text-black font-bold">¿Cómo funciona?</h2>
 

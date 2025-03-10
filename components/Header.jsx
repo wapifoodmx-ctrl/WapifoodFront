@@ -2,11 +2,23 @@ import { useState } from 'react';
 import { GoChecklist } from "react-icons/go";
 
 const menu = {
-  inicio: "Inicio",
-  acerca: "Acerca",
-  servicios: "Servicios",
-  contacto: "Contacto"
-}
+  inicios: {
+      title: "Inicio",
+      href: "#main",
+  },
+  caracteristicas: {
+      title: "Características",
+      href: "#caracteristicas",
+  },
+  funcion: {
+      title: "Funcionamiento",
+      href: "#funcionamiento",
+  },
+  registro: {
+      title: "Registro",
+      href: "#registro",
+  },
+};
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,7 +28,7 @@ export default function Header() {
       <nav className="w-full bg-gray-100 text-gray-800 p-4">
         <div className="flex items-center max-w-7xl mx-auto justify-between">
           {/* Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center" onClick={() => window.location.href = '/'}>
             <GoChecklist size={36} className="text-green-600" />
             <h1 className="text-3xl hover:text-green-600 font-bold ml-2">Comandapp</h1>
           </div>
@@ -26,7 +38,6 @@ export default function Header() {
             className="md:hidden z-20 " 
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
-            
           >
             <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
             <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
@@ -46,7 +57,7 @@ export default function Header() {
               {
                 Object.keys(menu).map((item, index) => (
                   <li key={index} className="cursor-pointer hover:text-green-600 my-4 md:my-0">
-                    {menu[item]}
+                    <a href={menu[item].href}>{menu[item].title}</a>
                   </li>
                 ))
               }

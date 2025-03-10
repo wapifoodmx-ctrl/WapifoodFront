@@ -6,18 +6,18 @@ export default function Main() {
     const router = useRouter();
 
     const handleStartClick = () => {
-        router.push('/Demopage');
+        router.push('#registro');
     };
 
     const handleHowItWorksClick = () => {
-        router.push('/Demopage');
+        router.push('#funcionamiento');
     };
 
     return (
         <main className="bg-[#3fe283] h-auto ">
-            <section className="py-10 flex justify-center items-center flex-col px-4  md:flex-row  md:items-center md:gap-4 md:px-10">
+            <section className="py-10 flex justify-center items-center flex-col px-4  md:flex-row  md:items-center md:gap-4 md:px-10" id='main'>
 
-                <div className="w-full md:w-1/2">
+                <div className="w-full md:w-1/2" >
                     <h2 className="text-4xl text-center font-bold text-black">Gestiona tus pedidos de forma fácil y eficiente!</h2>
 
                     <p className="text-center text-black text-lg mt-4">Comandapp es la plataforma que simplifica la gestión de pedidos para tu restaurante o negocio de comida.</p>
