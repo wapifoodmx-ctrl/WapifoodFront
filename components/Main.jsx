@@ -10,7 +10,7 @@ export default function Main() {
     };
 
     const handleHowItWorksClick = () => {
-        router.push('#funcionamiento');
+        router.push('/login');
     };
 
     return (
@@ -35,7 +35,7 @@ export default function Main() {
                             className="rounded-lg bg-[#3fe283] text-black p-2 w-full border-white border-3 cursor-pointer text-2xl"
                             onClick={handleHowItWorksClick}
                         >
-                            ¿Cómo funciona?
+                            Iniciar Sesión
                         </button>
 
                     </div>

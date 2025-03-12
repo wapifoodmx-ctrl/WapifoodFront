@@ -1,41 +1,58 @@
 import { useState } from 'react';
 import { GoChecklist } from "react-icons/go";
+import { useRouter } from 'next/router';
 
-const menu = {
-  inicios: {
-      title: "Inicio",
-      href: "#main",
-  },
-  caracteristicas: {
-      title: "Características",
-      href: "#caracteristicas",
-  },
-  funcion: {
-      title: "Funcionamiento",
-      href: "#funcionamiento",
-  },
-  registro: {
-      title: "Registro",
-      href: "#registro",
-  },
-};
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+
+  const mainPage = () => {
+    router.push('/');
+  };
+
+  const login = () => {
+    router.push('');
+  };
+  
+
+  const menu = {
+    inicios: {
+      title: "Inicio",
+      href: '/#main',
+    },
+    caracteristicas: {
+      title: "Características",
+      href: "/#caracteristicas",
+    },
+    funcion: {
+      title: "Funcionamiento",
+      href: "/#funcionamiento",
+    },
+    registro: {
+      title: "Registro",
+      href: "/#registro",
+    },
+    login: {
+      title: "Iniciar Sesión",
+      href: "/login",
+    },
+
+  };
 
   return (
     <header>
       <nav className="w-full bg-gray-100 text-gray-800 p-4">
         <div className="flex items-center max-w-7xl mx-auto justify-between">
           {/* Logo */}
-          <div className="flex items-center" onClick={() => window.location.href = '/'}>
+          <div className="flex items-center cursor-pointer" onClick={mainPage}>
             <GoChecklist size={36} className="text-green-600" />
             <h1 className="text-3xl hover:text-green-600 font-bold ml-2">Comandapp</h1>
           </div>
 
           {/* Botón Hamburguesa - Solo visible en móvil */}
-          <button 
-            className="md:hidden z-20 " 
+          <button
+            className="md:hidden z-20 "
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
@@ -51,7 +68,7 @@ export default function Header() {
             transition-all duration-300 ease-in-out
             ${isOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
           `}>
-            
+
             {/* Elementos del menú */}
             <ul className="md:flex md:space-x-6 mt-16 md:mt-0 p-4 md:p-0 text-xl">
               {

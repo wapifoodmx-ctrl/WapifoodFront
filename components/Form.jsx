@@ -9,6 +9,7 @@ export default function Form() {
                 validationSchema={Yup.object({
                     name: Yup.string()
                         .max(35, 'Debe tener 35 caracteres o menos')
+                        .min(3, 'Debe tener al menos 3 caracteres')
                         .required('Requerido'),
                     email: Yup.string()
                         .email('Dirección de correo inválida')
