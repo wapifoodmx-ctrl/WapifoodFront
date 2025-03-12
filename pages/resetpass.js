@@ -27,7 +27,7 @@ export default function ResetPass() {
     console.log(JSON.stringify(values));
     setSubmitting(false);
     login();
-    location.reload()
+    
   };
 
   return (
