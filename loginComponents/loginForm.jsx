@@ -51,9 +51,9 @@ const LoginForm = () => {
 
     return (
 
-        <div className="flex justify-center items-center h-screen flex-col gap-4 mt-10 ">
+        <div className="flex justify-center items-center h-screen flex-col gap-4 mt-10 px-4">
             <h2 className="text-4xl text-center font-bold text-black pb-4">Iniciar Sesión en comandapp</h2>
-            <p className='text-2xl'>Ingresa tus credenciales para acceder a tu cuenta</p>
+            <p className='text-2xl text-center'>Ingresa tus credenciales para acceder a tu cuenta</p>
 
             <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
                 <Formik
@@ -62,7 +62,7 @@ const LoginForm = () => {
                     onSubmit={onSubmit}
                 >
                     {({ isSubmitting }) => (
-                        <Form className="flex flex-col gap-7 mt-4" >
+                        <Form className="flex flex-col gap-4 mt-4" >
                             <div className=' text-[#3fe283] text-4xl flex justify-center'>
 
                                 <div className='bg-[#3fe283] text-white p-2 rounded-lg'>

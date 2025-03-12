@@ -29,7 +29,7 @@ export default function RecuperacionLink() {
         <>
             <Header />
 
-            <div className="flex justify-center items-center min-h-screen bg-[#3fe283]">
+            <div className="flex justify-center items-center min-h-screen bg-[#3fe283] ">
                 <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
                     <h2 className="text-4xl text-center font-bold text-black">
                         Recuperar Contraseña
