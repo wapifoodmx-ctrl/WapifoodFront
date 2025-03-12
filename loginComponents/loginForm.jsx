@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { IoDocumentTextOutline } from "react-icons/io5";
+import { GoChecklist } from "react-icons/go";
 
 
 
@@ -51,7 +51,7 @@ const LoginForm = () => {
 
     return (
 
-        <div className="flex justify-center items-center h-screen flex-col gap-4 ">
+        <div className="flex justify-center items-center h-screen flex-col gap-4 mt-10 ">
             <h2 className="text-4xl text-center font-bold text-black pb-4">Iniciar Sesión en comandapp</h2>
             <p className='text-2xl'>Ingresa tus credenciales para acceder a tu cuenta</p>
 
@@ -66,7 +66,7 @@ const LoginForm = () => {
                             <div className=' text-[#3fe283] text-4xl flex justify-center'>
 
                                 <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
-                                    <IoDocumentTextOutline size={32} />
+                                    <GoChecklist size={32} />
                                 </div>
                             </div>
                             <div className='flex flex-col gap-2'>
