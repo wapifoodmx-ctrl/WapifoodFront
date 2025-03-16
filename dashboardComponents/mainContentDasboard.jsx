@@ -1,5 +1,6 @@
 import MainStats from "./mainStats"
 import Populares from "./populares"
+import Ventas from "./ventas"
 export default function MainContentDasboard() {
     return (
         <section className="row-start-2 row-end-3 bg-white">
@@ -27,6 +28,10 @@ export default function MainContentDasboard() {
                     
                 </div>
 
+                <div className="mt-4 w-full h-auto">   
+                    <Ventas />
+
+                </div>
             </div>
         </section>
     )

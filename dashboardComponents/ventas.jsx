@@ -4,57 +4,86 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
 
+// Registrar los componentes de Chart.js
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+// Datos del gráfico
+const data = {
+  labels: ['January', 'February', 'March', 'April', 'May'], // Etiquetas del eje X
+  datasets: [
+    {
+      label: 'My First Dataset', // Nombre de la serie
+      data: [65, 59, 80, 81, 56], // Datos para la serie
+      fill: false, // Sin relleno bajo la línea
+      borderColor: 'rgb(75, 192, 192)', // Color de la línea
+      tension: 0.1, // Suaviza la curva de la línea
+    },
+  ],
+};
+
+// Opciones del gráfico (puedes personalizar lo que quieras)
+const options = {
+
+  plugins: {
+    legend: {
+      position: 'top', // Posición de la leyenda
+    },
+    tooltip: {
+      callbacks: {
+        label: function (tooltipItem) {
+          return `${tooltipItem.dataset.label}: ${tooltipItem.raw}`; // Personaliza las etiquetas del tooltip
+        },
+      },
+    },
+  },
+};
+
+// Componente del gráfico
 
 export default function Ventas() {
-    const [value, setValue] = React.useState('1');
+  const [value, setValue] = React.useState('1');
 
-    const handleChange = (event, newValue) => {
-      setValue(newValue);
-    };
-    return (
-        <div>
-            
-        <Box sx={{ width: '100%', typography: 'body1' }}>
-          <TabContext value={value}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <TabList onChange={handleChange} aria-label="lab API tabs example">
-                <Tab label="Item One" value="1" />
-                <Tab label="Item Two" value="2" />
-                <Tab label="Item Three" value="3" />
-              </TabList>
-            </Box>
-            <TabPanel value="1"> 
-              
-                
-            </TabPanel>
-            <TabPanel value="2">Item Two</TabPanel>
-            <TabPanel value="3">Item Three</TabPanel>
-          </TabContext>
-        </Box>
-        </div>
-      );
-    }
-//     return (
-//         <div className="flex items-center justify-center w-full mt-4">
-//             <div className="flex w-8/12 h-11/12 bg-white shadow-sm rounded-lg p-4">
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
 
-//                 <div class="flex space-x-2 p-4 justify-between w-full">
-//                     <h2 className="font-bold">Ventas</h2>
-//                    <div>
-//                    <button class="px-4 py-2 hover:border-b-2  text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-t-md">
-//                         Día
-//                     </button>
-//                     <button class="px-4 py-2 hover:border-b-2  text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 roun">
-//                         Semana
-//                     </button>
-//                     <button class="px-4 py-2 hover:border-b-2  text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-//                         Mes
-//                     </button>
-//                    </div>
-//                 </div>
-//             </div>
+  return (
+    <div>
 
-//         </div>
-//     )
-// }
+      <Box sx={{ width: '100%', typography: 'body1' }}>
+        <TabContext value={value}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <TabList onChange={handleChange} aria-label="lab API tabs example">
+              <Tab label="Día" value="1" />
+              <Tab label="Semana" value="2" />
+              <Tab label="Mes" value="3" />
+            </TabList>
+          </Box>
+          <TabPanel value="1">
+            <Line data={data} options={options} /> {/* Aquí se muestra el gráfico */}
+          </TabPanel>
+          <TabPanel value="2">
+            <Line data={data} options={options} /> {/* Aquí se muestra el gráfico */}
+
+
+          </TabPanel>
+          <TabPanel value="3">
+            <Line data={data} options={options} /> {/* Aquí se muestra el gráfico */}
+          </TabPanel>
+        </TabContext>
+      </Box>
+    </div>
+  );
+}
