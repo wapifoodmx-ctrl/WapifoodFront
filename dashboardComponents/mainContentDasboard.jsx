@@ -5,7 +5,7 @@ export default function MainContentDasboard() {
     return (
         <section className="row-start-2 row-end-3 bg-white">
 
-            <div className="mx-4 my-4">
+            <div className="mx-4 my-4 flex flex-col gap-4">
                 <div className="flex gap-4 my-4 flex-col md:justify-between md:flex-row">
                     <div className="flex flex-col gap-4">
                         <h2 className="text-2xl font-bold">
@@ -28,7 +28,7 @@ export default function MainContentDasboard() {
                     
                 </div>
 
-                <div className="mt-4 w-full h-auto">   
+                <div className="mt-4 w-6/12 h-auto self-center">   
                     <Ventas />
 
                 </div>

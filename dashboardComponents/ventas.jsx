@@ -72,10 +72,11 @@ export default function Ventas() {
             </TabList>
           </Box>
           <TabPanel value="1">
-            1
+            <Line data={data} options={options} /> {/* Aquí se muestra el gráfico */}
           </TabPanel>
           <TabPanel value="2">
             2
+
           </TabPanel>
           <TabPanel value="3">
             3
