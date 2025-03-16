@@ -6,13 +6,15 @@ import { LuPizza } from "react-icons/lu";
 import { FiShoppingBag } from "react-icons/fi";
 import { FcSalesPerformance } from "react-icons/fc";
 import { FaUser } from "react-icons/fa";
+import { ImExit } from "react-icons/im";
 
 export default function Navbar() {
-    const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
-
-    const mainPage = () => {
-        router.push('/');
+    const [isOpen, setIsOpen] = useState(false);
+    
+    const handleLogout = () => {
+        router.push("/login");
+        localStorage.removeItem('token');
     };
 
     const menu = {
@@ -44,13 +46,19 @@ export default function Navbar() {
             href: '#',
             icon: <FaUser className=" h-full w-[24px]" />,
         },
+        Logout: {
+            title: "Cerrar Sesión",
+            href: "#",
+            icon: <ImExit className=" h-full w-[24px]" />,
+            function: handleLogout,
+        },
     };
 
     return (
         <nav className="row-start-1 row-end-2 bg-[#f3f4f6] w-full h-full flex justify-between">
             <div className="flex w-full justify-between px-4">
                 {/* Logo */}
-                <div className="flex items-center cursor-pointer" onClick={mainPage}>
+                <div className="flex items-center cursor-pointer" >
                     <GoChecklist size={36} className="text-green-600" />
                     <h1 className="text-3xl hover:text-green-600 font-bold ml-2">Dashboard</h1>
                 </div>
@@ -87,7 +95,7 @@ export default function Navbar() {
                         {
                             Object.keys(config).map((item, index) => (
                                 <li key={index} className="cursor-pointer hover:text-green-600 my-4">
-                                    <a className="flex w-auto gap-2" href={config[item].href}> <span className="self-center">{config[item].icon}</span> {config[item].title}</a>
+                                    <button className="flex w-auto gap-2" onClick={config[item].function} href={config[item].href}> <span className="self-center">{config[item].icon}</span> {config[item].title}</button>
                                 </li>
                             ))
                         }
