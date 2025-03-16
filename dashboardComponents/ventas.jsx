@@ -72,15 +72,13 @@ export default function Ventas() {
             </TabList>
           </Box>
           <TabPanel value="1">
-            <Line data={data} options={options} /> {/* Aquí se muestra el gráfico */}
+            1
           </TabPanel>
           <TabPanel value="2">
-            <Line data={data} options={options} /> {/* Aquí se muestra el gráfico */}
-
-
+            2
           </TabPanel>
           <TabPanel value="3">
-            <Line data={data} options={options} /> {/* Aquí se muestra el gráfico */}
+            3
           </TabPanel>
         </TabContext>
       </Box>
