@@ -65,7 +65,7 @@ export default function Navbar() {
 
                 {/* Botón Hamburguesa - Siempre visible */}
                 <button
-                    className="z-20"
+                    className="z-20 cursor-pointer"
                     onClick={() => setIsOpen(!isOpen)}
                     aria-label="Toggle menu"
                 >

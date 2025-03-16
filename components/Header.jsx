@@ -52,7 +52,7 @@ export default function Header() {
 
           {/* Botón Hamburguesa - Solo visible en móvil */}
           <button
-            className="md:hidden z-20 "
+            className="md:hidden z-20 cursor-pointer"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >

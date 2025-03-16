@@ -41,8 +41,8 @@ export default function Populares() {
     };
 
     return (
-        <div className="flex items-center justify-center w-full mt-4">
-            <div className="flex flex-col gap-4 bg-white shadow-sm rounded-lg p-4 w-5/12">
+        <div className="flex items-center justify-center w-full">
+            <div className="flex flex-col gap-4 bg-white shadow-sm rounded-lg p-4 w-full h-full">
                 <h2 className="flex font-bold text-xl">Productos Populares</h2>
                 {sortedData.map((item, index) => (
                     <div key={index}>
@@ -53,7 +53,7 @@ export default function Populares() {
 
 
 
-                                    {item.producto ? <p className="flex font-bold">{item.producto}</p> : <p className="flex font-bold">Error no se encontró el producto</p>}
+                                    {item.producto ? <p className="flex font-bold ">{item.producto}</p> : <p className="flex font-bold">Error no se encontró el producto</p>}
                                     {item.vendidos ? <p className="flex text-gray-500 text-sm">${item.vendidos}</p> : <p className="flex text-gray-500 text-sm">Error no se encontró la cantidad</p>}
 
 

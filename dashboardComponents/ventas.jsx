@@ -4,7 +4,7 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import MicroComponent from './microcomponents';
+
 
 export default function Ventas() {
     const [value, setValue] = React.useState('1');
@@ -25,7 +25,7 @@ export default function Ventas() {
               </TabList>
             </Box>
             <TabPanel value="1"> 
-                <MicroComponent/>
+              
                 
             </TabPanel>
             <TabPanel value="2">Item Two</TabPanel>
