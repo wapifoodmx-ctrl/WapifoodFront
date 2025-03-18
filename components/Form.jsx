@@ -1,11 +1,16 @@
 import { Formik } from 'formik';
 import * as Yup from 'yup';
+import { createUser } from '@/useCases/createUser';
+import { useState } from 'react';
 
 export default function Form() {
+    const [serverError, setServerError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+
     return (
         <div className="w-full">
             <Formik
-                initialValues={{ name: '', email: '', password: '',  confirmPassword: '' }}
+                initialValues={{ name: '', email: '', password: '', confirmPassword: '' }}
                 validationSchema={Yup.object({
                     name: Yup.string()
                         .max(35, 'Debe tener 35 caracteres o menos')
@@ -21,13 +26,18 @@ export default function Form() {
                         .oneOf([Yup.ref('password'), null], 'Las contraseñas deben coincidir')
                         .required('Requerido'),
                 })}
-                onSubmit={(values, { setSubmitting }) => {
-                    setTimeout(() => {
-                        console.log(JSON.stringify(values));
-                        alert(JSON.stringify(values, null, 2));
+                onSubmit={async (values, { setSubmitting, resetForm }) => {
+                    setServerError(''); // Limpiar errores previos
+                    setSuccessMessage(''); // Limpiar mensajes de éxito previos
+                    try {
+                        const response = await createUser(values);
+                        setSuccessMessage('Usuario creado satisfactoriamente'); // Mostrar mensaje de éxito
+                        resetForm(); // Reiniciar el formulario
+                    } catch (error) {
+                        setServerError(error.message || 'Ocurrió un error al crear el usuario');
+                    } finally {
                         setSubmitting(false);
-                        //Aquí debemos poner la función que envía los datos al servidor
-                    }, 400);
+                    }
                 }}
             >
                 {({
@@ -39,9 +49,23 @@ export default function Form() {
                     handleSubmit,
                     isSubmitting,
                 }) => (
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-4  rounded-lg  w-full">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-lg w-full">
+                        {/* Mensaje de error del servidor */}
+                        {serverError && (
+                            <div className="text-red-500 text-sm mb-2">
+                                {serverError}
+                            </div>
+                        )}
+
+                        {/* Mensaje de éxito */}
+                        {successMessage && (
+                            <div className="text-green-600 text-sm mb-2">
+                                {successMessage}
+                            </div>
+                        )}
+
                         <div>
-                            <label htmlFor="name" className="block  text-black  font-bold">Nombre</label>
+                            <label htmlFor="name" className="block text-black font-bold">Nombre</label>
                             <input
                                 type="text"
                                 name="name"
@@ -56,7 +80,7 @@ export default function Form() {
                         </div>
 
                         <div>
-                            <label htmlFor="email" className="block font-bold  text-black">Correo Electrónico</label>
+                            <label htmlFor="email" className="block font-bold text-black">Correo Electrónico</label>
                             <input
                                 type="email"
                                 name="email"
@@ -71,7 +95,7 @@ export default function Form() {
                         </div>
 
                         <div>
-                            <label htmlFor="password" className="block  font-bold text-black">Contraseña</label>
+                            <label htmlFor="password" className="block font-bold text-black">Contraseña</label>
                             <input
                                 type="password"
                                 name="password"
