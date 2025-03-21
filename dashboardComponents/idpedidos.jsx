@@ -6,6 +6,7 @@ import { RiErrorWarningLine } from "react-icons/ri";
 export default function IdPedidos() {
     const [selectedPedido, setSelectedPedido] = useState(null); // Estado para el pedido seleccionado
     const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Estado para la modal de confirmación
 
     const data = [
         {
@@ -42,6 +43,27 @@ export default function IdPedidos() {
         },
     ];
 
+    const dataProductos = [
+        {
+            nombre: "Pizza Margherita",
+            precio: "$150.00",
+            cantidad: 1,
+            precioUnitario: "$150.00",
+        },
+        {
+            nombre: "Refresco de cola",
+            precio: "$50.00",
+            cantidad: 2,
+            precioUnitario: "$25.00",
+        },
+        {
+            nombre: "Palitos de ajo",
+            precio: "$45.50",
+            cantidad: 1,
+            precioUnitario: "$45.50",
+        },
+    ];
+
     const openModal = (pedido) => {
         setSelectedPedido(pedido); // Establece el pedido seleccionado
         setIsModalOpen(true); // Abre el modal
@@ -50,6 +72,20 @@ export default function IdPedidos() {
     const closeModal = () => {
         setSelectedPedido(null); // Limpia el pedido seleccionado
         setIsModalOpen(false); // Cierra el modal
+    };
+
+    const openConfirmModal = () => {
+        setIsConfirmModalOpen(true); // Abre la modal de confirmación
+    };
+
+    const closeConfirmModal = () => {
+        setIsConfirmModalOpen(false); // Cierra la modal de confirmación
+    };
+
+    const handleCancelPedido = () => {
+        console.log("Pedido cancelado:", selectedPedido.ID);
+        closeConfirmModal();
+        closeModal();
     };
 
     return (
@@ -106,26 +142,108 @@ export default function IdPedidos() {
             {/* Modal */}
             {isModalOpen && selectedPedido && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 overflow-y-auto"
                     onClick={closeModal} // Cierra el modal al hacer clic fuera del contenido
                 >
                     <div
-                        className="bg-white p-6 rounded-lg shadow-lg w-1/3"
+                        className="bg-white p-6 rounded-lg shadow-lg w-6/8 max-h-10/12 overflow-y-auto relative"
                         onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal cierre la ventana
                     >
+                        {/* Botón "Cancelar Pedido" */}
+                        {(selectedPedido.Estado === "Completado" ||
+                            selectedPedido.Estado === "En Proceso" ||
+                            selectedPedido.Estado === "Pendiente") && (
+                            <button
+                                className="absolute top-4 right-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
+                                onClick={openConfirmModal}
+                            >
+                                Cancelar Pedido
+                            </button>
+                        )}
+
                         <h2 className="text-xl font-bold mb-4">Detalles del Pedido</h2>
+                        <h3 className="font-bold border-b-1 mb-4">INFO</h3>
                         <p><strong>ID:</strong> {selectedPedido.ID}</p>
                         <p><strong>Fecha:</strong> {selectedPedido.Fecha}</p>
                         <p><strong>Hora:</strong> {selectedPedido.Hora}</p>
                         <p><strong>Total:</strong> {selectedPedido.Total}</p>
                         <p><strong>Método:</strong> {selectedPedido.Metodo}</p>
-                        <p><strong>Estado:</strong> {selectedPedido.Estado}</p>
+                        <p className="flex items-center gap-2">
+                            <strong>Estado:</strong>
+                            <span
+                                className={`flex items-center gap-1 py-0.5 px-2.5 text-xs rounded-xl ${
+                                    selectedPedido.Estado === "Completado"
+                                        ? "text-green-800 bg-green-300"
+                                        : selectedPedido.Estado === "En Proceso"
+                                        ? "text-blue-800 bg-blue-300"
+                                        : selectedPedido.Estado === "Pendiente"
+                                        ? "text-yellow-800 bg-yellow-300"
+                                        : "text-red-800 bg-red-300"
+                                }`}
+                            >
+                                {selectedPedido.Estado === "Completado" && <BsCheck2Circle />}
+                                {selectedPedido.Estado === "En Proceso" && <AiOutlineClockCircle />}
+                                {selectedPedido.Estado === "Pendiente" && <RiErrorWarningLine />}
+                                {selectedPedido.Estado === "Cancelado" && <AiOutlineCloseCircle />}
+                                {selectedPedido.Estado}
+                            </span>
+                        </p>
+                        <div>
+                            <h3 className="font-bold mt-4 border-b-1 mb-4">PRODUCTOS</h3>
+                            {dataProductos.map((producto, index) => (
+                                <div key={index}>
+                                    <p className="flex justify-between font-bold">{producto.nombre}<span>{producto.precio}</span></p>
+                                    <p className="flex justify-between text-xs text-gray-600 mb-4">Cantidad: {producto.cantidad}<span>{producto.precioUnitario} c/u</span></p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-4 border-t pt-4">
+                            <p className="flex justify-between font-bold text-lg">
+                                Total:
+                                <span>
+                                    {dataProductos.reduce((total, producto) => {
+                                        const precioNumerico = parseFloat(producto.precio.replace("$", ""));
+                                        return total + precioNumerico;
+                                    }, 0).toFixed(2)} MXN
+                                </span>
+                            </p>
+                        </div>
+
                         <button
-                            className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+                            className="mt-4 px-4 py-2 bg-green-400 text-white rounded hover:bg-green-500 cursor-pointer"
                             onClick={closeModal}
                         >
                             Cerrar
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de confirmación */}
+            {isConfirmModalOpen && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={closeConfirmModal} // Cierra la modal al hacer clic fuera del contenido
+                >
+                    <div
+                        className="bg-white p-6 rounded-lg shadow-lg w-1/3"
+                        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal cierre la ventana
+                    >
+                        <h2 className="text-xl font-bold mb-4">¿Seguro que quieres cancelar el pedido?</h2>
+                        <div className="flex justify-end gap-4">
+                            <button
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
+                                onClick={closeConfirmModal}
+                            >
+                                No
+                            </button>
+                            <button
+                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
+                                onClick={handleCancelPedido}
+                            >
+                                Sí
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
