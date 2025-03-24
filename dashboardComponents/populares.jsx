@@ -1,3 +1,4 @@
+import { FaMoneyBillTrendUp } from "react-icons/fa6";
 export default function Populares() {
     const data = [
         {
@@ -50,19 +51,30 @@ export default function Populares() {
                             <div className="flex ">
                                 <h3 className={`flex justify-center items-center w-9 h-9 self-center rounded-md ${getBackgroundColor(index)}`}>{index + 1}</h3>
                                 <div className="flex flex-col ml-2">
+                                    <p className="flex font-bold gap-4 items-center">
+                                        {item.producto}
+                                        {index === 0 && (
+                                            <>
+                                                <FaMoneyBillTrendUp className="text-green-500" size={24} />
 
-
-
-                                    {item.producto ? <p className="flex font-bold ">{item.producto}</p> : <p className="flex font-bold">Error no se encontró el producto</p>}
-                                    {item.vendidos ? <p className="flex text-gray-500 text-sm">${item.vendidos}</p> : <p className="flex text-gray-500 text-sm">Error no se encontró la cantidad</p>}
-
-
-
+                                                <span className="text-gray-500 text-sm hidden md:block">
+                                                    {"Tu producto más vendido"}
+                                                </span>
+                                            </>
+                                        )}
+                                    </p>
+                                    {item.vendidos ? (
+                                        <p className="flex text-gray-500 text-sm">${item.vendidos}</p>
+                                    ) : (
+                                        <p className="flex text-gray-500 text-sm">Error no se encontró la cantidad</p>
+                                    )}
                                 </div>
                             </div>
-                            
-
-                            { !item.vendidos || !item.precio ? <p className="font-bold">X</p> : <p className="font-bold">${item.vendidos * item.precio}</p>}
+                            {!item.vendidos || !item.precio ? (
+                                <p className="font-bold">X</p>
+                            ) : (
+                                <p className="font-bold">${item.vendidos * item.precio}</p>
+                            )}
                         </div>
                     </div>
                 ))}
