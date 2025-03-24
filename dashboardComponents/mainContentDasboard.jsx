@@ -1,6 +1,8 @@
 import MainStats from "./mainStats"
 import Populares from "./populares"
 import Ventas from "./ventas"
+import Pedidos from "./pedidos"
+import IdPedidos from "./idpedidos"
 export default function MainContentDasboard() {
     return (
         <section className="row-start-2 row-end-3 bg-white">
@@ -13,25 +15,28 @@ export default function MainContentDasboard() {
                         </h2>
                         <p className="text-gray-500">Bienvenido de nuevo aquí está el resumen de tu negocio</p>
                     </div>
-                    <div className="flex gap-4 ">
+                    {/* <div className="flex gap-4 ">
                         <button className="bg-blue-500 text-white px-4 py-2 md:h-2/3 rounded-lg cursor-pointer">Ver todo</button>
                         <button className="bg-blue-500 text-white px-4 py-2 md:h-2/3 rounded-lg cursor-pointer">Ver todo</button>
-                    </div>
+                    </div> */}
                 </div>
 
-                <div className="flex w-full flex-col md:flex-row gap-4 justify-between">
+                <div className="flex w-full flex-col  gap-4 justify-between">
+
 
                     <Populares />
-
-                    
+                    <Pedidos />
+                    <IdPedidos />
                     <MainStats />
-                    
+
+
+
                 </div>
 
-                <div className="mt-4 w-6/12 h-auto self-center">   
+                {/* <div className="mt-4 w-6/12 h-auto self-center">   
                     <Ventas />
 
-                </div>
+                </div> */}
             </div>
         </section>
     )

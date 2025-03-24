@@ -20,11 +20,11 @@ export default function Navbar() {
     const menu = {
         Dashboard: {
             title: "Dashboard",
-            href: '#',
+            href: '/dashboard',
             icon: <MdSpaceDashboard className=" h-full w-[24px]" />,
         },
         Register: {
-            title: "Registrar Productos",
+            title: "Productos",
             href: "#",
             icon: <LuPizza className=" h-full w-[24px]" />,
         },
@@ -47,7 +47,7 @@ export default function Navbar() {
             icon: <FaUser className=" h-full w-[24px]" />,
         },
         Logout: {
-            title: "Cerrar Sesión",
+            title: "Log-Out",
             href: "#",
             icon: <ImExit className=" h-full w-[24px]" />,
             function: handleLogout,
@@ -60,12 +60,12 @@ export default function Navbar() {
                 {/* Logo */}
                 <div className="flex items-center cursor-pointer" >
                     <GoChecklist size={36} className="text-green-600" />
-                    <h1 className="text-3xl hover:text-green-600 font-bold ml-2">Dashboard</h1>
+                    <h2 className="text-3xl hover:text-green-600 font-bold ml-2">Dashboard</h2>
                 </div>
 
                 {/* Botón Hamburguesa - Siempre visible */}
                 <button
-                    className="z-20 cursor-pointer"
+                    className="z-20 cursor-pointer sticky"
                     onClick={() => setIsOpen(!isOpen)}
                     aria-label="Toggle menu"
                 >

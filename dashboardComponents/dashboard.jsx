@@ -9,8 +9,13 @@ export default function Dashboard2() {
         <main className='w-full min-h-screen  grid grid-rows-[100px_1fr]'>
             <Navbar />
             <MainContentDasboard />
-            <Pedidos />
-            <IdPedidos />
+           
+            
+            
+
+          
+
+
         </main>
     );
 }
