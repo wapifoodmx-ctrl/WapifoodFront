@@ -22,7 +22,7 @@ export default function Ventas() {
             <TabList onChange={handleChange} aria-label="lab API tabs example">
               <Tab label="Populares" value="1" />
               <Tab label="Ventas" value="2" />
-              <Tab label="Productos" value="3" />
+              {/* <Tab label="Productos" value="3" /> */}
             </TabList>
           </Box>
           <TabPanel value="1">
@@ -33,11 +33,11 @@ export default function Ventas() {
           <TabPanel value="2">
             <MainStats />
           </TabPanel>
-          <TabPanel value="3">
+          {/* <TabPanel value="3">
 
             <IdPedidos />
 
-          </TabPanel>
+          </TabPanel> */}
         </TabContext>
       </Box>
     </div>

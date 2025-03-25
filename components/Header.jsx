@@ -11,9 +11,7 @@ export default function Header() {
     router.push('/');
   };
 
-  const login = () => {
-    router.push('');
-  };
+  
   
 
   const menu = {

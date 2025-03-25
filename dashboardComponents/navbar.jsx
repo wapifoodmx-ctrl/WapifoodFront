@@ -17,6 +17,14 @@ export default function Navbar() {
         localStorage.removeItem('token');
     };
 
+    const dasboard = () => {
+        router.push('/dashboard');
+      };
+    
+      const productos = () => {
+        router.push('/menu');
+      };
+
     const menu = {
         Dashboard: {
             title: "Dashboard",
@@ -55,7 +63,7 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="row-start-1 row-end-2 bg-[#f3f4f6] w-full h-full flex justify-between">
+        <nav className=" bg-[#f3f4f6] w-full  flex justify-between h-16">
             <div className="flex w-full justify-between px-4">
                 {/* Logo */}
                 <div className="flex items-center cursor-pointer" >
@@ -86,7 +94,25 @@ export default function Navbar() {
                         {
                             Object.keys(menu).map((item, index) => (
                                 <li key={index} className="cursor-pointer hover:text-green-600 my-4">
-                                    <a className="flex w-auto gap-2" href={menu[item].href}> <span className="self-center">{menu[item].icon}</span> {menu[item].title}</a>
+                                    {item === "Dashboard" ? (
+                                        <button
+                                            className="flex w-auto gap-2"
+                                            onClick={dasboard}
+                                        >
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : item === "Register" ? (
+                                        <button
+                                            className="flex w-auto gap-2"
+                                            onClick={productos}
+                                        >
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : (
+                                        <a className="flex w-auto gap-2" href={menu[item].href}>
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </a>
+                                    )}
                                 </li>
                             ))
                         }
