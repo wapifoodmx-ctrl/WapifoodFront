@@ -1,10 +1,11 @@
+import { FaPlus } from "react-icons/fa6";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FiFilter } from "react-icons/fi";
 import { BsTag } from "react-icons/bs";
 
 export default function MenuComponentes() {
     return (
-        <section className="w-full mt-4 justify-center mr-3 ml-3 self-center">
+        <section className="p-4">
             {/* Barra de búsqueda */}
             <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4">
                 <HiOutlineMagnifyingGlass className="text-xl" />
@@ -55,11 +56,11 @@ export default function MenuComponentes() {
 
             {/* Botones */}
             <div className="flex gap-4">
-                <button className="px-4 py-2 bg-green-500 text-white rounded-2xl cursor-pointer">
-                    Nuevo Producto
+                <button className="px-4 py-2 bg-green-500 text-white rounded-2xl cursor-pointer flex justify-center items-center">
+                <FaPlus className="text-3xl pr-2"/>Nuevo Producto
                 </button>
-                <button className="px-4 py-2 border-1 rounded-2xl cursor-pointer">
-                    Gestionar Categorías
+                <button className="px-3 py-2 border rounded-2xl cursor-pointer  flex ml-2 justify-center items-center">
+                    <BsTag className="text-3xl pr-2" />Gestionar Categorías
                 </button>
             </div>
         </section>
