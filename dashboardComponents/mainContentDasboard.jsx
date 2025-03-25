@@ -23,20 +23,12 @@ export default function MainContentDasboard() {
 
                 <div className="flex w-full flex-col  gap-4 justify-between">
 
-
-                    <Populares />
                     <Pedidos />
-                    <IdPedidos />
-                    <MainStats />
-
-
+                    <Ventas />
 
                 </div>
 
-                {/* <div className="mt-4 w-6/12 h-auto self-center">   
-                    <Ventas />
 
-                </div> */}
             </div>
         </section>
     )

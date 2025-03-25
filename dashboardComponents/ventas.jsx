@@ -4,7 +4,9 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-
+import Populares from './populares';
+import IdPedidos from './idpedidos';
+import MainStats from './mainStats';
 export default function Ventas() {
   const [value, setValue] = React.useState('1');
 
@@ -18,41 +20,26 @@ export default function Ventas() {
         <TabContext value={value}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <TabList onChange={handleChange} aria-label="lab API tabs example">
-              <Tab label="Día" value="1" />
-              <Tab label="Semana" value="2" />
-              <Tab label="Mes" value="3" />
+              <Tab label="Populares" value="1" />
+              <Tab label="Ventas" value="2" />
+              <Tab label="Productos" value="3" />
             </TabList>
           </Box>
           <TabPanel value="1">
-            1
+
+            <Populares />
+
           </TabPanel>
-          <TabPanel value="2">Semana</TabPanel>
-          <TabPanel value="3">Mes</TabPanel>
+          <TabPanel value="2">
+            <MainStats />
+          </TabPanel>
+          <TabPanel value="3">
+
+            <IdPedidos />
+
+          </TabPanel>
         </TabContext>
       </Box>
     </div>
   );
 }
-//     return (
-//         <div className="flex items-center justify-center w-full mt-4">
-//             <div className="flex w-8/12 h-11/12 bg-white shadow-sm rounded-lg p-4">
-
-//                 <div class="flex space-x-2 p-4 justify-between w-full">
-//                     <h2 className="font-bold">Ventas</h2>
-//                    <div>
-//                    <button class="px-4 py-2 hover:border-b-2  text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-t-md">
-//                         Día
-//                     </button>
-//                     <button class="px-4 py-2 hover:border-b-2  text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 roun">
-//                         Semana
-//                     </button>
-//                     <button class="px-4 py-2 hover:border-b-2  text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-//                         Mes
-//                     </button>
-//                    </div>
-//                 </div>
-//             </div>
-
-//         </div>
-//     )
-// }
