@@ -11,7 +11,7 @@ import { ImExit } from "react-icons/im";
 export default function Navbar() {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
-    
+
     const handleLogout = () => {
         router.push("/login");
         localStorage.removeItem('token');
@@ -19,11 +19,16 @@ export default function Navbar() {
 
     const dasboard = () => {
         router.push('/dashboard');
-      };
-    
-      const productos = () => {
+    };
+
+    const productos = () => {
         router.push('/menu');
-      };
+    };
+
+    const pedidos = () => {
+        router.push('/pedidos');
+    };
+
 
     const menu = {
         Dashboard: {
@@ -96,21 +101,28 @@ export default function Navbar() {
                                 <li key={index} className="cursor-pointer hover:text-green-600 my-4">
                                     {item === "Dashboard" ? (
                                         <button
-                                            className="flex w-auto gap-2"
+                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
                                             onClick={dasboard}
                                         >
-                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
                                         </button>
                                     ) : item === "Register" ? (
                                         <button
-                                            className="flex w-auto gap-2"
+                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
                                             onClick={productos}
                                         >
-                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : item === "Pedidos" ? (
+                                        <button
+                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                            onClick={pedidos}
+                                        >
+                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
                                         </button>
                                     ) : (
-                                        <a className="flex w-auto gap-2" href={menu[item].href}>
-                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        <a className="flex w-auto gap-2 cursor-pointer hover:text-green-600" href={menu[item].href}>
+                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
                                         </a>
                                     )}
                                 </li>
@@ -121,7 +133,7 @@ export default function Navbar() {
                         {
                             Object.keys(config).map((item, index) => (
                                 <li key={index} className="cursor-pointer hover:text-green-600 my-4">
-                                    <button className="flex w-auto gap-2" onClick={config[item].function} href={config[item].href}> <span className="self-center">{config[item].icon}</span> {config[item].title}</button>
+                                    <button className="flex w-auto gap-2 cursor-pointer hover:text-green-600" onClick={config[item].function} href={config[item].href}> <span className="self-center">{config[item].icon}</span> {config[item].title}</button>
                                 </li>
                             ))
                         }

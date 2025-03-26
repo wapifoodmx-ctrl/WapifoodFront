@@ -4,15 +4,16 @@ import { FiFilter } from "react-icons/fi";
 import { BsTag } from "react-icons/bs";
 export default function MenuComponentes() {
     return (
-            <section className="p-4">
-                {/* Barra de búsqueda */}
-                <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4">
-                    <HiOutlineMagnifyingGlass className="text-xl" />
-                    <input type="text" placeholder="Buscar..." className="ml-2 w-full outline-none" />
-                </div>
+        <section className=" lg:flex my-4 lg:gap-4 lg:justify-between lg:items-center">
+            {/* Barra de búsqueda */}
+            <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 lg:mb-0 lg:w-6/12 justify-center items-center" >
+                <HiOutlineMagnifyingGlass className="text-xl" />
+                <input type="text" placeholder="Buscar..." className="ml-2 w-full outline-none" />
+            </div>
 
+            <div className=" flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
                 {/* Dropdowns */}
-                <div className="flex gap-4 mb-4">
+                <div className="flex gap-4">
                     {/* Dropdown Categorías */}
                     <div className="relative">
                         <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm">
@@ -55,15 +56,18 @@ export default function MenuComponentes() {
 
                 {/* Botones */}
                 <div className="flex gap-4">
-                    <button className="px-4 py-2 bg-green-500 text-white rounded-2xl cursor-pointer flex justify-center items-center">
-                        <FaPlus className="text-3xl pr-2" />Nuevo Producto
+                    <button className="p-2 text-sm bg-green-500 text-white rounded-2xl cursor-pointer w-full flex justify-center items-center">
+                        <span className="flex justify-center items-center gap-4"> <FaPlus size={20} /> Productos</span>
                     </button>
-                    <button className="px-3 py-2 border rounded-2xl cursor-pointer  flex ml-2 justify-center items-center">
-                        <BsTag className="text-3xl pr-2" />Gestionar Categorías
+                    <button className=" p-2 border rounded-2xl cursor-pointer  ml-2  w-full ">
+                        <span className="flex justify-center items-center gap-2 "> <BsTag size={20} /> Categorías</span>
                     </button>
                 </div>
-            </section>
+            </div>
 
-           
+        </section>
+
+
+
     );
 }
