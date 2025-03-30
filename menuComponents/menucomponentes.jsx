@@ -238,6 +238,15 @@ export default function MenuComponentes() {
                                         placeholder="Nombre de la categoría"
                                     />
                                 </div>
+                                <div>
+                                        <label className="font-bold text-gray-600 py-2">Descripción</label>
+                                        <Field
+                                            name="descripcion"
+                                            as="textarea"
+                                            className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
+                                            placeholder="Escribe una descripción..."
+                                        />
+                                    </div>
 
                                 {/* Botones */}
                                 <div className="flex gap-4">
