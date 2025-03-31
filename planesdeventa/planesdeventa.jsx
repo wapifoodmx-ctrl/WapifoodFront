@@ -23,6 +23,7 @@ export default function PlanDeVentas() {
                         <p className="text-gray-600 mb-4">Ideal para negocios pequeños que están empezando.</p>
                         <p className="text-2xl font-bold mb-4">$29.99/mes</p>
                         <button className="bg-green-500 text-white py-2 px-4 rounded">Seleccionar</button>
+                        <div></div>
                     </div>
                 </div>
             </div>
