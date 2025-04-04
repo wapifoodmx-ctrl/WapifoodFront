@@ -77,6 +77,7 @@ export default function Cards() {
                             }}
                             onSubmit={(values) => {
                                 handleUpdateProduct(values); // Actualiza el producto
+                                console.log("actializande desdecards")
                             }}
                         >
                             {({ setFieldValue }) => (
