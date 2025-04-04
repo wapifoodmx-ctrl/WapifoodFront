@@ -1,5 +1,5 @@
 export async function getProducts() {
-    const endpoint = 'http://192.168.1.69:8000/products';
+    const endpoint = 'https://comandapp-api.h-dev.xyz/products';
 
     try {
         // Obtén el token desde localStorage o sessionStorage

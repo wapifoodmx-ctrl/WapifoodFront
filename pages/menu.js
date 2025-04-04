@@ -12,10 +12,6 @@ export default function Menu() {
 
       <div className="w-full p-4 flex flex-wrap gap-4 justify-center items-center flex-col md:flex-row ">
         <Cards />
-        <Cards />
-        <Cards />
-
-      
       </div>
     </section>
   );

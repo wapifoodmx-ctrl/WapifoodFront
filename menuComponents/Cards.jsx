@@ -1,63 +1,101 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import kime from "@/pages/assets/img/kime.jpeg";
 import { FiEdit } from "react-icons/fi";
 import { Formik, Form, Field } from "formik";
+import { getProducts } from "@/useCases/getProducts";
 
 export default function Cards() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal
-    const [product, setProduct] = useState({
-        id_products: 75,
-        name: "Pizza peperoni",
-        description: "pizza de peperoni con queso",
-        price: "500.00",
-        category: "pizzas",
-        status: "activo",
-        image: null,
-    });
+    const [products, setProducts] = useState([]); // Estado para almacenar los productos obtenidos
+    const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar
+    const [loading, setLoading] = useState(true); // Estado de carga
+    const [error, setError] = useState(null); // Estado para manejar errores
+
+    // Función para obtener los productos al cargar el componente
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const data = await getProducts();
+                setProducts(data); // Establece los productos obtenidos
+            } catch (err) {
+                setError(err.message); // Maneja errores
+            } finally {
+                setLoading(false); // Finaliza el estado de carga
+            }
+        };
+
+        fetchProducts();
+    }, []);
 
     // Función para cerrar la modal
     const closeModals = () => {
         setIsEditModalOpen(false);
+        setSelectedProduct(null); // Limpia el producto seleccionado
     };
 
-    // Función para actualizar el producto
+    // Función para actualizar un producto
     const handleUpdateProduct = (updatedProduct) => {
-        setProduct((prevProduct) => ({
-            ...prevProduct,
-            ...updatedProduct,
-        }));
+        setProducts((prevProducts) =>
+            prevProducts.map((product) =>
+                product.id_products === updatedProduct.id_products
+                    ? { ...product, ...updatedProduct }
+                    : product
+            )
+        );
         closeModals(); // Cierra la modal después de actualizar
     };
 
+    if (loading) {
+        return <p>Cargando productos...</p>;
+    }
+
+    if (error) {
+        return <p>Error: {error}</p>;
+    }
+
     return (
-        <>
-            <section className="rounded-t-2xl shadow flex justify-center items-center flex-col w-full md:w-5/12 lg:w-3/10 ">
-                <div className="w-full h-48 ">
-                    <Image src={kime} className="rounded-t-2xl w-full h-full object-cover" />
-                </div>
+        <div className="flex flex-wrap gap-6 justify-center w-full ">
+            {products.map((product) => (
+                <section
+                    key={product.id_products}
+                    className="rounded-t-2xl shadow flex justify-center items-center flex-col w-full md:w-4/10 lg:w-3/10  "
+                >
+                    <div className="w-full h-48">
+                        <Image
+                            src={product.image || kime} // Usa la imagen del producto o una predeterminada
+                            alt={product.name}
+                            className="rounded-t-2xl w-full h-full object-cover"
+                            width={300}
+                            height={200}
+                        />
+                    </div>
 
-                <div className="flex w-full p-4 justify-between items-center">
-                    <h3 className="font-bold text-2xl">{product.name}</h3>
-                    <p className="text-2xl text-green-500 font-bold">${product.price}</p>
-                </div>
+                    <div className="flex w-full p-4 justify-between items-center">
+                        <h3 className="font-bold text-2xl">{product.name}</h3>
+                        <p className="text-2xl text-green-500 font-bold">${product.price}</p>
+                    </div>
 
-                <div className="w-full px-4">
-                    <p className="text-gray-500">{product.description}</p>
-                </div>
-                <div className="w-full p-4 flex justify-between items-center">
-                    <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{product.category}</p>
-                    <button
-                        className="flex gap-4"
-                        onClick={() => setIsEditModalOpen(true)} // Abre la modal al hacer clic
-                    >
-                        <FiEdit size={28} className="cursor-pointer" />
-                    </button>
-                </div>
-            </section>
+                    <div className="w-full px-4">
+                        <p className="text-gray-500">{product.description}</p>
+                    </div>
+                    <div className="w-full p-4 flex justify-between items-center">
+                        <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{product.category}</p>
+                        <button
+                            className="flex gap-4"
+                            onClick={() => {
+                                setSelectedProduct(product); // Establece el producto seleccionado
+                                setIsEditModalOpen(true); // Abre la modal
+                            }}
+                        >
+                            <FiEdit size={28} className="cursor-pointer" />
+                        </button>
+                    </div>
+                </section>
+            ))}
 
             {/* Modal de Editar Producto */}
-            {isEditModalOpen && (
+            {isEditModalOpen && selectedProduct && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
                     onClick={closeModals} // Cierra la modal al hacer clic fuera
@@ -69,15 +107,16 @@ export default function Cards() {
                         <h2 className="text-xl font-bold mb-4">Editar Producto</h2>
                         <Formik
                             initialValues={{
-                                name: product.name,
-                                description: product.description,
-                                price: product.price,
-                                category: product.category,
-                                image: product.image,
+                                id_products: selectedProduct.id_products,
+                                name: selectedProduct.name,
+                                description: selectedProduct.description,
+                                price: selectedProduct.price,
+                                category: selectedProduct.category,
+                                image: selectedProduct.image,
                             }}
                             onSubmit={(values) => {
                                 handleUpdateProduct(values); // Actualiza el producto
-                                console.log("actializande desdecards")
+                                console.log(values)
                             }}
                         >
                             {({ setFieldValue }) => (
@@ -169,6 +208,6 @@ export default function Cards() {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 }

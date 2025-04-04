@@ -6,7 +6,9 @@ import Image from "next/image";
 import DashboardEstat from "@/pages/assets/images/DashboardEstat.png";
 import DashboardVentas from "@/pages/assets/images/DashboardVentas.png";
 import DashboardPedid from "@/pages/assets/images/DashboardPedid.png";
+
 import Creditos from "@/components/Creditos";
+
 
 export default function PlanDeVentas() {
     const planes = [
@@ -45,6 +47,7 @@ export default function PlanDeVentas() {
         },
     ];
 
+
     // Planes adicionales con las propiedades necesarias
     const planesAdicionales = [
         {
@@ -70,17 +73,22 @@ export default function PlanDeVentas() {
         },
     ];
 
+
     return (
         <section className="">
             <div>
                 {/* Encabezado */}
+
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 py-6">
+
                     <h2 className="text-4xl font-bold mb-4 pt-14">Elige tu plan</h2>
                     <p className="text-lg text-gray-600">Selecciona el plan que mejor se adapte a las necesidades de tu negocio</p>
                 </div>
 
                 {/* Contenido principal */}
+
                 <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-6 py-6">
+
                     <div className="grid grid-cols-1 gap-8">
                         {planes.map((plan, index) => (
                             <div
@@ -101,7 +109,9 @@ export default function PlanDeVentas() {
                                 </div>
 
                                 {/* Contenido del plan */}
+
                                 <div className="flex flex-col flex-grow lg:pl-24">
+
                                     <div className="flex items-center gap-4 mb-4">
                                         {plan.icon}
                                         <h3 className="font-bold text-2xl">{plan.title}</h3>
@@ -117,6 +127,7 @@ export default function PlanDeVentas() {
                                 </div>
                             </div>
                         ))}
+
                         <div className="space-y-8 py-30 ">
                 <h2 className="text-4xl font-bold mb-4 pt-14   md:pl-8">Tipos de Planes</h2>
                 <p className="text-lg text-gray-600   md:pl-8">Selecciona el plan que mas te convenga</p>
@@ -131,8 +142,9 @@ export default function PlanDeVentas() {
                 ))}
                 </div>
             </div>
+
                     </div>
-                </div>
+                ))}
             </div>
 
             {/* Plan adicional */}
