@@ -99,7 +99,6 @@ export default function MenuComponentes() {
                                 precio: "",
                                 categoria: "",
                                 imagen: null,
-                                disponible: false,
                             }}
                             onSubmit={(values) => {
                                 alert(JSON.stringify(values, null, 2)); // Muestra los valores en una alerta
@@ -172,16 +171,6 @@ export default function MenuComponentes() {
                                             onChange={(event) => setFieldValue("imagen", event.target.files[0])}
                                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                         />
-                                    </div>
-
-                                    {/* Disponible */}
-                                    <div className="flex items-center py-4">
-                                        <Field
-                                            name="disponible"
-                                            type="checkbox"
-                                            className="w-4 h-4 text-green-500 border-gray-300 rounded focus:ring-green-400"
-                                        />
-                                        <label className="ml-2 text-gray-700">Producto disponible</label>
                                     </div>
 
                                     {/* Botones */}
