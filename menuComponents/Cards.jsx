@@ -63,7 +63,7 @@ export default function Cards() {
                 >
                     <div className="w-full h-48">
                         <Image
-                            src={product.image || kime} // Usa la imagen del producto o una predeterminada
+                            src={product.image_url|| kime} // Usa la imagen del producto o una predeterminada
                             alt={product.name}
                             className="rounded-t-2xl w-full h-full object-cover"
                             width={300}
