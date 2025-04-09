@@ -1,3 +1,5 @@
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
 import { FaPlus } from "react-icons/fa6";
 import { IoLocationOutline } from "react-icons/io5";
 import { FaPhoneAlt } from "react-icons/fa";
@@ -10,6 +12,32 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import Navbar from "@/dashboardComponents/navbar";
+
+// Validaciones con Yup
+const personalInfoSchema = Yup.object().shape({
+  name: Yup.string().required("Nombre es requerido"),
+  lastName: Yup.string().required("Apellido es requerido"),
+  email: Yup.string().email("Email inválido").required("Email es requerido"),
+  phone: Yup.string().required("Teléfono es requerido"),
+  company: Yup.string().required("Empresa es requerida"),
+  position: Yup.string().required("Cargo es requerido"),
+});
+
+const addressSchema = Yup.object().shape({
+  address: Yup.string().required("Dirección es requerida"),
+  city: Yup.string().required("Ciudad es requerida"),
+  postalCode: Yup.string()
+    .matches(/^\d{5}$/, "El Código Postal es invalido")
+    .required("Código Postal es requerido"),
+  alcaldia: Yup.string().required("Alcaldía es requerida"),
+});
+
+const restaurantSchema = Yup.object().shape({
+  restaurantName: Yup.string().required("Nombre del restaurante es requerido"),
+  state: Yup.string().required("Estado/Provincia es requerido"),
+  city: Yup.string().required("Ciudad es requerida"),
+  alcaldia: Yup.string().required("Alcaldía es requerida"),
+});
 
 // Función para los paneles de las pestañas
 function CustomTabPanel(props) {
@@ -60,84 +88,145 @@ function BasicTabs() {
         </Tabs>
       </Box>
       <CustomTabPanel value={value} index={0}>
-        <div className="flex flex-col space-y-4">
-          <h3 className='font-bold text-xl'>Datos personales</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="name">Nombre</label>
-              <input type="text" id="name" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="name">Apellido</label>
-              <input type="text" id="name" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="email">Email</label>
-              <input type="email" id="email" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="phone">Teléfono</label>
-              <input type="tel" id="phone" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="text">Empresa</label>
-              <input type="text" id="email" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="text">Cargo</label>
-              <input type="text" id="email" className="border p-2 rounded" />
-            </div>
-          </div>
-        </div>
-        <button className="mt-4 w-1/9 bg-green-500 text-white p-2 rounded cursor-pointer">Guardar Cambios</button>
+        <Formik
+          initialValues={{
+            name: "",
+            lastName: "",
+            email: "",
+            phone: "",
+            company: "",
+            position: "",
+          }}
+          validationSchema={personalInfoSchema}
+          onSubmit={(values) => {
+            console.log("Datos Personales:", values);
+          }}
+        >
+          {() => (
+            <Form className="flex flex-col space-y-4">
+              <h3 className="font-bold text-xl">Datos personales</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="name">Nombre/s</label>
+                  <Field type="text" id="name" name="name" className="border p-2 rounded" />
+                  <ErrorMessage name="name" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="lastName">Apellidos</label>
+                  <Field type="text" id="lastName" name="lastName" className="border p-2 rounded" />
+                  <ErrorMessage name="lastName" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="email">Email</label>
+                  <Field type="email" id="email" name="email" className="border p-2 rounded" />
+                  <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="phone">Teléfono</label>
+                  <Field type="tel" id="phone" name="phone" className="border p-2 rounded" />
+                  <ErrorMessage name="phone" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="company">Empresa</label>
+                  <Field type="text" id="company" name="company" className="border p-2 rounded" />
+                  <ErrorMessage name="company" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="position">Cargo</label>
+                  <Field type="text" id="position" name="position" className="border p-2 rounded" />
+                  <ErrorMessage name="position" component="div" className="text-red-500 text-sm" />
+                </div>
+              </div>
+              <button type="submit" className="mt-4 md:w-2/9 xl:w-1/9 bg-green-500 text-white p-2 rounded w-2/3 cursor-pointer">Guardar Cambios</button>
+            </Form>
+          )}
+        </Formik>
       </CustomTabPanel>
       <CustomTabPanel value={value} index={1}>
-        <div className='flex flex-col space-y-4'>
-          <h3 className='font-bold text-xl'>Dirección</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="address">Dirección</label>
-              <input type="text" id="address" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="city">Ciudad</label>
-              <input type="text" id="city" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="postal-code">Código Postal</label>
-              <input type="text" id="postal-code" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="address">Alcaldia</label>
-              <input type="text" id="address" className="border p-2 rounded" />
-            </div>
-          </div>
-          <button className="mt-4 w-1/9 bg-green-500 text-white p-2 rounded cursor-pointer">Guardar Cambios</button>
-        </div>
+        <Formik
+          initialValues={{
+            address: "",
+            city: "",
+            postalCode: "",
+            alcaldia: "",
+          }}
+          validationSchema={addressSchema}
+          onSubmit={(values) => {
+            console.log("Dirección:", values);
+          }}
+        >
+          {() => (
+            <Form className="flex flex-col space-y-4">
+              <h3 className="font-bold text-xl">Dirección</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="address">Dirección</label>
+                  <Field type="text" id="address" name="address" className="border p-2 rounded" />
+                  <ErrorMessage name="address" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="city">Ciudad</label>
+                  <Field type="text" id="city" name="city" className="border p-2 rounded" />
+                  <ErrorMessage name="city" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="postalCode">Código Postal</label>
+                  <Field type="text" id="postalCode" name="postalCode" className="border p-2 rounded" />
+                  <ErrorMessage name="postalCode" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="alcaldia">Alcaldía</label>
+                  <Field type="text" id="alcaldia" name="alcaldia" className="border p-2 rounded" />
+                  <ErrorMessage name="alcaldia" component="div" className="text-red-500 text-sm" />
+                </div>
+              </div>
+              <button type="submit" className="mt-4 md:w-2/9 xl:w-1/9 bg-green-500 text-white p-2 rounded w-2/3 cursor-pointer">Guardar Cambios</button>
+            </Form>
+          )}
+        </Formik>
       </CustomTabPanel>
       <CustomTabPanel value={value} index={2}>
-        <div className='flex flex-col space-y-4'>
-          <h3 className='font-bold text-xl'>Agregar Restaurante</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="local">Nombre del restaurante</label>
-              <input type="text" id="local" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="state">Estado/Provincia</label>
-              <input type="text" id="state" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="city">Ciudad</label>
-              <input type="text" id="city" className="border p-2 rounded" />
-            </div>
-            <div className="flex flex-col pr-4">
-              <label className="font-bold" htmlFor="address">Alcaldia</label>
-              <input type="text" id="address" className="border p-2 rounded" />
-            </div>
-          </div>
-          <button className="flex justify-center w-1/8 mt-4 bg-green-500 text-white p-2 rounded cursor-pointer"><FaPlus className="text-xl self-center" /> Agregar Restaurante</button>
-        </div>
+        <Formik
+          initialValues={{
+            restaurantName: "",
+            state: "",
+            city: "",
+            alcaldia: "",
+          }}
+          validationSchema={restaurantSchema}
+          onSubmit={(values) => {
+            console.log("Agregar Restaurante:", values);
+          }}
+        >
+          {() => (
+            <Form className="flex flex-col space-y-4">
+              <h3 className="font-bold text-xl">Agregar Restaurante</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="restaurantName">Nombre del restaurante</label>
+                  <Field type="text" id="restaurantName" name="restaurantName" className="border p-2 rounded" />
+                  <ErrorMessage name="restaurantName" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="state">Estado/Provincia</label>
+                  <Field type="text" id="state" name="state" className="border p-2 rounded" />
+                  <ErrorMessage name="state" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="city">Ciudad</label>
+                  <Field type="text" id="city" name="city" className="border p-2 rounded" />
+                  <ErrorMessage name="city" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col pr-4">
+                  <label className="font-bold" htmlFor="alcaldia">Alcaldía</label>
+                  <Field type="text" id="alcaldia" name="alcaldia" className="border p-2 rounded" />
+                  <ErrorMessage name="alcaldia" component="div" className="text-red-500 text-sm" />
+                </div>
+              </div>
+              <button type="submit" className="flex justify-center md:w-2/8 xl:w-1/8 mt-4 bg-green-500 text-white p-2 rounded cursor-pointer w-2/3 gap-2"><FaPlus className="text-xl self-center" /> Agregar Restaurante</button>
+            </Form>
+          )}
+        </Formik>
       </CustomTabPanel>
     </Box>
   );
@@ -163,9 +252,9 @@ export default function UserPage() {
           <div className="border-b-1 w-full border-gray-500"></div>
         </div>
         <div className="space-y-4 mt-4">
-          <p className="flex gap-2"><CiMail className="text-xl" /> juan.dias@ejemplo.com</p>
-          <p className="flex gap-2"><FaPhoneAlt className="text-xl" /> +56912345678</p>
-          <p className="flex gap-2"><IoLocationOutline className="text-xl" /> CDMX, México</p>
+          <p className="flex gap-2"><CiMail className="text-xl self-center" /> juan.dias@ejemplo.com</p>
+          <p className="flex gap-2"><FaPhoneAlt className="text-xl self-center" /> +56912345678</p>
+          <p className="flex gap-2"><IoLocationOutline className="text-xl self-center" /> CDMX, México</p>
         </div>
       </div>
       <BasicTabs />
