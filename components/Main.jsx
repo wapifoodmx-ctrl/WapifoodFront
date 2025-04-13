@@ -20,7 +20,7 @@ export default function Main() {
                 <div className="w-full md:w-1/2" >
                     <h2 className="text-4xl text-center font-bold text-black">Gestiona tus pedidos de forma fácil y eficiente!</h2>
 
-                    <p className="text-center text-black text-lg mt-4">Comandapp es la plataforma que simplifica la gestión de pedidos para tu restaurante o negocio de comida.</p>
+                    <p className="text-center text-black text-lg mt-4">WapiFood es la plataforma que simplifica la gestión de pedidos para tu restaurante o negocio de comida.</p>
 
                     <div className="flex justify-center items-center my-8 flex-col gap-6">
 

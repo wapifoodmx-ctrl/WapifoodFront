@@ -18,7 +18,7 @@ const data = [
     {
         icon: <RiCoinsLine size={32} />,
         title: "Ahorra tiempo y dinero",
-        interm: "Optimiza la gestión de tu restaurante y ahorra tiempo y dinero. Comandapp te permite gestionar tu negocio de forma eficiente.",
+        interm: "Optimiza la gestión de tu restaurante y ahorra tiempo y dinero. WapiFood te permite gestionar tu negocio de forma eficiente.",
     },
     {
         icon: <AiFillSignal size={32} />,

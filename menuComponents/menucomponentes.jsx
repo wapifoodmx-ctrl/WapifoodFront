@@ -5,22 +5,52 @@ import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FiFilter } from "react-icons/fi";
 import { BsTag } from "react-icons/bs";
 import { Formik, Form, Field } from "formik";
+import { createProduct } from "../useCases/createProduct"; // Import the function
+import * as Yup from "yup"; // Importar Yup
 
-export default function MenuComponentes() {
+export default function MenuComponentes({ onSearch }) { // Recibir la función onSearch como prop
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);
     const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState(""); // Estado para el término de búsqueda
 
     const closeModals = () => {
         setIsProductoModalOpen(false);
         setIsCategoriaModalOpen(false);
     };
 
+    const handleSearchChange = (e) => {
+        const value = e.target.value;
+        setSearchTerm(value); // Actualizar el estado local
+        onSearch(value); // Pasar el término de búsqueda al componente padre
+    };
+
+    const validationSchemaProducto = Yup.object().shape({
+        nombre: Yup.string().required("El nombre del producto es obligatorio"),
+        descripcion: Yup.string().required("La descripción es obligatoria"),
+        precio: Yup.number()
+            .typeError("El precio debe ser un número")
+            .required("El precio es obligatorio"),
+        //categoria: Yup.string().required("La categoría es obligatoria"),
+        imagen: Yup.mixed().required("La imagen del producto es obligatoria"),
+    });
+
+    const validationSchemaCategoria = Yup.object().shape({
+        categoria: Yup.string().required("El nombre de la categoría es obligatorio"),
+        descripcion: Yup.string().required("La descripción es obligatoria"),
+    });
+
     return (
         <section className="lg:flex my-4 lg:gap-4 lg:justify-between lg:items-center">
             {/* Barra de búsqueda */}
             <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 lg:mb-0 lg:w-6/12 justify-center items-center">
                 <HiOutlineMagnifyingGlass className="text-xl" />
-                <input type="text" placeholder="Buscar..." className="ml-2 w-full outline-none" />
+                <input
+                    type="text"
+                    placeholder="Buscar..."
+                    value={searchTerm} // Vincular el estado al input
+                    onChange={handleSearchChange} // Manejar el cambio
+                    className="ml-2 w-full outline-none"
+                />
             </div>
 
             <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
@@ -97,15 +127,30 @@ export default function MenuComponentes() {
                                 nombre: "",
                                 descripcion: "",
                                 precio: "",
-                                categoria: "",
+                                categoria: 2,
                                 imagen: null,
                             }}
-                            onSubmit={(values) => {
-                                alert(JSON.stringify(values, null, 2)); // Muestra los valores en una alerta
-                                closeModals(); // Cierra la modal
+                            validationSchema={validationSchemaProducto} // Añadir validación
+                            onSubmit={async (values, { setSubmitting }) => {
+                                try {
+                                    const productData = {
+                                        name: values.nombre,
+                                        description: values.descripcion,
+                                        price: String(values.precio), // Convertir a string
+                                        category_id: String(3), // Convertir a string
+                                    };
+                                    await createProduct(productData, values.imagen); // Call the function
+                                    alert("Producto creado exitosamente");
+                                    closeModals();
+                                } catch (error) {
+                                    console.error("Error al crear el producto:", error);
+                                    alert("Error al crear el producto. Por favor, inténtalo de nuevo.");
+                                } finally {
+                                    setSubmitting(false);
+                                }
                             }}
                         >
-                            {({ setFieldValue }) => (
+                            {({ setFieldValue, errors, touched }) => (
                                 <Form className="space-y-4">
                                     {/* Nombre del producto */}
                                     <div>
@@ -116,6 +161,9 @@ export default function MenuComponentes() {
                                             className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
                                             placeholder="Nombre del producto"
                                         />
+                                        {errors.nombre && touched.nombre && (
+                                            <div className="text-red-500 text-sm">{errors.nombre}</div>
+                                        )}
                                     </div>
 
                                     {/* Descripción */}
@@ -127,6 +175,9 @@ export default function MenuComponentes() {
                                             className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
                                             placeholder="Escribe una descripción..."
                                         />
+                                        {errors.descripcion && touched.descripcion && (
+                                            <div className="text-red-500 text-sm">{errors.descripcion}</div>
+                                        )}
                                     </div>
 
                                     {/* Precio */}
@@ -141,6 +192,9 @@ export default function MenuComponentes() {
                                                 placeholder="Precio"
                                             />
                                         </div>
+                                        {errors.precio && touched.precio && (
+                                            <div className="text-red-500 text-sm">{errors.precio}</div>
+                                        )}
                                     </div>
 
                                     {/* Categoría */}
@@ -160,6 +214,9 @@ export default function MenuComponentes() {
                                             <option value="bebidas">Bebidas</option>
                                             <option value="combos">Combos</option>
                                         </Field>
+                                        {errors.categoria && touched.categoria && (
+                                            <div className="text-red-500 text-sm">{errors.categoria}</div>
+                                        )}
                                     </div>
 
                                     {/* Imagen */}
@@ -171,6 +228,9 @@ export default function MenuComponentes() {
                                             onChange={(event) => setFieldValue("imagen", event.target.files[0])}
                                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                         />
+                                        {errors.imagen && touched.imagen && (
+                                            <div className="text-red-500 text-sm">{errors.imagen}</div>
+                                        )}
                                     </div>
 
                                     {/* Botones */}
@@ -210,24 +270,30 @@ export default function MenuComponentes() {
                         <Formik
                             initialValues={{
                                 categoria: "",
+                                descripcion: "",
                             }}
+                            validationSchema={validationSchemaCategoria} // Añadir validación
                             onSubmit={(values) => {
                                 alert(`Nueva categoría: ${values.categoria}`); // Muestra la categoría en una alerta
                                 closeModals(); // Cierra la modal
                             }}
                         >
-                            <Form className="space-y-4">
-                                {/* Nombre de la categoría */}
-                                <div>
-                                    <label className="font-bold text-gray-600 pb-2">Nombre de la categoría</label>
-                                    <Field
-                                        name="categoria"
-                                        type="text"
-                                        className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
-                                        placeholder="Nombre de la categoría"
-                                    />
-                                </div>
-                                <div>
+                            {({ errors, touched }) => (
+                                <Form className="space-y-4">
+                                    {/* Nombre de la categoría */}
+                                    <div>
+                                        <label className="font-bold text-gray-600 pb-2">Nombre de la categoría</label>
+                                        <Field
+                                            name="categoria"
+                                            type="text"
+                                            className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
+                                            placeholder="Nombre de la categoría"
+                                        />
+                                        {errors.categoria && touched.categoria && (
+                                            <div className="text-red-500 text-sm">{errors.categoria}</div>
+                                        )}
+                                    </div>
+                                    <div>
                                         <label className="font-bold text-gray-600 py-2">Descripción</label>
                                         <Field
                                             name="descripcion"
@@ -235,25 +301,29 @@ export default function MenuComponentes() {
                                             className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
                                             placeholder="Escribe una descripción..."
                                         />
+                                        {errors.descripcion && touched.descripcion && (
+                                            <div className="text-red-500 text-sm">{errors.descripcion}</div>
+                                        )}
                                     </div>
 
-                                {/* Botones */}
-                                <div className="flex gap-4">
-                                    <button
-                                        type="submit"
-                                        className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 cursor-pointer"
-                                    >
-                                        Guardar Categoría
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
-                                        onClick={closeModals}
-                                    >
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </Form>
+                                    {/* Botones */}
+                                    <div className="flex gap-4">
+                                        <button
+                                            type="submit"
+                                            className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 cursor-pointer"
+                                        >
+                                            Guardar Categoría
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
+                                            onClick={closeModals}
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </Form>
+                            )}
                         </Formik>
                     </div>
                 </div>

@@ -153,7 +153,7 @@ export default function MenuCliente() {
                         {/* Logo */}
                         <div className="flex items-center">
                             <GoChecklist size={36} className="text-green-600" />
-                            <h1 className="text-3xl font-bold ml-2">Comandapp</h1>
+                            <h1 className="text-3xl font-bold ml-2">WapiFood</h1>
                         </div>
 
                         {/* Botón del menú hamburguesa */}
