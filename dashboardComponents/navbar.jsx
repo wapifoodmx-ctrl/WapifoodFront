@@ -28,6 +28,12 @@ export default function Navbar() {
     const pedidos = () => {
         router.push('/pedidos');
     };
+    const MiPerfil = () => {
+        router.push('/user');
+    };
+    const payments = () => {
+        router.push('/payments');
+    };
 
 
     const menu = {
@@ -47,7 +53,7 @@ export default function Navbar() {
             icon: <FiShoppingBag className=" h-full w-[24px]" />,
         },
         Ventas: {
-            title: "Ventas",
+            title: "Opciones de pago",
             href: "#",
             icon: <FcSalesPerformance className=" h-full w-[24px]" />,
         },
@@ -99,29 +105,29 @@ export default function Navbar() {
                         {
                             Object.keys(menu).map((item, index) => (
                                 <li key={index} className="cursor-pointer hover:text-green-600 my-4">
-                                    {item === "Dashboard" ? (
+                                    {item === "Dashboard" || item === "Register" || item === "Pedidos" ? (
                                         <button
                                             className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            onClick={dasboard}
+                                            onClick={
+                                                item === "Dashboard" ? dasboard :
+                                                item === "Register" ? productos :
+                                                pedidos
+                                            }
                                         >
                                             <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
                                         </button>
-                                    ) : item === "Register" ? (
+                                    ) : item === "Ventas" ? (
                                         <button
                                             className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            onClick={productos}
-                                        >
-                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
-                                        </button>
-                                    ) : item === "Pedidos" ? (
-                                        <button
-                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            onClick={pedidos}
+                                            onClick={payments}
                                         >
                                             <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
                                         </button>
                                     ) : (
-                                        <a className="flex w-auto gap-2 cursor-pointer hover:text-green-600" href={menu[item].href}>
+                                        <a
+                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                            href={menu[item].href}
+                                        >
                                             <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
                                         </a>
                                     )}
@@ -133,7 +139,28 @@ export default function Navbar() {
                         {
                             Object.keys(config).map((item, index) => (
                                 <li key={index} className="cursor-pointer hover:text-green-600 my-4">
-                                    <button className="flex w-auto gap-2 cursor-pointer hover:text-green-600" onClick={config[item].function} href={config[item].href}> <span className="self-center">{config[item].icon}</span> {config[item].title}</button>
+                                    {item === "Profile" ? (
+                                        <button
+                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                            onClick={MiPerfil}
+                                        >
+                                            <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                        </button>
+                                    ) : item === "Logout" ? (
+                                        <button
+                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                            onClick={config[item].function}
+                                        >
+                                            <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                        </button>
+                                    ) : (
+                                        <a
+                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                            href={config[item].href}
+                                        >
+                                            <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                        </a>
+                                    )}
                                 </li>
                             ))
                         }
