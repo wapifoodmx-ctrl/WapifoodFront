@@ -5,7 +5,7 @@ import { FiEdit } from "react-icons/fi";
 import { Formik, Form, Field } from "formik";
 import { getProducts } from "@/useCases/getProducts";
 
-export default function Cards() {
+export default function Cards({ searchTerm }) { // Recibir searchTerm como prop
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal
     const [products, setProducts] = useState([]); // Estado para almacenar los productos obtenidos
     const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar
@@ -28,23 +28,10 @@ export default function Cards() {
         fetchProducts();
     }, []);
 
-    // Función para cerrar la modal
-    const closeModals = () => {
-        setIsEditModalOpen(false);
-        setSelectedProduct(null); // Limpia el producto seleccionado
-    };
-
-    // Función para actualizar un producto
-    const handleUpdateProduct = (updatedProduct) => {
-        setProducts((prevProducts) =>
-            prevProducts.map((product) =>
-                product.id_products === updatedProduct.id_products
-                    ? { ...product, ...updatedProduct }
-                    : product
-            )
-        );
-        closeModals(); // Cierra la modal después de actualizar
-    };
+    // Filtrar los productos basados en el término de búsqueda
+    const filteredProducts = products.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) // Filtrar por nombre
+    );
 
     if (loading) {
         return <p>Cargando productos...</p>;
@@ -54,9 +41,19 @@ export default function Cards() {
         return <p>Error: {error}</p>;
     }
 
+    if (filteredProducts.length === 0) {
+        return (
+            <div className="flex justify-center items-center w-full h-64">
+                <p className="text-gray-500 text-xl font-bold">
+                    Lo siento, no se encontró ningún producto relacionado
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-wrap gap-6 justify-center w-full ">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
                 <section
                     key={product.id_products}
                     className="rounded-t-2xl shadow flex justify-center items-center flex-col w-full md:w-4/10 lg:w-3/10  "
@@ -80,7 +77,7 @@ export default function Cards() {
                         <p className="text-gray-500">{product.description}</p>
                     </div>
                     <div className="w-full p-4 flex justify-between items-center">
-                        <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{product.category}</p>
+                        <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{"Categoría :D!"}</p>
                         <button
                             className="flex gap-4"
                             onClick={() => {
@@ -111,7 +108,7 @@ export default function Cards() {
                                 name: selectedProduct.name,
                                 description: selectedProduct.description,
                                 price: selectedProduct.price,
-                                category: selectedProduct.category,
+                                category_id: selectedProduct.category_id,
                                 image: selectedProduct.image,
                                 disponible: selectedProduct.disponible || false, // Asegúrate de que tenga un valor booleano
                             }}
@@ -161,7 +158,7 @@ export default function Cards() {
                                     <div>
                                         <label className="font-bold text-gray-600 pb-2">Categoría</label>
                                         <Field
-                                            name="category"
+                                            name="category_id"
                                             as="select"
                                             className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
                                         >

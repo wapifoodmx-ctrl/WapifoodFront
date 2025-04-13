@@ -8,13 +8,20 @@ import { Formik, Form, Field } from "formik";
 import { createProduct } from "../useCases/createProduct"; // Import the function
 import * as Yup from "yup"; // Importar Yup
 
-export default function MenuComponentes() {
+export default function MenuComponentes({ onSearch }) { // Recibir la función onSearch como prop
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);
     const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState(""); // Estado para el término de búsqueda
 
     const closeModals = () => {
         setIsProductoModalOpen(false);
         setIsCategoriaModalOpen(false);
+    };
+
+    const handleSearchChange = (e) => {
+        const value = e.target.value;
+        setSearchTerm(value); // Actualizar el estado local
+        onSearch(value); // Pasar el término de búsqueda al componente padre
     };
 
     const validationSchemaProducto = Yup.object().shape({
@@ -37,7 +44,13 @@ export default function MenuComponentes() {
             {/* Barra de búsqueda */}
             <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 lg:mb-0 lg:w-6/12 justify-center items-center">
                 <HiOutlineMagnifyingGlass className="text-xl" />
-                <input type="text" placeholder="Buscar..." className="ml-2 w-full outline-none" />
+                <input
+                    type="text"
+                    placeholder="Buscar..."
+                    value={searchTerm} // Vincular el estado al input
+                    onChange={handleSearchChange} // Manejar el cambio
+                    className="ml-2 w-full outline-none"
+                />
             </div>
 
             <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
