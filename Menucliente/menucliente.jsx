@@ -10,8 +10,127 @@ import React, { useState, useEffect } from "react";
 import kime from "@/pages/assets/img/kime.jpeg";
 import Image from "next/image";
 
+const productos = [
+    {
+        id: 1,
+        nombre: "Ensalada César",
+        precio: 100.0,
+        descripcion: "Lechuga romana, crutones, parmesano y aderezo César",
+        categoria: "Ensaladas",
+        imagen: kime,
+    },
+    {
+        id: 2,
+        nombre: "Pizza Margarita",
+        precio: 150.0,
+        descripcion: "Masa artesanal, salsa de tomate, mozzarella y albahaca fresca",
+        categoria: "Pizzas",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 3,
+        nombre: "Sopa de Tomate",
+        precio: 80.0,
+        descripcion: "Sopa cremosa de tomate con un toque de albahaca",
+        categoria: "Entradas",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 4,
+        nombre: "Tarta de Chocolate",
+        precio: 120.0,
+        descripcion: "Tarta de chocolate con base de galleta y crema batida",
+        categoria: "Postres",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 5,
+        nombre: "Hamburguesa Clásica",
+        precio: 200.0,
+        descripcion: "Carne de res, lechuga, tomate y cebolla en pan artesanal jhguvuhvugivbufuhbuyvuvuhbuyvuhbjhvouckuhvugcvuhvoucoucviihvouycvouhvoucuguhcoutcuhv",
+        categoria: "Platos Principales",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 6,
+        nombre: "Batido de Fresa",
+        precio: 90.0,
+        descripcion: "Batido cremoso de fresa con leche y helado",
+        categoria: "Bebidas",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 7,
+        nombre: "Ensalada de Frutas",
+        precio: 70.0,
+        descripcion: "Mezcla de frutas frescas de temporada",
+        categoria: "Ensaladas",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 8,
+        nombre: "Pizza Pepperoni",
+        precio: 160.0,
+        descripcion: "Masa artesanal, salsa de tomate, mozzarella y pepperoni",
+        categoria: "Pizzas",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 9,
+        nombre: "Sopa de Pollo",
+        precio: 85.0,
+        descripcion: "Sopa caliente de pollo con verduras frescas",
+        categoria: "Entradas",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 10,
+        nombre: "Tarta de Limón",
+        precio: 110.0,
+        descripcion: "Tarta de limón con merengue y galleta",
+        categoria: "Postres",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 11,
+        nombre: "Ensalada Griega",
+        precio: 120.0,
+        descripcion: "Lechuga, tomate, pepino, aceitunas y queso feta",
+        categoria: "Ensaladas",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+    {
+        id: 12,
+        nombre: "Club Sandwich",
+        precio: 150.0,
+        descripcion: "Pan tostado con pollo, tocino, lechuga y tomate",
+        categoria: "Platos Principales",
+        imagen: kime, // Cambia por otra imagen si es necesario
+    },
+];
+
+const categoriaOrden = {
+    "Entradas": 0,
+    "Platos Principales": 1,
+    "Ensaladas": 2,
+    "Pizzas": 3,
+    "Postres": 4,
+    "Bebidas": 5,
+};
+
+console.log(productos.map(p => ({
+    nombre: p.nombre,
+    categoria: p.categoria,
+    orden: categoriaOrden[p.categoria],
+})));
+
 export default function MenuCliente() {
     const [isOpen, setIsOpen] = useState(false);
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos los platillos");
+
+    const productosFiltrados = categoriaSeleccionada === "Todos los platillos"
+        ? productos
+        : productos.filter(producto => producto.categoria === categoriaSeleccionada);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -39,7 +158,7 @@ export default function MenuCliente() {
 
                         {/* Botón del menú hamburguesa */}
                         <button
-                            className="z-20 cursor-pointer py-3 md:hidden hamburger-button"
+                            className="z-20 cursor-pointer py-3 hamburger-button"
                             onClick={() => setIsOpen(!isOpen)} // Toggle menu on click
                             aria-label="Toggle menu"
                         >
@@ -63,43 +182,64 @@ export default function MenuCliente() {
                     <p className="text-gray-500 font-bold">Menú principal</p>
                     <li
                         className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => setIsOpen(false)} // Close menu on click
+                        onClick={() => {
+                            setCategoriaSeleccionada("Todos los platillos");
+                            setIsOpen(false);
+                        }}
                     >
                         <IoHomeOutline className="self-center"/> Todos los platillos
                     </li>
                     <li
                         className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => setIsOpen(false)} // Close menu on click
+                        onClick={() => {
+                            setCategoriaSeleccionada("Entradas");
+                            setIsOpen(false);
+                        }}
                     >
                         <TbSoup className="self-center"/>Entradas
                     </li>
                     <li
                         className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => setIsOpen(false)} // Close menu on click
+                        onClick={() => {
+                            setCategoriaSeleccionada("Platos Principales");
+                            setIsOpen(false);
+                        }}
                     >
                         <GiForkKnifeSpoon className="self-center"/>Platos principales
                     </li>
                     <li
                         className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => setIsOpen(false)} // Close menu on click
+                        onClick={() => {
+                            setCategoriaSeleccionada("Ensaladas");
+                            setIsOpen(false);
+                        }}
                     >
-                        <LuSalad  className="self-center"/>Ensaladas
+                        <LuSalad className="self-center"/>Ensaladas
                     </li>
                     <li
                         className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => setIsOpen(false)} // Close menu on click
+                        onClick={() => {
+                            setCategoriaSeleccionada("Pizzas");
+                            setIsOpen(false);
+                        }}
                     >
                         <CiPizza className="self-center"/>Pizzas
                     </li>
                     <li
                         className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => setIsOpen(false)} // Close menu on click
+                        onClick={() => {
+                            setCategoriaSeleccionada("Postres");
+                            setIsOpen(false);
+                        }}
                     >
                         <GiCakeSlice className="self-center" />Postres
                     </li>
                     <li
                         className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => setIsOpen(false)} // Close menu on click
+                        onClick={() => {
+                            setCategoriaSeleccionada("Bebidas");
+                            setIsOpen(false);
+                        }}
                     >
                         <LuCupSoda className="self-center"/>Bebidas
                     </li>
@@ -107,36 +247,52 @@ export default function MenuCliente() {
             </div>
 
             {/* Card Section */}
-            <section className="rounded-lg shadow-lg flex flex-col w-11/12 md:w-1/2 lg:w-1/3 mx-auto my-8 bg-white ">
-                <div className="w-full h-48">
-                    <Image
-                        src={kime} // Usa la imagen del producto o una predeterminada
-                        alt="Imagen del producto"
-                        className="rounded-t-lg w-full h-full object-cover"
-                        width={300}
-                        height={200}
-                    />
-                </div>
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12">
+                {productosFiltrados
+                    .sort((a, b) => {
+                        const ordenA = categoriaOrden[a.categoria] ?? Number.MAX_SAFE_INTEGER;
+                        const ordenB = categoriaOrden[b.categoria] ?? Number.MAX_SAFE_INTEGER;
+                        return ordenA - ordenB;
+                    })
+                    .map((producto) => (
+                        <div
+                            key={producto.id}
+                            className="rounded-lg shadow-lg flex flex-col bg-white"
+                        >
+                            <div className="w-full h-48">
+                                <Image
+                                    src={producto.imagen}
+                                    alt={`Imagen de ${producto.nombre}`}
+                                    className="rounded-t-lg w-full h-full object-cover"
+                                    width={300}
+                                    height={200}
+                                />
+                            </div>
 
-                <div className="p-4">
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-bold text-xl">{"Ensalada César"}</h3>
-                        <p className="text-xl text-green-500 font-bold">${(100.00).toFixed(2)}</p>
-                    </div>
-                    <p className="text-gray-500 mb-4">
-                        {"Lechuga romana, crutones, parmesano y aderezo César"}
-                    </p>
-                    <div className="flex justify-between items-center">
-                        <p className="bg-green-300 text-green-800 rounded-full px-4 py-1 text-sm">
-                            {"Ensalada"}
-                        </p>
-                        <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
-                            Ver Detalles
-                        </button>
-                    </div>
-                </div>
+                            <div className="p-4">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="font-bold text-xl">{producto.nombre}</h3>
+                                    <p className="text-xl text-green-500 font-bold">
+                                        ${producto.precio.toFixed(2)}
+                                    </p>
+                                </div>
+                                <p className="text-gray-500 mb-4 line-clamp-2 min-h-[3rem]">
+                                    {producto.descripcion.length > 80
+                                        ? `${producto.descripcion.slice(0, 80)}...`
+                                        : producto.descripcion}
+                                </p>
+                                <div className="flex justify-between items-center">
+                                    <p className="bg-green-300 text-green-800 rounded-full px-4 py-1 text-sm">
+                                        {producto.categoria}
+                                    </p>
+                                    <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 cursor-pointer">
+                                        Ver Detalles
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
             </section>
-            
         </section>
     );
 }
