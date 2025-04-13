@@ -61,7 +61,7 @@ export default function Creditos() {
 
                 <div className="flex gap-4 items-center md:w-full">
                     <IoCartOutline size={32} />
-                    <h3 className="font-bold text-2xl">Comandapp</h3>
+                    <h3 className="font-bold text-2xl">WapiFood</h3>
                 </div>
                 <p className="font-medium text-sm text-left md:w-full">
                     La solución completa para la gestión de pedidos en tu negocio de comida.
@@ -86,7 +86,7 @@ export default function Creditos() {
             <div className="pt-8 flex items-center gap-2">
                 <FaRegCopyright size={15} />
                 <p className="font-medium text-sm">
-                    2025 Comandapp. Todos los derechos reservados.
+                    2025 WapiFood. Todos los derechos reservados.
                 </p>
             </div>
         </section>

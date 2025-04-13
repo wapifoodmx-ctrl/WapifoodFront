@@ -68,7 +68,7 @@ const LoginForm = () => {
 
     return (
         <div className="flex justify-center items-center h-screen flex-col gap-4 mt-10 px-4">
-            <h2 className="text-4xl text-center font-bold text-black pb-4">Iniciar Sesión en Comandapp</h2>
+            <h2 className="text-4xl text-center font-bold text-black pb-4">Iniciar Sesión en WapiFood</h2>
             <p className='text-2xl text-center'>Ingresa tus credenciales para acceder a tu cuenta</p>
 
             <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
