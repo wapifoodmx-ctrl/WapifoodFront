@@ -79,7 +79,7 @@ export default function Navbar() {
                 {/* Logo */}
                 <div className="flex items-center cursor-pointer" >
                     <GoChecklist size={36} className="text-green-600" />
-                    <h2 className="text-3xl hover:text-green-600 font-bold ml-2">Dashboard</h2>
+                    <h2 className="text-3xl hover:text-green-600 font-bold ml-2">WapiFood</h2>
                 </div>
 
                 {/* Botón Hamburguesa - Siempre visible */}
