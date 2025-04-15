@@ -73,18 +73,67 @@ function a11yProps(index) {
 // Componente de pestañas
 function BasicTabs() {
   const [value, setValue] = React.useState(0);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [restauranteAEliminar, setRestauranteAEliminar] = React.useState(null);
+  const [restauranteAEditar, setRestauranteAEditar] = React.useState(null);
+
+  // Estado para manejar la lista de restaurantes
+  const [restaurantes, setRestaurantes] = React.useState([
+    { id: 1, nombre: "Restaurante El Buen Sabor", direccion: "Av. Siempre Viva 123, CDMX" },
+    { id: 2, nombre: "La Parrilla Mexicana", direccion: "Calle Falsa 456, Monterrey" },
+    { id: 3, nombre: "Sushi Express", direccion: "Blvd. Reforma 789, Guadalajara" },
+  ]);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
+  };
+
+  // Función para mostrar la modal de confirmación
+  const confirmarEliminarRestaurante = (id) => {
+    setRestauranteAEliminar(id);
+    setIsConfirmModalOpen(true);
+  };
+
+  // Función para eliminar un restaurante
+  const eliminarRestaurante = () => {
+    setRestaurantes((prevRestaurantes) =>
+      prevRestaurantes.filter((restaurante) => restaurante.id !== restauranteAEliminar)
+    );
+    setIsConfirmModalOpen(false);
+    console.log(`Restaurante con ID ${restauranteAEliminar} eliminado`);
+  };
+
+  // Función para abrir la modal de edición
+  const editarRestaurante = (id) => {
+    const restaurante = restaurantes.find((restaurante) => restaurante.id === id);
+    setRestauranteAEditar(restaurante);
+    setIsEditModalOpen(true);
+  };
+
+  // Función para guardar los cambios del restaurante editado
+  const guardarCambiosRestaurante = (values) => {
+    setRestaurantes((prevRestaurantes) =>
+      prevRestaurantes.map((restaurante) =>
+        restaurante.id === values.id ? { ...restaurante, ...values } : restaurante
+      )
+    );
+    setIsEditModalOpen(false);
+    console.log(`Restaurante con ID ${values.id} actualizado`);
+  };
+
   return (
-    <Box sx={{ width: '100%' }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+    <Box sx={{ width: "100%" }}>
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
           <Tab label="Datos Personales" {...a11yProps(0)} />
           <Tab label="Dirección" {...a11yProps(1)} />
-          <Tab label="Agregar Restaurante" {...a11yProps(2)} />
+          <Tab label="Restaurantes" {...a11yProps(2)} />
         </Tabs>
       </Box>
       <CustomTabPanel value={value} index={0}>
@@ -127,14 +176,23 @@ function BasicTabs() {
                   <ErrorMessage name="phone" component="div" className="text-red-500 text-sm" />
                 </div>
                 <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="company">Empresa</label>
-                  <Field type="text" id="company" name="company" className="border p-2 rounded" />
-                  <ErrorMessage name="company" component="div" className="text-red-500 text-sm" />
-                </div>
-                <div className="flex flex-col pr-4">
                   <label className="font-bold" htmlFor="position">Cargo</label>
                   <Field type="text" id="position" name="position" className="border p-2 rounded" />
                   <ErrorMessage name="position" component="div" className="text-red-500 text-sm" />
+                </div>
+                {/* Input para subir imagen con la mitad del tamaño */}
+                <div className="flex flex-col pr-4 w-1/2">
+                  <label className="font-bold" htmlFor="profileImage">Imagen de Perfil</label>
+                  <input
+                    type="file"
+                    id="profileImage"
+                    name="profileImage"
+                    accept="image/*"
+                    className="border p-2 rounded cursor-pointer"
+                    onChange={(event) => {
+                      console.log("Archivo seleccionado:", event.target.files[0]);
+                    }}
+                  />
                 </div>
               </div>
               <button type="submit" className="mt-4 md:w-2/9 xl:w-1/9 bg-green-500 text-white p-2 rounded w-2/3 cursor-pointer">Guardar Cambios</button>
@@ -186,47 +244,231 @@ function BasicTabs() {
         </Formik>
       </CustomTabPanel>
       <CustomTabPanel value={value} index={2}>
-        <Formik
-          initialValues={{
-            restaurantName: "",
-            state: "",
-            city: "",
-            alcaldia: "",
-          }}
-          validationSchema={restaurantSchema}
-          onSubmit={(values) => {
-            console.log("Agregar Restaurante:", values);
-          }}
-        >
-          {() => (
-            <Form className="flex flex-col space-y-4">
-              <h3 className="font-bold text-xl">Agregar Restaurante</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="restaurantName">Nombre del restaurante</label>
-                  <Field type="text" id="restaurantName" name="restaurantName" className="border p-2 rounded" />
-                  <ErrorMessage name="restaurantName" component="div" className="text-red-500 text-sm" />
+        <div className="space-y-4">
+          <h3 className="font-bold text-xl">Lista de Restaurantes</h3>
+          <ul className="space-y-4">
+            {restaurantes.map((restaurante) => (
+              <li key={restaurante.id} className="border p-4 rounded shadow">
+                <p className="font-bold">{restaurante.nombre}</p>
+                <p className="text-gray-500">{restaurante.direccion}</p>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    onClick={() => editarRestaurante(restaurante.id)}
+                  >
+                    Editar Restaurante
+                  </button>
+                  <button
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                    onClick={() => confirmarEliminarRestaurante(restaurante.id)}
+                  >
+                    Eliminar Restaurante
+                  </button>
                 </div>
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="state">Estado/Provincia</label>
-                  <Field type="text" id="state" name="state" className="border p-2 rounded" />
-                  <ErrorMessage name="state" component="div" className="text-red-500 text-sm" />
-                </div>
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="city">Ciudad</label>
-                  <Field type="text" id="city" name="city" className="border p-2 rounded" />
-                  <ErrorMessage name="city" component="div" className="text-red-500 text-sm" />
-                </div>
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="alcaldia">Alcaldía</label>
-                  <Field type="text" id="alcaldia" name="alcaldia" className="border p-2 rounded" />
-                  <ErrorMessage name="alcaldia" component="div" className="text-red-500 text-sm" />
-                </div>
+              </li>
+            ))}
+          </ul>
+          <button
+            className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            onClick={toggleModal}
+          >
+            Agregar Restaurante
+          </button>
+        </div>
+
+        {/* Modal para agregar restaurante */}
+        {isModalOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            onClick={toggleModal} // Cierra la modal al hacer clic fuera
+          >
+            <div
+              className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2"
+              onClick={(e) => e.stopPropagation()} // Evita cerrar la modal al hacer clic dentro
+            >
+              <button
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+                onClick={toggleModal}
+              >
+                ✖
+              </button>
+              <h3 className="font-bold text-xl mb-4">Agregar Restaurante</h3>
+              <Formik
+                initialValues={{
+                  restaurantName: "",
+                  state: "",
+                  city: "",
+                  alcaldia: "",
+                }}
+                validationSchema={restaurantSchema}
+                onSubmit={(values) => {
+                  console.log("Agregar Restaurante:", values);
+                  toggleModal(); // Cierra la modal después de enviar
+                }}
+              >
+                {() => (
+                  <Form className="flex flex-col space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
+                      <div className="flex flex-col pr-4">
+                        <label className="font-bold" htmlFor="restaurantName">Nombre del restaurante</label>
+                        <Field type="text" id="restaurantName" name="restaurantName" className="border p-2 rounded" />
+                        <ErrorMessage name="restaurantName" component="div" className="text-red-500 text-sm" />
+                      </div>
+                      <div className="flex flex-col pr-4">
+                        <label className="font-bold" htmlFor="state">Calle y número</label>
+                        <Field type="text" id="state" name="state" className="border p-2 rounded" />
+                        <ErrorMessage name="state" component="div" className="text-red-500 text-sm" />
+                      </div>
+                      <div className="flex flex-col pr-4">
+                        <label className="font-bold" htmlFor="city">Ciudad</label>
+                        <Field type="text" id="city" name="city" className="border p-2 rounded" />
+                        <ErrorMessage name="city" component="div" className="text-red-500 text-sm" />
+                      </div>
+                      <div className="flex flex-col pr-4">
+                        <label className="font-bold" htmlFor="alcaldia">Alcaldía</label>
+                        <Field type="text" id="alcaldia" name="alcaldia" className="border p-2 rounded" />
+                        <ErrorMessage name="alcaldia" component="div" className="text-red-500 text-sm" />
+                      </div>
+                    </div>
+                    <button type="submit" className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                      Guardar Restaurante
+                    </button>
+                  </Form>
+                )}
+              </Formik>
+            </div>
+          </div>
+        )}
+
+        {/* Modal para editar restaurante */}
+        {isEditModalOpen && restauranteAEditar && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            onClick={() => setIsEditModalOpen(false)} // Cierra la modal al hacer clic fuera
+          >
+            <div
+              className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2"
+              onClick={(e) => e.stopPropagation()} // Evita cerrar la modal al hacer clic dentro
+            >
+              <button
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+                onClick={() => setIsEditModalOpen(false)}
+              >
+                ✖
+              </button>
+              <h3 className="font-bold text-xl mb-4">Editar Restaurante</h3>
+              <Formik
+                initialValues={{
+                  id: restauranteAEditar.id,
+                  restaurantName: restauranteAEditar.nombre,
+                  state: restauranteAEditar.direccion,
+                  city: restauranteAEditar.city || "",
+                  alcaldia: restauranteAEditar.alcaldia || "",
+                }}
+                validationSchema={restaurantSchema}
+                onSubmit={guardarCambiosRestaurante}
+              >
+                {() => (
+                  <Form className="flex flex-col space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
+                      <div className="flex flex-col pr-4">
+                        <label className="font-bold" htmlFor="restaurantName">Nombre del restaurante</label>
+                        <Field
+                          type="text"
+                          id="restaurantName"
+                          name="restaurantName"
+                          className="border p-2 rounded"
+                        />
+                        <ErrorMessage
+                          name="restaurantName"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
+                      </div>
+                      <div className="flex flex-col pr-4">
+                        <label className="font-bold" htmlFor="state">Calle y número</label>
+                        <Field
+                          type="text"
+                          id="state"
+                          name="state"
+                          className="border p-2 rounded"
+                        />
+                        <ErrorMessage
+                          name="state"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
+                      </div>
+                      <div className="flex flex-col pr-4">
+                        <label className="font-bold" htmlFor="city">Ciudad</label>
+                        <Field
+                          type="text"
+                          id="city"
+                          name="city"
+                          className="border p-2 rounded"
+                        />
+                        <ErrorMessage
+                          name="city"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
+                      </div>
+                      <div className="flex flex-col pr-4">
+                        <label className="font-bold" htmlFor="alcaldia">Alcaldía</label>
+                        <Field
+                          type="text"
+                          id="alcaldia"
+                          name="alcaldia"
+                          className="border p-2 rounded"
+                        />
+                        <ErrorMessage
+                          name="alcaldia"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                    >
+                      Guardar Cambios
+                    </button>
+                  </Form>
+                )}
+              </Formik>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de confirmación para eliminar restaurante */}
+        {isConfirmModalOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            onClick={() => setIsConfirmModalOpen(false)} // Cierra la modal al hacer clic fuera
+          >
+            <div
+              className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/3"
+              onClick={(e) => e.stopPropagation()} // Evita cerrar la modal al hacer clic dentro
+            >
+              <h3 className="font-bold text-xl mb-4">¿Seguro que quieres eliminar este restaurante?</h3>
+              <div className="flex justify-end gap-4">
+                <button
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                  onClick={eliminarRestaurante}
+                >
+                  Sí
+                </button>
+                <button
+                  className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+                  onClick={() => setIsConfirmModalOpen(false)}
+                >
+                  No
+                </button>
               </div>
-              <button type="submit" className="flex justify-center md:w-2/8 xl:w-1/8 mt-4 bg-green-500 text-white p-2 rounded cursor-pointer w-2/3 gap-2"><FaPlus className="text-xl self-center" /> Agregar Restaurante</button>
-            </Form>
-          )}
-        </Formik>
+            </div>
+          </div>
+        )}
       </CustomTabPanel>
     </Box>
   );
