@@ -1,3 +1,5 @@
+import { FaRegEye } from "react-icons/fa";
+import { IoTrashOutline } from "react-icons/io5";
 import { TbSoup } from "react-icons/tb";
 import { LuCupSoda } from "react-icons/lu";
 import { GiCakeSlice } from "react-icons/gi";
@@ -52,7 +54,7 @@ const productos = [
         id: 5,
         nombre: "Hamburguesa Clásica",
         precio: 200.0,
-        descripcion: "Carne de res, lechuga, tomate y cebolla en pan artesanal jhguvuhvugivbufuhbuyvuvuhbuyvuhbjhvouckuhvugcvuhvoucoucviihvouycv ouhvoucuguhcoutcuhv",
+        descripcion: "Carne de res, lechuga, tomate y cebolla en pan artesanal, preparado con los mejores ingredientes y la carne mas selecta del mercado, con un adereso de mango que le da un sabor único y espectacular, con 2 carnes y 2 quesos, acompañado de papas fritas y una bebida de tu elección",
         categoria: "Platos Principales",
         imagen: kime,   
         ingredientes: ["Carne de res", "Lechuga", "Tomate", "Cebolla", "Pan artesanal"],
@@ -138,10 +140,8 @@ export default function MenuCliente() {
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [carrito, setCarrito] = useState([]);
     const [carritoModalOpen, setCarritoModalOpen] = useState(false);
-
-    const productosFiltrados = categoriaSeleccionada === "Todos los platillos"
-        ? productos
-        : productos.filter(producto => producto.categoria === categoriaSeleccionada);
+    const [productosFiltrados, setProductosFiltrados] = useState(productos);
+    const [mensajeError, setMensajeError] = useState(""); // Estado para manejar el mensaje de error
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -156,6 +156,14 @@ export default function MenuCliente() {
         };
     }, [isOpen]);
 
+    useEffect(() => {
+        setProductosFiltrados(
+            categoriaSeleccionada === "Todos los platillos"
+                ? productos
+                : productos.filter(producto => producto.categoria === categoriaSeleccionada)
+        );
+    }, [categoriaSeleccionada]);
+
     const openModal = (producto) => {
         setProductoSeleccionado(producto);
         setModalOpen(true);
@@ -167,22 +175,59 @@ export default function MenuCliente() {
     };
 
     const agregarAlCarrito = (producto) => {
+        const ingredientesExcluidos = Array.from(
+            document.querySelectorAll('input[type="checkbox"]:checked')
+        ).map((checkbox) => checkbox.nextSibling.textContent.replace("Sin ", "").trim());
+
+        const productoConExclusiones = {
+            ...producto,
+            id: `${producto.id}-${ingredientesExcluidos.join(",")}`, // Genera un ID único basado en las exclusiones
+            ingredientesExcluidos,
+        };
+
         setCarrito((prevCarrito) => {
-            const productoExistente = prevCarrito.find((item) => item.id === producto.id);
+            const productoExistente = prevCarrito.find((item) => item.id === productoConExclusiones.id);
             if (productoExistente) {
+                // Incrementa la cantidad del producto existente
                 return prevCarrito.map((item) =>
-                    item.id === producto.id
-                        ? { ...item, cantidad: item.cantidad + producto.cantidad }
+                    item.id === productoConExclusiones.id
+                        ? { ...item, cantidad: item.cantidad + (producto.cantidad || 1) }
                         : item
                 );
             }
-            return [...prevCarrito, { ...producto, cantidad: producto.cantidad || 1 }];
+            // Agrega el producto al carrito si no existe
+            return [...prevCarrito, { ...productoConExclusiones, cantidad: producto.cantidad || 1 }];
         });
-        closeModal();
     };
 
     const calcularTotal = () => {
         return carrito.reduce((total, item) => total + item.precio * item.cantidad, 0).toFixed(2);
+    };
+
+    const realizarPedido = () => {
+        if (carrito.length === 0) {
+            // Si el carrito está vacío, muestra un mensaje de error
+            setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
+            return;
+        }
+
+        // Genera el JSON del pedido
+        const pedido = carrito.map((item) => ({
+            nombre: item.nombre,
+            cantidad: item.cantidad,
+            precioUnitario: item.precio,
+            ingredientesExcluidos: item.ingredientesExcluidos || [],
+        }));
+
+        // Calcula el total de todos los precios unitarios
+        const totalGeneral = carrito.reduce((total, item) => total + item.precio * item.cantidad, 0).toFixed(2);
+
+        console.log("Pedido generado:", JSON.stringify({ pedido, totalGeneral }, null, 2)); // Muestra el JSON en la consola
+
+        // Limpia el carrito y cierra la modal
+        setCarrito([]);
+        setCarritoModalOpen(false);
+        setMensajeError(""); // Limpia el mensaje de error
     };
 
     return (
@@ -314,16 +359,67 @@ export default function MenuCliente() {
                         {carrito.length > 0 ? (
                             <ul className="mb-4">
                                 {carrito.map((item) => (
-                                    <li key={item.id} className="flex justify-between items-center mb-2">
+                                    <li key={item.id} className="flex justify-between items-center mb-4">
                                         <div>
                                             <p className="font-bold">{item.nombre}</p>
+                                            {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                                <p className="text-sm text-gray-500">
+                                                    Sin: {item.ingredientesExcluidos.join(", ")}
+                                                </p>
+                                            )}
                                             <p className="text-sm text-gray-500">
-                                                {item.cantidad} x ${item.precio.toFixed(2)}
+                                                ${item.precio.toFixed(2)} c/u
                                             </p>
                                         </div>
-                                        <p className="font-bold">
-                                            ${(item.cantidad * item.precio).toFixed(2)}
-                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            {/* Botones de contador */}
+                                            <button
+                                                className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
+                                                onClick={() => {
+                                                    setCarrito((prevCarrito) =>
+                                                        prevCarrito.map((producto) =>
+                                                            producto.id === item.id
+                                                                ? {
+                                                                      ...producto,
+                                                                      cantidad: Math.max(producto.cantidad - 1, 1),
+                                                                  }
+                                                                : producto
+                                                        )
+                                                    );
+                                                }}
+                                            >
+                                                -
+                                            </button>
+                                            <span className="text-sm font-bold">{item.cantidad}</span>
+                                            <button
+                                                className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
+                                                onClick={() => {
+                                                    setCarrito((prevCarrito) =>
+                                                        prevCarrito.map((producto) =>
+                                                            producto.id === item.id
+                                                                ? {
+                                                                      ...producto,
+                                                                      cantidad: producto.cantidad + 1,
+                                                                  }
+                                                                : producto
+                                                        )
+                                                    );
+                                                }}
+                                            >
+                                                +
+                                            </button>
+                                            {/* Botón de eliminar */}
+                                            <button
+                                                className="text-xl"
+                                                onClick={() => {
+                                                    setCarrito((prevCarrito) =>
+                                                        prevCarrito.filter((producto) => producto.id !== item.id)
+                                                    );
+                                                }}
+                                            >
+                                                <IoTrashOutline />
+                                            </button>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
@@ -332,13 +428,12 @@ export default function MenuCliente() {
                         )}
                         <div className="border-t pt-4">
                             <p className="text-lg font-bold">Total: ${calcularTotal()}</p>
+                            {mensajeError && (
+                                <p className="text-red-500 text-sm font-bold mt-2">{mensajeError}</p> // Muestra el mensaje de error si existe
+                            )}
                             <button
                                 className="bg-green-500 text-white w-full py-2 rounded-lg mt-4 hover:bg-green-600"
-                                onClick={() => {
-                                    alert("Pedido realizado con éxito.");
-                                    setCarrito([]);
-                                    setCarritoModalOpen(false);
-                                }}
+                                onClick={realizarPedido}
                             >
                                 Realizar Pedido
                             </button>
@@ -370,18 +465,21 @@ export default function MenuCliente() {
                             <Image
                                 src={productoSeleccionado.imagen}
                                 alt={`Imagen de ${productoSeleccionado.nombre}`}
-                                className="rounded-lg object-cover"
-                                width={200}
-                                height={150}
+                                className="rounded-lg object-cover  w-5/10 h-10/10"
+                                
                             />
                         </div>
-                        <p className="text-gray-700 mb-4 text-center text-sm">{productoSeleccionado.descripcion}</p>
+                        <div className="flex justify-center items-center w-full">
+                        <p className="text-gray-700 text-center text-md leading-relaxed w-9/10 ">
+                            {productoSeleccionado.descripcion}
+                        </p>
+                        </div>
                         <h3 className="text-md font-semibold mb-2">Ingredientes:</h3>
                         <ul className="mb-4 text-sm">
                             {productoSeleccionado.ingredientes.map((ingrediente, index) => (
                                 <li key={index} className="flex items-center gap-2">
                                     <input type="checkbox" id={`ingrediente-${index}`} />
-                                    <label htmlFor={`ingrediente-${index}`}>{ingrediente}</label>
+                                    <label htmlFor={`ingrediente-${index}`}>Sin {ingrediente}</label>
                                 </li>
                             ))}
                         </ul>
@@ -416,7 +514,10 @@ export default function MenuCliente() {
                             </div>
                             <button
                                 className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm"
-                                onClick={() => agregarAlCarrito(productoSeleccionado)}
+                                onClick={() => {
+                                    agregarAlCarrito(productoSeleccionado);
+                                    closeModal(); // Cierra la modal después de agregar el producto
+                                }}
                             >
                                 Agregar - ${((productoSeleccionado.cantidad || 1) * productoSeleccionado.precio).toFixed(2)}
                             </button>
@@ -464,11 +565,62 @@ export default function MenuCliente() {
                                     <p className="bg-green-300 text-green-800 rounded-full px-4 py-1 text-sm">
                                         {producto.categoria}
                                     </p>
+                                </div>
+
+                                {/* Botones "+" y "-" */}
+                                <div className="flex items-center justify-between mt-4">
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            className="bg-gray-300 text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-400 flex items-center justify-center cursor-pointer"
+                                            onClick={() => {
+                                                setProductosFiltrados((prevProductos) =>
+                                                    prevProductos.map((item) =>
+                                                        item.id === producto.id
+                                                            ? {
+                                                                  ...item,
+                                                                  cantidad: Math.max((item.cantidad || 1) - 1, 1),
+                                                              }
+                                                            : item
+                                                    )
+                                                );
+                                            }}
+                                        >
+                                            -
+                                        </button>
+                                        <span className="text-lg font-bold">{producto.cantidad || 1}</span>
+                                        <button
+                                            className="bg-gray-300 text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-400 flex items-center justify-center cursor-pointer"
+                                            onClick={() => {
+                                                setProductosFiltrados((prevProductos) =>
+                                                    prevProductos.map((item) =>
+                                                        item.id === producto.id
+                                                            ? {
+                                                                  ...item,
+                                                                  cantidad: (item.cantidad || 1) + 1,
+                                                              }
+                                                            : item
+                                                    )
+                                                );
+                                            }}
+                                        >
+                                            +
+                                        </button>
+                                    </div>
                                     <button
-                                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 cursor-pointer"
+                                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm cursor-pointer"
+                                        onClick={() => agregarAlCarrito(producto)}
+                                    >
+                                        Agregar
+                                    </button>
+                                </div>
+
+                                {/* Botón "Personalizar" */}
+                                <div className="mt-4">
+                                    <button
+                                        className=" flex gap-4 items-center justify-center bg-green-500 text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full"
                                         onClick={() => openModal(producto)}
                                     >
-                                        Ver Detalles
+                                        <FaRegEye className="h-[20px] w-[20px]" />Personalizar
                                     </button>
                                 </div>
                             </div>

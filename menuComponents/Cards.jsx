@@ -5,12 +5,39 @@ import { FiEdit } from "react-icons/fi";
 import { Formik, Form, Field } from "formik";
 import { getProducts } from "@/useCases/getProducts";
 
-export default function Cards({ searchTerm }) { // Recibir searchTerm como prop
+export default function Cards({ searchTerm }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal
     const [products, setProducts] = useState([]); // Estado para almacenar los productos obtenidos
     const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar
     const [loading, setLoading] = useState(true); // Estado de carga
     const [error, setError] = useState(null); // Estado para manejar errores
+
+    // Función para cerrar la modal
+    const closeModals = () => {
+        setIsEditModalOpen(false); // Cierra la modal
+        setSelectedProduct(null); // Limpia el producto seleccionado
+    };
+
+    // Función para actualizar el producto
+    const handleUpdateProduct = async (updatedProduct) => {
+        try {
+            // Simula una solicitud al backend para actualizar el producto
+            // Aquí puedes usar fetch o axios para enviar los datos al servidor
+            console.log("Actualizando producto:", updatedProduct);
+
+            // Actualiza el estado local con el producto actualizado
+            setProducts((prevProducts) =>
+                prevProducts.map((product) =>
+                    product.id_products === updatedProduct.id_products ? updatedProduct : product
+                )
+            );
+
+            alert("Producto actualizado con éxito.");
+        } catch (err) {
+            console.error("Error al actualizar el producto:", err);
+            alert("Hubo un error al actualizar el producto.");
+        }
+    };
 
     // Función para obtener los productos al cargar el componente
     useEffect(() => {
@@ -60,7 +87,7 @@ export default function Cards({ searchTerm }) { // Recibir searchTerm como prop
                 >
                     <div className="w-full h-48">
                         <Image
-                            src={product.image_url|| kime} // Usa la imagen del producto o una predeterminada
+                            src={product.image_url || kime} // Usa la imagen del producto o una predeterminada
                             alt={product.name}
                             className="rounded-t-2xl w-full h-full object-cover"
                             width={300}
@@ -114,7 +141,7 @@ export default function Cards({ searchTerm }) { // Recibir searchTerm como prop
                             }}
                             onSubmit={(values) => {
                                 handleUpdateProduct(values); // Actualiza el producto
-                                console.log(values);
+                                closeModals(); // Cierra la modal después de guardar
                             }}
                         >
                             {({ setFieldValue }) => (
