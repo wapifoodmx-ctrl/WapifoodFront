@@ -1,6 +1,7 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { FaPlus } from "react-icons/fa6";
+import { IoTrashOutline } from "react-icons/io5";
+import { FiEdit } from "react-icons/fi";
 import { IoLocationOutline } from "react-icons/io5";
 import { FaPhoneAlt } from "react-icons/fa";
 import { CiMail } from "react-icons/ci";
@@ -81,9 +82,18 @@ function BasicTabs() {
 
   // Estado para manejar la lista de restaurantes
   const [restaurantes, setRestaurantes] = React.useState([
-    { id: 1, nombre: "Restaurante El Buen Sabor", direccion: "Av. Siempre Viva 123, CDMX" },
-    { id: 2, nombre: "La Parrilla Mexicana", direccion: "Calle Falsa 456, Monterrey" },
-    { id: 3, nombre: "Sushi Express", direccion: "Blvd. Reforma 789, Guadalajara" },
+    { id: 1, nombre: "Restaurante El Buen Sabor", direccion: "Av. Siempre Viva 123", city: "CDMX", alcaldia: "Tlalpan" },
+    { id: 2, nombre: "La Parrilla Mexicana", direccion: "Calle Falsa 456", city: "Monterrey", alcaldia: "Coyoacan" },
+    { id: 3, nombre: "Sushi Express", direccion: "Blvd. Reforma 789", city: "Guadalajara", alcaldia: "Tlahuac" },
+    { id: 4, nombre: "Restaurante El Buen Sabor", direccion: "Av. Siempre Viva 123", city: "CDMX", alcaldia: "Tlalpan" },
+    { id: 5, nombre: "La Parrilla Mexicana", direccion: "Calle Falsa 456", city: "Monterrey", alcaldia: "Coyoacan" },
+    { id: 6, nombre: "Sushi Express", direccion: "Blvd. Reforma 789", city: "Guadalajara", alcaldia: "Tlahuac" },
+    { id: 7, nombre: "Restaurante El Buen Sabor", direccion: "Av. Siempre Viva 123", city: "CDMX", alcaldia: "Tlalpan" },
+    { id: 8, nombre: "La Parrilla Mexicana", direccion: "Calle Falsa 456", city: "Monterrey", alcaldia: "Coyoacan" },
+    { id: 9, nombre: "Sushi Express", direccion: "Blvd. Reforma 789", city: "Guadalajara", alcaldia: "Tlahuac" },
+    { id: 10, nombre: "Restaurante El Buen Sabor", direccion: "Av. Siempre Viva 123", city: "CDMX", alcaldia: "Tlalpan" },
+    { id: 11, nombre: "La Parrilla Mexicana", direccion: "Calle Falsa 456", city: "Monterrey", alcaldia: "Coyoacan" },
+    { id: 12, nombre: "Sushi Express", direccion: "Blvd. Reforma 789", city: "Guadalajara", alcaldia: "Tlahuac" },
   ]);
 
   const handleChange = (event, newValue) => {
@@ -244,29 +254,33 @@ function BasicTabs() {
         </Formik>
       </CustomTabPanel>
       <CustomTabPanel value={value} index={2}>
-        <div className="space-y-4">
-          <h3 className="font-bold text-xl">Lista de Restaurantes</h3>
-          <ul className="space-y-4">
+        <div className=" w-full ">
+          <h3 className="font-bold text-xl pb-4">Lista de Restaurantes</h3>
+          <ul className="">
+          <div className="md:flex md:gap-4 md:flex-row flex flex-col gap-4 md:flex-wrap md:justify-center md:items-center">
             {restaurantes.map((restaurante) => (
-              <li key={restaurante.id} className="border p-4 rounded shadow">
+              <li key={restaurante.id} className="border p-4 rounded shadow md:w-5/12 lg:w-4/13 h-full">
                 <p className="font-bold">{restaurante.nombre}</p>
-                <p className="text-gray-500">{restaurante.direccion}</p>
+                <p className="text-gray-500">Dirección: {restaurante.direccion}</p>
+                <p className="text-gray-500">Ciudad: {restaurante.city}</p>
+                <p className="text-gray-500">Alcaldía: {restaurante.alcaldia}</p>
                 <div className="flex gap-2 mt-2">
+                </div>
                   <button
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 cursor-pointer"
                     onClick={() => editarRestaurante(restaurante.id)}
                   >
-                    Editar Restaurante
+                    <FiEdit />
                   </button>
                   <button
-                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                    className=" px-4 py-2 rounded text-gray-500 cursor-pointer"
                     onClick={() => confirmarEliminarRestaurante(restaurante.id)}
                   >
-                    Eliminar Restaurante
+                    <IoTrashOutline  />
                   </button>
-                </div>
               </li>
             ))}
+            </div>
           </ul>
           <button
             className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
@@ -279,7 +293,7 @@ function BasicTabs() {
         {/* Modal para agregar restaurante */}
         {isModalOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
             onClick={toggleModal} // Cierra la modal al hacer clic fuera
           >
             <div
@@ -343,7 +357,7 @@ function BasicTabs() {
         {/* Modal para editar restaurante */}
         {isEditModalOpen && restauranteAEditar && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
             onClick={() => setIsEditModalOpen(false)} // Cierra la modal al hacer clic fuera
           >
             <div
@@ -444,7 +458,7 @@ function BasicTabs() {
         {/* Modal de confirmación para eliminar restaurante */}
         {isConfirmModalOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
             onClick={() => setIsConfirmModalOpen(false)} // Cierra la modal al hacer clic fuera
           >
             <div
@@ -482,18 +496,18 @@ export default function UserPage() {
       <div className="flex space-x-4 p-4">
         <h2 className="font-bold text-2xl">Mi Perfil</h2>
       </div>
-      <div className='bg-white shadow-md rounded-lg p-4 m-4'>
+      <div className='bg-white shadow-md rounded-lg p-4 '>
         <div className="flex flex-col items-center">
           <div className='w-20 h-20 rounded-full overflow-hidden mb-3 justify-'>
             <Image src={Miokon} alt="Imagen de perfil" width={80} height={80} className="object-cover" />
           </div>
           <div className="flex flex-col">
             <p className="font-bold flex flex-col text-xl">Juan Días Rodriguez</p>
-            <p className=" text-gray-500 pb-4 self-center">Gerente</p>
+            <p className=" text-gray-500 pb-1 self-center">Gerente</p>
           </div>
           <div className="border-b-1 w-full border-gray-500"></div>
         </div>
-        <div className="space-y-4 mt-4">
+        <div className="space-y-2 mt-2 flex flex-col justify-center items-center">
           <p className="flex gap-2"><CiMail className="text-xl self-center" /> juan.dias@ejemplo.com</p>
           <p className="flex gap-2"><FaPhoneAlt className="text-xl self-center" /> +56912345678</p>
           <p className="flex gap-2"><IoLocationOutline className="text-xl self-center" /> CDMX, México</p>
