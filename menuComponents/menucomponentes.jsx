@@ -1,17 +1,56 @@
 import { MdOutlineAttachMoney } from "react-icons/md";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa6";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FiFilter } from "react-icons/fi";
 import { BsTag } from "react-icons/bs";
 import { Formik, Form, Field } from "formik";
 import { createProduct } from "../useCases/createProduct"; // Import the function
+import { getProducts } from "@/useCases/getProducts"; // Importar getProducts
+import { getCategoria } from "../useCases/getCategoria"; // Importar la función
 import * as Yup from "yup"; // Importar Yup
 
-export default function MenuComponentes({ onSearch }) { // Recibir la función onSearch como prop
+export default function MenuComponentes({ onSearch, onCategoryChange }) { // Añadir onCategoryChange como prop
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);
     const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState(""); // Estado para el término de búsqueda
+    const [categories, setCategories] = useState([]); // Estado para las categorías
+    const [modalCategories, setModalCategories] = useState([]); // Categorías para la modal de productos
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const products = await getProducts();
+                const uniqueCategories = [
+                    ...new Map(
+                        products.map((product) => [
+                            product.category_id,
+                            { id: product.category_id, name: product.category_name },
+                        ])
+                    ).values(),
+                ];
+                setCategories(uniqueCategories); // Establecer categorías únicas
+            } catch (error) {
+                console.error("Error al obtener categorías:", error);
+            }
+        };
+
+        const fetchModalCategories = async () => {
+            try {
+                const categorias = await getCategoria(); // Llamar a la API
+                const formattedCategories = categorias.map((cat) => ({
+                    id: cat.id_categoria,
+                    name: cat.nombre_categoria,
+                }));
+                setModalCategories(formattedCategories); // Guardar las categorías en el estado
+            } catch (error) {
+                console.error("Error al obtener categorías para la modal:", error);
+            }
+        };
+
+        fetchCategories();
+        fetchModalCategories(); // Llamar a la función para obtener categorías dinámicas
+    }, []);
 
     const closeModals = () => {
         setIsProductoModalOpen(false);
@@ -30,7 +69,6 @@ export default function MenuComponentes({ onSearch }) { // Recibir la función o
         precio: Yup.number()
             .typeError("El precio debe ser un número")
             .required("El precio es obligatorio"),
-        //categoria: Yup.string().required("La categoría es obligatoria"),
         imagen: Yup.mixed().required("La imagen del producto es obligatoria"),
     });
 
@@ -60,16 +98,17 @@ export default function MenuComponentes({ onSearch }) { // Recibir la función o
                     <div className="relative">
                         <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm">
                             <BsTag className="text-2xl" />
-                            <select id="categorias" className="w-full outline-none bg-transparent">
-                                <option value="" disabled selected>
-                                    Categorías
-                                </option>
-                                <option value="todas">Todas</option>
-                                <option value="entradas">Entradas</option>
-                                <option value="platos-principales">Platos principales</option>
-                                <option value="postres">Postres</option>
-                                <option value="bebidas">Bebidas</option>
-                                <option value="combos">Combos</option>
+                            <select
+                                id="categorias"
+                                className="w-full outline-none bg-transparent"
+                                onChange={(e) => onCategoryChange(e.target.value)} // Manejar cambio de categoría
+                            >
+                                <option value="">Todas</option>
+                                {categories.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -127,7 +166,7 @@ export default function MenuComponentes({ onSearch }) { // Recibir la función o
                                 nombre: "",
                                 descripcion: "",
                                 precio: "",
-                                categoria: 2,
+                                categoria: "",
                                 imagen: null,
                             }}
                             validationSchema={validationSchemaProducto} // Añadir validación
@@ -136,8 +175,8 @@ export default function MenuComponentes({ onSearch }) { // Recibir la función o
                                     const productData = {
                                         name: values.nombre,
                                         description: values.descripcion,
-                                        price: String(values.precio), // Convertir a string
-                                        category_id: String(3), // Convertir a string
+                                        price: values.precio, // Convertir a string
+                                        category_id: values.categoria, // Convertir a string
                                     };
                                     await createProduct(productData, values.imagen); // Call the function
                                     alert("Producto creado exitosamente");
@@ -208,11 +247,11 @@ export default function MenuComponentes({ onSearch }) { // Recibir la función o
                                             <option value="" disabled>
                                                 Seleccionar Categoría
                                             </option>
-                                            <option value="entradas">Entradas</option>
-                                            <option value="platos-principales">Platos principales</option>
-                                            <option value="postres">Postres</option>
-                                            <option value="bebidas">Bebidas</option>
-                                            <option value="combos">Combos</option>
+                                            {modalCategories.map((category) => (
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </option>
+                                            ))}
                                         </Field>
                                         {errors.categoria && touched.categoria && (
                                             <div className="text-red-500 text-sm">{errors.categoria}</div>

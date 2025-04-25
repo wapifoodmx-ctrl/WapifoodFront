@@ -5,7 +5,7 @@ import { FiEdit } from "react-icons/fi";
 import { Formik, Form, Field } from "formik";
 import { getProducts } from "@/useCases/getProducts";
 
-export default function Cards({ searchTerm }) {
+export default function Cards({ searchTerm, selectedCategory }) { // Añadir selectedCategory como prop
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal
     const [products, setProducts] = useState([]); // Estado para almacenar los productos obtenidos
     const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar
@@ -55,9 +55,11 @@ export default function Cards({ searchTerm }) {
         fetchProducts();
     }, []);
 
-    // Filtrar los productos basados en el término de búsqueda
-    const filteredProducts = products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) // Filtrar por nombre
+    // Filtrar los productos basados en el término de búsqueda y categoría seleccionada
+    const filteredProducts = products.filter(
+        (product) =>
+            product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            (selectedCategory === "" || product.category_id === parseInt(selectedCategory))
     );
 
     if (loading) {
@@ -87,7 +89,7 @@ export default function Cards({ searchTerm }) {
                 >
                     <div className="w-full h-48">
                         <Image
-                            src={product.image_url || kime} // Usa la imagen del producto o una predeterminada
+                            src={product.image_url[0] || kime} // Usa la imagen del producto o una predeterminada
                             alt={product.name}
                             className="rounded-t-2xl w-full h-full object-cover"
                             width={300}

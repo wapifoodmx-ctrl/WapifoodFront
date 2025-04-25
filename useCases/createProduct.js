@@ -20,8 +20,8 @@ export async function createProduct(productData, imageFile) {
     // Agregar los campos del producto individualmente con los nombres correctos
     formData.append("name", productData.name || "");
     formData.append("description", productData.description || "");
-    formData.append("price", String(productData.price || "")); // Convertir a string
-    formData.append("category", String(productData.category || "")); // Convertir a string
+    formData.append("price", parseFloat(productData.price || "")); // Convertir a string
+    formData.append("category_id", parseInt(productData.category_id || "")); // Convertir a string
 
     // Validar y agregar el archivo de imagen si está disponible
     if (imageFile) {
