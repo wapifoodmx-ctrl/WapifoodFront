@@ -11,6 +11,12 @@ import { GoChecklist } from "react-icons/go";
 import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import kime from "@/pages/assets/img/kime.jpeg";
+import Burger from "@/pages/assets/img/Burger.jpg";
+import Sopadetomate from "@/pages/assets/img/sopatomate.jpg";
+import Sopadepollo from "@/pages/assets/img/sopadepollo.jpeg";
+import Clubsandwich from "@/pages/assets/img/clubsandwich.jpg";
+import Cesar from "@/pages/assets/img/Cesar.jpg";
+import Fruta from "@/pages/assets/img/fruta.jpg";
 import Image from "next/image";
 
 const productos = [
@@ -20,7 +26,7 @@ const productos = [
         precio: 100.0,
         descripcion: "Lechuga romana, crutones, parmesano y aderezo César",
         categoria: "Ensaladas",
-        imagen: kime,
+        imagen: Cesar,
         ingredientes: ["Lechuga romana", "Crutones", "Parmesano", "Aderezo César"],
     },
     {
@@ -38,7 +44,7 @@ const productos = [
         precio: 80.0,
         descripcion: "Sopa cremosa de tomate con un toque de albahaca",
         categoria: "Entradas",
-        imagen: kime,
+        imagen: Sopadetomate,
         ingredientes: ["Tomate", "Cebolla", "Ajo", "Albahaca"],
     },
     {
@@ -56,7 +62,7 @@ const productos = [
         precio: 200.0,
         descripcion: "Carne de res, lechuga, tomate y cebolla en pan artesanal, preparado con los mejores ingredientes y la carne mas selecta del mercado, con un adereso de mango que le da un sabor único y espectacular, con 2 carnes y 2 quesos, acompañado de papas fritas y una bebida de tu elección",
         categoria: "Platos Principales",
-        imagen: kime,   
+        imagen: Burger,   
         ingredientes: ["Carne de res", "Lechuga", "Tomate", "Cebolla", "Pan artesanal"],
     },
     {
@@ -74,7 +80,7 @@ const productos = [
         precio: 70.0,
         descripcion: "Mezcla de frutas frescas de temporada",
         categoria: "Ensaladas",
-        imagen: kime,
+        imagen: Fruta,
         ingredientes: ["Fresas", "Kiwi", "Piña", "Mango"],
     },
     {
@@ -92,7 +98,7 @@ const productos = [
         precio: 85.0,
         descripcion: "Sopa caliente de pollo con verduras frescas",
         categoria: "Entradas",
-        imagen: kime,
+        imagen: Sopadepollo,
         ingredientes: ["Pollo", "Zanahoria", "Apio", "Cebolla"],
     },
     {
@@ -119,7 +125,7 @@ const productos = [
         precio: 150.0,
         descripcion: "Pan tostado con pollo, tocino, lechuga y tomate",
         categoria: "Platos Principales",
-        imagen: kime,
+        imagen: Clubsandwich,
         ingredientes: ["Pan tostado", "Pollo", "Tocino", "Lechuga", "Tomate"],
     },
 ];
@@ -453,7 +459,9 @@ export default function MenuCliente() {
                         }
                     }}
                 >
-                    <div className="bg-white rounded-lg p-4 w-10/12 md:w-7/10  relative">
+                    <div
+                        className="bg-white rounded-lg p-4 w-11/12 md:w-8/10 max-h-screen overflow-y-auto relative"
+                    >
                         <button
                             className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
                             onClick={closeModal}
@@ -465,14 +473,13 @@ export default function MenuCliente() {
                             <Image
                                 src={productoSeleccionado.imagen}
                                 alt={`Imagen de ${productoSeleccionado.nombre}`}
-                                className="rounded-lg object-cover  w-5/10 h-10/10"
-                                
+                                className="rounded-lg object-cover w-5/10 h-10/10"
                             />
                         </div>
                         <div className="flex justify-center items-center w-full">
-                        <p className="text-gray-700 text-center text-md leading-relaxed w-9/10 ">
-                            {productoSeleccionado.descripcion}
-                        </p>
+                            <p className="text-gray-700 text-center text-md leading-relaxed w-9/10">
+                                {productoSeleccionado.descripcion}
+                            </p>
                         </div>
                         <h3 className="text-md font-semibold mb-2">Ingredientes:</h3>
                         <ul className="mb-4 text-sm">
@@ -483,31 +490,30 @@ export default function MenuCliente() {
                                 </li>
                             ))}
                         </ul>
-                        <textarea
-                            className="w-full border rounded-lg p-2 mb-4 text-sm"
-                            rows="3"
-                            placeholder="Escribe tus comentarios aquí..."
-                        ></textarea>
 
                         {/* Contador, Botones y Botón Agregar en la misma línea */}
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <button
                                     className="bg-gray-300 text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-400 flex items-center justify-center"
-                                    onClick={() => setProductoSeleccionado({
-                                        ...productoSeleccionado,
-                                        cantidad: Math.max((productoSeleccionado.cantidad || 1) - 1, 1),
-                                    })}
+                                    onClick={() =>
+                                        setProductoSeleccionado({
+                                            ...productoSeleccionado,
+                                            cantidad: Math.max((productoSeleccionado.cantidad || 1) - 1, 1),
+                                        })
+                                    }
                                 >
                                     -
                                 </button>
                                 <span className="text-lg font-bold">{productoSeleccionado.cantidad || 1}</span>
                                 <button
                                     className="bg-gray-300 text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-400 flex items-center justify-center"
-                                    onClick={() => setProductoSeleccionado({
-                                        ...productoSeleccionado,
-                                        cantidad: (productoSeleccionado.cantidad || 1) + 1,
-                                    })}
+                                    onClick={() =>
+                                        setProductoSeleccionado({
+                                            ...productoSeleccionado,
+                                            cantidad: (productoSeleccionado.cantidad || 1) + 1,
+                                        })
+                                    }
                                 >
                                     +
                                 </button>
