@@ -148,6 +148,9 @@ export default function MenuCliente() {
     const [carritoModalOpen, setCarritoModalOpen] = useState(false);
     const [productosFiltrados, setProductosFiltrados] = useState(productos);
     const [mensajeError, setMensajeError] = useState(""); // Estado para manejar el mensaje de error
+    const [historialPedidos, setHistorialPedidos] = useState([]); // Estado para manejar el historial de pedidos
+    const [modalTotalOpen, setModalTotalOpen] = useState(false); // Estado para la modal del total
+    const [totalPedidos, setTotalPedidos] = useState(0); // Estado para almacenar el total acumulado
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -169,6 +172,30 @@ export default function MenuCliente() {
                 : productos.filter(producto => producto.categoria === categoriaSeleccionada)
         );
     }, [categoriaSeleccionada]);
+
+    useEffect(() => {
+        // Recuperar carrito y historial de pedidos desde localStorage
+        const carritoGuardado = localStorage.getItem("carrito");
+        const historialGuardado = localStorage.getItem("historialPedidos");
+
+        if (carritoGuardado) {
+            setCarrito(JSON.parse(carritoGuardado));
+        }
+
+        if (historialGuardado) {
+            setHistorialPedidos(JSON.parse(historialGuardado));
+        }
+    }, []);
+
+    useEffect(() => {
+        // Guardar el carrito en localStorage
+        localStorage.setItem("carrito", JSON.stringify(carrito));
+    }, [carrito]);
+
+    useEffect(() => {
+        // Guardar el historial de pedidos en localStorage
+        localStorage.setItem("historialPedidos", JSON.stringify(historialPedidos));
+    }, [historialPedidos]);
 
     const openModal = (producto) => {
         setProductoSeleccionado(producto);
@@ -207,33 +234,49 @@ export default function MenuCliente() {
     };
 
     const calcularTotal = () => {
+        // Si el carrito está vacío, devuelve 0
+        if (!carrito || carrito.length === 0) {
+            return 0;
+        }
+
+        // Calcula el total sumando el precio de cada producto multiplicado por su cantidad
         return carrito.reduce((total, item) => total + item.precio * item.cantidad, 0).toFixed(2);
     };
 
     const realizarPedido = () => {
         if (carrito.length === 0) {
-            // Si el carrito está vacío, muestra un mensaje de error
             setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
             return;
         }
 
-        // Genera el JSON del pedido
-        const pedido = carrito.map((item) => ({
-            nombre: item.nombre,
-            cantidad: item.cantidad,
-            precioUnitario: item.precio,
-            ingredientesExcluidos: item.ingredientesExcluidos || [],
-        }));
-
-        // Calcula el total de todos los precios unitarios
-        const totalGeneral = carrito.reduce((total, item) => total + item.precio * item.cantidad, 0).toFixed(2);
-
-        console.log("Pedido generado:", JSON.stringify({ pedido, totalGeneral }, null, 2)); // Muestra el JSON en la consola
+        // Agregar los productos del carrito al historial
+        setHistorialPedidos((prevHistorial) => [
+            ...prevHistorial,
+            ...carrito.map((item) => ({
+                nombre: item.nombre,
+                cantidad: item.cantidad,
+                precio: item.precio,
+                ingredientesExcluidos: item.ingredientesExcluidos || [],
+            })),
+        ]);
 
         // Limpia el carrito y cierra la modal
         setCarrito([]);
         setCarritoModalOpen(false);
         setMensajeError(""); // Limpia el mensaje de error
+    };
+
+    const terminarOrden = () => {
+        // Calcula el total acumulado del historial
+        const total = historialPedidos.reduce(
+            (acc, item) => acc + item.precio * item.cantidad,
+            0
+        );
+
+        // Actualiza el total y abre la modal del total
+        setTotalPedidos(total.toFixed(2));
+        setHistorialPedidos([]); // Limpia el historial de pedidos
+        setModalTotalOpen(true); // Abre la modal del total
     };
 
     return (
@@ -360,8 +403,10 @@ export default function MenuCliente() {
                         }
                     }}
                 >
-                    <div className="bg-white w-80 h-full shadow-lg p-4">
+                    <div className="bg-white w-80 h-full shadow-lg p-4 overflow-y-auto">
                         <h2 className="text-xl font-bold mb-4">Tu Pedido</h2>
+
+                        {/* Carrito actual */}
                         {carrito.length > 0 ? (
                             <ul className="mb-4">
                                 {carrito.map((item) => (
@@ -378,17 +423,13 @@ export default function MenuCliente() {
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            {/* Botones de contador */}
                                             <button
                                                 className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
                                                 onClick={() => {
                                                     setCarrito((prevCarrito) =>
                                                         prevCarrito.map((producto) =>
                                                             producto.id === item.id
-                                                                ? {
-                                                                      ...producto,
-                                                                      cantidad: Math.max(producto.cantidad - 1, 1),
-                                                                  }
+                                                                ? { ...producto, cantidad: Math.max(producto.cantidad - 1, 1) }
                                                                 : producto
                                                         )
                                                     );
@@ -403,18 +444,15 @@ export default function MenuCliente() {
                                                     setCarrito((prevCarrito) =>
                                                         prevCarrito.map((producto) =>
                                                             producto.id === item.id
-                                                                ? {
-                                                                      ...producto,
-                                                                      cantidad: producto.cantidad + 1,
-                                                                  }
+                                                                ? { ...producto, cantidad: producto.cantidad + 1 }
                                                                 : producto
                                                         )
                                                     );
                                                 }}
+                                                
                                             >
                                                 +
                                             </button>
-                                            {/* Botón de eliminar */}
                                             <button
                                                 className="text-xl"
                                                 onClick={() => {
@@ -432,10 +470,12 @@ export default function MenuCliente() {
                         ) : (
                             <p className="text-gray-500">Tu carrito está vacío.</p>
                         )}
+
+                        {/* Total del carrito */}
                         <div className="border-t pt-4">
                             <p className="text-lg font-bold">Total: ${calcularTotal()}</p>
                             {mensajeError && (
-                                <p className="text-red-500 text-sm font-bold mt-2">{mensajeError}</p> // Muestra el mensaje de error si existe
+                                <p className="text-red-500 text-sm font-bold mt-2">{mensajeError}</p>
                             )}
                             <button
                                 className="bg-green-500 text-white w-full py-2 rounded-lg mt-4 hover:bg-green-600"
@@ -444,6 +484,36 @@ export default function MenuCliente() {
                                 Realizar Pedido
                             </button>
                         </div>
+
+                        {/* Historial de pedidos */}
+                        {historialPedidos.length > 0 && (
+                            <div className="mt-8">
+                                <h3 className="text-lg font-bold text-gray-500 mb-2">Historial de Pedidos</h3>
+                                <ul className="space-y-0">
+                                    {historialPedidos.map((item, index) => (
+                                        <li key={index} className="p-2 rounded shadow">
+                                            <p className="font-bold">{item.cantidad}x {item.nombre}</p>
+                                            {item.ingredientesExcluidos.length > 0 && (
+                                                <p className="text-sm text-gray-500">
+                                                    Sin: {item.ingredientesExcluidos.join(", ")}
+                                                </p>
+                                            )}
+                                            <p className="text-sm text-gray-500">
+                                                Precio: ${item.precio.toFixed(2)} c/u
+                                            </p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Botón "Terminar Orden" */}
+                        <button
+                            className="bg-red-500 text-white w-full py-2 rounded-lg mt-4 hover:bg-red-600"
+                            onClick={terminarOrden}
+                        >
+                            Terminar Orden
+                        </button>
                     </div>
                 </div>
             )}
@@ -528,6 +598,29 @@ export default function MenuCliente() {
                                 Agregar - ${((productoSeleccionado.cantidad || 1) * productoSeleccionado.precio).toFixed(2)}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal del total de pedidos */}
+            {modalTotalOpen && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            setModalTotalOpen(false);
+                        }
+                    }}
+                >
+                    <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
+                        <h2 className="text-xl font-bold mb-4 text-center">Total de la Orden</h2>
+                        <p className="text-lg text-center mb-4">El total de tus pedidos es: <span className="font-bold">${totalPedidos}</span></p>
+                        <button
+                            className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
+                            onClick={() => setModalTotalOpen(false)}
+                        >
+                            Cerrar
+                        </button>
                     </div>
                 </div>
             )}

@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import kimet from '@/pages/assets/img/kimet.png'
 import Menu from '@/pages/assets/img/menu.png'
 
 export default function Main() {
