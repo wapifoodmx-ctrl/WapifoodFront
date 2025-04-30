@@ -3,14 +3,17 @@ import Image from "next/image";
 import kime from "@/pages/assets/img/kime.jpeg";
 import { FiEdit } from "react-icons/fi";
 import { Formik, Form, Field } from "formik";
-import { getProducts } from "@/useCases/getProducts";
 
-export default function Cards({ searchTerm, selectedCategory }) { // Añadir selectedCategory como prop
+export default function Cards({ products, searchTerm, selectedCategory, categories }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal
-    const [products, setProducts] = useState([]); // Estado para almacenar los productos obtenidos
     const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar
     const [loading, setLoading] = useState(true); // Estado de carga
-    const [error, setError] = useState(null); // Estado para manejar errores
+
+    useEffect(() => {
+        // Simular un tiempo de carga para mostrar el loader
+        const timeout = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timeout);
+    }, []);
 
     // Función para cerrar la modal
     const closeModals = () => {
@@ -21,39 +24,15 @@ export default function Cards({ searchTerm, selectedCategory }) { // Añadir sel
     // Función para actualizar el producto
     const handleUpdateProduct = async (updatedProduct) => {
         try {
-            // Simula una solicitud al backend para actualizar el producto
-            // Aquí puedes usar fetch o axios para enviar los datos al servidor
             console.log("Actualizando producto:", updatedProduct);
 
-            // Actualiza el estado local con el producto actualizado
-            setProducts((prevProducts) =>
-                prevProducts.map((product) =>
-                    product.id_products === updatedProduct.id_products ? updatedProduct : product
-                )
-            );
-
+            // Aquí puedes enviar los datos al backend para actualizar el producto
             alert("Producto actualizado con éxito.");
         } catch (err) {
             console.error("Error al actualizar el producto:", err);
             alert("Hubo un error al actualizar el producto.");
         }
     };
-
-    // Función para obtener los productos al cargar el componente
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const data = await getProducts();
-                setProducts(data); // Establece los productos obtenidos
-            } catch (err) {
-                setError(err.message); // Maneja errores
-            } finally {
-                setLoading(false); // Finaliza el estado de carga
-            }
-        };
-
-        fetchProducts();
-    }, []);
 
     // Filtrar los productos basados en el término de búsqueda y categoría seleccionada
     const filteredProducts = products.filter(
@@ -63,11 +42,11 @@ export default function Cards({ searchTerm, selectedCategory }) { // Añadir sel
     );
 
     if (loading) {
-        return <p>Cargando productos...</p>;
-    }
-
-    if (error) {
-        return <p>Error: {error}</p>;
+        return (
+            <div className="flex justify-center items-center w-full h-64">
+                <p className="text-gray-500 text-xl font-bold">Cargando productos...</p>
+            </div>
+        );
     }
 
     if (filteredProducts.length === 0) {
@@ -85,11 +64,11 @@ export default function Cards({ searchTerm, selectedCategory }) { // Añadir sel
             {filteredProducts.map((product) => (
                 <section
                     key={product.id_products}
-                    className="rounded-t-2xl shadow flex justify-center items-center flex-col w-full md:w-4/10 lg:w-3/10  "
+                    className="rounded-t-2xl shadow flex justify-center items-center flex-col w-full md:w-4/10 lg:w-3/10"
                 >
                     <div className="w-full h-48">
                         <Image
-                            src={product.image_url[0] || kime} // Usa la imagen del producto o una predeterminada
+                            src={product.image_url?.[0] || kime} // Usa la imagen del producto o una predeterminada
                             alt={product.name}
                             className="rounded-t-2xl w-full h-full object-cover"
                             width={300}
@@ -106,7 +85,7 @@ export default function Cards({ searchTerm, selectedCategory }) { // Añadir sel
                         <p className="text-gray-500">{product.description}</p>
                     </div>
                     <div className="w-full p-4 flex justify-between items-center">
-                        <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{"Categoría :D!"}</p>
+                        <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{product.category_name}</p>
                         <button
                             className="flex gap-4"
                             onClick={() => {
@@ -194,21 +173,37 @@ export default function Cards({ searchTerm, selectedCategory }) { // Añadir sel
                                             <option value="" disabled>
                                                 Seleccionar Categoría
                                             </option>
-                                            <option value="entradas">Entradas</option>
-                                            <option value="platos-principales">Platos principales</option>
-                                            <option value="postres">Postres</option>
-                                            <option value="bebidas">Bebidas</option>
-                                            <option value="combos">Combos</option>
+                                            {(categories || []).map((category) => (
+                                                <option key={category.id_categoria} value={category.id_categoria}>
+                                                    {category.nombre_categoria}
+                                                </option>
+                                            ))}
                                         </Field>
                                     </div>
 
                                     {/* Imagen */}
                                     <div>
-                                        <label className="font-bold text-gray-600 pb-2 pt-4">Imagen del Producto</label>
+                                        <label className="font-bold text-gray-600 pb-2 pt-4">
+                                            Imagen del Producto
+                                        </label>
+                                        <p className="text-sm text-gray-500 pb-2">
+                                            Formatos permitidos: .jpg, .jpeg, .png, .gif
+                                        </p>
                                         <input
                                             type="file"
-                                            accept="image/*"
-                                            onChange={(event) => setFieldValue("image", event.target.files[0])}
+                                            accept="image/jpeg,image/png,image/gif,image/jpg"
+                                            onChange={(event) => {
+                                                const file = event.target.files[0];
+                                                const allowedFormats = ["image/jpeg", "image/png", "image/gif", "image/jpg"];
+
+                                                if (file && !allowedFormats.includes(file.type)) {
+                                                    alert("Formato de archivo no válido. Solo se permiten .jpg, .jpeg, .png o .gif.");
+                                                    event.target.value = ""; // Limpiar el input
+                                                    return;
+                                                }
+
+                                                setFieldValue("image", file); // Establecer el archivo si es válido
+                                            }}
                                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                         />
                                     </div>

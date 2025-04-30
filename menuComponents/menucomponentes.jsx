@@ -1,56 +1,20 @@
 import { MdOutlineAttachMoney } from "react-icons/md";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FaPlus } from "react-icons/fa6";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FiFilter } from "react-icons/fi";
 import { BsTag } from "react-icons/bs";
 import { Formik, Form, Field } from "formik";
 import { createProduct } from "../useCases/createProduct"; // Import the function
-import { getProducts } from "@/useCases/getProducts"; // Importar getProducts
-import { getCategoria } from "../useCases/getCategoria"; // Importar la función
 import * as Yup from "yup"; // Importar Yup
+import postCategoria from "../useCases/postCategoria"; // Importar la función para crear categorías
+import ModalMessage from "../components/ModalMessage"; // Importar la nueva modal
 
-export default function MenuComponentes({ onSearch, onCategoryChange }) { // Añadir onCategoryChange como prop
+export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh, categories }) {
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);
     const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState(""); // Estado para el término de búsqueda
-    const [categories, setCategories] = useState([]); // Estado para las categorías
-    const [modalCategories, setModalCategories] = useState([]); // Categorías para la modal de productos
-
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const products = await getProducts();
-                const uniqueCategories = [
-                    ...new Map(
-                        products.map((product) => [
-                            product.category_id,
-                            { id: product.category_id, name: product.category_name },
-                        ])
-                    ).values(),
-                ];
-                setCategories(uniqueCategories); // Establecer categorías únicas
-            } catch (error) {
-                console.error("Error al obtener categorías:", error);
-            }
-        };
-
-        const fetchModalCategories = async () => {
-            try {
-                const categorias = await getCategoria(); // Llamar a la API
-                const formattedCategories = categorias.map((cat) => ({
-                    id: cat.id_categoria,
-                    name: cat.nombre_categoria,
-                }));
-                setModalCategories(formattedCategories); // Guardar las categorías en el estado
-            } catch (error) {
-                console.error("Error al obtener categorías para la modal:", error);
-            }
-        };
-
-        fetchCategories();
-        fetchModalCategories(); // Llamar a la función para obtener categorías dinámicas
-    }, []);
+    const [modalMessage, setModalMessage] = useState(null); // Estado para el mensaje de la modal
 
     const closeModals = () => {
         setIsProductoModalOpen(false);
@@ -73,12 +37,20 @@ export default function MenuComponentes({ onSearch, onCategoryChange }) { // Añ
     });
 
     const validationSchemaCategoria = Yup.object().shape({
-        categoria: Yup.string().required("El nombre de la categoría es obligatorio"),
-        descripcion: Yup.string().required("La descripción es obligatoria"),
+        nombre_categoria: Yup.string().required("El nombre de la categoría es obligatorio"),
+        descripcion_categoria: Yup.string().required("La descripción es obligatoria"),
     });
 
     return (
         <section className="lg:flex my-4 lg:gap-4 lg:justify-between lg:items-center">
+            {/* Mostrar la modal si hay un mensaje */}
+            {modalMessage && (
+                <ModalMessage
+                    message={modalMessage}
+                    onClose={() => setModalMessage(null)} // Cerrar la modal
+                />
+            )}
+
             {/* Barra de búsqueda */}
             <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 lg:mb-0 lg:w-6/12 justify-center items-center">
                 <HiOutlineMagnifyingGlass className="text-xl" />
@@ -105,8 +77,8 @@ export default function MenuComponentes({ onSearch, onCategoryChange }) { // Añ
                             >
                                 <option value="">Todas</option>
                                 {categories.map((category) => (
-                                    <option key={category.id} value={category.id}>
-                                        {category.name}
+                                    <option key={category.id_categoria} value={category.id_categoria}>
+                                        {category.nombre_categoria}
                                     </option>
                                 ))}
                             </select>
@@ -117,11 +89,12 @@ export default function MenuComponentes({ onSearch, onCategoryChange }) { // Añ
                     <div className="relative">
                         <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm">
                             <FiFilter className="text-2xl" />
-                            <select id="disponibilidad" className="w-full outline-none bg-transparent">
-                                <option value="" disabled selected>
-                                    Disponibilidad
-                                </option>
-                                <option value="todas">Todas</option>
+                            <select
+                                id="disponibilidad"
+                                className="w-full outline-none bg-transparent"
+                                onChange={(e) => onSearch(e.target.value)} // Manejar cambio de disponibilidad
+                            >
+                                <option value="">Disponibilidad</option>
                                 <option value="disponibles">Disponibles</option>
                                 <option value="no-disponibles">No Disponibles</option>
                             </select>
@@ -175,15 +148,23 @@ export default function MenuComponentes({ onSearch, onCategoryChange }) { // Añ
                                     const productData = {
                                         name: values.nombre,
                                         description: values.descripcion,
-                                        price: values.precio, // Convertir a string
-                                        category_id: values.categoria, // Convertir a string
+                                        price: values.precio,
+                                        category_id: values.categoria,
                                     };
-                                    await createProduct(productData, values.imagen); // Call the function
-                                    alert("Producto creado exitosamente");
+
+                                    if (!values.imagen) {
+                                        setModalMessage("Por favor, selecciona una imagen válida.");
+                                        setSubmitting(false);
+                                        return;
+                                    }
+
+                                    await createProduct(productData, values.imagen); // Llamar a la función para crear el producto
+                                    setModalMessage("Producto creado exitosamente");
                                     closeModals();
+                                    await onRefresh(); // Actualizar los datos globales
                                 } catch (error) {
-                                    console.error("Error al crear el producto:", error);
-                                    alert("Error al crear el producto. Por favor, inténtalo de nuevo.");
+                                    console.error("Error al crear el producto:", error.message);
+                                    setModalMessage(error.message || "Error al crear el producto. Verifica los datos enviados.");
                                 } finally {
                                     setSubmitting(false);
                                 }
@@ -247,9 +228,9 @@ export default function MenuComponentes({ onSearch, onCategoryChange }) { // Añ
                                             <option value="" disabled>
                                                 Seleccionar Categoría
                                             </option>
-                                            {modalCategories.map((category) => (
-                                                <option key={category.id} value={category.id}>
-                                                    {category.name}
+                                            {categories.map((category) => (
+                                                <option key={category.id_categoria} value={category.id_categoria}>
+                                                    {category.nombre_categoria}
                                                 </option>
                                             ))}
                                         </Field>
@@ -261,6 +242,9 @@ export default function MenuComponentes({ onSearch, onCategoryChange }) { // Añ
                                     {/* Imagen */}
                                     <div>
                                         <label className="font-bold text-gray-600 pb-2 pt-4">Imagen del Producto</label>
+                                        <p className="text-sm text-gray-500 pb-2">
+                                            Formatos permitidos: .jpg, .jpeg, .png, .gif
+                                        </p>
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -308,44 +292,54 @@ export default function MenuComponentes({ onSearch, onCategoryChange }) { // Añ
                         <h2 className="text-xl font-bold mb-4">Nueva Categoría</h2>
                         <Formik
                             initialValues={{
-                                categoria: "",
-                                descripcion: "",
+                                nombre_categoria: "",
+                                descripcion_categoria: "",
                             }}
-                            validationSchema={validationSchemaCategoria} // Añadir validación
-                            onSubmit={(values) => {
-                                alert(`Nueva categoría: ${values.categoria}`); // Muestra la categoría en una alerta
-                                closeModals(); // Cierra la modal
+                            validationSchema={validationSchemaCategoria}
+                            onSubmit={async (values, { setSubmitting }) => {
+                                try {
+                                    const categoriaData = {
+                                        nombre_categoria: values.nombre_categoria,
+                                        descripcion_categoria: values.descripcion_categoria,
+                                    };
+                                    await postCategoria(categoriaData);
+                                    setModalMessage("Categoría creada exitosamente");
+                                    closeModals();
+                                    onRefresh(); // Llamar a la función onRefresh para actualizar los datos globales
+                                } catch (error) {
+                                    console.error("Error al crear la categoría:", error.message);
+                                    setModalMessage(error.message || "Error al crear la categoría. Por favor, inténtalo de nuevo.");
+                                } finally {
+                                    setSubmitting(false);
+                                }
                             }}
                         >
                             {({ errors, touched }) => (
                                 <Form className="space-y-4">
-                                    {/* Nombre de la categoría */}
                                     <div>
                                         <label className="font-bold text-gray-600 pb-2">Nombre de la categoría</label>
                                         <Field
-                                            name="categoria"
+                                            name="nombre_categoria"
                                             type="text"
                                             className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
                                             placeholder="Nombre de la categoría"
                                         />
-                                        {errors.categoria && touched.categoria && (
-                                            <div className="text-red-500 text-sm">{errors.categoria}</div>
+                                        {errors.nombre_categoria && touched.nombre_categoria && (
+                                            <div className="text-red-500 text-sm">{errors.nombre_categoria}</div>
                                         )}
                                     </div>
                                     <div>
                                         <label className="font-bold text-gray-600 py-2">Descripción</label>
                                         <Field
-                                            name="descripcion"
+                                            name="descripcion_categoria"
                                             as="textarea"
                                             className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
                                             placeholder="Escribe una descripción..."
                                         />
-                                        {errors.descripcion && touched.descripcion && (
-                                            <div className="text-red-500 text-sm">{errors.descripcion}</div>
+                                        {errors.descripcion_categoria && touched.descripcion_categoria && (
+                                            <div className="text-red-500 text-sm">{errors.descripcion_categoria}</div>
                                         )}
                                     </div>
-
-                                    {/* Botones */}
                                     <div className="flex gap-4">
                                         <button
                                             type="submit"
