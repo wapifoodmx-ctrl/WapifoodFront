@@ -61,6 +61,7 @@ export default function Menu() {
           searchTerm={searchTerm}
           selectedCategory={selectedCategory}
           categories={categories} // Pasar las categorías como prop
+          onRefresh={handleRefresh} // Pasar handleRefresh como prop
         />
       </div>
     </section>

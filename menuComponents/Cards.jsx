@@ -3,17 +3,25 @@ import Image from "next/image";
 import kime from "@/pages/assets/img/kime.jpeg";
 import { FiEdit } from "react-icons/fi";
 import { Formik, Form, Field } from "formik";
+import { updateProduct } from "../useCases/updateProduct"; // Importar la función para actualizar productos
+import ModalMessage from "../components/ModalMessage"; // Importar la modal de mensajes
 
-export default function Cards({ products, searchTerm, selectedCategory, categories }) {
+export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal
     const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar
     const [loading, setLoading] = useState(true); // Estado de carga
+    const [modalMessage, setModalMessage] = useState(null); // Estado para el mensaje de la modal
 
     useEffect(() => {
         // Simular un tiempo de carga para mostrar el loader
         const timeout = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timeout);
     }, []);
+
+    // Función para truncar el texto
+    const truncateText = (text, maxLength) => {
+        return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+    };
 
     // Función para cerrar la modal
     const closeModals = () => {
@@ -22,15 +30,17 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     };
 
     // Función para actualizar el producto
-    const handleUpdateProduct = async (updatedProduct) => {
+    const handleUpdateProduct = async (values, imageFile) => {
         try {
-            console.log("Actualizando producto:", updatedProduct);
-
-            // Aquí puedes enviar los datos al backend para actualizar el producto
-            alert("Producto actualizado con éxito.");
+            await updateProduct(values.id_products, values, imageFile); // Llamar a la función para actualizar el producto
+            setModalMessage("Producto actualizado con éxito.");
+            closeModals();
+            if (onRefresh) {
+                onRefresh(); // Llamar a onRefresh si está definido
+            }
         } catch (err) {
-            console.error("Error al actualizar el producto:", err);
-            alert("Hubo un error al actualizar el producto.");
+            console.error("Error al actualizar el producto:", err.message);
+            setModalMessage(err.message || "Hubo un error al actualizar el producto.");
         }
     };
 
@@ -61,12 +71,21 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
 
     return (
         <div className="flex flex-wrap gap-6 justify-center w-full ">
+            {/* Mostrar la modal si hay un mensaje */}
+            {modalMessage && (
+                <ModalMessage
+                    message={modalMessage}
+                    onClose={() => setModalMessage(null)} // Cerrar la modal
+                />
+            )}
+
             {filteredProducts.map((product) => (
                 <section
                     key={product.id_products}
-                    className="rounded-t-2xl shadow flex justify-center items-center flex-col w-full md:w-4/10 lg:w-3/10"
+                    className="relative rounded-t-2xl shadow flex justify-center items-center flex-col w-full md:w-4/10 lg:w-3/10"
                 >
-                    <div className="w-full h-48">
+                    <div className="relative w-full h-48">
+                        {/* Imagen del producto */}
                         <Image
                             src={product.image_url?.[0] || kime} // Usa la imagen del producto o una predeterminada
                             alt={product.name}
@@ -74,10 +93,26 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                             width={300}
                             height={200}
                         />
+                        {/* Marca de agua si el producto está inactivo */}
+                        {product.status === "inactivo" && (
+                            <div className="absolute inset-0 rounded-t-2xl flex justify-center items-center backdrop-brightness-30">
+                                <p className="text-white text-2xl font-bold transform rotate-[-20deg] opacity-80">
+                                    No visible en el menu
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex w-full p-4 justify-between items-center">
-                        <h3 className="font-bold text-2xl">{product.name}</h3>
+                        {/* Truncar el nombre del producto dinámicamente */}
+                        <h3 className="font-bold text-2xl">
+                            <span className=" xl:hidden hidden md:block">
+                                {truncateText(product.name, 12)} {/* Móvil y tablet */}
+                            </span>
+                            <span className="xl:block md:hidden ">
+                                {truncateText(product.name, 18)} {/* Computadora */}
+                            </span>
+                        </h3>
                         <p className="text-2xl text-green-500 font-bold">${product.price}</p>
                     </div>
 
@@ -117,15 +152,15 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                 description: selectedProduct.description,
                                 price: selectedProduct.price,
                                 category_id: selectedProduct.category_id,
-                                image: selectedProduct.image,
-                                disponible: selectedProduct.disponible || false, // Asegúrate de que tenga un valor booleano
+                                image: null, // Imagen inicial vacía
+                                status: selectedProduct.status, // Inicializar con el estado actual
                             }}
-                            onSubmit={(values) => {
-                                handleUpdateProduct(values); // Actualiza el producto
-                                closeModals(); // Cierra la modal después de guardar
+                            onSubmit={(values, { setSubmitting }) => {
+                                handleUpdateProduct(values, values.image); // Actualiza el producto
+                                setSubmitting(false); // Finaliza el estado de envío
                             }}
                         >
-                            {({ setFieldValue }) => (
+                            {({ setFieldValue, values }) => (
                                 <Form className="space-y-4">
                                     {/* Nombre del producto */}
                                     <div>
@@ -197,7 +232,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                 const allowedFormats = ["image/jpeg", "image/png", "image/gif", "image/jpg"];
 
                                                 if (file && !allowedFormats.includes(file.type)) {
-                                                    alert("Formato de archivo no válido. Solo se permiten .jpg, .jpeg, .png o .gif.");
+                                                    setModalMessage("Formato de archivo no válido. Solo se permiten .jpg, .jpeg, .png o .gif.");
                                                     event.target.value = ""; // Limpiar el input
                                                     return;
                                                 }
@@ -207,14 +242,19 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                         />
                                     </div>
-                                    {/* Disponible */}
-                                    <div className="flex items-center py-4">
+
+                                    {/* Estado */}
+                                    <div>
+                                        <label className="font-bold text-gray-600 pb-2">Estado del Producto</label>
                                         <Field
-                                            name="disponible"
-                                            type="checkbox"
-                                            className="w-4 h-4 text-green-500 border-gray-300 rounded focus:ring-green-400"
-                                        />
-                                        <label className="ml-2 text-gray-700">Producto disponible</label>
+                                            name="status"
+                                            as="select"
+                                            className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
+                                            onChange={(e) => setFieldValue("status", e.target.value)} // Actualizar el valor de status
+                                        >
+                                            <option value="activo">Activo</option>
+                                            <option value="inactivo">Inactivo</option>
+                                        </Field>
                                     </div>
 
                                     {/* Botones */}
