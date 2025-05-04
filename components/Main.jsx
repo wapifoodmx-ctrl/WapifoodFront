@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import Menu from '@/pages/assets/img/menu.png'
+import Menuuwu from '@/pages/assets/img/Menuuwu.png'
 
 export default function Main() {
     const router = useRouter();
@@ -42,7 +43,17 @@ export default function Main() {
 
                 </div>
 
-                <Image src={Menu} className='h-[400px] w-[500px] shadow-xl rounded-lg md:h-[50%] md:w-[50%]  md:min-w-[400px]  ' />
+                <Image 
+                    src={Menu} 
+                    className="hidden md:block h-[400px] w-[500px] shadow-xl rounded-lg md:h-[50%] md:w-[50%] md:min-w-[400px]" 
+                    alt="Imagen para pantallas grandes"
+                />
+
+                <Image 
+                    src={Menuuwu}
+                    className="block md:hidden h-[500px] w-[375px] shadow-xl rounded-lg" 
+                    alt="Imagen para pantallas pequeñas"
+                />
 
             </section>
         </main>
