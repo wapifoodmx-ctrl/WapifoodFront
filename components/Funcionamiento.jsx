@@ -16,7 +16,7 @@ export default function Funcionamiento() {
             icon: "3",
         },
         {
-            title: "¿Amigable con tus clientes!",
+            title: "¡Amigable con tus clientes!",
             description: "Tus clientes amarán pedir tus productos a través de nuestra plataforma.",
             icon: "4",
         },
