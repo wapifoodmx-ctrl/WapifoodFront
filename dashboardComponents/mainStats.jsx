@@ -54,8 +54,8 @@ export default function MainStats() {
                 ];
                 setAnalyticsData(mappedData); // Actualizar el estado con los datos mapeados
             } catch (error) {
-                console.error("Error al obtener las analíticas:", error);
-                setError("No se pudieron cargar las estadísticas. Por favor, intenta nuevamente.");
+                console.error("Error al obtener las analíticas:", error.message);
+                setError(error.message); // Establecer el mensaje de error en el estado
                 setAnalyticsData([]);
             } finally {
                 setLoading(false); // Desactivar el estado de carga
