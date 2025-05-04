@@ -6,7 +6,7 @@ import { Formik, Form, Field } from "formik";
 import { updateProduct } from "../useCases/updateProduct"; // Importar la función para actualizar productos
 import ModalMessage from "../components/ModalMessage"; // Importar la modal de mensajes
 
-export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh }) {
+export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh, availabilityFilter }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal
     const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar
     const [loading, setLoading] = useState(true); // Estado de carga
@@ -44,12 +44,17 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         }
     };
 
-    // Filtrar los productos basados en el término de búsqueda y categoría seleccionada
-    const filteredProducts = products.filter(
-        (product) =>
-            product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-            (selectedCategory === "" || product.category_id === parseInt(selectedCategory))
-    );
+    // Filtrar los productos basados en el término de búsqueda, categoría seleccionada y disponibilidad
+    const filteredProducts = products.filter((product) => {
+        const matchesSearchTerm = product.name.toLowerCase().includes(searchTerm.toLowerCase()); // Filtro por búsqueda
+        const matchesCategory = selectedCategory === "" || product.category_id === parseInt(selectedCategory); // Filtro por categoría
+        const matchesAvailability =
+            availabilityFilter === "todos" || // Mostrar todos si el filtro es "todos"
+            (availabilityFilter === "disponibles" && product.status === "activo") || // Mostrar solo activos
+            (availabilityFilter === "no-disponibles" && product.status === "inactivo"); // Mostrar solo inactivos
+
+        return matchesSearchTerm && matchesCategory && matchesAvailability; // Combinar todos los filtros
+    });
 
     if (loading) {
         return (

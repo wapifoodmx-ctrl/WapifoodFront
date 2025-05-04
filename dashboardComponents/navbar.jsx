@@ -7,6 +7,7 @@ import { FiShoppingBag } from "react-icons/fi";
 import { FcSalesPerformance } from "react-icons/fc";
 import { FaUser } from "react-icons/fa";
 import { ImExit } from "react-icons/im";
+import { LuIdCard } from "react-icons/lu";
 
 export default function Navbar() {
     const router = useRouter();
@@ -34,6 +35,9 @@ export default function Navbar() {
     const payments = () => {
         router.push('/payments');
     };
+    const puntoDeVenta = () => {
+        router.push('/puntodeventa');
+    };
 
 
     const menu = {
@@ -51,12 +55,18 @@ export default function Navbar() {
             title: "Pedidos",
             href: "#",
             icon: <FiShoppingBag className=" h-full w-[24px]" />,
+        }, 
+        PuntoDeVenta: {
+            title: "Punto de venta",
+            href: "#",
+            icon: <FcSalesPerformance className=" h-full w-[24px]" />,
         },
         Ventas: {
             title: "Opciones de pago",
             href: "#",
-            icon: <FcSalesPerformance className=" h-full w-[24px]" />,
+            icon: <LuIdCard className=" h-full w-[24px]" />,
         },
+
     };
 
     const config = {
@@ -74,17 +84,17 @@ export default function Navbar() {
     };
 
     return (
-        <nav className=" bg-[#f3f4f6] w-full  flex justify-between h-16">
+        <nav className="bg-[#f3f4f6] w-full flex justify-between h-16 z-40 shadow-md"> {/* Eliminamos `fixed` y `top-0` */}
             <div className="flex w-full justify-between px-4">
                 {/* Logo */}
-                <div className="flex items-center cursor-pointer" >
+                <div className="flex items-center cursor-pointer">
                     <GoChecklist size={36} className="text-green-600" />
                     <h2 className="text-3xl hover:text-green-600 font-bold ml-2">WapiFood</h2>
                 </div>
 
                 {/* Botón Hamburguesa - Siempre visible */}
                 <button
-                    className="z-20 cursor-pointer sticky"
+                    className="z-50 cursor-pointer"
                     onClick={() => setIsOpen(!isOpen)}
                     aria-label="Toggle menu"
                 >
@@ -95,12 +105,12 @@ export default function Navbar() {
 
                 {/* Menú */}
                 <div className={`
-                    fixed top-0 right-0 h-full w-auto min-w-0 bg-gray-100 
+                    absolute top-16 right-0 h-full w-auto min-w-0 bg-gray-100 z-40
                     transition-all duration-300 ease-in-out
                     ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-                `}>
+                `}> {/* Ajustamos `top-16` para que el menú se posicione debajo de la Navbar */}
                     {/* Elementos del menú */}
-                    <ul className="flex flex-col mt-16 p-4 text-xl">
+                    <ul className="flex flex-col mt-4 p-4 text-xl">
                         <p className="text-gray-500 font-bold">Menú principal</p>
                         {
                             Object.keys(menu).map((item, index) => (
@@ -113,6 +123,13 @@ export default function Navbar() {
                                                 item === "Register" ? productos :
                                                 pedidos
                                             }
+                                        >
+                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : item === "PuntoDeVenta" ? (
+                                        <button
+                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                            onClick={puntoDeVenta}
                                         >
                                             <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
                                         </button>

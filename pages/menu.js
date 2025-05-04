@@ -10,6 +10,7 @@ export default function Menu() {
   const [selectedCategory, setSelectedCategory] = useState(""); // Estado para la categoría seleccionada
   const [products, setProducts] = useState([]); // Estado para los productos
   const [categories, setCategories] = useState([]); // Estado para las categorías
+  const [availabilityFilter, setAvailabilityFilter] = useState("todos"); // Estado para el filtro de disponibilidad
 
   // Función para obtener los productos
   const fetchProducts = async () => {
@@ -52,6 +53,7 @@ export default function Menu() {
           onCategoryChange={setSelectedCategory}
           onRefresh={handleRefresh} // Pasar handleRefresh como prop
           categories={categories} // Pasar las categorías como prop
+          onAvailabilityChange={setAvailabilityFilter} // Pasar el manejador del filtro de disponibilidad
         />
       </div>
 
@@ -62,6 +64,7 @@ export default function Menu() {
           selectedCategory={selectedCategory}
           categories={categories} // Pasar las categorías como prop
           onRefresh={handleRefresh} // Pasar handleRefresh como prop
+          availabilityFilter={availabilityFilter} // Pasar el filtro de disponibilidad
         />
       </div>
     </section>

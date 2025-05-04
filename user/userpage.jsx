@@ -143,7 +143,7 @@ function BasicTabs() {
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
           <Tab label="Datos Personales" {...a11yProps(0)} />
           <Tab label="Dirección" {...a11yProps(1)} />
-          <Tab label="Restaurantes" {...a11yProps(2)} />
+          {/* <Tab label="Restaurantes" {...a11yProps(2)} /> */}
         </Tabs>
       </Box>
       <CustomTabPanel value={value} index={0}>
@@ -253,7 +253,7 @@ function BasicTabs() {
           )}
         </Formik>
       </CustomTabPanel>
-      <CustomTabPanel value={value} index={2}>
+      {/* <CustomTabPanel value={value} index={2}>
         <div className=" w-full ">
           <h3 className="font-bold text-xl pb-4">Lista de Restaurantes</h3>
           <ul className="">
@@ -288,9 +288,10 @@ function BasicTabs() {
           >
             Agregar Restaurante
           </button>
-        </div>
+        </div> */}
 
         {/* Modal para agregar restaurante */}
+{/*         
         {isModalOpen && (
           <div
             className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
@@ -352,9 +353,10 @@ function BasicTabs() {
               </Formik>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Modal para editar restaurante */}
+{/*         
         {isEditModalOpen && restauranteAEditar && (
           <div
             className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
@@ -453,9 +455,10 @@ function BasicTabs() {
               </Formik>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Modal de confirmación para eliminar restaurante */}
+{/*         
         {isConfirmModalOpen && (
           <div
             className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
@@ -483,7 +486,7 @@ function BasicTabs() {
             </div>
           </div>
         )}
-      </CustomTabPanel>
+      </CustomTabPanel> */}
     </Box>
   );
 }

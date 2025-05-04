@@ -10,7 +10,7 @@ import * as Yup from "yup"; // Importar Yup
 import postCategoria from "../useCases/postCategoria"; // Importar la función para crear categorías
 import ModalMessage from "../components/ModalMessage"; // Importar la nueva modal
 
-export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh, categories }) {
+export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh, categories, onAvailabilityChange }) {
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);
     const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState(""); // Estado para el término de búsqueda
@@ -92,9 +92,9 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                             <select
                                 id="disponibilidad"
                                 className="w-full outline-none bg-transparent"
-                                onChange={(e) => onSearch(e.target.value)} // Manejar cambio de disponibilidad
+                                onChange={(e) => onAvailabilityChange(e.target.value)} // Corregir para usar onAvailabilityChange
                             >
-                                <option value="">Disponibilidad</option>
+                                <option value="todos">Todos los Disponibles</option>
                                 <option value="disponibles">Disponibles</option>
                                 <option value="no-disponibles">No Disponibles</option>
                             </select>
