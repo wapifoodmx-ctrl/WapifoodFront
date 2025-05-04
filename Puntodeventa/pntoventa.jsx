@@ -1,12 +1,9 @@
+import Navbar from "@/dashboardComponents/navbar";
 import { FaRegEye } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
-import { TbSoup } from "react-icons/tb";
-import { LuCupSoda } from "react-icons/lu";
-import { GiCakeSlice } from "react-icons/gi";
-import { CiPizza } from "react-icons/ci";
-import { GiForkKnifeSpoon } from "react-icons/gi";
-import { LuSalad } from "react-icons/lu";
-import { IoHomeOutline } from "react-icons/io5";
+import { BsTag } from "react-icons/bs";
+import { FiFilter } from "react-icons/fi";
+import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { GoChecklist } from "react-icons/go";
 import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
@@ -140,13 +137,15 @@ const categoriaOrden = {
 };
 
 export default function Pntoventa() {
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Categorías");
+    const [disponibilidadSeleccionada, setDisponibilidadSeleccionada] = useState("Disponibilidad");
+    const [busqueda, setBusqueda] = useState("");
+    const [productosFiltrados, setProductosFiltrados] = useState(productos);
     const [isOpen, setIsOpen] = useState(false);
-    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos los platillos");
     const [modalOpen, setModalOpen] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [carrito, setCarrito] = useState([]);
     const [carritoModalOpen, setCarritoModalOpen] = useState(false);
-    const [productosFiltrados, setProductosFiltrados] = useState(productos);
     const [mensajeError, setMensajeError] = useState(""); // Estado para manejar el mensaje de error
     const [historialPedidos, setHistorialPedidos] = useState([]); // Estado para manejar el historial de pedidos
     const [modalTotalOpen, setModalTotalOpen] = useState(false); // Estado para la modal del total
@@ -166,12 +165,27 @@ export default function Pntoventa() {
     }, [isOpen]);
 
     useEffect(() => {
-        setProductosFiltrados(
-            categoriaSeleccionada === "Todos los platillos"
+        // Filtrar productos según categoría, disponibilidad y búsqueda
+        const productosFiltradosPorCategoria =
+            categoriaSeleccionada === "Categorías" || categoriaSeleccionada === "Todos los platillos"
                 ? productos
-                : productos.filter(producto => producto.categoria === categoriaSeleccionada)
+                : productos.filter((producto) => producto.categoria === categoriaSeleccionada);
+
+        const productosFiltradosPorDisponibilidad =
+            disponibilidadSeleccionada === "Disponibilidad" || disponibilidadSeleccionada === "Todas"
+                ? productosFiltradosPorCategoria
+                : productosFiltradosPorCategoria.filter((producto) =>
+                      disponibilidadSeleccionada === "Disponibles"
+                          ? producto.disponible !== false
+                          : producto.disponible === false
+                  );
+
+        const productosFiltradosPorBusqueda = productosFiltradosPorDisponibilidad.filter((producto) =>
+            producto.nombre.toLowerCase().includes(busqueda.toLowerCase())
         );
-    }, [categoriaSeleccionada]);
+
+        setProductosFiltrados(productosFiltradosPorBusqueda);
+    }, [categoriaSeleccionada, disponibilidadSeleccionada, busqueda]);
 
     useEffect(() => {
         // Recuperar carrito y historial de pedidos desde localStorage
@@ -281,103 +295,57 @@ export default function Pntoventa() {
 
     return (
         <section>
-            <header>
-                <nav className="w-full bg-gray-100 text-gray-800 p-4">
-                    <div className="flex items-center max-w-7xl mx-auto justify-between">
-                        {/* Logo */}
-                        <div className="flex items-center">
-                            <GoChecklist size={36} className="text-green-600" />
-                            <h1 className="text-3xl font-bold ml-2">WapiFood</h1>
-                        </div>
+            <Navbar />
 
-                        {/* Botón del menú hamburguesa */}
-                        <button
-                            className="z-20 cursor-pointer py-3 hamburger-button"
-                            onClick={() => setIsOpen(!isOpen)} // Toggle menu on click
-                            aria-label="Toggle menu"
-                        >
-                            <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-                            <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
-                            <div className={`w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
-                        </button>
+            {/* Barra de búsqueda y dropdowns */}
+            <div className="p-4 ">
+                <div className="flex flex-col md:flex-row gap-4 lg:px-16 md:px-6">
+                    {/* Barra de búsqueda */}
+                    <div className="flex items-center border p-2 rounded-xl w-full md:w-1/3">
+                        <HiOutlineMagnifyingGlass className="text-gray-500 mr-2 text-xl" />
+                        <input
+                            type="text"
+                            placeholder="Buscar platillos..."
+                            className="w-full bg-transparent outline-none"
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                        />
                     </div>
-                </nav>
-            </header>
 
-            {/* Menú desplegable */}
-            <div
-                className={`
-                    fixed top-0 left-0 h-full w-64 bg-gray-100 shadow-lg 
-                    transition-transform duration-300 ease-in-out menu-container
-                    ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-                `}
-            >
-                <ul className="flex flex-col mt-16 p-4 text-xl">
-                    <p className="text-gray-500 font-bold">Menú principal</p>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Todos los platillos");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <IoHomeOutline className="self-center"/> Todos los platillos
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Entradas");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <TbSoup className="self-center"/>Entradas
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Platos Principales");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <GiForkKnifeSpoon className="self-center"/>Platos principales
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Ensaladas");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <LuSalad className="self-center"/>Ensaladas
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Pizzas");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <CiPizza className="self-center"/>Pizzas
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Postres");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <GiCakeSlice className="self-center" />Postres
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Bebidas");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <LuCupSoda className="self-center"/>Bebidas
-                    </li>
-                </ul>
+                    {/* Dropdown de categorías */}
+                    <div className="flex items-center border p-2 rounded-md w-full md:w-1/4">
+                        <BsTag className="text-gray-500 mr-2 text-xl font-bold flex self-center" />
+                        <select
+                            className="w-full bg-transparent outline-none"
+                            value={categoriaSeleccionada}
+                            onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+                        >
+                            <option value="Categorías" disabled>Categorías</option>
+                            <option value="Todos los platillos">Todos los platillos</option>
+                            <option value="Entradas">Entradas</option>
+                            <option value="Platos Principales">Platos principales</option>
+                            <option value="Ensaladas">Ensaladas</option>
+                            <option value="Pizzas">Pizzas</option>
+                            <option value="Postres">Postres</option>
+                            <option value="Bebidas">Bebidas</option>
+                        </select>
+                    </div>
+
+                    {/* Dropdown de disponibilidad */}
+                    <div className="flex items-center border p-2 rounded-md w-full md:w-1/4">
+                        <FiFilter className="text-gray-500 mr-2" />
+                        <select
+                            className="w-full bg-transparent outline-none"
+                            value={disponibilidadSeleccionada}
+                            onChange={(e) => setDisponibilidadSeleccionada(e.target.value)}
+                        >
+                            <option value="Disponibilidad" disabled>Disponibilidad</option>
+                            <option value="Todas">Todas</option>
+                            <option value="Disponibles">Disponibles</option>
+                            <option value="No disponibles">No disponibles</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             {/* Botón flotante del carrito */}
@@ -723,7 +691,9 @@ export default function Pntoventa() {
                                     </button>
                                 </div>
                             </div>
+                            
                         </div>
+                        
                     ))}
             </section>
         </section>
