@@ -2,9 +2,7 @@ export async function getAnalitics() {
     const endpoint = 'http://192.168.1.69:8000/analytics/dashboard';
 
     try {
-        // Obtener el token del localStorage
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-
         if (!token) {
             throw new Error('No se encontró un token en el localStorage');
         }
@@ -13,16 +11,23 @@ export async function getAnalitics() {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`, // Agregar el token en el encabezado
+                Authorization: `Bearer ${token}`,
             },
         });
 
         if (!response.ok) {
-            throw new Error('Error al obtener las analíticas');
+            let errorData = {};
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                console.error('No se pudo parsear la respuesta de error:', e);
+            }
+            console.error('Error en la respuesta:', errorData);
+            throw new Error(errorData.message || 'Error al obtener las analíticas. Verifica el servidor.');
         }
 
-        const data = await response.json(); // Parsear la respuesta como JSON
-        return data; // Devolver las categorías
+        const data = await response.json();
+        return data;
     } catch (error) {
         console.error('Error al obtener las analíticas:', error.message);
         throw error;

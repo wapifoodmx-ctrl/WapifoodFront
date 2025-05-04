@@ -38,6 +38,20 @@ export default function Populares() {
         return <p className="text-center text-red-500">{error}</p>;
     }
 
+    // Manejar el caso en el que no haya productos populares
+    if (!data || data.length === 0) {
+        return (
+            <div className="flex items-center justify-center w-full">
+                <div className="flex flex-col gap-4 bg-white shadow-sm rounded-lg p-4 w-full h-full">
+                    <h2 className="flex font-bold text-xl">Productos Populares</h2>
+                    <p className="text-center text-gray-500">
+                        No tienes productos populares. Conforme vayas creando productos y comiences a tener ventas, esta vista se irá actualizando.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex items-center justify-center w-full">
             <div className="flex flex-col gap-4 bg-white shadow-sm rounded-lg p-4 w-full h-full">

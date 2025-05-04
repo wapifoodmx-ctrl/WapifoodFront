@@ -9,11 +9,22 @@ import { getAnalitics } from "../useCases/getAnalitics"; // Importar la función
 export default function MainStats() {
     const [analyticsData, setAnalyticsData] = useState([]); // Estado para las analíticas
     const [loading, setLoading] = useState(true); // Estado de carga
+    const [error, setError] = useState(""); // Estado para manejar errores
 
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
                 const data = await getAnalitics(); // Llamar a la API
+
+                // Verificar si los datos están vacíos o no contienen las propiedades esperadas
+                if (!data || Object.keys(data).length === 0) {
+                    setError(
+                        "No tienes Ventas hasta el momento. Conforme comiences a tener ventas, esta vista se irá actualizando."
+                    );
+                    setAnalyticsData([]);
+                    return;
+                }
+
                 // Mapear los datos de la API al formato esperado
                 const mappedData = [
                     {
@@ -44,6 +55,8 @@ export default function MainStats() {
                 setAnalyticsData(mappedData); // Actualizar el estado con los datos mapeados
             } catch (error) {
                 console.error("Error al obtener las analíticas:", error);
+                setError("No se pudieron cargar las estadísticas. Por favor, intenta nuevamente.");
+                setAnalyticsData([]);
             } finally {
                 setLoading(false); // Desactivar el estado de carga
             }
@@ -54,6 +67,22 @@ export default function MainStats() {
 
     if (loading) {
         return <p className="text-gray-500">Cargando estadísticas...</p>;
+    }
+
+    if (error) {
+        return (
+            <p className="text-center text-gray-500">
+                {error}
+            </p>
+        );
+    }
+
+    if (analyticsData.length === 0) {
+        return (
+            <p className="text-center text-gray-500">
+                No se encontraron estadísticas. Por favor, verifica que los datos estén disponibles.
+            </p>
+        );
     }
 
     return (
