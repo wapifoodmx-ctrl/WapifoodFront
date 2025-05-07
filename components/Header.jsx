@@ -1,18 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GoChecklist } from "react-icons/go";
 import { useRouter } from 'next/router';
-
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const menuRef = useRef(null); // Referencia para el menú
 
   const mainPage = () => {
     router.push('/');
   };
-
-  
-  
 
   const menu = {
     inicios: {
@@ -35,8 +32,21 @@ export default function Header() {
       title: "Iniciar Sesión",
       href: "/login",
     },
-
   };
+
+  // Cerrar el menú al hacer clic fuera de él
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <header>
@@ -60,13 +70,15 @@ export default function Header() {
           </button>
 
           {/* Menú */}
-          <div className={`
-            md:flex md:items-center md:static
-            fixed top-0 right-0 h-full w-auto min-w-0 bg-gray-100 
-            transition-all duration-300 ease-in-out
-            ${isOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
-          `}>
-
+          <div
+            ref={menuRef}
+            className={`
+              md:flex md:items-center md:static
+              fixed top-0 right-0 h-full w-auto min-w-0 bg-gray-100 
+              transition-all duration-300 ease-in-out
+              ${isOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+            `}
+          >
             {/* Elementos del menú */}
             <ul className="md:flex md:space-x-6 mt-16 md:mt-0 p-4 md:p-0 text-xl">
               {

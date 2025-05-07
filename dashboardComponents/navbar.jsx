@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { GoChecklist } from "react-icons/go";
 import { useRouter } from 'next/router';
 import { MdSpaceDashboard } from "react-icons/md";
@@ -12,6 +12,7 @@ import { LuIdCard } from "react-icons/lu";
 export default function Navbar() {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef(null);
 
     const handleLogout = () => {
         router.push("/login");
@@ -67,6 +68,19 @@ export default function Navbar() {
         },
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
     return (
         <nav className="bg-[#f3f4f6] w-full fixed top-0 left-0 flex justify-between h-16 z-50 shadow-md overflow-x-hidden">
             <div className="flex w-full justify-between px-4">
@@ -88,12 +102,15 @@ export default function Navbar() {
                 </button>
 
                 {/* Menú */}
-                <div className={`
-                    fixed top-16 right-0 h-full  bg-gray-100 z-40
+                <div
+                    ref={menuRef}
+                    className={`
+                    fixed top-16 right-0 h-full bg-gray-100 z-40
                     transition-transform duration-300 ease-in-out
                     ${isOpen ? 'translate-x-0' : 'translate-x-full'}
                     overflow-hidden
-                `}>
+                `}
+                >
                     <ul className="flex flex-col mt-4 p-4 text-xl">
                         <p className="text-gray-500 font-bold">Menú principal</p>
                         {Object.keys(menu).map((item, index) => (
