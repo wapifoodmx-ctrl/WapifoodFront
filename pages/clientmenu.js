@@ -1,7 +1,7 @@
 import Menucliente from '@/Menucliente/menucliente';
 export default function ClientMenu() {
     return (
-        <div>
+        <div className=" min-h-screen flex flex-col w-full">
            <Menucliente />
         </div>
     );

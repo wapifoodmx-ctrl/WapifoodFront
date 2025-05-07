@@ -61,7 +61,7 @@ export default function Menu() {
 
   if (products.length === 0) {
     return (
-      <section className="flex flex-col items-center justify-center ">
+      <section className="flex flex-col items-center justify-center mt-16">
         <Navbar />
         <div className="w-11/12 ">
           <MenuComponentes
@@ -80,7 +80,7 @@ export default function Menu() {
   }
 
   return (
-    <section className="flex flex-col items-center justify-center ">
+    <section className="flex flex-col items-center justify-center mt-16 ">
       <Navbar />
       <div className="w-11/12 ">
         <MenuComponentes

@@ -139,7 +139,7 @@ export default function Pntoventa() {
     };
 
     return (
-        <section>
+        <section className="mt-16">
             <Navbar />
 
             {/* Barra de búsqueda y dropdowns */}

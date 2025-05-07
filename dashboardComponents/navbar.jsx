@@ -18,73 +18,57 @@ export default function Navbar() {
         localStorage.removeItem('token');
     };
 
-    const dasboard = () => {
-        router.push('/dashboard');
-    };
-
-    const productos = () => {
-        router.push('/menu');
-    };
-
-    const pedidos = () => {
-        router.push('/pedidos');
-    };
-    const MiPerfil = () => {
-        router.push('/user');
-    };
-    const payments = () => {
-        router.push('/payments');
-    };
-    const puntoDeVenta = () => {
-        router.push('/puntodeventa');
-    };
-
+    const dasboard = () => router.push('/dashboard');
+    const productos = () => router.push('/menu');
+    const pedidos = () => router.push('/pedidos');
+    const MiPerfil = () => router.push('/user');
+    const payments = () => router.push('/payments');
+    const puntoDeVenta = () => router.push('/puntodeventa');
 
     const menu = {
         Dashboard: {
             title: "Dashboard",
             href: '/dashboard',
-            icon: <MdSpaceDashboard className=" h-full w-[24px]" />,
+            icon: <MdSpaceDashboard className="h-full w-[24px]" />,
         },
         Register: {
             title: "Productos",
             href: "#",
-            icon: <LuPizza className=" h-full w-[24px]" />,
+            icon: <LuPizza className="h-full w-[24px]" />,
         },
         Pedidos: {
             title: "Pedidos",
             href: "#",
-            icon: <FiShoppingBag className=" h-full w-[24px]" />,
-        }, 
+            icon: <FiShoppingBag className="h-full w-[24px]" />,
+        },
         PuntoDeVenta: {
             title: "Punto de venta",
             href: "#",
-            icon: <FcSalesPerformance className=" h-full w-[24px]" />,
+            icon: <FcSalesPerformance className="h-full w-[24px]" />,
         },
         Ventas: {
             title: "Opciones de pago",
             href: "#",
-            icon: <LuIdCard className=" h-full w-[24px]" />,
+            icon: <LuIdCard className="h-full w-[24px]" />,
         },
-
     };
 
     const config = {
         Profile: {
             title: "Mi perfil",
             href: '#',
-            icon: <FaUser className=" h-full w-[24px]" />,
+            icon: <FaUser className="h-full w-[24px]" />,
         },
         Logout: {
             title: "Log-Out",
             href: "#",
-            icon: <ImExit className=" h-full w-[24px]" />,
+            icon: <ImExit className="h-full w-[24px]" />,
             function: handleLogout,
         },
     };
 
     return (
-        <nav className="bg-[#f3f4f6] w-full flex justify-between h-16 z-40 shadow-md"> {/* Eliminamos `fixed` y `top-0` */}
+        <nav className="bg-[#f3f4f6] w-full fixed top-0 left-0 flex justify-between h-16 z-50 shadow-md overflow-x-hidden">
             <div className="flex w-full justify-between px-4">
                 {/* Logo */}
                 <div className="flex items-center cursor-pointer">
@@ -92,7 +76,7 @@ export default function Navbar() {
                     <h2 className="text-3xl hover:text-green-600 font-bold ml-2">WapiFood</h2>
                 </div>
 
-                {/* Botón Hamburguesa - Siempre visible */}
+                {/* Botón Hamburguesa */}
                 <button
                     className="z-50 cursor-pointer"
                     onClick={() => setIsOpen(!isOpen)}
@@ -105,82 +89,78 @@ export default function Navbar() {
 
                 {/* Menú */}
                 <div className={`
-                    absolute top-16 right-0 h-full w-auto min-w-0 bg-gray-100 z-40
-                    transition-all duration-300 ease-in-out
+                    fixed top-16 right-0 h-full  bg-gray-100 z-40
+                    transition-transform duration-300 ease-in-out
                     ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-                `}> {/* Ajustamos `top-16` para que el menú se posicione debajo de la Navbar */}
-                    {/* Elementos del menú */}
+                    overflow-hidden
+                `}>
                     <ul className="flex flex-col mt-4 p-4 text-xl">
                         <p className="text-gray-500 font-bold">Menú principal</p>
-                        {
-                            Object.keys(menu).map((item, index) => (
-                                <li key={index} className="cursor-pointer hover:text-green-600 my-4">
-                                    {item === "Dashboard" || item === "Register" || item === "Pedidos" ? (
-                                        <button
-                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            onClick={
-                                                item === "Dashboard" ? dasboard :
-                                                item === "Register" ? productos :
-                                                pedidos
-                                            }
-                                        >
-                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
-                                        </button>
-                                    ) : item === "PuntoDeVenta" ? (
-                                        <button
-                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            onClick={puntoDeVenta}
-                                        >
-                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
-                                        </button>
-                                    ) : item === "Ventas" ? (
-                                        <button
-                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            onClick={payments}
-                                        >
-                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
-                                        </button>
-                                    ) : (
-                                        <a
-                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            href={menu[item].href}
-                                        >
-                                            <span className="self-center cursor-pointer hover:text-green-600">{menu[item].icon}</span> {menu[item].title}
-                                        </a>
-                                    )}
-                                </li>
-                            ))
-                        }
+                        {Object.keys(menu).map((item, index) => (
+                            <li key={index} className="cursor-pointer hover:text-green-600 my-4">
+                                {item === "Dashboard" || item === "Register" || item === "Pedidos" ? (
+                                    <button
+                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        onClick={
+                                            item === "Dashboard" ? dasboard :
+                                            item === "Register" ? productos :
+                                            pedidos
+                                        }
+                                    >
+                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                    </button>
+                                ) : item === "PuntoDeVenta" ? (
+                                    <button
+                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        onClick={puntoDeVenta}
+                                    >
+                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                    </button>
+                                ) : item === "Ventas" ? (
+                                    <button
+                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        onClick={payments}
+                                    >
+                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                    </button>
+                                ) : (
+                                    <a
+                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        href={menu[item].href}
+                                    >
+                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                    </a>
+                                )}
+                            </li>
+                        ))}
 
                         <p className="text-gray-500 font-bold">Configuración</p>
-                        {
-                            Object.keys(config).map((item, index) => (
-                                <li key={index} className="cursor-pointer hover:text-green-600 my-4">
-                                    {item === "Profile" ? (
-                                        <button
-                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            onClick={MiPerfil}
-                                        >
-                                            <span className="self-center">{config[item].icon}</span> {config[item].title}
-                                        </button>
-                                    ) : item === "Logout" ? (
-                                        <button
-                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            onClick={config[item].function}
-                                        >
-                                            <span className="self-center">{config[item].icon}</span> {config[item].title}
-                                        </button>
-                                    ) : (
-                                        <a
-                                            className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
-                                            href={config[item].href}
-                                        >
-                                            <span className="self-center">{config[item].icon}</span> {config[item].title}
-                                        </a>
-                                    )}
-                                </li>
-                            ))
-                        }
+                        {Object.keys(config).map((item, index) => (
+                            <li key={index} className="cursor-pointer hover:text-green-600 my-4">
+                                {item === "Profile" ? (
+                                    <button
+                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        onClick={MiPerfil}
+                                    >
+                                        <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                    </button>
+                                ) : item === "Logout" ? (
+                                    <button
+                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        onClick={config[item].function}
+                                    >
+                                        <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                    </button>
+                                ) : (
+                                    <a
+                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        href={config[item].href}
+                                    >
+                                        <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                    </a>
+                                )}
+                            </li>
+                        ))}
                     </ul>
                 </div>
             </div>

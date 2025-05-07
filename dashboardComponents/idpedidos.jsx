@@ -90,7 +90,7 @@ export default function IdPedidos() {
 
     return (
         <>
-            <h3 className="md:hidden text-justify font-bold w-full">
+            <h3 className="md:hidden text-justify font-bold w-full pt-4">
                 <p className="text-center"> 
                  Para poder ver el detalle de los pedidos se necesta abrir desde una pantalla más grande o poner el dispositivo en modo "sitio de escritorio"
                 </p>

@@ -6,7 +6,8 @@ import Ventas from './ventas';
 
 export default function Dashboard2() {
     return (
-        <main className='w-full min-h-screen  flex flex-col'>
+        
+        <main className='w-full min-h-screen  flex flex-col mt-16'>
             <Navbar />
             
             <MainContentDasboard />
