@@ -118,7 +118,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                 {truncateText(product.name, 18)} {/* Computadora */}
                             </span>
                         </h3>
-                        <p className="text-2xl text-green-500 font-bold">${product.price}</p>
+                        <p className="text-2xl text-green-500 font-bold">$ {parseFloat(product.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
 
                     <div className="w-full px-4">

@@ -10,19 +10,41 @@ import { getProducts } from "@/useCases/getProducts";
 
 export default function Pntoventa() {
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Categorías");
-    const [disponibilidadSeleccionada, setDisponibilidadSeleccionada] = useState("Disponibilidad");
+    const [disponibilidadSeleccionada, setDisponibilidadSeleccionada] = useState("Disponibles");
     const [busqueda, setBusqueda] = useState("");
-    const [productos, setProductos] = useState([]); // Estado para los productos obtenidos de la API
+    const [productos, setProductos] = useState([]);
     const [productosFiltrados, setProductosFiltrados] = useState([]);
-    const [isOpen, setIsOpen] = useState(false);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [carrito, setCarrito] = useState([]);
     const [carritoModalOpen, setCarritoModalOpen] = useState(false);
     const [mensajeError, setMensajeError] = useState("");
     const [historialPedidos, setHistorialPedidos] = useState([]);
     const [modalTotalOpen, setModalTotalOpen] = useState(false);
     const [totalPedidos, setTotalPedidos] = useState(0);
+    const [productoSeleccionado, setProductoSeleccionado] = useState(null); // Estado para el producto seleccionado
+    const [modalProductoOpen, setModalProductoOpen] = useState(false); // Estado para la modal de detalles del producto
+
+    // Recuperar carrito e historial del localStorage al cargar la página
+    useEffect(() => {
+        const carritoGuardado = localStorage.getItem("carrito");
+        const historialGuardado = localStorage.getItem("historialPedidos");
+
+        if (carritoGuardado) {
+            setCarrito(JSON.parse(carritoGuardado));
+        }
+        if (historialGuardado) {
+            setHistorialPedidos(JSON.parse(historialGuardado));
+        }
+    }, []);
+
+    // Guardar el carrito en localStorage cada vez que cambie
+    useEffect(() => {
+        localStorage.setItem("carrito", JSON.stringify(carrito));
+    }, [carrito]);
+
+    // Guardar el historial en localStorage cada vez que cambie
+    useEffect(() => {
+        localStorage.setItem("historialPedidos", JSON.stringify(historialPedidos));
+    }, [historialPedidos]);
 
     // Obtener productos desde la API
     useEffect(() => {
@@ -40,7 +62,6 @@ export default function Pntoventa() {
         fetchProductos();
     }, []);
 
-    // Filtrar productos según categoría, disponibilidad y búsqueda
     useEffect(() => {
         const productosFiltradosPorCategoria =
             categoriaSeleccionada === "Categorías" || categoriaSeleccionada === "Todos los platillos"
@@ -48,7 +69,7 @@ export default function Pntoventa() {
                 : productos.filter((producto) => producto.category_name === categoriaSeleccionada);
 
         const productosFiltradosPorDisponibilidad =
-            disponibilidadSeleccionada === "Disponibilidad" || disponibilidadSeleccionada === "Todas"
+            disponibilidadSeleccionada === "Todas"
                 ? productosFiltradosPorCategoria
                 : productosFiltradosPorCategoria.filter((producto) =>
                     disponibilidadSeleccionada === "Disponibles"
@@ -63,14 +84,16 @@ export default function Pntoventa() {
         setProductosFiltrados(productosFiltradosPorBusqueda);
     }, [categoriaSeleccionada, disponibilidadSeleccionada, busqueda, productos]);
 
+    // Función para abrir la modal de detalles del producto
     const openModal = (producto) => {
         setProductoSeleccionado(producto);
-        setModalOpen(true);
+        setModalProductoOpen(true);
     };
 
+    // Función para cerrar la modal de detalles del producto
     const closeModal = () => {
-        setModalOpen(false);
         setProductoSeleccionado(null);
+        setModalProductoOpen(false);
     };
 
     const agregarAlCarrito = (producto, comentario = "") => {
@@ -86,13 +109,33 @@ export default function Pntoventa() {
                 // Incrementa la cantidad del producto existente
                 return prevCarrito.map((item) =>
                     item.id === productoConComentario.id
-                        ? { ...item, cantidad: item.cantidad + 1 }
+                        ? { ...item, cantidad: item.cantidad + (producto.cantidad || 1) }
                         : item
                 );
             }
-            // Agrega el producto al carrito si no existe
-            return [...prevCarrito, { ...productoConComentario, cantidad: 1 }];
+            // Agrega el producto al carrito con la cantidad actual
+            return [...prevCarrito, { ...productoConComentario, cantidad: producto.cantidad || 1 }];
         });
+    };
+
+    const terminarOrden = () => {
+        if (carrito.length === 0) {
+            setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
+            return;
+        }
+
+        setHistorialPedidos((prevHistorial) => [
+            ...prevHistorial,
+            ...carrito.map((item) => ({
+                name: item.name,
+                cantidad: item.cantidad,
+                price: item.price,
+                comentario: item.comentario || "",
+            })),
+        ]);
+
+        setCarrito([]);
+        setMensajeError("");
     };
 
     return (
@@ -122,8 +165,7 @@ export default function Pntoventa() {
                             value={categoriaSeleccionada}
                             onChange={(e) => setCategoriaSeleccionada(e.target.value)}
                         >
-                            <option value="Categorías" disabled>Categorías</option>
-                            <option value="Todos los platillos">Todos los platillos</option>
+                            <option value="Todos los platillos">Todas las categorías</option>
                             {[...new Set(productos.map((producto) => producto.category_name))].map((categoria) => (
                                 <option key={categoria} value={categoria}>
                                     {categoria}
@@ -140,10 +182,9 @@ export default function Pntoventa() {
                             value={disponibilidadSeleccionada}
                             onChange={(e) => setDisponibilidadSeleccionada(e.target.value)}
                         >
-                            <option value="Disponibilidad" disabled>Disponibilidad</option>
-                            <option value="Todas">Todas</option>
                             <option value="Disponibles">Disponibles</option>
                             <option value="No disponibles">No disponibles</option>
+                            <option value="Todas">Todas</option>
                         </select>
                     </div>
                 </div>
@@ -188,7 +229,7 @@ export default function Pntoventa() {
                                                 </p>
                                             )}
                                             <p className="text-sm text-gray-500">
-                                                ${item.price.toFixed(2)} c/u
+                                                ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -241,32 +282,15 @@ export default function Pntoventa() {
 
                         {/* Total del carrito */}
                         <div className="border-t pt-4">
-                            <p className="text-lg font-bold">Total: ${carrito.reduce((total, item) => total + item.price * item.cantidad, 0).toFixed(2)}</p>
+                            <p className="text-lg font-bold">Total: ${carrito.reduce((total, item) => total + item.price * item.cantidad, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                             {mensajeError && (
                                 <p className="text-red-500 text-sm font-bold mt-2">{mensajeError}</p>
                             )}
                             <button
                                 className="bg-green-500 text-white w-full py-2 rounded-lg mt-4 hover:bg-green-600"
-                                onClick={() => {
-                                    if (carrito.length === 0) {
-                                        setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
-                                        return;
-                                    }
-                                    setHistorialPedidos((prevHistorial) => [
-                                        ...prevHistorial,
-                                        ...carrito.map((item) => ({
-                                            name: item.name,
-                                            cantidad: item.cantidad,
-                                            price: item.price,
-                                            comentario: item.comentario || "",
-                                        })),
-                                    ]);
-                                    setCarrito([]);
-                                    setCarritoModalOpen(false);
-                                    setMensajeError("");
-                                }}
+                                onClick={terminarOrden}
                             >
-                                Realizar Pedido
+                                Añadir a la orden
                             </button>
                         </div>
 
@@ -277,107 +301,55 @@ export default function Pntoventa() {
                                 <ul className="space-y-0">
                                     {historialPedidos.map((item, index) => (
                                         <li key={index} className="p-2 rounded shadow">
-                                            <p className="font-bold">{item.cantidad}x {item.name}</p>
+                                            <p className="font-bold">{item.cantidad} x {item.name}</p>
                                             {item.comentario && (
                                                 <p className="text-sm text-gray-500">
                                                     Comentario: {item.comentario}
                                                 </p>
                                             )}
                                             <p className="text-sm text-gray-500">
-                                                Precio: ${item.price.toFixed(2)} c/u
+                                                Precio: ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                            </p>
+                                            <p className="text-sm text-gray-500">
+                                                Total: ${item.cantidad * item.price}
                                             </p>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                         )}
-
+                        <p className="text-sm text-gray-500 pt-2" > Sub Total: ${historialPedidos.reduce((subtotal, item) => subtotal + item.price * item.cantidad, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} </p>
+                       
                         {/* Botón "Terminar Orden" */}
-                        <button
-                            className="bg-red-500 text-white w-full py-2 rounded-lg mt-4 hover:bg-red-600"
-                            onClick={() => {
-                                const total = historialPedidos.reduce(
-                                    (acc, item) => acc + item.price * item.cantidad,
-                                    0
-                                );
-                                setTotalPedidos(total.toFixed(2));
-                                setHistorialPedidos([]);
-                                setModalTotalOpen(true);
-                            }}
-                        >
-                            Terminar Orden
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal */}
-            {modalOpen && productoSeleccionado && (
-                <div
-                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
-                    onClick={(e) => {
-                        // Cierra la modal si el clic ocurre fuera del contenido
-                        if (e.target === e.currentTarget) {
-                            closeModal();
-                        }
-                    }}
-                >
-                    <div
-                        className="bg-white rounded-lg p-4 w-11/12 md:w-8/10 max-h-screen overflow-y-auto relative"
-                    >
-                        <button
-                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-                            onClick={closeModal}
-                        >
-                            ✖
-                        </button>
-                        <h2 className="text-xl font-bold mb-4 text-center">{productoSeleccionado.name}</h2>
-                        <div className="w-full h-40 mb-4 flex justify-center">
-                            <img
-                                src={productoSeleccionado.image_url[0]}
-                                alt={`Imagen de ${productoSeleccionado.name}`}
-                                className="rounded-lg object-cover w-5/10 h-10/10"
-                            />
-                        </div>
-                        <div className="flex justify-center items-center w-full">
-                            <p className="text-gray-700 text-center text-md leading-relaxed w-9/10">
-                                {productoSeleccionado.description}
-                            </p>
-                        </div>
-                        {productoSeleccionado.ingredientes && productoSeleccionado.ingredientes.length > 0 ? (
-                            <div>
-                                <h3 className="font-bold">Ingredientes:</h3>
-                                <ul>
-                                    {productoSeleccionado.ingredientes.map((ingrediente, index) => (
-                                        <li key={index}>{ingrediente}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ) : (
-                            <div>
-                                <h3 className="font-bold">Comentarios:</h3>
-                                <input
-                                    type="text"
-                                    placeholder="Agregar comentarios"
-                                    className="border p-2 rounded w-full"
-                                    onChange={(e) =>
-                                        setProductoSeleccionado({
-                                            ...productoSeleccionado,
-                                            comentario: e.target.value,
-                                        })
+                        <div className="mt-4">
+                            <button
+                                className={`w-full py-2 rounded-lg mt-4 ${historialPedidos.length > 0
+                                    ? "bg-red-500 text-white hover:bg-red-600"
+                                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    }`}
+                                onClick={() => {
+                                    if (historialPedidos.length === 0) {
+                                        setMensajeError("No habilitado, debes primero añadir productos a la orden");
+                                        return;
                                     }
-                                />
-                            </div>
-                        )}
-                        <button
-                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm"
-                            onClick={() => {
-                                agregarAlCarrito(productoSeleccionado, productoSeleccionado.comentario || "");
-                                closeModal(); // Cierra la modal después de agregar el producto
-                            }}
-                        >
-                            Agregar - ${productoSeleccionado.price.toFixed(2)}
-                        </button>
+                                    const total = historialPedidos.reduce(
+                                        (acc, item) => acc + item.price * item.cantidad,
+                                        0
+                                    );
+                                    setTotalPedidos(total.toFixed(2));
+                                    setHistorialPedidos([]);
+                                    setModalTotalOpen(true);
+                                    setMensajeError(""); // Limpia el mensaje de error si todo está bien
+                                }}
+                                disabled={historialPedidos.length === 0}
+                            >
+                                Terminar Orden
+                            </button>
+                            {mensajeError && (
+                                <p className="text-red-500 text-sm font-bold mt-2">{mensajeError}</p>
+                            )}
+                            
+                        </div>
                     </div>
                 </div>
             )}
@@ -394,7 +366,7 @@ export default function Pntoventa() {
                 >
                     <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
                         <h2 className="text-xl font-bold mb-4 text-center">Total de la Orden</h2>
-                        <p className="text-lg text-center mb-4">El total de tus pedidos es: <span className="font-bold">${totalPedidos}</span></p>
+                        <p className="text-lg text-center mb-4">El total de tus pedidos es: <span className="font-bold">${parseFloat(totalPedidos).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
                         <button
                             className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
                             onClick={() => setModalTotalOpen(false)}
@@ -405,27 +377,64 @@ export default function Pntoventa() {
                 </div>
             )}
 
+            {/* Modal de detalles del producto */}
+            {modalProductoOpen && productoSeleccionado && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            closeModal();
+                        }
+                    }}
+                >
+                    <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
+                        <h2 className="text-xl font-bold mb-4">{productoSeleccionado.name}</h2>
+                        <img
+                            src={productoSeleccionado.image_url[0]}
+                            alt={`Imagen de ${productoSeleccionado.name}`}
+                            className="w-full h-48 object-cover rounded-lg mb-4"
+                        />
+                        <p className="text-gray-500 mb-4">{productoSeleccionado.description}</p>
+                        <p className="text-lg font-bold text-green-500 mb-4">
+                            Precio: ${parseFloat(productoSeleccionado.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <button
+                            className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
+                            onClick={closeModal}
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* Card Section */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12">
                 {productosFiltrados.map((producto) => (
                     <div
                         key={producto.id_products}
-                        className="rounded-lg shadow-lg flex flex-col bg-white"
+                        className="rounded-lg shadow-lg flex flex-col bg-white relative"
                     >
-                        <div className="w-full h-48">
+                        <div className="w-full h-48 relative">
                             <img
                                 src={producto.image_url[0]}
                                 alt={`Imagen de ${producto.name}`}
-                                className="rounded-t-lg w-full h-full object-cover"
+                                className={`rounded-t-lg w-full h-full object-cover ${producto.status !== "activo" ? "opacity-50" : ""
+                                    }`}
                             />
+                            {producto.status !== "activo" && (
+                                <div className="absolute inset-0 backdrop-brightness-30 flex items-center justify-center">
+                                    <p className="text-white text-center font-bold px-4">
+                                        Producto no disponible, favor de actualizar disponibilidad en productos
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="p-4">
                             <div className="flex justify-between items-center mb-2">
                                 <h3 className="font-bold text-xl">{producto.name}</h3>
                                 <p className="text-xl text-green-500 font-bold">
-                                    $ {producto.price}
-                                    {/* ${producto.price.toFixed(2)} */}
+                                    $ {parseFloat(producto.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                             </div>
                             <p className="text-gray-500 mb-4 line-clamp-2 min-h-[3rem]">
@@ -481,6 +490,7 @@ export default function Pntoventa() {
                                 <button
                                     className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm cursor-pointer"
                                     onClick={() => agregarAlCarrito(producto)}
+                                    disabled={producto.status !== "activo"}
                                 >
                                     Agregar
                                 </button>
@@ -489,8 +499,9 @@ export default function Pntoventa() {
                             {/* Botón "Personalizar" */}
                             <div className="mt-4">
                                 <button
-                                    className=" flex gap-4 items-center justify-center bg-green-500 text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full"
+                                    className="flex gap-4 items-center justify-center bg-green-500 text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full"
                                     onClick={() => openModal(producto)}
+                                    disabled={producto.status !== "activo"}
                                 >
                                     <FaRegEye className="h-[20px] w-[20px]" />Personalizar
                                 </button>
