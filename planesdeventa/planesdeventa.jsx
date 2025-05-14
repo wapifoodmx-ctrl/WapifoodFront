@@ -49,23 +49,23 @@ export default function PlanDeVentas() {
     const planesAdicionales = [
         {
             id: 1,
-            title: "Plan Básico",
-            description: "Ideal para negocios pequeños que están empezando.",
-            price: "$29.99/mes",
+            title: "Plan Ventas",
+            description: "App de punto de venta para tu negocio.",
+            price: "$100.00 mxn al mes",
             buttonText: "Seleccionar",
         },
         {
             id: 2,
-            title: "Plan Profesional",
-            description: "Perfecto para negocios en crecimiento.",
-            price: "$49.99/mes",
+            title: "Plan Restaurante",
+            description: "App de punto de venta + 15 mesas para tu negocio.",
+            price: "$200.00 mxn al mes",
             buttonText: "Seleccionar",
         },
         {
             id: 3,
-            title: "Plan Empresarial",
-            description: "Para empresas grandes con necesidades avanzadas.",
-            price: "$99.99/mes",
+            title: "Plan Restaurante +",
+            description: "App de punto de venta + 25 mesas para tu negocio.",
+            price: "$300.00 mxn al mes",
             buttonText: "Seleccionar",
         },
     ];
@@ -128,7 +128,7 @@ export default function PlanDeVentas() {
                                 <h3 className="text-xl font-semibold mb-4">{plan.title}</h3>
                                 <p className="text-gray-600 mb-4">{plan.description}</p>
                                 <p className="text-2xl font-bold mb-4">{plan.price}</p>
-                                <button className="bg-green-500 text-white py-2 px-4 rounded">
+                                <button className="bg-green-500 text-white py-2 px-4 rounded cursor-pointer">
                                     {plan.buttonText}
                                 </button>
                             </div>
