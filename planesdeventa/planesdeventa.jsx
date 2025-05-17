@@ -8,6 +8,8 @@ import DashboardVentas from "@/pages/assets/images/DashboardVentas.png";
 import DashboardPedid from "@/pages/assets/images/DashboardPedid.png";
 
 import Creditos from "@/components/Creditos";
+import getPaymentsLink, { getAllPaymentLinks } from "@/useCases/getPaymentsLink";
+import { useEffect, useState } from "react";
 
 export default function PlanDeVentas() {
     const planes = [
@@ -46,13 +48,15 @@ export default function PlanDeVentas() {
         },
     ];
 
-    const planesAdicionales = [
+    const [planesAdicionales, setPlanesAdicionales] = useState([
         {
             id: 1,
             title: "Plan Ventas",
             description: "App de punto de venta para tu negocio.",
             price: "$100.00 mxn al mes",
             buttonText: "Seleccionar",
+            prop: "basico",
+            link: null,
         },
         {
             id: 2,
@@ -60,6 +64,8 @@ export default function PlanDeVentas() {
             description: "App de punto de venta + 15 mesas para tu negocio.",
             price: "$200.00 mxn al mes",
             buttonText: "Seleccionar",
+            prop: "profesional",
+            link: null,
         },
         {
             id: 3,
@@ -67,8 +73,23 @@ export default function PlanDeVentas() {
             description: "App de punto de venta + 25 mesas para tu negocio.",
             price: "$300.00 mxn al mes",
             buttonText: "Seleccionar",
+            prop: "empresarial",
+            link: null,
         },
-    ];
+    ]);
+
+    useEffect(() => {
+        const fetchPaymentLinks = async () => {
+            try {
+                const updatedPlans = await getAllPaymentLinks(planesAdicionales);
+                setPlanesAdicionales(updatedPlans);
+            } catch (error) {
+                console.error("Error al cargar los enlaces de pago:", error.message);
+            }
+        };
+
+        fetchPaymentLinks();
+    }, []);
 
     return (
         <section>
@@ -128,7 +149,16 @@ export default function PlanDeVentas() {
                                 <h3 className="text-xl font-semibold mb-4">{plan.title}</h3>
                                 <p className="text-gray-600 mb-4">{plan.description}</p>
                                 <p className="text-2xl font-bold mb-4">{plan.price}</p>
-                                <button className="bg-green-500 text-white py-2 px-4 rounded cursor-pointer">
+                                <button
+                                    className="bg-green-500 text-white py-2 px-4 rounded cursor-pointer"
+                                    onClick={() => {
+                                        if (plan.link) {
+                                            window.location.href = plan.link; // Redirigir al enlace de pago
+                                        } else {
+                                            console.error("El enlace de pago no está disponible.");
+                                        }
+                                    }}
+                                >
                                     {plan.buttonText}
                                 </button>
                             </div>
