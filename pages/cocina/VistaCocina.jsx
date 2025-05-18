@@ -1,3 +1,4 @@
+import { LuCupSoda } from "react-icons/lu";
 import { BsClock } from "react-icons/bs";
 import { LuCalendarDays } from "react-icons/lu";
 
@@ -43,18 +44,45 @@ export default function VistaCocina() {
                         {/* Productos */}
                         <div className="flex flex-col bg-gray-100 rounded-lg ">
                             <p className="pl-4 pt-2 text-gray-500 font-bold">Productos</p>
-                            <div className="bg-white rounded-lg mx-4 flex gap-4">
-                                {/* Producto */}
+                            {/* Producto */}
+                            <div className="bg-white rounded-lg mx-4 flex flex-col h-11">
                                 <div className="flex ">
-                                    <p className="px-2">Hamburguesa Doble</p>
-                                    <div className="border-1 rounded-md border-gray-500">
+                                    <p className="px-2 pr-6">Hamburguesa Doble</p>
+                                    <div className="border-1 rounded-md border-gray-500 ">
                                         <p className="text-xs self-center text-gray-500 py-0.5 px-1">X4</p>
                                     </div>
-                                    <button className="border-1 cursor-pointer text-sm rounded-md py-0.5 px-1">
-                                        Iniciar
-                                    </button>
+                                    <div className="flex ml-auto pr-5">
+                                        <button className="border-1 cursor-pointer text-sm rounded-md py-0.5 px-1">
+                                            Iniciar
+                                        </button>
+                                    </div>
                                 </div>
-                                <p className="text-xs pl-5">Una sin cebolla</p>
+                                <p className="text-xs pl-2">Una sin cebolla</p>
+                            </div>
+                            <div className="pt-4">
+                                <div className="bg-white rounded-lg mx-4 flex flex-col h-11">
+                                    <div className="flex">
+                                        <p className="px-2 pr-6">Nachos con Guacamole</p>
+                                        <div className="border-1 rounded-md border-gray-500 ">
+                                            <p className="text-xs self-center text-gray-500 py-0.5 px-1">X1</p>
+                                        </div>
+                                        <div className="flex ml-auto pr-5">
+                                            <button className="border-1 cursor-pointer text-sm rounded-md py-0.5 px-1">
+                                                Iniciar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="pt-4 px-5">
+                                <div className="flex">
+                                <LuCupSoda className="self-center"/>
+                                <p className="pl-1">Bebidas</p>
+                                </div>
+                                <div className="flex py-3 ">
+                                    <p>Coca cola Light</p>
+                                    <p className="ml-auto pr-3">x4</p>
+                                </div>
                             </div>
                         </div>
                     </div>
