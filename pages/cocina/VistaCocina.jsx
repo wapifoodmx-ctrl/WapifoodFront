@@ -1,6 +1,9 @@
+import { GoDotFill } from "react-icons/go";
+import { MdTableBar } from "react-icons/md";
 import { LuCupSoda } from "react-icons/lu";
 import { BsClock } from "react-icons/bs";
 import { LuCalendarDays } from "react-icons/lu";
+import { BsThreeDotsVertical } from "react-icons/bs"; // Importa el ícono
 
 export default function VistaCocina() {
     return (
@@ -22,12 +25,16 @@ export default function VistaCocina() {
             </div>
 
             {/* Contenedor principal */}
-            <div className="py-5 px-5">
+            <div className="py-5 px-5 ">
                 {/* Tarjeta de la comanda */}
-                <div className="max-w-96 max-h-80 border-1 bg-white shadow-md rounded-lg">
+                <div className="max-w-96 max-h-90 border-l-green-600 border-l-5 bg-white shadow-md rounded-lg ">
                     {/* Encabezado de la tarjeta */}
                     <div>
-                        <p className="font-bold text-xl pl-4">Mesa 1</p>
+                        <div className="flex pl-4 ">
+                        <MdTableBar className="self-center text-2xl" />
+                        <p className="font-bold text-xl pl-2">1</p>
+                        <GoDotFill className="self-center text-green-600"/>
+                        </div>
                         <div className="flex justify-between px-4">
                             {/* Fecha */}
                             <div className="flex">
@@ -45,19 +52,21 @@ export default function VistaCocina() {
                         <div className="flex flex-col bg-gray-100 rounded-lg ">
                             <p className="pl-4 pt-2 text-gray-500 font-bold">Productos</p>
                             {/* Producto */}
-                            <div className="bg-white rounded-lg mx-4 flex flex-col h-11">
-                                <div className="flex ">
-                                    <p className="px-2 pr-6">Hamburguesa Doble</p>
-                                    <div className="border-1 rounded-md border-gray-500 ">
-                                        <p className="text-xs self-center text-gray-500 py-0.5 px-1">X4</p>
-                                    </div>
-                                    <div className="flex ml-auto pr-5">
-                                        <button className="border-1 cursor-pointer text-sm rounded-md py-0.5 px-1">
-                                            Iniciar
-                                        </button>
+                            <div className="bg-white rounded-lg mx-4 flex flex-col h-16 py-2">
+                                <div className="flex justify-between ">
+                                    <p className="px-2 pr-6 h-auto">Hamburguesa Doble</p>
+                                    <div className="flex ">
+                                        <div className="border-1 rounded-md border-gray-500">
+                                            <p className="text-xs self-center text-gray-500 px-1">X4</p>
+                                        </div>
+                                        <div className="flex md:ml-auto pr-5">
+                                            <button className="border-1 cursor-pointer text-sm rounded-md px-1">
+                                                <BsThreeDotsVertical className="text-gray-500" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <p className="text-xs pl-2">Una sin cebolla</p>
+                                <p className="text-xs pl-2 py-1">Una sin cebolla</p>
                             </div>
                             <div className="pt-4">
                                 <div className="bg-white rounded-lg mx-4 flex flex-col h-11">
@@ -76,14 +85,17 @@ export default function VistaCocina() {
                             </div>
                             <div className="pt-4 px-5">
                                 <div className="flex">
-                                <LuCupSoda className="self-center"/>
-                                <p className="pl-1">Bebidas</p>
+                                    <LuCupSoda className="self-center" />
+                                    <p className="pl-1">Bebidas</p>
                                 </div>
                                 <div className="flex py-3 ">
                                     <p>Coca cola Light</p>
                                     <p className="ml-auto pr-3">x4</p>
                                 </div>
                             </div>
+                        </div>
+                        <div className="px-4 py-2">
+                        <button className="w-full bg-green-600 text-white text-xl font-bold cursor-pointer rounded-md py-1">Realizado</button>
                         </div>
                     </div>
                 </div>
