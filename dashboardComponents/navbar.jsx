@@ -8,6 +8,7 @@ import { FcSalesPerformance } from "react-icons/fc";
 import { FaUser } from "react-icons/fa";
 import { ImExit } from "react-icons/im";
 import { LuIdCard } from "react-icons/lu";
+import { FaKitchenSet } from "react-icons/fa6";
 
 export default function Navbar() {
     const router = useRouter();
@@ -25,6 +26,7 @@ export default function Navbar() {
     const MiPerfil = () => router.push('/user');
     const payments = () => router.push('/payments');
     const puntoDeVenta = () => router.push('/puntodeventa');
+    const cocina = () => router.push('/cocina');
 
     const menu = {
         Dashboard: {
@@ -42,6 +44,11 @@ export default function Navbar() {
             href: "#",
             icon: <FiShoppingBag className="h-full w-[24px]" />,
         },
+        Cocina: {
+            title: "Cocina",
+            href: "#",
+            icon: <FaKitchenSet className="h-full w-[24px]" />,
+        },
         PuntoDeVenta: {
             title: "Punto de venta",
             href: "#",
@@ -51,7 +58,7 @@ export default function Navbar() {
             title: "Opciones de pago",
             href: "#",
             icon: <LuIdCard className="h-full w-[24px]" />,
-        },
+        }
     };
 
     const config = {
@@ -67,6 +74,14 @@ export default function Navbar() {
             function: handleLogout,
         },
     };
+
+    useEffect(() => {
+        // Verificar si el token existe en el localStorage
+        const token = localStorage.getItem('token');
+        if (!token) {
+            router.push('/login'); // Redirigir al login si no hay token
+        }
+    }, [router]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -123,6 +138,13 @@ export default function Navbar() {
                                             item === "Register" ? productos :
                                             pedidos
                                         }
+                                    >
+                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                    </button>
+                                ) : item === "Cocina" ? (
+                                    <button
+                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        onClick={cocina}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                     </button>

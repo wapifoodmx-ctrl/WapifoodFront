@@ -8,6 +8,9 @@ import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { getProducts } from "@/useCases/getProducts";
 
+// Mock de ingredientes general
+const mockIngredientes = ["Tomate", "Cebolla", "Lechuga", "Queso", "Salsa"];
+
 export default function Pntoventa() {
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Categorías");
     const [disponibilidadSeleccionada, setDisponibilidadSeleccionada] = useState("Disponibles");
@@ -86,7 +89,7 @@ export default function Pntoventa() {
 
     // Función para abrir la modal de detalles del producto
     const openModal = (producto) => {
-        setProductoSeleccionado(producto);
+        setProductoSeleccionado({ ...producto, ingredientesExcluidos: [] }); // Inicializa los ingredientes excluidos
         setModalProductoOpen(true);
     };
 
@@ -96,25 +99,26 @@ export default function Pntoventa() {
         setModalProductoOpen(false);
     };
 
-    const agregarAlCarrito = (producto, comentario = "") => {
-        const productoConComentario = {
+    const agregarAlCarrito = (producto, comentario = "", ingredientesExcluidos = []) => {
+        const productoConPersonalizacion = {
             ...producto,
-            id: `${producto.id_products}-${comentario}`, // Genera un ID único basado en el comentario
+            id: `${producto.id_products}-${ingredientesExcluidos.join(",")}-${comentario}`, // Genera un ID único basado en las exclusiones y el comentario
             comentario,
+            ingredientesExcluidos,
         };
 
         setCarrito((prevCarrito) => {
-            const productoExistente = prevCarrito.find((item) => item.id === productoConComentario.id);
+            const productoExistente = prevCarrito.find((item) => item.id === productoConPersonalizacion.id);
             if (productoExistente) {
                 // Incrementa la cantidad del producto existente
                 return prevCarrito.map((item) =>
-                    item.id === productoConComentario.id
+                    item.id === productoConPersonalizacion.id
                         ? { ...item, cantidad: item.cantidad + (producto.cantidad || 1) }
                         : item
                 );
             }
             // Agrega el producto al carrito con la cantidad actual
-            return [...prevCarrito, { ...productoConComentario, cantidad: producto.cantidad || 1 }];
+            return [...prevCarrito, { ...productoConPersonalizacion, cantidad: producto.cantidad || 1 }];
         });
     };
 
@@ -131,6 +135,7 @@ export default function Pntoventa() {
                 cantidad: item.cantidad,
                 price: item.price,
                 comentario: item.comentario || "",
+                ingredientesExcluidos: item.ingredientesExcluidos || [],
             })),
         ]);
 
@@ -223,6 +228,11 @@ export default function Pntoventa() {
                                     <li key={item.id} className="flex justify-between items-center mb-4">
                                         <div>
                                             <p className="font-bold">{item.name}</p>
+                                            {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                                <p className="text-sm text-gray-500">
+                                                    Sin: {item.ingredientesExcluidos.join(", ")}
+                                                </p>
+                                            )}
                                             {item.comentario && (
                                                 <p className="text-sm text-gray-500">
                                                     Comentario: {item.comentario}
@@ -302,6 +312,11 @@ export default function Pntoventa() {
                                     {historialPedidos.map((item, index) => (
                                         <li key={index} className="p-2 rounded shadow">
                                             <p className="font-bold">{item.cantidad} x {item.name}</p>
+                                            {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                                <p className="text-sm text-gray-500">
+                                                    Sin: {item.ingredientesExcluidos.join(", ")}
+                                                </p>
+                                            )}
                                             {item.comentario && (
                                                 <p className="text-sm text-gray-500">
                                                     Comentario: {item.comentario}
@@ -398,11 +413,39 @@ export default function Pntoventa() {
                         <p className="text-lg font-bold text-green-500 mb-4">
                             Precio: ${parseFloat(productoSeleccionado.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
+                        <h3 className="text-md font-semibold mb-2">Ingredientes:</h3>
+                        <ul className="mb-4 text-sm">
+                            {(productoSeleccionado.ingredients || mockIngredientes).map((ingrediente, index) => (
+                                <li key={index} className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id={`ingrediente-${index}`}
+                                        onChange={(e) => {
+                                            const isChecked = e.target.checked;
+                                            setProductoSeleccionado((prevProducto) => {
+                                                const ingredientesExcluidos = isChecked
+                                                    ? [...prevProducto.ingredientesExcluidos, ingrediente]
+                                                    : prevProducto.ingredientesExcluidos.filter((ing) => ing !== ingrediente);
+                                                return { ...prevProducto, ingredientesExcluidos };
+                                            });
+                                        }}
+                                    />
+                                    <label htmlFor={`ingrediente-${index}`}>Sin {ingrediente}</label>
+                                </li>
+                            ))}
+                        </ul>
                         <button
                             className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
-                            onClick={closeModal}
+                            onClick={() => {
+                                agregarAlCarrito(
+                                    productoSeleccionado,
+                                    productoSeleccionado.comentario || "",
+                                    productoSeleccionado.ingredientesExcluidos
+                                );
+                                closeModal();
+                            }}
                         >
-                            Cerrar
+                            Agregar al carrito
                         </button>
                     </div>
                 </div>
@@ -503,7 +546,8 @@ export default function Pntoventa() {
                                     onClick={() => openModal(producto)}
                                     disabled={producto.status !== "activo"}
                                 >
-                                    <FaRegEye className="h-[20px] w-[20px]" />Personalizar
+                                    <FaRegEye className="h-[20px] w-[20px]" />
+                                    Personalizar
                                 </button>
                             </div>
                         </div>
