@@ -23,7 +23,7 @@ export default function MainContentDasboard() {
 
                 <div className="flex w-full flex-col  gap-4 justify-between">
 
-                    <Pedidos />
+                    {/* <Pedidos /> */}
                     <Ventas />
 
                 </div>

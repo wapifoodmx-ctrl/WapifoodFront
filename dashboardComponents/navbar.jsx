@@ -77,7 +77,7 @@ export default function Navbar() {
 
     useEffect(() => {
         // Verificar si el token existe en el localStorage
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (!token) {
             router.push('/login'); // Redirigir al login si no hay token
         }

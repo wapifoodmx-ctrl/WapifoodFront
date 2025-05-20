@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { FaMoneyBillTrendUp } from "react-icons/fa6";
-import { loginUser } from "../useCases/getPopulares";
+import { getPopulares } from "../useCases/getPopulares";
 
 export default function Populares() {
     const [data, setData] = useState([]);
@@ -10,8 +10,7 @@ export default function Populares() {
     useEffect(() => {
         const fetchPopulares = async () => {
             try {
-                const response = await loginUser(); // Llama a la función para obtener los datos
-                const populares = await response.json(); // Convierte la respuesta a JSON
+                const populares = await getPopulares(); // Llama a la función para obtener los datos
                 setData(populares); // Establece los datos en el estado
             } catch (err) {
                 console.error("Error al obtener los productos populares:", err);

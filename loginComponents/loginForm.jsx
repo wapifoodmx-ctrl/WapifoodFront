@@ -8,6 +8,7 @@ import { loginUser } from '@/useCases/login';
 const LoginForm = () => {
     const router = useRouter();
     const [serverError, setServerError] = useState(''); // Estado para manejar errores del servidor
+    const [isLoading, setIsLoading] = useState(false); // Estado para manejar el loader
 
     const resetPass = () => {
         router.push('/resetLink');
@@ -16,7 +17,7 @@ const LoginForm = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            router.push('/pedidos');
+            router.push('/dashboard');
         }
     }, [router]);
 
@@ -34,6 +35,7 @@ const LoginForm = () => {
 
     const onSubmit = async (values, { setSubmitting }) => {
         setServerError(''); // Limpiar errores previos
+        setIsLoading(true); // Mostrar loader
         try {
             const response = await loginUser(values); // Llamada a la función de login
 
@@ -63,6 +65,7 @@ const LoginForm = () => {
             setServerError('Ocurrió un error al intentar iniciar sesión. Inténtalo nuevamente.');
         } finally {
             setSubmitting(false);
+            setIsLoading(false); // Ocultar loader
         }
     };
 
@@ -72,73 +75,79 @@ const LoginForm = () => {
             <p className='text-2xl text-center'>Ingresa tus credenciales para acceder a tu cuenta</p>
 
             <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-                <Formik
-                    initialValues={initialValues}
-                    validationSchema={validationSchema}
-                    onSubmit={onSubmit}
-                >
-                    {({ isSubmitting }) => (
-                        <Form className="flex flex-col gap-4 mt-4">
-                            <div className='text-[#3fe283] text-4xl flex justify-center'>
-                                <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
-                                    <GoChecklist size={32} />
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-32">
+                        <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin"></div>
+                    </div>
+                ) : (
+                    <Formik
+                        initialValues={initialValues}
+                        validationSchema={validationSchema}
+                        onSubmit={onSubmit}
+                    >
+                        {({ isSubmitting }) => (
+                            <Form className="flex flex-col gap-4 mt-4">
+                                <div className='text-[#3fe283] text-4xl flex justify-center'>
+                                    <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
+                                        <GoChecklist size={32} />
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Mensaje de error del servidor */}
-                            {serverError && (
-                                <div className="text-red-500 text-sm mb-2 text-center">
-                                    {serverError}
+                                {/* Mensaje de error del servidor */}
+                                {serverError && (
+                                    <div className="text-red-500 text-sm mb-2 text-center">
+                                        {serverError}
+                                    </div>
+                                )}
+
+                                <div className='flex flex-col gap-2'>
+                                    <label>Ingresa tu correo electrónico</label>
+                                    <Field
+                                        type="email"
+                                        name="email"
+                                        placeholder="Correo electrónico"
+                                        className="p-2 border border-gray-300 rounded-lg w-full"
+                                    />
+                                    <ErrorMessage name="email" component="div" className="text-red-500 text-sm mt-1" />
                                 </div>
-                            )}
+                                <div className='flex flex-col gap-2'>
+                                    <label>Ingresa tu contraseña</label>
+                                    <Field
+                                        type="password"
+                                        name="password"
+                                        placeholder="Contraseña"
+                                        className="p-2 border border-gray-300 rounded-lg w-full"
+                                    />
+                                    <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <Field
+                                        type="checkbox"
+                                        name="rememberMe"
+                                        className="mr-2 h-[24px] w-[24px]"
+                                    />
+                                    <label htmlFor="rememberMe" className="text-black">Recordar</label>
+                                </div>
+                                <div className='flex flex-col gap-4'>
+                                    <button
+                                        type="submit"
+                                        className="bg-[#3fe283] text-white p-2 rounded-lg"
+                                        disabled={isSubmitting}
+                                    >
+                                        Iniciar Sesión
+                                    </button>
 
-                            <div className='flex flex-col gap-2'>
-                                <label>Ingresa tu correo electrónico</label>
-                                <Field
-                                    type="email"
-                                    name="email"
-                                    placeholder="Correo electrónico"
-                                    className="p-2 border border-gray-300 rounded-lg w-full"
-                                />
-                                <ErrorMessage name="email" component="div" className="text-red-500 text-sm mt-1" />
-                            </div>
-                            <div className='flex flex-col gap-2'>
-                                <label>Ingresa tu contraseña</label>
-                                <Field
-                                    type="password"
-                                    name="password"
-                                    placeholder="Contraseña"
-                                    className="p-2 border border-gray-300 rounded-lg w-full"
-                                />
-                                <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <Field
-                                    type="checkbox"
-                                    name="rememberMe"
-                                    className="mr-2 h-[24px] w-[24px]"
-                                />
-                                <label htmlFor="rememberMe" className="text-black">Recordar</label>
-                            </div>
-                            <div className='flex flex-col gap-4'>
-                                <button
-                                    type="submit"
-                                    className="bg-[#3fe283] text-white p-2 rounded-lg"
-                                    disabled={isSubmitting}
-                                >
-                                    Iniciar Sesión
-                                </button>
-
-                                <p
-                                    className='text-[#3fe283] cursor-pointer'
-                                    onClick={resetPass}
-                                >
-                                    ¿Olvidaste tu contraseña?
-                                </p>
-                            </div>
-                        </Form>
-                    )}
-                </Formik>
+                                    <p
+                                        className='text-[#3fe283] cursor-pointer'
+                                        onClick={resetPass}
+                                    >
+                                        ¿Olvidaste tu contraseña?
+                                    </p>
+                                </div>
+                            </Form>
+                        )}
+                    </Formik>
+                )}
             </div>
         </div>
     );
