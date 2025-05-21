@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from "react";
-import { FaTrashAlt } from "react-icons/fa";
+import { FaTrashAlt, FaTimes, FaPlus } from "react-icons/fa"; // Importa los íconos necesarios
 import { GoDotFill } from "react-icons/go";
 import { MdTableBar } from "react-icons/md";
-import { LuCupSoda } from "react-icons/lu";
-import { BsClock } from "react-icons/bs";
+import { BsClock, BsThreeDotsVertical } from "react-icons/bs";
 import { LuCalendarDays } from "react-icons/lu";
-import { BsThreeDotsVertical } from "react-icons/bs";
 
 export default function VistaCocina() {
+    const [visibleDropdown, setVisibleDropdown] = useState(null); // Estado para controlar el dropdown visible
     const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar la visibilidad de la modal
+    const [activeModal, setActiveModal] = useState(null); // Estado para identificar la modal activa
+    const [selectedTable, setSelectedTable] = useState(null); // Mesa seleccionada para cancelar o completar
     const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para eliminar
+    const [view, setView] = useState("all"); // Estado para controlar la vista actual
+    const dropdownRef = useRef(null); // Referencia al contenedor del dropdown
+    const buttonRef = useRef(null); // Referencia al botón que abre la modal
     const [tables, setTables] = useState([
         {
             tableNumber: 1,
@@ -62,7 +66,7 @@ export default function VistaCocina() {
             ],
         },
         {
-            tableNumber: 8, // Nueva mesa
+            tableNumber: 8,
             products: [
                 { id: 16, name: "Hamburguesa Sencilla", quantity: 2, note: "Sin tomate" },
                 { id: 17, name: "Papas a la Francesa", quantity: 1, note: "" },
@@ -73,25 +77,132 @@ export default function VistaCocina() {
                 { id: 22, name: "Café Latte", quantity: 1, note: "Con leche deslactosada" },
             ],
         },
-    ]); // Lista de mesas con productos
+    ]);
+    const [completedTables, setCompletedTables] = useState([]); // Estado para las tarjetas completadas
+    const [cancelledTables, setCancelledTables] = useState([]); // Estado para las tarjetas canceladas
+
+    const toggleDropdown = (id) => {
+        setVisibleDropdown(visibleDropdown === id ? null : id); // Alterna el dropdown visible
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target) &&
+                (!buttonRef.current || !buttonRef.current.contains(event.target))
+            ) {
+                setVisibleDropdown(null); // Cierra el dropdown si se hace clic fuera
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     const handleDeleteProduct = (productId) => {
-        setTables(
-            tables.map((table) => ({
-                ...table,
-                products: table.products.filter((product) => product.id !== productId),
-            }))
-        ); // Elimina el producto
+        setTables((prevTables) =>
+            prevTables
+                .map((table) => ({
+                    ...table,
+                    products: table.products.filter((product) => product.id !== productId), // Elimina el producto
+                }))
+                .filter((table) => table.products.length > 0) // Elimina la tarjeta si no tiene productos
+        );
         setIsModalOpen(false); // Cierra la modal
+    };
+
+    const handleCancelOrder = () => {
+        setTables((prevTables) =>
+            prevTables.filter((table) => {
+                if (table.tableNumber === selectedTable.tableNumber) {
+                    setCancelledTables((prevCancelled) => [...prevCancelled, table]); // Mueve la tarjeta a canceladas
+                    return false; // Elimina la tarjeta de las activas
+                }
+                return true;
+            })
+        );
+        setActiveModal(null); // Cierra la modal
+    };
+
+    const handleCompleteOrder = () => {
+        setTables((prevTables) =>
+            prevTables.filter((table) => {
+                if (table.tableNumber === selectedTable.tableNumber) {
+                    setCompletedTables((prevCompleted) => [...prevCompleted, table]); // Mueve la tarjeta a completadas
+                    return false; // Elimina la tarjeta de las activas
+                }
+                return true;
+            })
+        );
+        setActiveModal(null); // Cierra la modal
     };
 
     return (
         <div className="w-full mt-16">
             {/* Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 modal">
-                        <p className="text-lg font-bold mb-4">¿Seguro que desea eliminar el producto?</p>
+            {activeModal === "realizado" && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={() => setActiveModal(null)} // Cierra la modal al hacer clic fuera
+                >
+                    <div
+                        className="bg-white rounded-lg p-6 modal"
+                        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro de la modal cierre la modal
+                    >
+                        <p className="text-lg font-bold mb-4">El producto está listo para entregar</p>
+                        <button
+                            className="bg-green-500 text-white px-4 py-2 rounded-md"
+                            onClick={handleCompleteOrder} // Mueve la tarjeta a completadas
+                        >
+                            Aceptar
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {activeModal === "cancelar" && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={() => setActiveModal(null)} // Cierra la modal al hacer clic fuera
+                >
+                    <div
+                        className="bg-white rounded-lg p-6 modal"
+                        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro de la modal cierre la modal
+                    >
+                        <p className="text-lg font-bold mb-4">¿Estás seguro de cancelar la orden?</p>
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                className="bg-gray-300 px-4 py-2 rounded-md"
+                                onClick={() => setActiveModal(null)} // Cierra la modal
+                            >
+                                No
+                            </button>
+                            <button
+                                className="bg-red-500 text-white px-4 py-2 rounded-md"
+                                onClick={handleCancelOrder} // Elimina la tarjeta
+                            >
+                                Sí
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isModalOpen && selectedProduct && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={() => setIsModalOpen(false)} // Cierra la modal al hacer clic fuera
+                >
+                    <div
+                        className="bg-white rounded-lg p-6 modal"
+                        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro de la modal cierre la modal
+                    >
+                        <p className="text-lg font-bold mb-4">
+                            ¿Seguro que desea eliminar el producto "{selectedProduct.name}"?
+                        </p>
                         <div className="flex justify-end space-x-4">
                             <button
                                 className="bg-gray-300 px-4 py-2 rounded-md"
@@ -101,7 +212,7 @@ export default function VistaCocina() {
                             </button>
                             <button
                                 className="bg-red-500 text-white px-4 py-2 rounded-md"
-                                onClick={() => handleDeleteProduct(selectedProduct)} // Elimina el producto
+                                onClick={() => handleDeleteProduct(selectedProduct.id)} // Elimina el producto
                             >
                                 Sí
                             </button>
@@ -110,128 +221,279 @@ export default function VistaCocina() {
                 </div>
             )}
 
-            {/* Barra de botones con scroll horizontal */}
-            <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap">
-                <button className="px-2.5 cursor-pointer hover:text-green-600">
-                    Todas las Comandas ({tables.length})
+            {/* Barra de botones con líneas divisorias */}
+            <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b">
+                <button
+                    className={`px-4 py-2 cursor-pointer ${
+                        view === "all" ? "border-b-2 border-green-600 font-bold" : ""
+                    }`}
+                    onClick={() => setView("all")}
+                >
+                    Comandas Recibidas
                 </button>
-                <button className="px-2.5 cursor-pointer hover:text-green-600">
-                    Comandas Completadas (5)
+                <button
+                    className={`px-4 py-2 cursor-pointer ${
+                        view === "completed" ? "border-b-2 border-green-600 font-bold" : ""
+                    }`}
+                    onClick={() => setView("completed")}
+                >
+                    Comandas Completadas
                 </button>
-                <button className="px-2.5 cursor-pointer hover:text-green-600">
-                    Comandas Canceladas (0)
+                <button
+                    className={`px-4 py-2 cursor-pointer ${
+                        view === "cancelled" ? "border-b-2 border-green-600 font-bold" : ""
+                    }`}
+                    onClick={() => setView("cancelled")}
+                >
+                    Comandas Canceladas
                 </button>
             </div>
 
-            {/* Contenedor principal con flex */}
-            <div className="flex flex-wrap gap-4 py-5 px-5  justify-center">
-                {tables.map((table) => {
-                    const [visibleDropdown, setVisibleDropdown] = useState(null); // Estado local para cada card
-                    const dropdownRef = useRef(null); // Referencia al contenedor del dropdown
-
-                    const toggleDropdown = (index) => {
-                        setVisibleDropdown(visibleDropdown === index ? null : index); // Alterna el dropdown visible
-                    };
-
-                    const handleClickOutside = (event) => {
-                        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                            setVisibleDropdown(null); // Cierra el dropdown si se hace clic fuera
-                        }
-                    };
-
-                    useEffect(() => {
-                        document.addEventListener("mousedown", handleClickOutside);
-                        return () => {
-                            document.removeEventListener("mousedown", handleClickOutside);
-                        };
-                    }, []);
-
-                    return (
-                        <div
-                            key={table.tableNumber}
-                            className="w-full md:w-[40%]  xl:w-1/4 p-2 " // Ajusta el ancho de las tarjetas según el tamaño de pantalla
-                        >
-                            <div
-                                className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg flex flex-col "
-                                
-                            >
-                                <div className="py-2 flex-grow">
-                                    <div className="flex pl-4">
-                                        <MdTableBar className="self-center text-2xl" />
-                                        <p className="font-bold text-xl pl-2">{table.tableNumber}</p>
-                                        <GoDotFill className="self-center text-green-600" />
-                                    </div>
-                                    <div className="flex justify-between px-4 pb-2">
-                                        <div className="flex">
-                                            <LuCalendarDays className="text-gray-500 text-sm self-center" />
-                                            <p className="text-sm text-gray-500 pl-1">10/05/2025</p>
-                                        </div>
-                                        <div className="flex">
-                                            <BsClock className="text-gray-500 text-sm self-center" />
-                                            <p className="text-sm text-gray-500 pl-1">14:10</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Productos */}
-                                    <div className="flex flex-col bg-gray-100 rounded-lg flex-grow overflow-y-auto">
-                                        <p className="pl-4 pt-2 text-gray-500 font-bold">Productos</p>
-                                        {table.products.map((product, index) => (
-                                            <div
-                                                key={product.id}
-                                                className="bg-white rounded-lg mx-4 flex flex-col h-auto py-2 mb-4"
-                                            >
-                                                <div className="flex justify-between px-2">
-                                                    <p className="h-auto">{product.name}</p>
-                                                    <div
-                                                        className="flex w-1/5 justify-between dropdown-container"
-                                                        ref={dropdownRef} // Asigna la referencia al contenedor
-                                                    >
-                                                        <div className="border-1 rounded-md border-gray-500">
-                                                            <p className="text-xs self-center text-gray-500 px-1">X{product.quantity}</p>
-                                                        </div>
-                                                        <div className="flex md:ml-auto relative">
-                                                            <button
-                                                                className="border-1 cursor-pointer text-sm rounded-md px-1"
-                                                                onClick={() => toggleDropdown(index + 1)} // Identifica el dropdown
-                                                            >
-                                                                <BsThreeDotsVertical className="text-gray-500" />
-                                                            </button>
-                                                            {visibleDropdown === index + 1 && (
-                                                                <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg flex px-2">
-                                                                    <FaTrashAlt className="self-center" />
-                                                                    <button
-                                                                        className="w-full text-left px-2 py-2 text-sm"
-                                                                        onClick={() => {
-                                                                            setSelectedProduct(product.id); // Selecciona el producto
-                                                                            setIsModalOpen(true); // Abre la modal
-                                                                        }}
-                                                                    >
-                                                                        Eliminar producto
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                {product.note && <p className="text-xs pl-2 py-1">{product.note}</p>}
+            {/* Contenido dinámico basado en la vista */}
+            <div className="py-5 px-5">
+                {view === "all" && (
+                    <div>
+                        <p className="text-lg font-bold mb-4">Comandas Recibidas:</p>
+                        {/* Contenedor principal con flex */}
+                        <div className="flex flex-wrap gap-4 py-5 px-5 justify-center">
+                            {tables.map((table) => (
+                                <div
+                                    key={table.tableNumber} // Usa tableNumber como clave única
+                                    className="w-full md:w-[40%] xl:w-1/4 p-2"
+                                >
+                                    <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg flex flex-col">
+                                        <div className="py-2 flex-grow">
+                                            <div className="flex pl-4">
+                                                <MdTableBar className="self-center text-2xl" />
+                                                <p className="font-bold text-xl pl-2">{table.tableNumber}</p>
+                                                <GoDotFill className="self-center text-green-600" />
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                            <div className="flex justify-between px-4 pb-2">
+                                                <div className="flex">
+                                                    <LuCalendarDays className="text-gray-500 text-sm self-center" />
+                                                    <p className="text-sm text-gray-500 pl-1">10/05/2025</p>
+                                                </div>
+                                                <div className="flex">
+                                                    <BsClock className="text-gray-500 text-sm self-center" />
+                                                    <p className="text-sm text-gray-500 pl-1">14:10</p>
+                                                </div>
+                                            </div>
 
-                                <div className="pt-2">
-                                    <div className="px-4 py-2 justify-between w-full flex">
-                                        <button className="bg-red-600 text-white text-xl font-bold cursor-pointer rounded-md py-1 w-1/3">Cancelar</button>
-                                        <button className="bg-green-600 text-white text-xl font-bold cursor-pointer rounded-md py-1 w-1/3">
-                                            Realizado
-                                        </button>
+                                            {/* Productos */}
+                                            <div className="flex flex-col bg-gray-100 rounded-lg flex-grow overflow-y-auto">
+                                                <p className="pl-4 pt-2 text-gray-500 font-bold">Productos</p>
+                                                {table.products.map((product) => (
+                                                    <div
+                                                        key={product.id} // Usa product.id como clave única
+                                                        className="bg-white rounded-lg mx-4 flex flex-col h-auto py-2 mb-4"
+                                                    >
+                                                        <div className="flex justify-between px-2">
+                                                            <p className="h-auto text-xl font-bold">{product.name}</p>
+                                                            <div className="flex w-1/5 justify-between dropdown-container">
+                                                                <div className="border-1 rounded-md border-gray-500">
+                                                                    <p className="text-md self-center text-gray-500 px-1 font-bold">X{product.quantity}</p>
+                                                                </div>
+                                                                <div className="flex md:ml-auto relative" ref={dropdownRef}>
+                                                                    <button
+                                                                        className="border-1 cursor-pointer text-sm rounded-md px-1"
+                                                                        onClick={() => toggleDropdown(product.id)} // Alterna el dropdown
+                                                                    >
+                                                                        <BsThreeDotsVertical className="text-gray-500" />
+                                                                    </button>
+                                                                    {visibleDropdown === product.id && (
+                                                                        <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg flex px-2">
+                                                                            <FaTrashAlt className="self-center" />
+                                                                            <button
+                                                                                ref={buttonRef} // Referencia al botón
+                                                                                className="w-full text-left px-2 py-2 text-sm cursor-pointer"
+                                                                                onClick={() => {
+                                                                                    setSelectedProduct(product); // Selecciona el producto completo
+                                                                                    setIsModalOpen(true); // Abre la modal
+                                                                                }}
+                                                                            >
+                                                                                Eliminar producto
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {product.note && (
+                                                            <p className="text-xs pl-2 py-1 font-bold flex items-center">
+                                                                
+                                                                 {product.note.toLowerCase().includes("sin") ? 
+                                                                    <FaTimes className="text-red-500 mr-1" />
+                                                                : <FaPlus className="text-green-600 mr-1" /> } 
+
+
+                                                                {product.note}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2">
+                                            <div className="px-4 py-2 justify-between w-full flex">
+                                                <button
+                                                    className="bg-green-600 text-white text-xl font-bold cursor-pointer rounded-md py-1 w-5/12"
+                                                    onClick={() => {
+                                                        setSelectedTable(table); // Selecciona la tarjeta
+                                                        setActiveModal("realizado"); // Abre la modal de "Realizado"
+                                                    }}
+                                                >
+                                                    Realizado
+                                                </button>
+                                                <button
+                                                    className="bg-red-600 text-white text-xl font-bold cursor-pointer rounded-md py-1 w-5/12"
+                                                    onClick={() => {
+                                                        setSelectedTable(table); // Selecciona la tarjeta
+                                                        setActiveModal("cancelar"); // Abre la modal de "Cancelar"
+                                                    }}
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            ))}
                         </div>
-                    );
-                })}
+                    </div>
+                )}
+                {view === "completed" && (
+                    <div>
+                        <p className="text-lg font-bold mb-4">Comandas Completadas:</p>
+                        <div className="flex flex-wrap gap-4 py-5 px-5 justify-center">
+                            {completedTables.map((table) => (
+                                <div
+                                    key={table.tableNumber} // Usa tableNumber como clave única
+                                    className="w-full md:w-[40%] xl:w-1/4 p-2"
+                                >
+                                    <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg flex flex-col">
+                                        <div className="py-2 flex-grow">
+                                            <div className="flex pl-4">
+                                                <MdTableBar className="self-center text-2xl" />
+                                                <p className="font-bold text-xl pl-2">{table.tableNumber}</p>
+                                                <GoDotFill className="self-center text-green-600" />
+                                            </div>
+                                            <div className="flex justify-between px-4 pb-2">
+                                                <div className="flex">
+                                                    <LuCalendarDays className="text-gray-500 text-sm self-center" />
+                                                    <p className="text-sm text-gray-500 pl-1">10/05/2025</p>
+                                                </div>
+                                                <div className="flex">
+                                                    <BsClock className="text-gray-500 text-sm self-center" />
+                                                    <p className="text-sm text-gray-500 pl-1">14:10</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Productos */}
+                                            <div className="flex flex-col bg-gray-100 rounded-lg flex-grow overflow-y-auto">
+                                                <p className="pl-4 pt-2 text-gray-500 font-bold">Productos</p>
+                                                {table.products.map((product) => (
+                                                    <div
+                                                        key={product.id} // Usa product.id como clave única
+                                                        className="bg-white rounded-lg mx-4 flex flex-col h-auto py-2 mb-4"
+                                                    >
+                                                        <div className="flex justify-between px-2">
+                                                            <p className="h-auto">{product.name}</p>
+                                                            <div className="flex w-1/5 justify-between">
+                                                                <div className="border-1 rounded-md border-gray-500">
+                                                                    <p className="text-xs self-center text-gray-500 px-1">X{product.quantity}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {product.note && (
+                                                            <p className="text-xs pl-2 py-1 font-bold flex items-center">
+                                                                {/* Renderiza el ícono según el contenido de la nota */}
+                                                                {product.note.toLowerCase().includes("sin") && (
+                                                                    <FaTimes className="text-red-500 mr-1" />
+                                                                )}
+                                                                {product.note.toLowerCase().includes("extra") && (
+                                                                    <FaPlus className="text-green-500 mr-1" />
+                                                                )}
+                                                                {product.note}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {view === "cancelled" && (
+                    <div>
+                        <p className="text-lg font-bold mb-4">Comandas Canceladas:</p>
+                        <div className="flex flex-wrap gap-4 py-5 px-5 justify-center">
+                            {cancelledTables.map((table) => (
+                                <div
+                                    key={table.tableNumber} // Usa tableNumber como clave única
+                                    className="w-full md:w-[40%] xl:w-1/4 p-2"
+                                >
+                                    <div className="border-l-red-600 border-l-5 bg-white shadow-md rounded-lg flex flex-col">
+                                        <div className="py-2 flex-grow">
+                                            <div className="flex pl-4">
+                                                <MdTableBar className="self-center text-2xl" />
+                                                <p className="font-bold text-xl pl-2">{table.tableNumber}</p>
+                                                <GoDotFill className="self-center text-red-600" />
+                                            </div>
+                                            <div className="flex justify-between px-4 pb-2">
+                                                <div className="flex">
+                                                    <LuCalendarDays className="text-gray-500 text-sm self-center" />
+                                                    <p className="text-sm text-gray-500 pl-1">10/05/2025</p>
+                                                </div>
+                                                <div className="flex">
+                                                    <BsClock className="text-gray-500 text-sm self-center" />
+                                                    <p className="text-sm text-gray-500 pl-1">14:10</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Productos */}
+                                            <div className="flex flex-col bg-gray-100 rounded-lg flex-grow overflow-y-auto">
+                                                <p className="pl-4 pt-2 text-gray-500 font-bold">Productos</p>
+                                                {table.products.map((product) => (
+                                                    <div
+                                                        key={product.id} // Usa product.id como clave única
+                                                        className="bg-white rounded-lg mx-4 flex flex-col h-auto py-2 mb-4"
+                                                    >
+                                                        <div className="flex justify-between px-2">
+                                                            <p className="h-auto">{product.name}</p>
+                                                            <div className="flex w-1/5 justify-between">
+                                                                <div className="border-1 rounded-md border-gray-500">
+                                                                    <p className="text-xs self-center text-gray-500 px-1">X{product.quantity}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {product.note && (
+                                                            <p className="text-xs pl-2 py-1 font-bold flex items-center">
+                                                                {/* Renderiza el ícono según el contenido de la nota */}
+                                                                {product.note.toLowerCase().includes("sin") && (
+                                                                    <FaTimes className="text-red-500 mr-1" />
+                                                                )}
+                                                                {product.note.toLowerCase().includes("extra") && (
+                                                                    <FaPlus className="text-green-500 mr-1" />
+                                                                )}
+                                                                {product.note}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
+
