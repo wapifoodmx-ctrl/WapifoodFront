@@ -88,7 +88,7 @@ export default function MainStats() {
     return (
         <div className="flex-wrap flex justify-center items-center gap-2 w-full md:flex-row flex-col">
             {analyticsData.map((item, index) => (
-                <div key={index} className="flex gap-4 flex-col bg-white shadow-sm rounded-lg w-full md:p-4 md:w-4/9">
+                <div key={index} className="flex gap-4 flex-col bg-white shadow-sm rounded-lg w-full p-4 md:w-4/9">
                     <div className="flex gap-30 w-full justify-between">
                         {item.titulo ? (
                             <p className="flex color text-gray-500">{item.titulo}</p>
