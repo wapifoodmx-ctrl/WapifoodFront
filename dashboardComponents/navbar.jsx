@@ -74,7 +74,7 @@ export default function Navbar() {
             function: handleLogout,
         },
     };
-
+    //Recuperar estos cambios para el login 
     // useEffect(() => {
     //     // Verificar si el token existe en el localStorage
     //     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
