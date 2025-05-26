@@ -122,7 +122,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                     </div>
 
                     <div className="w-full px-4">
-                        <p className="text-gray-500">{product.description}</p>
+                        <p className="text-gray-500">{truncateText(product.description, 55)}</p>
                     </div>
                     <div className="w-full p-4 flex justify-between items-center">
                         <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{product.category_name}</p>
@@ -165,121 +165,145 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                 setSubmitting(false); // Finaliza el estado de envío
                             }}
                         >
-                            {({ setFieldValue, values }) => (
-                                <Form className="space-y-4">
-                                    {/* Nombre del producto */}
-                                    <div>
-                                        <label className="font-bold text-gray-600 pb-2">Nombre del producto</label>
-                                        <Field
-                                            name="name"
-                                            type="text"
-                                            className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
-                                            placeholder="Nombre del producto"
-                                        />
-                                    </div>
+                            {({ setFieldValue, values }) => {
+                                // Validaciones
+                                const isDescriptionTooLong = values.description && values.description.length > 500;
+                                const isCategoryNotSelected = !values.category_id || values.category_id === "";
+                                const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
 
-                                    {/* Descripción */}
-                                    <div>
-                                        <label className="font-bold text-gray-600 py-2">Descripción</label>
-                                        <Field
-                                            name="description"
-                                            as="textarea"
-                                            className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
-                                            placeholder="Escribe una descripción..."
-                                        />
-                                    </div>
-
-                                    {/* Precio */}
-                                    <div>
-                                        <label className="font-bold text-gray-600">Precio</label>
-                                        <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 w-45">
+                                return (
+                                    <Form className="space-y-4">
+                                        {/* Nombre del producto */}
+                                        <div>
+                                            <label className="font-bold text-gray-600 pb-2">Nombre del producto</label>
                                             <Field
-                                                name="price"
-                                                type="number"
-                                                className="ml-2 w-full outline-none"
-                                                placeholder="Precio"
+                                                name="name"
+                                                type="text"
+                                                className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
+                                                placeholder="Nombre del producto"
                                             />
                                         </div>
-                                    </div>
 
-                                    {/* Categoría */}
-                                    <div>
-                                        <label className="font-bold text-gray-600 pb-2">Categoría</label>
-                                        <Field
-                                            name="category_id"
-                                            as="select"
-                                            className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
-                                        >
-                                            <option value="" disabled>
-                                                Seleccionar Categoría
-                                            </option>
-                                            {(categories || []).map((category) => (
-                                                <option key={category.id_categoria} value={category.id_categoria}>
-                                                    {category.nombre_categoria}
+                                        {/* Descripción */}
+                                        <div>
+                                            <label className="font-bold text-gray-600 py-2">Descripción</label>
+                                            <Field
+                                                name="description"
+                                                as="textarea"
+                                                className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
+                                                placeholder="Escribe una descripción..."
+                                            />
+                                            {/* Validación de descripción */}
+                                            {isDescriptionTooLong && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    La descripción no puede exceder los 500 caracteres. Actualmente: {values.description.length}/500
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Precio */}
+                                        <div>
+                                            <label className="font-bold text-gray-600">Precio</label>
+                                            <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 w-45">
+                                                <Field
+                                                    name="price"
+                                                    type="number"
+                                                    className="ml-2 w-full outline-none"
+                                                    placeholder="Precio"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Categoría */}
+                                        <div>
+                                            <label className="font-bold text-gray-600 pb-2">Categoría</label>
+                                            <Field
+                                                name="category_id"
+                                                as="select"
+                                                className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
+                                            >
+                                                <option value="" disabled>
+                                                    Seleccionar Categoría
                                                 </option>
-                                            ))}
-                                        </Field>
-                                    </div>
+                                                {(categories || []).map((category) => (
+                                                    <option key={category.id_categoria} value={category.id_categoria}>
+                                                        {category.nombre_categoria}
+                                                    </option>
+                                                ))}
+                                            </Field>
+                                            {/* Validación de categoría */}
+                                            {isCategoryNotSelected && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    Debe seleccionar una categoría para el producto.
+                                                </p>
+                                            )}
+                                        </div>
 
-                                    {/* Imagen */}
-                                    <div>
-                                        <label className="font-bold text-gray-600 pb-2 pt-4">
-                                            Imagen del Producto
-                                        </label>
-                                        <p className="text-sm text-gray-500 pb-2">
-                                            Formatos permitidos: .jpg, .jpeg, .png, .gif
-                                        </p>
-                                        <input
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/gif,image/jpg"
-                                            onChange={(event) => {
-                                                const file = event.target.files[0];
-                                                const allowedFormats = ["image/jpeg", "image/png", "image/gif", "image/jpg"];
+                                        {/* Imagen */}
+                                        <div>
+                                            <label className="font-bold text-gray-600 pb-2 pt-4">
+                                                Imagen del Producto
+                                            </label>
+                                            <p className="text-sm text-gray-500 pb-2">
+                                                Formatos permitidos: .jpg, .jpeg, .png, .gif
+                                            </p>
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg,image/png,image/gif,image/jpg"
+                                                onChange={(event) => {
+                                                    const file = event.target.files[0];
+                                                    const allowedFormats = ["image/jpeg", "image/png", "image/gif", "image/jpg"];
 
-                                                if (file && !allowedFormats.includes(file.type)) {
-                                                    setModalMessage("Formato de archivo no válido. Solo se permiten .jpg, .jpeg, .png o .gif.");
-                                                    event.target.value = ""; // Limpiar el input
-                                                    return;
-                                                }
+                                                    if (file && !allowedFormats.includes(file.type)) {
+                                                        setModalMessage("Formato de archivo no válido. Solo se permiten .jpg, .jpeg, .png o .gif.");
+                                                        event.target.value = ""; // Limpiar el input
+                                                        return;
+                                                    }
 
-                                                setFieldValue("image", file); // Establecer el archivo si es válido
-                                            }}
-                                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        />
-                                    </div>
+                                                    setFieldValue("image", file); // Establecer el archivo si es válido
+                                                }}
+                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                            />
+                                        </div>
 
-                                    {/* Estado */}
-                                    <div>
-                                        <label className="font-bold text-gray-600 pb-2">Estado del Producto</label>
-                                        <Field
-                                            name="status"
-                                            as="select"
-                                            className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
-                                            onChange={(e) => setFieldValue("status", e.target.value)} // Actualizar el valor de status
-                                        >
-                                            <option value="activo">Activo</option>
-                                            <option value="inactivo">Inactivo</option>
-                                        </Field>
-                                    </div>
+                                        {/* Estado */}
+                                        <div>
+                                            <label className="font-bold text-gray-600 pb-2">Estado del Producto</label>
+                                            <Field
+                                                name="status"
+                                                as="select"
+                                                className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
+                                                onChange={(e) => setFieldValue("status", e.target.value)} // Actualizar el valor de status
+                                            >
+                                                <option value="activo">Activo</option>
+                                                <option value="inactivo">Inactivo</option>
+                                            </Field>
+                                        </div>
 
-                                    {/* Botones */}
-                                    <div className="flex gap-4">
-                                        <button
-                                            type="submit"
-                                            className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 cursor-pointer"
-                                        >
-                                            Guardar Cambios
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
-                                            onClick={closeModals}
-                                        >
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </Form>
-                            )}
+                                        {/* Botones */}
+                                        <div className="flex gap-4">
+                                            <button
+                                                type="submit"
+                                                disabled={isFormInvalid} // Deshabilitar el botón si hay errores
+                                                className={`mt-4 px-4 py-2 text-white rounded ${
+                                                    isFormInvalid 
+                                                        ? 'bg-gray-400 cursor-not-allowed' 
+                                                        : 'bg-green-500 hover:bg-green-600 cursor-pointer'
+                                                }`}
+                                            >
+                                                Guardar Cambios
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
+                                                onClick={closeModals}
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    </Form>
+                                );
+                            }}
                         </Formik>
                     </div>
                 </div>

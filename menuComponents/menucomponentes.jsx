@@ -170,110 +170,134 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                 }
                             }}
                         >
-                            {({ setFieldValue, errors, touched }) => (
-                                <Form className="space-y-4">
-                                    {/* Nombre del producto */}
-                                    <div>
-                                        <label className="font-bold text-gray-600 pb-2">Nombre del producto</label>
-                                        <Field
-                                            name="nombre"
-                                            type="text"
-                                            className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
-                                            placeholder="Nombre del producto"
-                                        />
-                                        {errors.nombre && touched.nombre && (
-                                            <div className="text-red-500 text-sm">{errors.nombre}</div>
-                                        )}
-                                    </div>
+                            {({ setFieldValue, errors, touched, values }) => {
+                                // Validaciones adicionales
+                                const isDescriptionTooLong = values.descripcion && values.descripcion.length > 500;
+                                const isCategoryNotSelected = !values.categoria || values.categoria === "";
+                                const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
 
-                                    {/* Descripción */}
-                                    <div>
-                                        <label className="font-bold text-gray-600 py-2">Descripción</label>
-                                        <Field
-                                            name="descripcion"
-                                            as="textarea"
-                                            className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
-                                            placeholder="Escribe una descripción..."
-                                        />
-                                        {errors.descripcion && touched.descripcion && (
-                                            <div className="text-red-500 text-sm">{errors.descripcion}</div>
-                                        )}
-                                    </div>
-
-                                    {/* Precio */}
-                                    <div>
-                                        <label className="font-bold text-gray-600">Precio</label>
-                                        <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 w-45">
-                                            <MdOutlineAttachMoney className="text-2xl" />
+                                return (
+                                    <Form className="space-y-4">
+                                        {/* Nombre del producto */}
+                                        <div>
+                                            <label className="font-bold text-gray-600 pb-2">Nombre del producto</label>
                                             <Field
-                                                name="precio"
-                                                type="number"
-                                                className="ml-2 w-full outline-none"
-                                                placeholder="Precio"
+                                                name="nombre"
+                                                type="text"
+                                                className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
+                                                placeholder="Nombre del producto"
                                             />
+                                            {errors.nombre && touched.nombre && (
+                                                <div className="text-red-500 text-sm">{errors.nombre}</div>
+                                            )}
                                         </div>
-                                        {errors.precio && touched.precio && (
-                                            <div className="text-red-500 text-sm">{errors.precio}</div>
-                                        )}
-                                    </div>
 
-                                    {/* Categoría */}
-                                    <div>
-                                        <label className="font-bold text-gray-600 pb-2">Categoría</label>
-                                        <Field
-                                            name="categoria"
-                                            as="select"
-                                            className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
-                                        >
-                                            <option value="" disabled>
-                                                Seleccionar Categoría
-                                            </option>
-                                            {categories.map((category) => (
-                                                <option key={category.id_categoria} value={category.id_categoria}>
-                                                    {category.nombre_categoria}
+                                        {/* Descripción */}
+                                        <div>
+                                            <label className="font-bold text-gray-600 py-2">Descripción</label>
+                                            <Field
+                                                name="descripcion"
+                                                as="textarea"
+                                                className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
+                                                placeholder="Escribe una descripción..."
+                                            />
+                                            {errors.descripcion && touched.descripcion && (
+                                                <div className="text-red-500 text-sm">{errors.descripcion}</div>
+                                            )}
+                                            {/* Validación adicional para longitud */}
+                                            {isDescriptionTooLong && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    La descripción no puede exceder los 500 caracteres. Actualmente: {values.descripcion.length}/500
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Precio */}
+                                        <div>
+                                            <label className="font-bold text-gray-600">Precio</label>
+                                            <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 w-45">
+                                                <MdOutlineAttachMoney className="text-2xl" />
+                                                <Field
+                                                    name="precio"
+                                                    type="number"
+                                                    className="ml-2 w-full outline-none"
+                                                    placeholder="Precio"
+                                                />
+                                            </div>
+                                            {errors.precio && touched.precio && (
+                                                <div className="text-red-500 text-sm">{errors.precio}</div>
+                                            )}
+                                        </div>
+
+                                        {/* Categoría */}
+                                        <div>
+                                            <label className="font-bold text-gray-600 pb-2">Categoría</label>
+                                            <Field
+                                                name="categoria"
+                                                as="select"
+                                                className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
+                                            >
+                                                <option value="" disabled>
+                                                    Seleccionar Categoría
                                                 </option>
-                                            ))}
-                                        </Field>
-                                        {errors.categoria && touched.categoria && (
-                                            <div className="text-red-500 text-sm">{errors.categoria}</div>
-                                        )}
-                                    </div>
+                                                {categories.map((category) => (
+                                                    <option key={category.id_categoria} value={category.id_categoria}>
+                                                        {category.nombre_categoria}
+                                                    </option>
+                                                ))}
+                                            </Field>
+                                            {errors.categoria && touched.categoria && (
+                                                <div className="text-red-500 text-sm">{errors.categoria}</div>
+                                            )}
+                                            {/* Validación adicional para categoría */}
+                                            {isCategoryNotSelected && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    Debe seleccionar una categoría para el producto.
+                                                </p>
+                                            )}
+                                        </div>
 
-                                    {/* Imagen */}
-                                    <div>
-                                        <label className="font-bold text-gray-600 pb-2 pt-4">Imagen del Producto</label>
-                                        <p className="text-sm text-gray-500 pb-2">
-                                            Formatos permitidos: .jpg, .jpeg, .png, .gif
-                                        </p>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(event) => setFieldValue("imagen", event.target.files[0])}
-                                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        />
-                                        {errors.imagen && touched.imagen && (
-                                            <div className="text-red-500 text-sm">{errors.imagen}</div>
-                                        )}
-                                    </div>
+                                        {/* Imagen */}
+                                        <div>
+                                            <label className="font-bold text-gray-600 pb-2 pt-4">Imagen del Producto</label>
+                                            <p className="text-sm text-gray-500 pb-2">
+                                                Formatos permitidos: .jpg, .jpeg, .png, .gif
+                                            </p>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(event) => setFieldValue("imagen", event.target.files[0])}
+                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                            />
+                                            {errors.imagen && touched.imagen && (
+                                                <div className="text-red-500 text-sm">{errors.imagen}</div>
+                                            )}
+                                        </div>
 
-                                    {/* Botones */}
-                                    <div className="flex gap-4">
-                                        <button
-                                            type="submit"
-                                            className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 cursor-pointer"
-                                        >
-                                            Guardar Producto
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
-                                            onClick={closeModals}
-                                        >
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </Form>
-                            )}
+                                        {/* Botones */}
+                                        <div className="flex gap-4">
+                                            <button
+                                                type="submit"
+                                                disabled={isFormInvalid} // Deshabilitar el botón si hay errores
+                                                className={`mt-4 px-4 py-2 text-white rounded ${
+                                                    isFormInvalid 
+                                                        ? 'bg-gray-400 cursor-not-allowed' 
+                                                        : 'bg-green-500 hover:bg-green-600 cursor-pointer'
+                                                }`}
+                                            >
+                                                Guardar Producto
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
+                                                onClick={closeModals}
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    </Form>
+                                );
+                            }}
                         </Formik>
                     </div>
                 </div>
