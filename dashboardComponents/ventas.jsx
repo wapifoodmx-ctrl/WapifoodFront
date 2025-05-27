@@ -42,7 +42,7 @@ export default function Ventas() {
       <Box sx={{ width: '100%', typography: 'body1' }}>
         <TabContext value={value}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            
+
             <TabList onChange={handleChange} aria-label="lab API tabs example">
               <Tab label="Populares" value="1" />
               <Tab label="Ventas" value="2" />
@@ -55,8 +55,10 @@ export default function Ventas() {
           </TabPanel>
           <TabPanel value="2">
             <div className="space-y-6">
+
               <MainStats />
               <LineChartFull data={ventasSemanales} title="Ventas de la Semana" />
+
             </div>
           </TabPanel>
         </TabContext>

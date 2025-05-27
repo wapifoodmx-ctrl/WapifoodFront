@@ -93,8 +93,8 @@ export function LineChartFull({ data = salesData, title = "Ventas por Día" }) {
             {/* Gradient definition */}
             <defs>
               <linearGradient id="lineFull-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#8b5cf6" />
-                <stop offset="100%" stopColor="#ec4899" />
+                <stop offset="0%" stopColor="#22c55e" /> {/* green-500 */}
+                <stop offset="100%" stopColor="#16a34a" /> {/* green-600 */}
               </linearGradient>
             </defs>
           </svg>

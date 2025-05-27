@@ -16,6 +16,12 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
     const [searchTerm, setSearchTerm] = useState(""); // Estado para el término de búsqueda
     const [modalMessage, setModalMessage] = useState(null); // Estado para el mensaje de la modal
 
+    // Función para capitalizar la primera letra
+    const capitalizeFirstLetter = (string) => {
+        if (!string) return '';
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    };
+
     const closeModals = () => {
         setIsProductoModalOpen(false);
         setIsCategoriaModalOpen(false);
@@ -146,8 +152,8 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                             onSubmit={async (values, { setSubmitting }) => {
                                 try {
                                     const productData = {
-                                        name: values.nombre,
-                                        description: values.descripcion,
+                                        name: capitalizeFirstLetter(values.nombre), // Capitalizar aquí
+                                        description: capitalizeFirstLetter(values.descripcion), // Capitalizar aquí también
                                         price: values.precio,
                                         category_id: values.categoria,
                                     };
@@ -186,6 +192,11 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                 type="text"
                                                 className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
                                                 placeholder="Nombre del producto"
+                                                onChange={(e) => {
+                                                    const capitalizedValue = capitalizeFirstLetter(e.target.value);
+                                                    setFieldValue("nombre", capitalizedValue);
+                                                }}
+                                                value={values.nombre}
                                             />
                                             {errors.nombre && touched.nombre && (
                                                 <div className="text-red-500 text-sm">{errors.nombre}</div>
@@ -200,6 +211,11 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                 as="textarea"
                                                 className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
                                                 placeholder="Escribe una descripción..."
+                                                onChange={(e) => {
+                                                    const capitalizedValue = capitalizeFirstLetter(e.target.value);
+                                                    setFieldValue("descripcion", capitalizedValue);
+                                                }}
+                                                value={values.descripcion}
                                             />
                                             {errors.descripcion && touched.descripcion && (
                                                 <div className="text-red-500 text-sm">{errors.descripcion}</div>
@@ -323,7 +339,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                             onSubmit={async (values, { setSubmitting }) => {
                                 try {
                                     const categoriaData = {
-                                        nombre_categoria: values.nombre_categoria,
+                                        nombre_categoria: capitalizeFirstLetter(values.nombre_categoria), // Capitalizar aquí
                                         descripcion_categoria: values.descripcion_categoria,
                                     };
                                     await postCategoria(categoriaData);
@@ -338,7 +354,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                 }
                             }}
                         >
-                            {({ errors, touched }) => (
+                            {({ errors, touched, setFieldValue, values }) => (
                                 <Form className="space-y-4">
                                     <div>
                                         <label className="font-bold text-gray-600 pb-2">Nombre de la categoría</label>
@@ -347,6 +363,11 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                             type="text"
                                             className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
                                             placeholder="Nombre de la categoría"
+                                            onChange={(e) => {
+                                                const capitalizedValue = capitalizeFirstLetter(e.target.value);
+                                                setFieldValue("nombre_categoria", capitalizedValue);
+                                            }}
+                                            value={values.nombre_categoria}
                                         />
                                         {errors.nombre_categoria && touched.nombre_categoria && (
                                             <div className="text-red-500 text-sm">{errors.nombre_categoria}</div>

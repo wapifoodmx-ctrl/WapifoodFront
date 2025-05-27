@@ -18,8 +18,10 @@ import Clubsandwich from "@/pages/assets/img/clubsandwich.jpg";
 import Cesar from "@/pages/assets/img/Cesar.jpg";
 import Fruta from "@/pages/assets/img/fruta.jpg";
 import Image from "next/image";
+import { getProducts } from "@/useCases/getProducts";
 
-const productos = [
+// Productos estáticos como fallback
+const productosEstaticos = [
     {
         id: 1,
         nombre: "Ensalada César",
@@ -62,7 +64,7 @@ const productos = [
         precio: 200.0,
         descripcion: "Carne de res, lechuga, tomate y cebolla en pan artesanal, preparado con los mejores ingredientes y la carne mas selecta del mercado, con un adereso de mango que le da un sabor único y espectacular, con 2 carnes y 2 quesos, acompañado de papas fritas y una bebida de tu elección",
         categoria: "Platos Principales",
-        imagen: Burger,   
+        imagen: Burger,
         ingredientes: ["Carne de res", "Lechuga", "Tomate", "Cebolla", "Pan artesanal"],
     },
     {
@@ -137,6 +139,7 @@ const categoriaOrden = {
     "Pizzas": 3,
     "Postres": 4,
     "Bebidas": 5,
+    "Termos": 6, // Agregamos la nueva categoría
 };
 
 export default function MenuCliente() {
@@ -146,11 +149,58 @@ export default function MenuCliente() {
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [carrito, setCarrito] = useState([]);
     const [carritoModalOpen, setCarritoModalOpen] = useState(false);
-    const [productosFiltrados, setProductosFiltrados] = useState(productos);
-    const [mensajeError, setMensajeError] = useState(""); // Estado para manejar el mensaje de error
-    const [historialPedidos, setHistorialPedidos] = useState([]); // Estado para manejar el historial de pedidos
-    const [modalTotalOpen, setModalTotalOpen] = useState(false); // Estado para la modal del total
-    const [totalPedidos, setTotalPedidos] = useState(0); // Estado para almacenar el total acumulado
+    const [productos, setProductos] = useState(productosEstaticos); // Estado para productos dinámicos
+    const [productosFiltrados, setProductosFiltrados] = useState(productosEstaticos);
+    const [mensajeError, setMensajeError] = useState("");
+    const [historialPedidos, setHistorialPedidos] = useState([]);
+    const [modalTotalOpen, setModalTotalOpen] = useState(false);
+    const [totalPedidos, setTotalPedidos] = useState(0);
+    const [loading, setLoading] = useState(true); // Estado de carga
+
+    // Función para transformar productos de la API al formato local
+    const transformarProductos = (productosAPI) => {
+        return productosAPI.map(producto => ({
+            id: producto.id_products,
+            nombre: producto.name,
+            precio: parseFloat(producto.price),
+            descripcion: producto.description,
+            categoria: producto.category_name || producto.nombre_categoria,
+            imagen: producto.image_url && producto.image_url.length > 0
+                ? producto.image_url[0]
+                : kime, // Imagen por defecto
+            ingredientes: producto.ingredientes || [], // Opcional: solo si existe
+            status: producto.status
+        }));
+    };
+
+    // Cargar productos desde la API
+    useEffect(() => {
+        const cargarProductos = async () => {
+            try {
+                setLoading(true);
+                const productosAPI = await getProducts();
+                const productosTransformados = transformarProductos(productosAPI);
+
+                // Filtrar solo productos activos
+                const productosActivos = productosTransformados.filter(
+                    producto => producto.status === 'activo'
+                );
+
+                setProductos(productosActivos);
+                setProductosFiltrados(productosActivos);
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                setMensajeError('Error al cargar los productos. Mostrando menú estático.');
+                // Mantener productos estáticos en caso de error
+                setProductos(productosEstaticos);
+                setProductosFiltrados(productosEstaticos);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        cargarProductos();
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -171,12 +221,12 @@ export default function MenuCliente() {
                 ? productos
                 : productos.filter(producto => producto.categoria === categoriaSeleccionada)
         );
-    }, [categoriaSeleccionada]);
+    }, [categoriaSeleccionada, productos]);
 
     useEffect(() => {
         // Recuperar carrito y historial de pedidos desde localStorage
-        const carritoGuardado = localStorage.getItem("carrito");
-        const historialGuardado = localStorage.getItem("historialPedidos");
+        const carritoGuardado = localStorage.getItem("carrito1");
+        const historialGuardado = localStorage.getItem("historialPedidos1");
 
         if (carritoGuardado) {
             setCarrito(JSON.parse(carritoGuardado));
@@ -189,12 +239,12 @@ export default function MenuCliente() {
 
     useEffect(() => {
         // Guardar el carrito en localStorage
-        localStorage.setItem("carrito", JSON.stringify(carrito));
+        localStorage.setItem("carrito1", JSON.stringify(carrito));
     }, [carrito]);
 
     useEffect(() => {
         // Guardar el historial de pedidos en localStorage
-        localStorage.setItem("historialPedidos", JSON.stringify(historialPedidos));
+        localStorage.setItem("historialPedidos1", JSON.stringify(historialPedidos));
     }, [historialPedidos]);
 
     const openModal = (producto) => {
@@ -208,38 +258,40 @@ export default function MenuCliente() {
     };
 
     const agregarAlCarrito = (producto) => {
-        const ingredientesExcluidos = Array.from(
-            document.querySelectorAll('input[type="checkbox"]:checked')
-        ).map((checkbox) => checkbox.nextSibling.textContent.replace("Sin ", "").trim());
+        // Solo procesar ingredientes si existen
+        const ingredientesExcluidos = producto.ingredientes && producto.ingredientes.length > 0
+            ? Array.from(
+                document.querySelectorAll('input[type="checkbox"]:checked')
+            ).map((checkbox) => checkbox.nextSibling.textContent.replace("Sin ", "").trim())
+            : [];
 
         const productoConExclusiones = {
             ...producto,
-            id: `${producto.id}-${ingredientesExcluidos.join(",")}`, // Genera un ID único basado en las exclusiones
+            id: `${producto.id}-${ingredientesExcluidos.join(",")}`,
             ingredientesExcluidos,
         };
 
         setCarrito((prevCarrito) => {
-            const productoExistente = prevCarrito.find((item) => item.id === productoConExclusiones.id);
-            if (productoExistente) {
-                // Incrementa la cantidad del producto existente
-                return prevCarrito.map((item) =>
-                    item.id === productoConExclusiones.id
-                        ? { ...item, cantidad: item.cantidad + (producto.cantidad || 1) }
-                        : item
-                );
+            const existingItemIndex = prevCarrito.findIndex(
+                (item) => item.id === productoConExclusiones.id
+            );
+
+            if (existingItemIndex !== -1) {
+                const updatedCarrito = [...prevCarrito];
+                updatedCarrito[existingItemIndex].cantidad += 1;
+                return updatedCarrito;
+            } else {
+                return [...prevCarrito, { ...productoConExclusiones, cantidad: 1 }];
             }
-            // Agrega el producto al carrito si no existe
-            return [...prevCarrito, { ...productoConExclusiones, cantidad: producto.cantidad || 1 }];
         });
+
+        closeModal();
     };
 
     const calcularTotal = () => {
-        // Si el carrito está vacío, devuelve 0
         if (!carrito || carrito.length === 0) {
-            return 0;
+            return "0.00";
         }
-
-        // Calcula el total sumando el precio de cada producto multiplicado por su cantidad
         return carrito.reduce((total, item) => total + item.precio * item.cantidad, 0).toFixed(2);
     };
 
@@ -248,6 +300,40 @@ export default function MenuCliente() {
             setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
             return;
         }
+
+        // Crear la orden en el formato que espera la API
+        const orden = {
+            fecha: new Date().toISOString(),
+            total: parseFloat(calcularTotal()),
+            items: carrito.map((item) => ({
+                producto_id: item.id.split('-')[0], // Remover las exclusiones del ID
+                nombre: item.nombre,
+                cantidad: item.cantidad,
+                precio_unitario: item.precio,
+                precio_total: item.precio * item.cantidad,
+                categoria: item.categoria,
+                ingredientes_excluidos: item.ingredientesExcluidos || [],
+                personalizaciones: item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 
+                    ? `Sin: ${item.ingredientesExcluidos.join(", ")}` 
+                    : null
+            })),
+            resumen: {
+                total_items: carrito.reduce((total, item) => total + item.cantidad, 0),
+                subtotal: parseFloat(calcularTotal()),
+                total_final: parseFloat(calcularTotal())
+            }
+        };
+
+        // Imprimir la orden en consola
+        console.log("=== ORDEN PARA ENVIAR A LA API ===");
+        console.log(JSON.stringify(orden, null, 2));
+        console.log("=== FIN DE LA ORDEN ===");
+
+        // También puedes imprimir solo los datos esenciales
+        console.log("=== DATOS ESENCIALES ===");
+        console.log("Total:", orden.total);
+        console.log("Cantidad de items:", orden.resumen.total_items);
+        console.log("Items:", orden.items);
 
         // Agregar los productos del carrito al historial
         setHistorialPedidos((prevHistorial) => [
@@ -267,6 +353,12 @@ export default function MenuCliente() {
     };
 
     const terminarOrden = () => {
+        // Validar que existe historial de pedidos
+        if (historialPedidos.length === 0) {
+            setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
+            return;
+        }
+
         // Calcula el total acumulado del historial
         const total = historialPedidos.reduce(
             (acc, item) => acc + item.precio * item.cantidad,
@@ -277,7 +369,19 @@ export default function MenuCliente() {
         setTotalPedidos(total.toFixed(2));
         setHistorialPedidos([]); // Limpia el historial de pedidos
         setModalTotalOpen(true); // Abre la modal del total
+        setMensajeError(""); // Limpiar cualquier mensaje de error previo
     };
+
+    // Obtener categorías únicas de los productos cargados
+    const categorias = ["Todos los platillos", ...new Set(productos.map(p => p.categoria))];
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="text-lg">Cargando productos...</div>
+            </div>
+        );
+    }
 
     return (
         <section>
@@ -314,69 +418,19 @@ export default function MenuCliente() {
             >
                 <ul className="flex flex-col mt-16 p-4 text-xl">
                     <p className="text-gray-500 font-bold">Menú principal</p>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Todos los platillos");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <IoHomeOutline className="self-center"/> Todos los platillos
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Entradas");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <TbSoup className="self-center"/>Entradas
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Platos Principales");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <GiForkKnifeSpoon className="self-center"/>Platos principales
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Ensaladas");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <LuSalad className="self-center"/>Ensaladas
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Pizzas");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <CiPizza className="self-center"/>Pizzas
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Postres");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <GiCakeSlice className="self-center" />Postres
-                    </li>
-                    <li
-                        className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                        onClick={() => {
-                            setCategoriaSeleccionada("Bebidas");
-                            setIsOpen(false);
-                        }}
-                    >
-                        <LuCupSoda className="self-center"/>Bebidas
-                    </li>
+                    {categorias.map((categoria, index) => (
+                        <li
+                            key={index}
+                            className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
+                            onClick={() => {
+                                setCategoriaSeleccionada(categoria);
+                                setIsOpen(false);
+                            }}
+                        >
+                            {categoria === "Todos los platillos" && <IoHomeOutline className="self-center" />}
+                            {categoria}
+                        </li>
+                    ))}
                 </ul>
             </div>
 
@@ -449,7 +503,7 @@ export default function MenuCliente() {
                                                         )
                                                     );
                                                 }}
-                                                
+
                                             >
                                                 +
                                             </button>
@@ -507,12 +561,17 @@ export default function MenuCliente() {
                             </div>
                         )}
 
-                        {/* Botón "Terminar Orden" */}
+                        {/* Botón "Terminar Orden" - Solo habilitado si hay historial */}
                         <button
-                            className="bg-red-500 text-white w-full py-2 rounded-lg mt-4 hover:bg-red-600"
+                            className={`w-full py-2 rounded-lg mt-4 transition-colors ${
+                                historialPedidos.length > 0 
+                                    ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer' 
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
                             onClick={terminarOrden}
+                            disabled={historialPedidos.length === 0}
                         >
-                            Terminar Orden
+                            Terminar Orden {historialPedidos.length > 0 && `(${historialPedidos.length} productos)`}
                         </button>
                     </div>
                 </div>
@@ -544,6 +603,8 @@ export default function MenuCliente() {
                                 src={productoSeleccionado.imagen}
                                 alt={`Imagen de ${productoSeleccionado.nombre}`}
                                 className="rounded-lg object-cover w-5/10 h-10/10"
+                                width={400}
+                                height={300}
                             />
                         </div>
                         <div className="flex justify-center items-center w-full">
@@ -551,15 +612,17 @@ export default function MenuCliente() {
                                 {productoSeleccionado.descripcion}
                             </p>
                         </div>
-                        <h3 className="text-md font-semibold mb-2">Ingredientes:</h3>
-                        <ul className="mb-4 text-sm">
-                            {productoSeleccionado.ingredientes.map((ingrediente, index) => (
-                                <li key={index} className="flex items-center gap-2">
-                                    <input type="checkbox" id={`ingrediente-${index}`} />
-                                    <label htmlFor={`ingrediente-${index}`}>Sin {ingrediente}</label>
-                                </li>
-                            ))}
-                        </ul>
+                        {productoSeleccionado.ingredientes && productoSeleccionado.ingredientes.length > 0 && (
+                            <div className="mb-4">
+                                <h4 className="font-semibold mb-2">Personalizar:</h4>
+                                {productoSeleccionado.ingredientes.map((ingrediente, index) => (
+                                    <label key={index} className="flex items-center mb-2">
+                                        <input type="checkbox" className="mr-2" />
+                                        <span>Sin {ingrediente}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Contador, Botones y Botón Agregar en la misma línea */}
                         <div className="flex items-center justify-between mb-4">
@@ -676,9 +739,9 @@ export default function MenuCliente() {
                                                     prevProductos.map((item) =>
                                                         item.id === producto.id
                                                             ? {
-                                                                  ...item,
-                                                                  cantidad: Math.max((item.cantidad || 1) - 1, 1),
-                                                              }
+                                                                ...item,
+                                                                cantidad: Math.max((item.cantidad || 1) - 1, 1),
+                                                            }
                                                             : item
                                                     )
                                                 );
@@ -694,9 +757,9 @@ export default function MenuCliente() {
                                                     prevProductos.map((item) =>
                                                         item.id === producto.id
                                                             ? {
-                                                                  ...item,
-                                                                  cantidad: (item.cantidad || 1) + 1,
-                                                              }
+                                                                ...item,
+                                                                cantidad: (item.cantidad || 1) + 1,
+                                                            }
                                                             : item
                                                     )
                                                 );
