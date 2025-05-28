@@ -74,27 +74,34 @@ export default function Navbar() {
             function: handleLogout,
         },
     };
-    //Recuperar estos cambios para el login 
-    // useEffect(() => {
-    //     // Verificar si el token existe en el localStorage
-    //     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    //     if (!token) {
-    //         router.push('/login'); // Redirigir al login si no hay token
-    //     }
-    // }, [router]);
+    
+    useEffect(() => {
+        // Verificar si el token existe en el localStorage
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (!token) {
+            router.push('/login'); // Redirigir al login si no hay token
+        }
+    }, [router]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
-                setIsOpen(false);
+                // Verificar que el click no sea en el botón hamburguesa
+                const hamburgerButton = event.target.closest('button[aria-label="Toggle menu"]');
+                if (!hamburgerButton) {
+                    setIsOpen(false);
+                }
             }
         };
 
-        document.addEventListener("mousedown", handleClickOutside);
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, []);
+    }, [isOpen]);
 
     return (
         <nav className="bg-[#f3f4f6] w-full fixed top-0 left-0 flex justify-between h-16 z-50 shadow-md overflow-x-hidden">
@@ -108,7 +115,10 @@ export default function Navbar() {
                 {/* Botón Hamburguesa */}
                 <button
                     className="z-50 cursor-pointer"
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsOpen(!isOpen);
+                    }}
                     aria-label="Toggle menu"
                 >
                     <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>

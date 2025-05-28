@@ -1,37 +1,35 @@
 import { scaleTime, scaleLinear, max, line as d3_line, curveNatural } from "d3";
 
-// Datos mockeados de ventas
-let salesData = [
-  { date: "2023-04-30", value: 5 },
-  { date: "2023-05-01", value: 7 },
-  { date: "2023-05-02", value: 7 },
-  { date: "2023-05-03", value: 7.5 },
-  { date: "2023-05-04", value: 9 },
-  { date: "2023-05-05", value: 10.5 },
-  { date: "2023-05-06", value: 11 },
-  { date: "2023-05-07", value: 10.5 },
-  { date: "2023-05-08", value: 8 },
-  { date: "2023-05-09", value: 9 },
-  { date: "2023-05-10", value: 9.5 },
-  { date: "2023-05-11", value: 10 },
-  { date: "2023-05-12", value: 9 },
-  { date: "2023-05-13", value: 8.5 },
-  { date: "2023-05-14", value: 6 },
-  { date: "2023-05-15", value: 7 },
-  { date: "2023-05-16", value: 9 },
-  { date: "2023-05-17", value: 10 },
-  { date: "2023-05-18", value: 10.5 },
-  { date: "2023-05-19", value: 11 },
-  { date: "2023-05-20", value: 11 },
-  { date: "2023-05-21", value: 11.5 },
-  { date: "2023-05-22", value: 12 },
-  { date: "2023-05-23", value: 12 },
-];
+export function LineChartFull({ data = [], title = "Ventas totales" }) {
+  // Validar que hay datos
+  if (!data || data.length === 0) {
+    return <div className="text-center text-gray-500">No hay datos disponibles</div>;
+  }
 
-export function LineChartFull({ data = salesData, title = "Ventas por Día" }) {
+  // Agrupar datos por fecha y sumar los valores del mismo día
+  const dataAgrupada = data.reduce((acc, item) => {
+    const fecha = item.date;
+    if (acc[fecha]) {
+      acc[fecha] += item.value;
+    } else {
+      acc[fecha] = item.value;
+    }
+    return acc;
+  }, {});
+
+  // Convertir a array y ordenar por fecha
+  const dataOrdenada = Object.entries(dataAgrupada)
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
   // Procesar datos
-  const processedData = data.map((d) => ({ ...d, date: new Date(d.date) }));
+  const processedData = dataOrdenada.map((d) => ({ ...d, date: new Date(d.date) }));
   
+  // Validar que hay datos procesados
+  if (processedData.length === 0) {
+    return <div className="text-center text-gray-500">No hay datos disponibles</div>;
+  }
+
   // Escalas
   let xScale = scaleTime()
     .domain([processedData[0].date, processedData[processedData.length - 1].date])
@@ -119,9 +117,13 @@ export function LineChartFull({ data = salesData, title = "Ventas por Día" }) {
               );
             })}
 
-          {/* X axis labels */}
+          {/* X axis labels - Mejorado para mostrar todas las fechas disponibles */}
           {processedData.map((day, i) => {
-            if (i % 4 !== 0 && i !== processedData.length - 1) return null;
+            // Mostrar todas las fechas si hay pocas, o cada 2 si hay muchas
+            const shouldShow = processedData.length <= 5 || i % Math.ceil(processedData.length / 4) === 0 || i === processedData.length - 1;
+            
+            if (!shouldShow) return null;
+            
             return (
               <div key={i} className="overflow-visible text-gray-500">
                 <div

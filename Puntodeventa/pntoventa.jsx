@@ -197,7 +197,7 @@ export default function Pntoventa() {
 
             {/* Botón flotante del carrito */}
             <button
-                className="fixed bottom-10 right-4 bg-green-500 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-green-600"
+                className="fixed bottom-10 right-4 bg-green-500 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-green-600 z-[9999]"
                 onClick={() => setCarritoModalOpen(true)}
             >
                 <FaShoppingCart className="text-xl" />
@@ -211,7 +211,7 @@ export default function Pntoventa() {
             {/* Modal del carrito */}
             {carritoModalOpen && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 z-50 flex justify-end"
+                    className="fixed inset-0 backdrop-brightness-30 z-[9998] flex justify-end"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {
                             setCarritoModalOpen(false);
@@ -372,7 +372,7 @@ export default function Pntoventa() {
             {/* Modal del total de pedidos */}
             {modalTotalOpen && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
+                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[9997]"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {
                             setModalTotalOpen(false);
@@ -395,7 +395,7 @@ export default function Pntoventa() {
             {/* Modal de detalles del producto */}
             {modalProductoOpen && productoSeleccionado && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
+                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[9996]"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {
                             closeModal();

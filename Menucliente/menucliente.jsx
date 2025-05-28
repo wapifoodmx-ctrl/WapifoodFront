@@ -10,6 +10,7 @@ import { IoHomeOutline } from "react-icons/io5";
 import { GoChecklist } from "react-icons/go";
 import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
+import { useRouter } from 'next/router'; // Agregar esta importación
 import kime from "@/pages/assets/img/kime.jpeg";
 import Burger from "@/pages/assets/img/Burger.jpg";
 import Sopadetomate from "@/pages/assets/img/sopatomate.jpg";
@@ -19,118 +20,6 @@ import Cesar from "@/pages/assets/img/Cesar.jpg";
 import Fruta from "@/pages/assets/img/fruta.jpg";
 import Image from "next/image";
 import { getProducts } from "@/useCases/getProducts";
-
-// Productos estáticos como fallback
-const productosEstaticos = [
-    {
-        id: 1,
-        nombre: "Ensalada César",
-        precio: 100.0,
-        descripcion: "Lechuga romana, crutones, parmesano y aderezo César",
-        categoria: "Ensaladas",
-        imagen: Cesar,
-        ingredientes: ["Lechuga romana", "Crutones", "Parmesano", "Aderezo César"],
-    },
-    {
-        id: 2,
-        nombre: "Pizza Margarita",
-        precio: 150.0,
-        descripcion: "Masa artesanal, salsa de tomate, mozzarella y albahaca fresca",
-        categoria: "Pizzas",
-        imagen: kime,
-        ingredientes: ["Masa artesanal", "Salsa de tomate", "Mozzarella", "Albahaca fresca"],
-    },
-    {
-        id: 3,
-        nombre: "Sopa de Tomate",
-        precio: 80.0,
-        descripcion: "Sopa cremosa de tomate con un toque de albahaca",
-        categoria: "Entradas",
-        imagen: Sopadetomate,
-        ingredientes: ["Tomate", "Cebolla", "Ajo", "Albahaca"],
-    },
-    {
-        id: 4,
-        nombre: "Tarta de Chocolate",
-        precio: 120.0,
-        descripcion: "Tarta de chocolate con base de galleta y crema batida",
-        categoria: "Postres",
-        imagen: kime,
-        ingredientes: ["Chocolate", "Galleta", "Crema batida"],
-    },
-    {
-        id: 5,
-        nombre: "Hamburguesa Clásica",
-        precio: 200.0,
-        descripcion: "Carne de res, lechuga, tomate y cebolla en pan artesanal, preparado con los mejores ingredientes y la carne mas selecta del mercado, con un adereso de mango que le da un sabor único y espectacular, con 2 carnes y 2 quesos, acompañado de papas fritas y una bebida de tu elección",
-        categoria: "Platos Principales",
-        imagen: Burger,
-        ingredientes: ["Carne de res", "Lechuga", "Tomate", "Cebolla", "Pan artesanal"],
-    },
-    {
-        id: 6,
-        nombre: "Batido de Fresa",
-        precio: 90.0,
-        descripcion: "Batido cremoso de fresa con leche y helado",
-        categoria: "Bebidas",
-        imagen: kime,
-        ingredientes: ["Fresa", "Leche", "Helado"],
-    },
-    {
-        id: 7,
-        nombre: "Ensalada de Frutas",
-        precio: 70.0,
-        descripcion: "Mezcla de frutas frescas de temporada",
-        categoria: "Ensaladas",
-        imagen: Fruta,
-        ingredientes: ["Fresas", "Kiwi", "Piña", "Mango"],
-    },
-    {
-        id: 8,
-        nombre: "Pizza Pepperoni",
-        precio: 160.0,
-        descripcion: "Masa artesanal, salsa de tomate, mozzarella y pepperoni",
-        categoria: "Pizzas",
-        imagen: kime,
-        ingredientes: ["Masa artesanal", "Salsa de tomate", "Mozzarella", "Pepperoni"],
-    },
-    {
-        id: 9,
-        nombre: "Sopa de Pollo",
-        precio: 85.0,
-        descripcion: "Sopa caliente de pollo con verduras frescas",
-        categoria: "Entradas",
-        imagen: Sopadepollo,
-        ingredientes: ["Pollo", "Zanahoria", "Apio", "Cebolla"],
-    },
-    {
-        id: 10,
-        nombre: "Tarta de Limón",
-        precio: 110.0,
-        descripcion: "Tarta de limón con merengue y galleta",
-        categoria: "Postres",
-        imagen: kime,
-        ingredientes: ["Limón", "Galleta", "Merengue"],
-    },
-    {
-        id: 11,
-        nombre: "Ensalada Griega",
-        precio: 120.0,
-        descripcion: "Lechuga, tomate, pepino, aceitunas y queso feta",
-        categoria: "Ensaladas",
-        imagen: kime,
-        ingredientes: ["Lechuga", "Tomate", "Pepino", "Aceitunas", "Queso feta"],
-    },
-    {
-        id: 12,
-        nombre: "Club Sandwich",
-        precio: 150.0,
-        descripcion: "Pan tostado con pollo, tocino, lechuga y tomate",
-        categoria: "Platos Principales",
-        imagen: Clubsandwich,
-        ingredientes: ["Pan tostado", "Pollo", "Tocino", "Lechuga", "Tomate"],
-    },
-];
 
 const categoriaOrden = {
     "Entradas": 0,
@@ -142,7 +31,13 @@ const categoriaOrden = {
     "Termos": 6, // Agregamos la nueva categoría
 };
 
+// Productos estáticos como fallback (necesitas definir esto)
+const productosEstaticos = [
+    // Agrega aquí tus productos estáticos como respaldo
+];
+
 export default function MenuCliente() {
+    const router = useRouter(); // Mover dentro del componente
     const [isOpen, setIsOpen] = useState(false);
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos los platillos");
     const [modalOpen, setModalOpen] = useState(false);
@@ -157,6 +52,15 @@ export default function MenuCliente() {
     const [totalPedidos, setTotalPedidos] = useState(0);
     const [loading, setLoading] = useState(true); // Estado de carga
 
+    // Mover el useEffect dentro del componente
+    useEffect(() => {
+        // Verificar si el token existe en el localStorage
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (!token) {
+            router.push('/login'); // Redirigir al login si no hay token
+        }
+    }, [router]);
+
     // Función para transformar productos de la API al formato local
     const transformarProductos = (productosAPI) => {
         return productosAPI.map(producto => ({
@@ -169,7 +73,8 @@ export default function MenuCliente() {
                 ? producto.image_url[0]
                 : kime, // Imagen por defecto
             ingredientes: producto.ingredientes || [], // Opcional: solo si existe
-            status: producto.status
+            status: producto.status,
+            cantidad: 1 // Agregar cantidad inicial
         }));
     };
 

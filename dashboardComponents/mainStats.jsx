@@ -39,12 +39,12 @@ export default function MainStats() {
                         porcentaje: `${data.total_orders.change}%`,
                         icon: <FiShoppingBag className="text-blue-400" size={30} />,
                     },
-                    {
-                        titulo: "Clientes nuevos",
-                        monto: `${data.new_customers.value}`,
-                        porcentaje: `${data.new_customers.change}%`,
-                        icon: <IoPeopleSharp className="text-violet-500" size={30} />,
-                    },
+                    // {
+                    //     titulo: "Clientes nuevos",
+                    //     monto: `${data.new_customers.value}`,
+                    //     porcentaje: `${data.new_customers.change}%`,
+                    //     icon: <IoPeopleSharp className="text-violet-500" size={30} />,
+                    // },
                     {
                         titulo: "Ticket Promedio",
                         monto: `$${data.average_daily_sales.value.toFixed(2)}`,
@@ -98,7 +98,7 @@ export default function MainStats() {
                         {item.icon ? item.icon : <p className="flex color text-gray-500">Error no se encontró el icono</p>}
                     </div>
                     <h2 className="flex font-bold text-2xl">{item.monto}</h2>
-                    <div className="flex gap-2">
+                    {/* <div className="flex gap-2">
                         {item.porcentaje ? (
                             <>
                                 {item.porcentaje.includes("-") ? (
@@ -116,7 +116,7 @@ export default function MainStats() {
                             <p className="text-gray-500">Error contactar al desarrollador</p>
                         )}
                         <p className="text-gray-500">vs la semana pasada</p>
-                    </div>
+                    </div> */}
                 </div>
             ))}
         </div>
