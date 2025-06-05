@@ -1,5 +1,5 @@
 export async function getADataGrafico() {
-    const endpoint = 'http://192.168.1.69:8000/analytics/get-analytics-basic';
+    const endpoint = 'https://comandapp-api.h-dev.xyz/analytics/get-analytics-basic';
 
     try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');

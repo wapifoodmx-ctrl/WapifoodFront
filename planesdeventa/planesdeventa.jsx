@@ -52,7 +52,9 @@ export default function PlanDeVentas() {
             id: 1,
             title: "Plan Ventas",
             description: "App de punto de venta para tu negocio.",
-            price: "$100.00 mxn al mes",
+            price: "$150.00 mxn al mes",
+            promoPrice: "$100.00 mxn al mes",
+            promoText: "Precio de apertura",
             buttonText: "Seleccionar",
             prop: "basico",
             link: null,
@@ -61,7 +63,9 @@ export default function PlanDeVentas() {
             id: 2,
             title: "Plan Restaurante",
             description: "App de punto de venta + 15 mesas para tu negocio.",
-            price: "$200.00 mxn al mes",
+            price: "$250.00 mxn al mes",
+            promoPrice: "$200.00 mxn al mes",
+            promoText: "Precio de apertura",
             buttonText: "Seleccionar",
             prop: "profesional",
             link: null,
@@ -70,7 +74,9 @@ export default function PlanDeVentas() {
             id: 3,
             title: "Plan Restaurante +",
             description: "App de punto de venta + 25 mesas para tu negocio.",
-            price: "$300.00 mxn al mes",
+            price: "$350.00 mxn al mes",
+            promoPrice: "$300.00 mxn al mes",
+            promoText: "Precio de apertura",
             buttonText: "Seleccionar",
             prop: "empresarial",
             link: null,
@@ -106,7 +112,11 @@ export default function PlanDeVentas() {
                             <div key={plan.id} className="bg-white shadow-lg rounded-lg p-4 md:p-6 flex flex-col h-full">
                                 <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">{plan.title}</h3>
                                 <p className="text-gray-600 mb-3 md:mb-4 text-sm md:text-base flex-grow">{plan.description}</p>
-                                <p className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-green-600">{plan.price}</p>
+                                <div className="mb-3 md:mb-4">
+                                    <p className="text-xl md:text-2xl font-bold text-gray-500 line-through">{plan.price}</p>
+                                    <p className="text-xl md:text-2xl font-bold text-green-600">{plan.promoPrice}</p>
+                                    <p className="text-sm md:text-base text-green-800">{plan.promoText}</p>
+                                </div>
                                 <button
                                     className="bg-green-500 hover:bg-green-600 text-white py-2 md:py-3 px-4 md:px-6 rounded cursor-pointer transition-colors duration-200 w-full text-sm md:text-base"
                                     onClick={() => {
