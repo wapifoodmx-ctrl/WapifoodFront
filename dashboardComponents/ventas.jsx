@@ -9,7 +9,7 @@ import IdPedidos from './idpedidos';
 import MainStats from './mainStats';
 import { LineChartFull } from './chart';
 import { getADataGrafico } from '@/useCases/getDataGrafico';
-
+import BarChartBreakdown from './chartbar';
 export default function Ventas() {
   const [value, setValue] = React.useState('1');
   const [ventasSemanales, setVentasSemanales] = React.useState([]);
@@ -39,9 +39,9 @@ export default function Ventas() {
       try {
         setLoading(true);
         setError(null);
-        
+
         const resultado = await getADataGrafico();
-        
+
         if (resultado.success) {
           const datosTransformados = transformarDatosAPI(resultado.data);
           setVentasSemanales(datosTransformados);
@@ -49,13 +49,13 @@ export default function Ventas() {
         } else {
           // Manejar diferentes tipos de errores sin lanzar excepciones
           console.log('Error controlado:', resultado.error, resultado.message);
-          
+
           if (resultado.error === 'sin-ventas' || resultado.error === 'sin-permisos') {
             setError('sin-ventas');
           } else {
             setError(resultado.message);
           }
-          
+
           setVentasSemanales([]);
         }
       } catch (error) {
@@ -71,16 +71,7 @@ export default function Ventas() {
     cargarDatosVentas();
   }, []);
 
-  // Datos estáticos para productos vendidos (mantener como está)
-  const productosVendidos = [
-    { date: "2025-05-16", value: 45 },
-    { date: "2025-05-17", value: 52 },
-    { date: "2025-05-18", value: 38 },
-    { date: "2025-05-19", value: 65 },
-    { date: "2025-05-20", value: 72 },
-    { date: "2025-05-21", value: 80 },
-    { date: "2025-05-22", value: 75 },
-  ];
+
 
   return (
     <div>
@@ -94,19 +85,23 @@ export default function Ventas() {
           </Box>
           <TabPanel value="1">
             <Populares />
-            <LineChartFull data={productosVendidos} title="Productos Vendidos por Día" />
+            {/* fsdiofjsdo */}
+            <div className='mt-4'> 
+              <BarChartBreakdown />
+
+            </div>
           </TabPanel>
           <TabPanel value="2">
             <div className="space-y-6">
               <MainStats />
-              
+
               {/* Mostrar estado de carga */}
               {loading && (
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <div className="text-center text-gray-500">Cargando datos de ventas...</div>
                 </div>
               )}
-              
+
               {/* Mostrar mensaje específico para sin ventas */}
               {error === 'sin-ventas' && (
                 <div className="bg-white rounded-lg shadow-md p-6">
@@ -120,9 +115,9 @@ export default function Ventas() {
 
               {/* Gráfico de ventas solo si hay datos y no hay error */}
               {!loading && !error && ventasSemanales.length > 0 && (
-                <LineChartFull 
-                  data={ventasSemanales} 
-                  title="Ventas Totales" 
+                <LineChartFull
+                  data={ventasSemanales}
+                  title="Ventas Totales"
                 />
               )}
 

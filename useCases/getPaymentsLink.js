@@ -1,5 +1,5 @@
 export default async function getPaymentsLink(propsData) {
-    const endpoint = 'http://192.168.1.69:8000/payments/create-checkout-session';
+    const endpoint = 'https://comandapp-api.h-dev.xyz/payments/create-checkout-session';
 
     try {
         // Obtener el token del localStorage
@@ -32,21 +32,33 @@ export default async function getPaymentsLink(propsData) {
     }
 }
 
-export async function getAllPaymentLinks(plans) {
-    try {
-        const updatedPlans = [];
-        for (const plan of plans) {
-            try {
-                const response = await getPaymentsLink({ plan: plan.prop });
-                updatedPlans.push({ ...plan, link: response.checkout_url });
-            } catch (error) {
-                console.error(`Error al obtener el enlace para el plan ${plan.prop}:`, error.message);
-                updatedPlans.push({ ...plan, link: null }); // Si falla, asignar null al enlace
-            }
-        }
-        return updatedPlans;
-    } catch (error) {
-        console.error("Error al obtener los enlaces de pago:", error.message);
-        throw error;
-    }
-}
+// Nueva función para obtener un enlace individual bajo demanda
+// export async function getSinglePaymentLink(planProp) {
+//     try {
+//         const response = await getPaymentsLink({ plan: planProp });
+//         return response.checkout_url;
+//     } catch (error) {
+//         console.error(`Error al obtener el enlace para el plan ${planProp}:`, error.message);
+//         throw error;
+//     }
+// }
+
+// // Mantener la función original para uso opcional (no la usaremos ahora)
+// export async function getAllPaymentLinks(plans) {
+//     try {
+//         const updatedPlans = [];
+//         for (const plan of plans) {
+//             try {
+//                 const response = await getPaymentsLink({ plan: plan.prop });
+//                 updatedPlans.push({ ...plan, link: response.checkout_url });
+//             } catch (error) {
+//                 console.error(`Error al obtener el enlace para el plan ${plan.prop}:`, error.message);
+//                 updatedPlans.push({ ...plan, link: null }); // Si falla, asignar null al enlace
+//             }
+//         }
+//         return updatedPlans;
+//     } catch (error) {
+//         console.error("Error al obtener los enlaces de pago:", error.message);
+//         throw error;
+//     }
+// }

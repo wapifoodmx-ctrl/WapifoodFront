@@ -11,6 +11,7 @@ import getPaymentsLink, { getAllPaymentLinks } from "@/useCases/getPaymentsLink"
 import { useEffect, useState } from "react";
 
 export default function PlanDeVentas() {
+
     const planes = [
         {
             id: 1,
@@ -55,7 +56,6 @@ export default function PlanDeVentas() {
             price: "$100.00 mxn al mes",
             buttonText: "Seleccionar",
             prop: "basico",
-            link: null,
         },
         {
             id: 2,
@@ -64,7 +64,6 @@ export default function PlanDeVentas() {
             price: "$200.00 mxn al mes",
             buttonText: "Seleccionar",
             prop: "profesional",
-            link: null,
         },
         {
             id: 3,
@@ -73,22 +72,23 @@ export default function PlanDeVentas() {
             price: "$300.00 mxn al mes",
             buttonText: "Seleccionar",
             prop: "empresarial",
-            link: null,
         },
     ]);
 
-    useEffect(() => {
-        const fetchPaymentLinks = async () => {
-            try {
-                const updatedPlans = await getAllPaymentLinks(planesAdicionales);
-                setPlanesAdicionales(updatedPlans);
-            } catch (error) {
-                console.error("Error al cargar los enlaces de pago:", error.message);
+    async function getLink(prop) {
+        try {
+            const response = await getPaymentsLink({ plan: prop });
+            console.log("Enlace de pago obtenido:", response);
+            
+            if (response.checkout_url) {
+                window.location.href = response.checkout_url;
+            } else {
+                console.error("No se recibió un enlace de pago válido");
             }
-        };
-
-        fetchPaymentLinks();
-    }, []);
+        } catch (error) {
+            console.error("Error al obtener el enlace de pago:", error.message);
+        }
+    }
 
     return (
         <section>
@@ -109,13 +109,7 @@ export default function PlanDeVentas() {
                                 <p className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-green-600">{plan.price}</p>
                                 <button
                                     className="bg-green-500 hover:bg-green-600 text-white py-2 md:py-3 px-4 md:px-6 rounded cursor-pointer transition-colors duration-200 w-full text-sm md:text-base"
-                                    onClick={() => {
-                                        if (plan.link) {
-                                            window.location.href = plan.link; // Redirigir al enlace de pago
-                                        } else {
-                                            console.error("El enlace de pago no está disponible.");
-                                        }
-                                    }}
+                                    onClick={() => getLink(plan.prop)}
                                 >
                                     {plan.buttonText}
                                 </button>
