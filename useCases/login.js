@@ -1,5 +1,5 @@
 export async function loginUser(user) {
-    const endpoint = 'https://comandapp-api.h-dev.xyz/login'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
+    const endpoint = 'http://189.147.92.232:8000/login'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
 
     try {
         const response = await fetch(endpoint, {
