@@ -1,3 +1,7 @@
+import { FaWhatsapp } from "react-icons/fa";
+import { FaPhoneAlt } from "react-icons/fa";
+import { MdOutlineWatchLater } from "react-icons/md";
+import Profile from "@/pages/assets/images/Profile.jpg";
 import { FaRegEye } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
 import { TbSoup } from "react-icons/tb";
@@ -10,7 +14,7 @@ import { IoHomeOutline } from "react-icons/io5";
 import { GoChecklist } from "react-icons/go";
 import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
-import { useRouter } from 'next/router'; // Agregar esta importación
+import { useRouter } from 'next/router';
 import kime from "@/pages/assets/img/kime.jpeg";
 import Burger from "@/pages/assets/img/Burger.jpg";
 import Sopadetomate from "@/pages/assets/img/sopatomate.jpg";
@@ -28,39 +32,36 @@ const categoriaOrden = {
     "Pizzas": 3,
     "Postres": 4,
     "Bebidas": 5,
-    "Termos": 6, // Agregamos la nueva categoría
+    "Termos": 6,
 };
 
-// Productos estáticos como fallback (necesitas definir esto)
 const productosEstaticos = [
     // Agrega aquí tus productos estáticos como respaldo
 ];
 
 export default function MenuCliente() {
-    const router = useRouter(); // Mover dentro del componente
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos los platillos");
     const [modalOpen, setModalOpen] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [carrito, setCarrito] = useState([]);
-    const [productos, setProductos] = useState(productosEstaticos); // Estado para productos dinámicos
+    const [productos, setProductos] = useState(productosEstaticos);
     const [productosFiltrados, setProductosFiltrados] = useState(productosEstaticos);
     const [mensajeError, setMensajeError] = useState("");
     const [historialPedidos, setHistorialPedidos] = useState([]);
     const [modalTotalOpen, setModalTotalOpen] = useState(false);
     const [totalPedidos, setTotalPedidos] = useState(0);
-    const [loading, setLoading] = useState(true); // Estado de carga
+    const [loading, setLoading] = useState(true);
+    const [busqueda, setBusqueda] = useState("");
 
-    // Mover el useEffect dentro del componente
     useEffect(() => {
-        // Verificar si el token existe en el localStorage
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (!token) {
-            router.push('/login'); // Redirigir al login si no hay token
+            router.push('/login');
         }
     }, [router]);
 
-    // Función para transformar productos de la API al formato local
     const transformarProductos = (productosAPI) => {
         return productosAPI.map(producto => ({
             id: producto.id_products,
@@ -70,14 +71,13 @@ export default function MenuCliente() {
             categoria: producto.category_name || producto.nombre_categoria,
             imagen: producto.image_url && producto.image_url.length > 0
                 ? producto.image_url[0]
-                : kime, // Imagen por defecto
-            ingredientes: producto.ingredientes || [], // Opcional: solo si existe
+                : kime,
+            ingredientes: producto.ingredientes || [],
             status: producto.status,
-            cantidad: 1 // Agregar cantidad inicial
+            cantidad: 1
         }));
     };
 
-    // Cargar productos desde la API
     useEffect(() => {
         const cargarProductos = async () => {
             try {
@@ -85,7 +85,6 @@ export default function MenuCliente() {
                 const productosAPI = await getProducts();
                 const productosTransformados = transformarProductos(productosAPI);
 
-                // Filtrar solo productos activos
                 const productosActivos = productosTransformados.filter(
                     producto => producto.status === 'activo'
                 );
@@ -95,7 +94,6 @@ export default function MenuCliente() {
             } catch (error) {
                 console.error('Error al cargar productos:', error);
                 setMensajeError('Error al cargar los productos. Mostrando menú estático.');
-                // Mantener productos estáticos en caso de error
                 setProductos(productosEstaticos);
                 setProductosFiltrados(productosEstaticos);
             } finally {
@@ -120,36 +118,24 @@ export default function MenuCliente() {
     }, [isOpen]);
 
     useEffect(() => {
-        setProductosFiltrados(
-            categoriaSeleccionada === "Todos los platillos"
-                ? productos
-                : productos.filter(producto => producto.categoria === categoriaSeleccionada)
-        );
-    }, [categoriaSeleccionada, productos]);
+        let productosFiltradosTemp = productos;
 
-    useEffect(() => {
-        // Recuperar carrito y historial de pedidos desde localStorage
-        const carritoGuardado = localStorage.getItem("carrito1");
-        const historialGuardado = localStorage.getItem("historialPedidos1");
-
-        if (carritoGuardado) {
-            setCarrito(JSON.parse(carritoGuardado));
+        if (categoriaSeleccionada !== "Todos los platillos") {
+            productosFiltradosTemp = productosFiltradosTemp.filter(
+                producto => producto.categoria === categoriaSeleccionada
+            );
         }
 
-        if (historialGuardado) {
-            setHistorialPedidos(JSON.parse(historialGuardado));
+        if (busqueda.trim() !== "") {
+            productosFiltradosTemp = productosFiltradosTemp.filter(
+                producto => producto.nombre.toLowerCase().includes(busqueda.toLowerCase())
+            );
         }
-    }, []);
 
-    useEffect(() => {
-        // Guardar el carrito en localStorage
-        localStorage.setItem("carrito1", JSON.stringify(carrito));
-    }, [carrito]);
+        setProductosFiltrados(productosFiltradosTemp);
+    }, [categoriaSeleccionada, productos, busqueda]);
 
-    useEffect(() => {
-        // Guardar el historial de pedidos en localStorage
-        localStorage.setItem("historialPedidos1", JSON.stringify(historialPedidos));
-    }, [historialPedidos]);
+    const categorias = ["Todos los platillos", ...new Set(productos.map(p => p.categoria))];
 
     const openModal = (producto) => {
         setProductoSeleccionado(producto);
@@ -160,123 +146,6 @@ export default function MenuCliente() {
         setModalOpen(false);
         setProductoSeleccionado(null);
     };
-
-    const agregarAlCarrito = (producto) => {
-        // Solo procesar ingredientes si existen
-        const ingredientesExcluidos = producto.ingredientes && producto.ingredientes.length > 0
-            ? Array.from(
-                document.querySelectorAll('input[type="checkbox"]:checked')
-            ).map((checkbox) => checkbox.nextSibling.textContent.replace("Sin ", "").trim())
-            : [];
-
-        const productoConExclusiones = {
-            ...producto,
-            id: `${producto.id}-${ingredientesExcluidos.join(",")}`,
-            ingredientesExcluidos,
-        };
-
-        setCarrito((prevCarrito) => {
-            const existingItemIndex = prevCarrito.findIndex(
-                (item) => item.id === productoConExclusiones.id
-            );
-
-            if (existingItemIndex !== -1) {
-                const updatedCarrito = [...prevCarrito];
-                updatedCarrito[existingItemIndex].cantidad += 1;
-                return updatedCarrito;
-            } else {
-                return [...prevCarrito, { ...productoConExclusiones, cantidad: 1 }];
-            }
-        });
-
-        closeModal();
-    };
-
-    const calcularTotal = () => {
-        if (!carrito || carrito.length === 0) {
-            return "0.00";
-        }
-        return carrito.reduce((total, item) => total + item.precio * item.cantidad, 0).toFixed(2);
-    };
-
-    const realizarPedido = () => {
-        if (carrito.length === 0) {
-            setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
-            return;
-        }
-
-        // Crear la orden en el formato que espera la API
-        const orden = {
-            fecha: new Date().toISOString(),
-            total: parseFloat(calcularTotal()),
-            items: carrito.map((item) => ({
-                producto_id: item.id.split('-')[0], // Remover las exclusiones del ID
-                nombre: item.nombre,
-                cantidad: item.cantidad,
-                precio_unitario: item.precio,
-                precio_total: item.precio * item.cantidad,
-                categoria: item.categoria,
-                ingredientes_excluidos: item.ingredientesExcluidos || [],
-                personalizaciones: item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 
-                    ? `Sin: ${item.ingredientesExcluidos.join(", ")}` 
-                    : null
-            })),
-            resumen: {
-                total_items: carrito.reduce((total, item) => total + item.cantidad, 0),
-                subtotal: parseFloat(calcularTotal()),
-                total_final: parseFloat(calcularTotal())
-            }
-        };
-
-        // Imprimir la orden en consola
-        console.log("=== ORDEN PARA ENVIAR A LA API ===");
-        console.log(JSON.stringify(orden, null, 2));
-        console.log("=== FIN DE LA ORDEN ===");
-
-        // También puedes imprimir solo los datos esenciales
-        console.log("=== DATOS ESENCIALES ===");
-        console.log("Total:", orden.total);
-        console.log("Cantidad de items:", orden.resumen.total_items);
-        console.log("Items:", orden.items);
-
-        // Agregar los productos del carrito al historial
-        setHistorialPedidos((prevHistorial) => [
-            ...prevHistorial,
-            ...carrito.map((item) => ({
-                nombre: item.nombre,
-                cantidad: item.cantidad,
-                precio: item.precio,
-                ingredientesExcluidos: item.ingredientesExcluidos || [],
-            })),
-        ]);
-
-        // Limpia el carrito y cierra la modal
-        setCarrito([]);
-        setMensajeError(""); // Limpia el mensaje de error
-    };
-
-    const terminarOrden = () => {
-        // Validar que existe historial de pedidos
-        if (historialPedidos.length === 0) {
-            setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
-            return;
-        }
-
-        // Calcula el total acumulado del historial
-        const total = historialPedidos.reduce(
-            (acc, item) => acc + item.precio * item.cantidad,
-            0
-        );
-
-        // Actualiza el total y abre la modal del total
-        setTotalPedidos(total.toFixed(2));
-        setHistorialPedidos([]); // Limpia el historial de pedidos
-        setModalTotalOpen(true); // Abre la modal del total
-        setMensajeError(""); // Limpiar cualquier mensaje de error previo
-    };
-
-    // Obtener categorías únicas de los productos cargados
-    const categorias = ["Todos los platillos", ...new Set(productos.map(p => p.categoria))];
 
     if (loading) {
         return (
@@ -291,16 +160,13 @@ export default function MenuCliente() {
             <header>
                 <nav className="w-full bg-gray-100 text-gray-800 p-4">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
-                        {/* Logo */}
                         <div className="flex items-center">
                             <GoChecklist size={36} className="text-green-600" />
                             <h1 className="text-3xl font-bold ml-2">WapiFood</h1>
                         </div>
-
-                        {/* Botón del menú hamburguesa */}
                         <button
                             className="z-20 cursor-pointer py-3 hamburger-button"
-                            onClick={() => setIsOpen(!isOpen)} // Toggle menu on click
+                            onClick={() => setIsOpen(!isOpen)}
                             aria-label="Toggle menu"
                         >
                             <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
@@ -311,7 +177,6 @@ export default function MenuCliente() {
                 </nav>
             </header>
 
-            {/* Menú desplegable */}
             <div
                 className={`
                     fixed top-0 left-0 h-full w-64 bg-gray-100 shadow-lg 
@@ -336,13 +201,75 @@ export default function MenuCliente() {
                     ))}
                 </ul>
             </div>
+            <div className="w-full h-70 shadow-md bg-white flex px-4"> 
+                <div className="w-full flex items-center justify-center flex-col ">
+                    <Image
+                        src={Profile}
+                        alt="Perfil"
+                        className="rounded-full w-20 h-20 object-cover mr-4"
+                        width={48}
+                        height={48}
+                    />
+                    <p className="font-bold text-2xl ">Las flautas de pepe </p>
+                    <p className="text-sm pt-2">| Av. San Piter #43 col. Lomas de Pedro, Tlalpan |  </p>
+                    <div className="flex items-center gap-2">
+                    
+                    <p className="text-sm flex py-2">| <span className=" px-2 self-center"><MdOutlineWatchLater className="text-green-600" /></span> Lun - Vie 9:00 a 6:00 |  </p>
+                    </div>
+                    
+                    
+                    <p className="text-sm flex">| <span className=" px-2 self-center"> <FaPhoneAlt className="text-green-600"/> </span>55-57-18-10-51 |  </p>
+                    <button className="cursor-pointer py-2"><FaWhatsapp className="text-xl"/> </button>
 
-            {/* Modal */}
+                </div>
+            </div>
+
+            <div className="w-full max-w-4xl mx-auto px-4 py-6">
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Buscar..."
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                    />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                        <svg 
+                            className="w-5 h-5 text-gray-400" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                        >
+                            <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2} 
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                            />
+                        </svg>
+                    </div>
+                    {busqueda && (
+                        <button
+                            onClick={() => setBusqueda("")}
+                            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
+                {busqueda && (
+                    <p className="mt-2 text-sm text-gray-600">
+                        {productosFiltrados.length} resultado(s) encontrado(s) para "{busqueda}"
+                    </p>
+                )}
+            </div>
+
             {modalOpen && productoSeleccionado && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
                     onClick={(e) => {
-                        // Cierra la modal si el clic ocurre fuera del contenido
                         if (e.target === e.currentTarget) {
                             closeModal();
                         }
@@ -383,66 +310,75 @@ export default function MenuCliente() {
                                 ))}
                             </div>
                         )}
-
-                        
-    
                     </div>
                 </div>
             )}
 
-            {/* Card Section */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12">
-                {productosFiltrados
-                    .sort((a, b) => {
-                        const ordenA = categoriaOrden[a.categoria] ?? Number.MAX_SAFE_INTEGER;
-                        const ordenB = categoriaOrden[b.categoria] ?? Number.MAX_SAFE_INTEGER;
-                        return ordenA - ordenB;
-                    })
-                    .map((producto) => (
-                        <div
-                            key={producto.id}
-                            className="rounded-lg shadow-lg flex flex-col bg-white"
-                        >
-                            <div className="w-full h-48">
-                                <Image
-                                    src={producto.imagen}
-                                    alt={`Imagen de ${producto.nombre}`}
-                                    className="rounded-t-lg w-full h-full object-cover"
-                                    width={300}
-                                    height={200}
-                                />
-                            </div>
-
-                            <div className="p-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-bold text-xl">{producto.nombre}</h3>
-                                    <p className="text-xl text-green-500 font-bold">
-                                        ${producto.precio.toFixed(2)}
-                                    </p>
-                                </div>
-                                <p className="text-gray-500 mb-4 line-clamp-2 min-h-[3rem]">
-                                    {producto.descripcion.length > 80
-                                        ? `${producto.descripcion.slice(0, 80)}...`
-                                        : producto.descripcion}
-                                </p>
-                                <div className="flex justify-between items-center">
-                                    <p className="bg-green-300 text-green-800 rounded-full px-4 py-1 text-sm">
-                                        {producto.categoria}
-                                    </p>
+                {productosFiltrados.length > 0 ? (
+                    productosFiltrados
+                        .sort((a, b) => {
+                            const ordenA = categoriaOrden[a.categoria] ?? Number.MAX_SAFE_INTEGER;
+                            const ordenB = categoriaOrden[b.categoria] ?? Number.MAX_SAFE_INTEGER;
+                            return ordenA - ordenB;
+                        })
+                        .map((producto) => (
+                            <div
+                                key={producto.id}
+                                className="rounded-lg shadow-lg flex flex-col bg-white"
+                            >
+                                <div className="w-full h-48">
+                                    <Image
+                                        src={producto.imagen}
+                                        alt={`Imagen de ${producto.nombre}`}
+                                        className="rounded-t-lg w-full h-full object-cover"
+                                        width={300}
+                                        height={200}
+                                    />
                                 </div>
 
-                                {/* Botón "Personalizar" */}
-                                <div className="mt-4">
-                                    <button
-                                        className=" flex gap-4 items-center justify-center bg-green-500 text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full"
-                                        onClick={() => openModal(producto)}
-                                    >
-                                        <FaRegEye className="h-[20px] w-[20px]" />Detalles
-                                    </button>
+                                <div className="p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h3 className="font-bold text-xl">{producto.nombre}</h3>
+                                        <p className="text-xl text-green-500 font-bold">
+                                            ${producto.precio.toFixed(2)}
+                                        </p>
+                                    </div>
+                                    <p className="text-gray-500 mb-4 line-clamp-2 min-h-[3rem]">
+                                        {producto.descripcion.length > 80
+                                            ? `${producto.descripcion.slice(0, 80)}...`
+                                            : producto.descripcion}
+                                    </p>
+                                    <div className="flex justify-between items-center">
+                                        <p className="bg-green-300 text-green-800 rounded-full px-4 py-1 text-sm">
+                                            {producto.categoria}
+                                        </p>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <button
+                                            className=" flex gap-4 items-center justify-center bg-green-500 text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full"
+                                            onClick={() => openModal(producto)}
+                                        >
+                                            <FaRegEye className="h-[20px] w-[20px]" />Detalles
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                ) : (
+                    <div className="col-span-full text-center py-8">
+                        <p className="text-gray-500 text-lg">No se encontraron platillos que coincidan con tu búsqueda.</p>
+                        {busqueda && (
+                            <button
+                                onClick={() => setBusqueda("")}
+                                className="mt-2 text-green-600 hover:text-green-800"
+                            >
+                                Limpiar búsqueda
+                            </button>
+                        )}
+                    </div>
+                )}
             </section>
         </section>
     );
