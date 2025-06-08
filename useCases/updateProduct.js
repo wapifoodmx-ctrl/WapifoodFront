@@ -25,7 +25,7 @@ export async function updateProduct(id_products, productData, imageFile) {
     if (productData.category_id) queryParams.append("category_id", productData.category_id);
 
     // Construir la URL con los parámetros de consulta
-    const url = `https://comandapp-api.h-dev.xyz/products/${id_products}?${queryParams.toString()}`;
+    const url = `http://189.147.92.232:8000/products/${id_products}?${queryParams.toString()}`;
 
     // Crear el FormData para el archivo
     const formData = new FormData();
