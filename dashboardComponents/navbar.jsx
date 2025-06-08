@@ -22,10 +22,11 @@ export default function Navbar() {
 
     const dasboard = () => router.push('/dashboard');
     const productos = () => router.push('/menu');
-    const pedidos = () => router.push('/pedidos');
+    const tickets = () => router.push('/tickets');
     const MiPerfil = () => router.push('/user');
     const payments = () => router.push('/payments');
     const puntoDeVenta = () => router.push('/puntodeventa');
+    // Corregir el typo en "cocina"
     const cocina = () => router.push('/cocina');
 
     const menu = {
@@ -39,8 +40,8 @@ export default function Navbar() {
             href: "#",
             icon: <LuPizza className="h-full w-[24px]" />,
         },
-        Pedidos: {
-            title: "Pedidos",
+        Tickets: {
+            title: "Tickets",
             href: "#",
             icon: <FiShoppingBag className="h-full w-[24px]" />,
         },
@@ -140,13 +141,13 @@ export default function Navbar() {
                         <p className="text-gray-500 font-bold">Menú principal</p>
                         {Object.keys(menu).map((item, index) => (
                             <li key={index} className="cursor-pointer hover:text-green-600 my-4">
-                                {item === "Dashboard" || item === "Register" || item === "Pedidos" ? (
+                                {item === "Dashboard" || item === "Register" || item === "Tickets" ? (
                                     <button
                                         className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
                                         onClick={
                                             item === "Dashboard" ? dasboard :
                                             item === "Register" ? productos :
-                                            pedidos
+                                            item === "Tickets" ? tickets : null
                                         }
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
