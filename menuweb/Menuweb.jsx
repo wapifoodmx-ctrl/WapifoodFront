@@ -1,3 +1,4 @@
+import { IoLocationOutline } from "react-icons/io5";
 import { FaWhatsapp } from "react-icons/fa";
 import { FaPhoneAlt } from "react-icons/fa";
 import { MdOutlineWatchLater } from "react-icons/md";
@@ -24,6 +25,15 @@ import Cesar from "@/pages/assets/img/Cesar.jpg";
 import Fruta from "@/pages/assets/img/fruta.jpg";
 import Image from "next/image";
 import { getProducts } from "@/useCases/getProducts";
+
+const profileData = {
+    profileImage: Profile, 
+    name: "Las flautas de pepe",
+    address: "Av. San Piter #43 col. Lomas de Pedro, Tlalpan",
+    schedule: "Lun - Vie 9:00 a 6:00",
+    phone: "55-57-18-10-51",
+    whatsapp: true, 
+  };
 
 const categoriaOrden = {
     "Entradas": 0,
@@ -180,7 +190,7 @@ export default function MenuCliente() {
             <div
                 className={`
                     fixed top-0 left-0 h-full w-64 bg-gray-100 shadow-lg 
-                    transition-transform duration-300 ease-in-out menu-container
+                    transition-transform duration-300 ease-in-out menu-container z-11
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
             >
@@ -201,30 +211,67 @@ export default function MenuCliente() {
                     ))}
                 </ul>
             </div>
-            <div className="w-full h-70 shadow-md bg-white flex px-4"> 
-                <div className="w-full flex items-center justify-center flex-col ">
-                    <Image
-                        src={Profile}
-                        alt="Perfil"
-                        className="rounded-full w-20 h-20 object-cover mr-4"
-                        width={48}
-                        height={48}
-                    />
-                    <p className="font-bold text-2xl ">Las flautas de pepe </p>
-                    <p className="text-sm pt-2">| Av. San Piter #43 col. Lomas de Pedro, Tlalpan |  </p>
-                    <div className="flex items-center gap-2">
-                    
-                    <p className="text-sm flex py-2">| <span className=" px-2 self-center"><MdOutlineWatchLater className="text-green-600" /></span> Lun - Vie 9:00 a 6:00 |  </p>
-                    </div>
-                    
-                    
-                    <p className="text-sm flex">| <span className=" px-2 self-center"> <FaPhoneAlt className="text-green-600"/> </span>55-57-18-10-51 |  </p>
-                    <button className="cursor-pointer py-2"><FaWhatsapp className="text-xl"/> </button>
+            <div className="w-full h-auto py-4 shadow-md bg-white flex px-4"> 
+    <div className="w-full flex items-center justify-center flex-col">
+        {profileData.profileImage && (
+            <Image
+                src={profileData.profileImage}
+                alt="Perfil"
+                className="rounded-full w-20 h-20 object-cover mr-4"
+                width={48}
+                height={48}
+            />
+        )}
 
+        {profileData.name && (
+            <p className="font-bold text-2xl">{profileData.name}</p>
+        )}
+
+        <div className="md:flex md:justify-between items-center justify-center">
+            {profileData.address && (
+                <div className="flex items-center gap-2 text-center">
+                    <p className="text-sm flex py-2">
+                        |
+                        <span className="px-2 self-center">
+                            <IoLocationOutline className="text-green-600" />
+                        </span> 
+                        {profileData.address} |
+                    </p>
                 </div>
-            </div>
+            )}
 
-            <div className="w-full max-w-4xl mx-auto px-4 py-6">
+            {profileData.schedule && (
+                <div className="flex items-center justify-center gap-2">
+                    <p className="text-sm flex py-2">
+                        | 
+                        <span className="px-2 self-center">
+                            <MdOutlineWatchLater className="text-green-600" />
+                        </span> 
+                        {profileData.schedule} |
+                    </p>
+                </div>
+            )}
+
+            {profileData.phone && (
+                <p className="text-sm flex py-2 justify-center items-center">
+                    | 
+                    <span className="px-2 self-center">
+                        <FaPhoneAlt className="text-green-600" />
+                    </span> 
+                    {profileData.phone} |
+                </p>
+            )}
+        </div>
+
+        {profileData.whatsapp && (
+            <button className="cursor-pointer py-2">
+                <FaWhatsapp className="text-xl md:text-3xl" />
+            </button>
+        )}
+    </div>
+</div>
+
+            <div className="w-full max-w-4xl mx-auto px-4 py-6 z-10">
                 <div className="relative">
                     <input
                         type="text"
