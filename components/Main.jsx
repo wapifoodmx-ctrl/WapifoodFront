@@ -13,6 +13,9 @@ export default function Main() {
     const handleHowItWorksClick = () => {
         router.push('/login');
     };
+    const handleClientMenuClick = () => {
+        router.push('/clientmenu');
+    }
 
     return (
         <main className="bg-[#3fe283] h-auto ">
@@ -37,6 +40,12 @@ export default function Main() {
                             onClick={handleHowItWorksClick}
                         >
                             Iniciar Sesión
+                        </button>
+                        <button 
+                            className="rounded-lg bg-white text-black border-black  p-2 w-full cursor-pointer text-2xl"
+                            onClick={handleClientMenuClick}
+                        >
+                            Menu del Cliente
                         </button>
 
                     </div>

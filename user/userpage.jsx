@@ -1,3 +1,4 @@
+import { TbWorldShare } from "react-icons/tb";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { IoLocationOutline } from "react-icons/io5";
@@ -9,7 +10,7 @@ import Navbar from "@/dashboardComponents/navbar";
 
 // Validaciones con Yup
 const personalInfoSchema = Yup.object().shape({
-  phone: Yup.string().required("Teléfono es requerido"),
+  telephone: Yup.string().required("Teléfono es requerido"),
   profileImage: Yup.mixed().required("La imagen de perfil es requerida"),
 });
 
@@ -31,20 +32,22 @@ export default function UserPage() {
           </div>
           <div className="border-b-1 w-full border-gray-500"></div>
         </div>
-        <div className="space-y-2 mt-2 flex flex-col justify-center items-center">
-          <p className="flex gap-2"><CiMail className="text-xl self-center" /> juan.dias@ejemplo.com</p>
-          <p className="flex gap-2"><FaPhoneAlt className="text-xl self-center" /> +56912345678</p>
-          <p className="flex gap-2"><IoLocationOutline className="text-xl self-center" /> CDMX, México</p>
+        <div className="pt-2 flex flex-col justify-center items-center md:flex-row ">
+          <p className="flex gap-2">| <IoLocationOutline className="text-xl self-center" /> CDMX, México |</p>
+          <p className="flex gap-2">| <CiMail className="text-xl self-center" /> juan.dias@ejemplo.com |</p>
+          <p className="flex gap-2">| <FaPhoneAlt className="text-xl self-center" /> +56912345678 |</p>
+          <a className="flex gap-2 cursor-pointer">| <TbWorldShare className="text-xl self-center"/> www |</a>
         </div>
       </div>
       <div className="bg-white shadow-md rounded-lg p-4 mt-4">
         <Formik
           initialValues={{
-            name: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            position: "",
+            restaurantName: "",
+            street: "",
+            neighborhood: "",
+            delegation: "",
+            telephone: "",
+            whatsapp: "",
             profileImage: null,
           }}
           validationSchema={personalInfoSchema}
@@ -55,43 +58,81 @@ export default function UserPage() {
           {({ setFieldValue }) => (
             <Form className="flex flex-col space-y-4">
               <h3 className="font-bold text-xl">Datos Generales</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 space-y-2">
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="name">Nombre del restaurante</label>
-                  <Field type="text" id="name" name="name" className="border p-2 rounded" />
-                  <ErrorMessage name="name" component="div" className="text-red-500 text-sm" />
+              <p>NOTA: Los siguientes datos apareceran en su página web, favor de revisar antes de dar click en "Guardar Cambios"</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <label className="font-bold" htmlFor="restaurantName">Nombre del restaurante</label>
+                  <Field 
+                    type="text" 
+                    id="restaurantName" 
+                    name="restaurantName" 
+                    placeholder="Ej: Las Flautas de Pepe"
+                    className="border p-2 rounded" 
+                  />
+                  <ErrorMessage name="restaurantName" component="div" className="text-red-500 text-sm" />
                 </div>
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="lastName">Calle y número</label>
-                  <Field type="text" id="lastName" name="lastName" className="border p-2 rounded" />
-                  <ErrorMessage name="lastName" component="div" className="text-red-500 text-sm" />
+                <div className="flex flex-col">
+                  <label className="font-bold" htmlFor="street">Calle y número</label>
+                  <Field 
+                    type="text" 
+                    id="street" 
+                    name="street" 
+                    placeholder="Ej: Av. Reforma #123"
+                    className="border p-2 rounded" 
+                  />
+                  <ErrorMessage name="street" component="div" className="text-red-500 text-sm" />
                 </div>
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="email">Colonia</label>
-                  <Field type="email" id="email" name="email" className="border p-2 rounded" />
-                  <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
+                <div className="flex flex-col">
+                  <label className="font-bold" htmlFor="neighborhood">Colonia</label>
+                  <Field 
+                    type="text" 
+                    id="neighborhood" 
+                    name="neighborhood" 
+                    placeholder="Ej: Lomas de Hidalgo"
+                    className="border p-2 rounded" 
+                  />
+                  <ErrorMessage name="neighborhood" component="div" className="text-red-500 text-sm" />
                 </div>
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="phone">Delegación</label>
-                  <Field type="tel" id="phone" name="phone" className="border p-2 rounded" />
-                  <ErrorMessage name="phone" component="div" className="text-red-500 text-sm" />
+                <div className="flex flex-col">
+                  <label className="font-bold" htmlFor="delegation">Delegación</label>
+                  <Field 
+                    type="text" 
+                    id="delegation" 
+                    name="delegation" 
+                    placeholder="Ej: Cuauhtémoc"
+                    className="border p-2 rounded" 
+                  />
+                  <ErrorMessage name="delegation" component="div" className="text-red-500 text-sm" />
                 </div>
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="position">Teléfono</label>
-                  <Field type="text" id="position" name="position" className="border p-2 rounded" />
-                  <ErrorMessage name="position" component="div" className="text-red-500 text-sm" />
+                <div className="flex flex-col">
+                  <label className="font-bold" htmlFor="telephone">Teléfono</label>
+                  <Field 
+                    type="tel" 
+                    id="telephone" 
+                    name="telephone" 
+                    placeholder="Ej: 55-1234-5678"
+                    className="border p-2 rounded" 
+                  />
+                  <ErrorMessage name="telephone" component="div" className="text-red-500 text-sm" />
                 </div>
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="position">WhatsApp</label>
-                  <Field type="text" id="position" name="position" className="border p-2 rounded" />
-                  <ErrorMessage name="position" component="div" className="text-red-500 text-sm" />
+                <div className="flex flex-col">
+                  <label className="font-bold" htmlFor="whatsapp">WhatsApp</label>
+                  <Field 
+                    type="tel" 
+                    id="whatsapp" 
+                    name="whatsapp" 
+                    placeholder="Ej: https://api.whatsapp.com/message/DJESQM3TOQH5G1?autoload=1&app_absent=0"
+                    className="border p-2 rounded" 
+                  />
+                  <ErrorMessage name="whatsapp" component="div" className="text-red-500 text-sm" />
                 </div>
-                <div className="flex flex-col pr-4">
-                  <label className="font-bold" htmlFor="profileImage">Imagen de perfil</label>
+                <div className="flex flex-col">
+                  <label className="font-bold cursor-pointer" htmlFor="profileImage">Imagen de perfil</label>
                   <input
                     type="file"
                     id="profileImage"
                     name="profileImage"
+                    accept="image/*"
                     className="border p-2 rounded cursor-pointer"
                     onChange={(event) => {
                       setFieldValue("profileImage", event.currentTarget.files[0]);
