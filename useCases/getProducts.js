@@ -7,6 +7,7 @@ export async function getProducts() {
             throw new Error('No se encontró un token de autenticación');
         }
 
+
         const response = await fetch(endpoint, {
             method: 'GET',
             headers: {

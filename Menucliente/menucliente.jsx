@@ -10,7 +10,9 @@ import { IoHomeOutline } from "react-icons/io5";
 import { GoChecklist } from "react-icons/go";
 import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
-import { useRouter } from 'next/router'; // Agregar esta importación
+import { useRouter } from 'next/router';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
 import kime from "@/pages/assets/img/kime.jpeg";
 import Burger from "@/pages/assets/img/Burger.jpg";
 import Sopadetomate from "@/pages/assets/img/sopatomate.jpg";
@@ -20,6 +22,7 @@ import Cesar from "@/pages/assets/img/Cesar.jpg";
 import Fruta from "@/pages/assets/img/fruta.jpg";
 import Image from "next/image";
 import { getProducts } from "@/useCases/getProducts";
+import { loginUser } from '@/useCases/login';
 
 const categoriaOrden = {
     "Entradas": 0,
@@ -28,38 +31,113 @@ const categoriaOrden = {
     "Pizzas": 3,
     "Postres": 4,
     "Bebidas": 5,
-    "Termos": 6, // Agregamos la nueva categoría
+    "Termos": 6,
 };
 
-// Productos estáticos como fallback (necesitas definir esto)
+// Productos estáticos como fallback
 const productosEstaticos = [
     // Agrega aquí tus productos estáticos como respaldo
 ];
 
 export default function MenuCliente() {
-    const router = useRouter(); // Mover dentro del componente
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos los platillos");
     const [modalOpen, setModalOpen] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [carrito, setCarrito] = useState([]);
     const [carritoModalOpen, setCarritoModalOpen] = useState(false);
-    const [productos, setProductos] = useState(productosEstaticos); // Estado para productos dinámicos
+    const [productos, setProductos] = useState(productosEstaticos);
     const [productosFiltrados, setProductosFiltrados] = useState(productosEstaticos);
     const [mensajeError, setMensajeError] = useState("");
     const [historialPedidos, setHistorialPedidos] = useState([]);
     const [modalTotalOpen, setModalTotalOpen] = useState(false);
     const [totalPedidos, setTotalPedidos] = useState(0);
-    const [loading, setLoading] = useState(true); // Estado de carga
+    const [loading, setLoading] = useState(true);
+    
+    // Estados para la modal de login
+    const [loginModalOpen, setLoginModalOpen] = useState(false);
+    const [serverError, setServerError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false); // Nuevo estado para controlar la autenticación
 
-    // Mover el useEffect dentro del componente
+    // Verificar token al cargar el componente
     useEffect(() => {
-        // Verificar si el token existe en el localStorage
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const token = localStorage.getItem('token');
         if (!token) {
-            router.push('/login'); // Redirigir al login si no hay token
+            setLoginModalOpen(true); // Mostrar modal de login si no hay token
+            setLoading(false); // Detener el loading ya que no hay token
+        } else {
+            setIsAuthenticated(true); // Marcar como autenticado si hay token
         }
-    }, [router]);
+    }, []);
+
+    // Cargar productos solo después de autenticarse
+    useEffect(() => {
+        if (!isAuthenticated) return; // No cargar productos si no está autenticado
+
+        const cargarProductos = async () => {
+            try {
+                setLoading(true);
+                const productosAPI = await getProducts();
+                const productosTransformados = transformarProductos(productosAPI);
+
+                const productosActivos = productosTransformados.filter(
+                    producto => producto.status === 'activo'
+                );
+
+                setProductos(productosActivos);
+                setProductosFiltrados(productosActivos);
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                setMensajeError('Error al cargar los productos. Mostrando menú estático.');
+                setProductos(productosEstaticos);
+                setProductosFiltrados(productosEstaticos);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        cargarProductos();
+    }, [isAuthenticated]); // Ejecutar solo cuando isAuthenticated cambie a true
+
+    // Función para manejar el login
+    const handleLogin = async (values, { setSubmitting }) => {
+        setServerError('');
+        setIsLoading(true);
+        try {
+            const response = await loginUser(values);
+
+            if (response.ok) {
+                const data = await response.json();
+
+                if (data.access_token) {
+                    // Guardar token siempre en localStorage
+                    localStorage.setItem('token', data.access_token);
+                    
+                    // Cerrar modal de login y marcar como autenticado
+                    setLoginModalOpen(false);
+                    setServerError('');
+                    setIsAuthenticated(true); // Esto disparará la carga de productos
+                } else {
+                    setServerError('No se recibió un token válido. Por favor, intenta nuevamente.');
+                }
+            } else {
+                setServerError('Usuario y/o contraseña incorrectos. Por favor, verifica tus credenciales.');
+            }
+        } catch (error) {
+            setServerError('Ocurrió un error al intentar iniciar sesión. Inténtalo nuevamente.');
+        } finally {
+            setSubmitting(false);
+            setIsLoading(false);
+        }
+    };
+
+    // Validación del login simplificada (sin rememberMe)
+    const loginValidationSchema = Yup.object({
+        email: Yup.string().email('Correo electrónico inválido').required('Correo electrónico es requerido'),
+        password: Yup.string().min(6, 'La contraseña debe tener al menos 6 caracteres').required('Contraseña es requerida'),
+    });
 
     // Función para transformar productos de la API al formato local
     const transformarProductos = (productosAPI) => {
@@ -71,41 +149,12 @@ export default function MenuCliente() {
             categoria: producto.category_name || producto.nombre_categoria,
             imagen: producto.image_url && producto.image_url.length > 0
                 ? producto.image_url[0]
-                : kime, // Imagen por defecto
-            ingredientes: producto.ingredientes || [], // Opcional: solo si existe
+                : kime,
+            ingredientes: producto.ingredientes || [],
             status: producto.status,
-            cantidad: 1 // Agregar cantidad inicial
+            cantidad: 1
         }));
     };
-
-    // Cargar productos desde la API
-    useEffect(() => {
-        const cargarProductos = async () => {
-            try {
-                setLoading(true);
-                const productosAPI = await getProducts();
-                const productosTransformados = transformarProductos(productosAPI);
-
-                // Filtrar solo productos activos
-                const productosActivos = productosTransformados.filter(
-                    producto => producto.status === 'activo'
-                );
-
-                setProductos(productosActivos);
-                setProductosFiltrados(productosActivos);
-            } catch (error) {
-                console.error('Error al cargar productos:', error);
-                setMensajeError('Error al cargar los productos. Mostrando menú estático.');
-                // Mantener productos estáticos en caso de error
-                setProductos(productosEstaticos);
-                setProductosFiltrados(productosEstaticos);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        cargarProductos();
-    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -129,7 +178,6 @@ export default function MenuCliente() {
     }, [categoriaSeleccionada, productos]);
 
     useEffect(() => {
-        // Recuperar carrito y historial de pedidos desde localStorage
         const carritoGuardado = localStorage.getItem("carrito1");
         const historialGuardado = localStorage.getItem("historialPedidos1");
 
@@ -143,12 +191,10 @@ export default function MenuCliente() {
     }, []);
 
     useEffect(() => {
-        // Guardar el carrito en localStorage
         localStorage.setItem("carrito1", JSON.stringify(carrito));
     }, [carrito]);
 
     useEffect(() => {
-        // Guardar el historial de pedidos en localStorage
         localStorage.setItem("historialPedidos1", JSON.stringify(historialPedidos));
     }, [historialPedidos]);
 
@@ -163,7 +209,6 @@ export default function MenuCliente() {
     };
 
     const agregarAlCarrito = (producto) => {
-        // Solo procesar ingredientes si existen
         const ingredientesExcluidos = producto.ingredientes && producto.ingredientes.length > 0
             ? Array.from(
                 document.querySelectorAll('input[type="checkbox"]:checked')
@@ -206,12 +251,11 @@ export default function MenuCliente() {
             return;
         }
 
-        // Crear la orden en el formato que espera la API
         const orden = {
             fecha: new Date().toISOString(),
             total: parseFloat(calcularTotal()),
             items: carrito.map((item) => ({
-                producto_id: item.id.split('-')[0], // Remover las exclusiones del ID
+                producto_id: item.id.split('-')[0],
                 nombre: item.nombre,
                 cantidad: item.cantidad,
                 precio_unitario: item.precio,
@@ -229,18 +273,10 @@ export default function MenuCliente() {
             }
         };
 
-        // Imprimir la orden en consola
         console.log("=== ORDEN PARA ENVIAR A LA API ===");
         console.log(JSON.stringify(orden, null, 2));
         console.log("=== FIN DE LA ORDEN ===");
 
-        // También puedes imprimir solo los datos esenciales
-        console.log("=== DATOS ESENCIALES ===");
-        console.log("Total:", orden.total);
-        console.log("Cantidad de items:", orden.resumen.total_items);
-        console.log("Items:", orden.items);
-
-        // Agregar los productos del carrito al historial
         setHistorialPedidos((prevHistorial) => [
             ...prevHistorial,
             ...carrito.map((item) => ({
@@ -251,36 +287,32 @@ export default function MenuCliente() {
             })),
         ]);
 
-        // Limpia el carrito y cierra la modal
         setCarrito([]);
         setCarritoModalOpen(false);
-        setMensajeError(""); // Limpia el mensaje de error
+        setMensajeError("");
     };
 
     const terminarOrden = () => {
-        // Validar que existe historial de pedidos
         if (historialPedidos.length === 0) {
             setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
             return;
         }
 
-        // Calcula el total acumulado del historial
         const total = historialPedidos.reduce(
             (acc, item) => acc + item.precio * item.cantidad,
             0
         );
 
-        // Actualiza el total y abre la modal del total
         setTotalPedidos(total.toFixed(2));
-        setHistorialPedidos([]); // Limpia el historial de pedidos
-        setModalTotalOpen(true); // Abre la modal del total
-        setMensajeError(""); // Limpiar cualquier mensaje de error previo
+        setHistorialPedidos([]);
+        setModalTotalOpen(true);
+        setMensajeError("");
     };
 
-    // Obtener categorías únicas de los productos cargados
     const categorias = ["Todos los platillos", ...new Set(productos.map(p => p.categoria))];
 
-    if (loading) {
+    // Mostrar loading solo si está autenticado y cargando productos
+    if (loading && isAuthenticated) {
         return (
             <div className="flex justify-center items-center min-h-screen">
                 <div className="text-lg">Cargando productos...</div>
@@ -290,19 +322,89 @@ export default function MenuCliente() {
 
     return (
         <section>
+            {/* Modal de Login */}
+            {loginModalOpen && (
+                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1000]">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
+                        {isLoading ? (
+                            <div className="flex justify-center items-center h-32">
+                                <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin"></div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className='text-[#3fe283] text-4xl flex justify-center mb-4'>
+                                    <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
+                                        <GoChecklist size={32} />
+                                    </div>
+                                </div>
+                                <h2 className="text-2xl text-center font-bold text-black mb-2">Iniciar Sesión</h2>
+                                <p className='text-center text-gray-600 mb-4'>Ingresa tus credenciales para acceder al menú</p>
+                                
+                                <Formik
+                                    initialValues={{
+                                        email: '',
+                                        password: '',
+                                    }}
+                                    validationSchema={loginValidationSchema}
+                                    onSubmit={handleLogin}
+                                >
+                                    {({ isSubmitting }) => (
+                                        <Form className="flex flex-col gap-4">
+                                            {serverError && (
+                                                <div className="text-red-500 text-sm mb-2 text-center">
+                                                    {serverError}
+                                                </div>
+                                            )}
+
+                                            <div className='flex flex-col gap-2'>
+                                                <label>Correo electrónico</label>
+                                                <Field
+                                                    type="email"
+                                                    name="email"
+                                                    placeholder="Correo electrónico"
+                                                    className="p-2 border border-gray-300 rounded-lg w-full"
+                                                />
+                                                <ErrorMessage name="email" component="div" className="text-red-500 text-sm mt-1" />
+                                            </div>
+                                            
+                                            <div className='flex flex-col gap-2'>
+                                                <label>Contraseña</label>
+                                                <Field
+                                                    type="password"
+                                                    name="password"
+                                                    placeholder="Contraseña"
+                                                    className="p-2 border border-gray-300 rounded-lg w-full"
+                                                />
+                                                <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
+                                            </div>
+                                            
+                                            <button
+                                                type="submit"
+                                                className="bg-[#3fe283] text-white p-2 rounded-lg hover:bg-green-600 transition-colors"
+                                                disabled={isSubmitting}
+                                            >
+                                                Iniciar Sesión
+                                            </button>
+                                        </Form>
+                                    )}
+                                </Formik>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <header>
                 <nav className="w-full bg-gray-100 text-gray-800 p-4">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
-                        {/* Logo */}
                         <div className="flex items-center">
                             <GoChecklist size={36} className="text-green-600" />
                             <h1 className="text-3xl font-bold ml-2">WapiFood</h1>
                         </div>
 
-                        {/* Botón del menú hamburguesa */}
                         <button
                             className="z-20 cursor-pointer py-3 hamburger-button"
-                            onClick={() => setIsOpen(!isOpen)} // Toggle menu on click
+                            onClick={() => setIsOpen(!isOpen)}
                             aria-label="Toggle menu"
                         >
                             <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
@@ -466,7 +568,6 @@ export default function MenuCliente() {
                             </div>
                         )}
 
-                        {/* Botón "Terminar Orden" - Solo habilitado si hay historial */}
                         <button
                             className={`w-full py-2 rounded-lg mt-4 transition-colors ${
                                 historialPedidos.length > 0 
@@ -482,12 +583,11 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal */}
+            {/* Modal de producto */}
             {modalOpen && productoSeleccionado && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
                     onClick={(e) => {
-                        // Cierra la modal si el clic ocurre fuera del contenido
                         if (e.target === e.currentTarget) {
                             closeModal();
                         }
@@ -529,7 +629,6 @@ export default function MenuCliente() {
                             </div>
                         )}
 
-                        {/* Contador, Botones y Botón Agregar en la misma línea */}
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <button
@@ -560,7 +659,7 @@ export default function MenuCliente() {
                                 className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm"
                                 onClick={() => {
                                     agregarAlCarrito(productoSeleccionado);
-                                    closeModal(); // Cierra la modal después de agregar el producto
+                                    closeModal();
                                 }}
                             >
                                 Agregar - ${((productoSeleccionado.cantidad || 1) * productoSeleccionado.precio).toFixed(2)}
@@ -634,7 +733,6 @@ export default function MenuCliente() {
                                     </p>
                                 </div>
 
-                                {/* Botones "+" y "-" */}
                                 <div className="flex items-center justify-between mt-4">
                                     <div className="flex items-center gap-2">
                                         <button
@@ -681,7 +779,6 @@ export default function MenuCliente() {
                                     </button>
                                 </div>
 
-                                {/* Botón "Personalizar" */}
                                 <div className="mt-4">
                                     <button
                                         className=" flex gap-4 items-center justify-center bg-green-500 text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full"
