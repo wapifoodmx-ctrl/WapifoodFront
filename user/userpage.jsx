@@ -7,6 +7,8 @@ import { CiMail } from "react-icons/ci";
 import Image from "next/image";
 import Miokon from "@/pages/assets/images/Miokon.png";
 import Navbar from "@/dashboardComponents/navbar";
+import { useEffect, useState } from "react";
+import { getUserInfo } from "@/useCases/getUserInfo";
 
 // Validaciones con Yup
 const personalInfoSchema = Yup.object().shape({
@@ -16,6 +18,38 @@ const personalInfoSchema = Yup.object().shape({
 
 // Componente principal
 export default function UserPage() {
+  const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const data = await getUserInfo();
+        // console.log('Datos del usuario:', data);
+        const user= data.user_info;
+        console.log('Información del usuario:', user);
+        setUserInfo(user);
+      } catch (error) {
+        console.error('Error al cargar información del usuario:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  if (loading) {
+    return (
+      <section>
+        <Navbar />
+        <div className="flex justify-center items-center p-8">
+          <p>Cargando información del usuario...</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section>
       <Navbar />
@@ -28,14 +62,14 @@ export default function UserPage() {
             <Image src={Miokon} alt="Imagen de perfil" width={80} height={80} className="object-cover" />
           </div>
           <div className="flex flex-col">
-            <p className="font-bold text-xl">Juan Días Rodriguez</p>
+            <p className="font-bold text-xl">{userInfo.nombre}</p>
           </div>
           <div className="border-b-1 w-full border-gray-500"></div>
         </div>
         <div className="pt-2 flex flex-col justify-center items-center md:flex-row ">
-          <p className="flex gap-2">| <IoLocationOutline className="text-xl self-center" /> CDMX, México |</p>
-          <p className="flex gap-2">| <CiMail className="text-xl self-center" /> juan.dias@ejemplo.com |</p>
-          <p className="flex gap-2">| <FaPhoneAlt className="text-xl self-center" /> +56912345678 |</p>
+          <p className="flex gap-2">| <IoLocationOutline className="text-xl self-center" />{`${userInfo.direccion} ${userInfo.ciudad} ${userInfo.codigo_postal} ${userInfo.alcaldia}`} |</p>
+          <p className="flex gap-2">| <CiMail className="text-xl self-center" /> {`${userInfo.email}`} |</p>
+          <p className="flex gap-2">| <FaPhoneAlt className="text-xl self-center" /> {`${userInfo.telefono}`} |</p>
           <a className="flex gap-2 cursor-pointer">| <TbWorldShare className="text-xl self-center"/> www |</a>
         </div>
       </div>
@@ -66,6 +100,7 @@ export default function UserPage() {
                     type="text" 
                     id="restaurantName" 
                     name="restaurantName" 
+                    value={userInfo.nombre_restaurante || ""}
                     placeholder="Ej: Las Flautas de Pepe"
                     className="border p-2 rounded" 
                   />
@@ -77,6 +112,7 @@ export default function UserPage() {
                     type="text" 
                     id="street" 
                     name="street" 
+                    value={userInfo.direccion || ""}
                     placeholder="Ej: Av. Reforma #123"
                     className="border p-2 rounded" 
                   />
@@ -88,6 +124,7 @@ export default function UserPage() {
                     type="text" 
                     id="neighborhood" 
                     name="neighborhood" 
+                    value={userInfo.ciudad || ""}
                     placeholder="Ej: Lomas de Hidalgo"
                     className="border p-2 rounded" 
                   />
@@ -99,6 +136,7 @@ export default function UserPage() {
                     type="text" 
                     id="delegation" 
                     name="delegation" 
+                    value={userInfo.alcaldia || ""}
                     placeholder="Ej: Cuauhtémoc"
                     className="border p-2 rounded" 
                   />
@@ -110,6 +148,7 @@ export default function UserPage() {
                     type="tel" 
                     id="telephone" 
                     name="telephone" 
+                    value={userInfo.telefono || ""}
                     placeholder="Ej: 55-1234-5678"
                     className="border p-2 rounded" 
                   />
@@ -121,7 +160,8 @@ export default function UserPage() {
                     type="tel" 
                     id="whatsapp" 
                     name="whatsapp" 
-                    placeholder="Ej: https://api.whatsapp.com/message/DJESQM3TOQH5G1?autoload=1&app_absent=0"
+                    value={userInfo.whatsapp || ""}
+                    placeholder="Ej: https://api.whatsapp.com/message/DJESQM3TOQH5G1"
                     className="border p-2 rounded" 
                   />
                   <ErrorMessage name="whatsapp" component="div" className="text-red-500 text-sm" />
