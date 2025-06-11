@@ -9,6 +9,7 @@ import Miokon from "@/pages/assets/images/Miokon.png";
 import Navbar from "@/dashboardComponents/navbar";
 import { useEffect, useState } from "react";
 import { getUserInfo } from "@/useCases/getUserInfo";
+import { patchUserInfo } from "@/useCases/patchUserInfo";
 
 // Validaciones con Yup
 const personalInfoSchema = Yup.object().shape({
@@ -25,8 +26,7 @@ export default function UserPage() {
     const fetchUserInfo = async () => {
       try {
         const data = await getUserInfo();
-        // console.log('Datos del usuario:', data);
-        const user= data.user_info;
+        const user = data.user_info;
         console.log('Información del usuario:', user);
         setUserInfo(user);
       } catch (error) {
@@ -38,6 +38,34 @@ export default function UserPage() {
 
     fetchUserInfo();
   }, []);
+
+  const handleSubmit = async (values, { setSubmitting }) => {
+    try {
+      const updateData = {
+        telefono: values.telephone,
+        direccion: values.street,
+        codigo_postal: values.postalCode ? parseInt(values.postalCode) : null,
+        ciudad: values.neighborhood,
+        alcaldia: values.delegation,
+        nombre_restaurante: values.restaurantName,
+        whatsapp: values.whatsapp,
+        image: values.profileImage,
+      };
+
+      const updatedUser = await patchUserInfo(updateData);
+      console.log('Datos actualizados:', updatedUser);
+      
+      // Actualizar el estado local con los nuevos datos
+      setUserInfo(updatedUser);
+      
+      alert('Información actualizada exitosamente');
+    } catch (error) {
+      console.error('Error al actualizar:', error);
+      alert('Error al actualizar la información');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -59,7 +87,7 @@ export default function UserPage() {
       <div className='bg-white shadow-md rounded-lg p-4'>
         <div className="flex flex-col items-center">
           <div className='w-20 h-20 rounded-full overflow-hidden mb-3'>
-            <Image src={Miokon} alt="Imagen de perfil" width={80} height={80} className="object-cover" />
+            <Image src={userInfo.image_user.url} alt="Imagen de perfil" width={80} height={80} className="object-cover" />
           </div>
           <div className="flex flex-col">
             <p className="font-bold text-xl">{userInfo.nombre}</p>
@@ -76,20 +104,20 @@ export default function UserPage() {
       <div className="bg-white shadow-md rounded-lg p-4 mt-4">
         <Formik
           initialValues={{
-            restaurantName: "",
-            street: "",
-            neighborhood: "",
-            delegation: "",
-            telephone: "",
-            whatsapp: "",
+            restaurantName: userInfo?.nombre_restaurante || "",
+            street: userInfo?.direccion || "",
+            neighborhood: userInfo?.ciudad || "",
+            delegation: userInfo?.alcaldia || "",
+            telephone: userInfo?.telefono || "",
+            whatsapp: userInfo?.whatsapp || "",
+            postalCode: userInfo?.codigo_postal || "",
             profileImage: null,
-          }}
+          }}  
           validationSchema={personalInfoSchema}
-          onSubmit={(values) => {
-            console.log("Datos Personales:", values);
-          }}
+          onSubmit={handleSubmit}
+          enableReinitialize={true}
         >
-          {({ setFieldValue }) => (
+          {({ setFieldValue, isSubmitting }) => (
             <Form className="flex flex-col space-y-4">
               <h3 className="font-bold text-xl">Datos Generales</h3>
               <p>NOTA: Los siguientes datos apareceran en su página web, favor de revisar antes de dar click en "Guardar Cambios"</p>
@@ -100,7 +128,6 @@ export default function UserPage() {
                     type="text" 
                     id="restaurantName" 
                     name="restaurantName" 
-                    value={userInfo.nombre_restaurante || ""}
                     placeholder="Ej: Las Flautas de Pepe"
                     className="border p-2 rounded" 
                   />
@@ -112,7 +139,6 @@ export default function UserPage() {
                     type="text" 
                     id="street" 
                     name="street" 
-                    value={userInfo.direccion || ""}
                     placeholder="Ej: Av. Reforma #123"
                     className="border p-2 rounded" 
                   />
@@ -124,7 +150,6 @@ export default function UserPage() {
                     type="text" 
                     id="neighborhood" 
                     name="neighborhood" 
-                    value={userInfo.ciudad || ""}
                     placeholder="Ej: Lomas de Hidalgo"
                     className="border p-2 rounded" 
                   />
@@ -136,7 +161,6 @@ export default function UserPage() {
                     type="text" 
                     id="delegation" 
                     name="delegation" 
-                    value={userInfo.alcaldia || ""}
                     placeholder="Ej: Cuauhtémoc"
                     className="border p-2 rounded" 
                   />
@@ -148,7 +172,6 @@ export default function UserPage() {
                     type="tel" 
                     id="telephone" 
                     name="telephone" 
-                    value={userInfo.telefono || ""}
                     placeholder="Ej: 55-1234-5678"
                     className="border p-2 rounded" 
                   />
@@ -160,11 +183,21 @@ export default function UserPage() {
                     type="tel" 
                     id="whatsapp" 
                     name="whatsapp" 
-                    value={userInfo.whatsapp || ""}
                     placeholder="Ej: https://api.whatsapp.com/message/DJESQM3TOQH5G1"
                     className="border p-2 rounded" 
                   />
                   <ErrorMessage name="whatsapp" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col">
+                  <label className="font-bold" htmlFor="postalCode">Código Postal</label>
+                  <Field 
+                    type="number" 
+                    id="postalCode" 
+                    name="postalCode" 
+                    placeholder="Ej: 06100"
+                    className="border p-2 rounded" 
+                  />
+                  <ErrorMessage name="postalCode" component="div" className="text-red-500 text-sm" />
                 </div>
                 <div className="flex flex-col">
                   <label className="font-bold cursor-pointer" htmlFor="profileImage">Imagen de perfil</label>
@@ -181,7 +214,15 @@ export default function UserPage() {
                   <ErrorMessage name="profileImage" component="div" className="text-red-500 text-sm" />
                 </div>
               </div>
-              <button type="submit" className="mt-4 bg-green-500 text-white p-2 rounded cursor-pointer">Guardar Cambios</button>
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className={`mt-4 p-2 rounded cursor-pointer text-white ${
+                  isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+                }`}
+              >
+                {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
             </Form>
           )}
         </Formik>
