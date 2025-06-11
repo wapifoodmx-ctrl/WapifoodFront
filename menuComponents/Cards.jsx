@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import kime from "@/pages/assets/img/kime.jpeg";
 import { FiEdit } from "react-icons/fi";
+import { BsTrash3 } from "react-icons/bs"
 import { Formik, Form, Field } from "formik";
 import { updateProduct } from "../useCases/updateProduct"; // Importar la función para actualizar productos
 import ModalMessage from "../components/ModalMessage"; // Importar la modal de mensajes
 
 export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh, availabilityFilter }) {
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal
-    const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal de edición
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // Estado para modal de eliminar
+    const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar o eliminar
     const [loading, setLoading] = useState(true); // Estado de carga
     const [modalMessage, setModalMessage] = useState(null); // Estado para el mensaje de la modal
 
@@ -23,9 +25,10 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
     };
 
-    // Función para cerrar la modal
+    // Función para cerrar todas las modales
     const closeModals = () => {
-        setIsEditModalOpen(false); // Cierra la modal
+        setIsEditModalOpen(false); // Cierra la modal de edición
+        setIsDeleteModalOpen(false); // Cierra la modal de eliminar
         setSelectedProduct(null); // Limpia el producto seleccionado
     };
 
@@ -41,6 +44,24 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         } catch (err) {
             console.error("Error al actualizar el producto:", err.message);
             setModalMessage(err.message || "Hubo un error al actualizar el producto.");
+        }
+    };
+
+    // Función para eliminar el producto
+    const handleDeleteProduct = async () => {
+        try {
+            // Aquí llamarías a tu función de eliminación
+            // await deleteProduct(selectedProduct.id_products);
+            console.log(`Eliminando producto con ID: ${selectedProduct.id_products}`);
+            
+            setModalMessage("Producto eliminado con éxito.");
+            closeModals();
+            if (onRefresh) {
+                onRefresh(); // Refrescar la lista de productos
+            }
+        } catch (err) {
+            console.error("Error al eliminar el producto:", err.message);
+            setModalMessage(err.message || "Hubo un error al eliminar el producto.");
         }
     };
 
@@ -92,7 +113,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                     <div className="relative w-full h-48">
                         {/* Imagen del producto */}
                         <Image
-                            src={product.image_url?.[0] || kime} // Usa la imagen del producto o una predeterminada
+                            src={product.image_url?.[0]} // Usa la imagen del producto o una predeterminada
                             alt={product.name}
                             className="rounded-t-2xl w-full h-full object-cover"
                             width={300}
@@ -126,18 +147,64 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                     </div>
                     <div className="w-full p-4 flex justify-between items-center">
                         <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{product.category_name}</p>
-                        <button
-                            className="flex gap-4"
-                            onClick={() => {
-                                setSelectedProduct(product); // Establece el producto seleccionado
-                                setIsEditModalOpen(true); // Abre la modal
-                            }}
-                        >
-                            <FiEdit size={28} className="cursor-pointer" />
-                        </button>
+                        <div className="flex gap-3 items-center">
+                           
+                            
+                            {/* Botón de eliminar */}
+                            <button
+                                className="flex items-center"
+                                onClick={() => {
+                                    setSelectedProduct(product); // Establece el producto seleccionado
+                                    setIsDeleteModalOpen(true); // Abre la modal de eliminar
+                                }}
+                            >
+                                <BsTrash3 size={24} className="cursor-pointer text-red-500 hover:text-red-700" />
+                            </button>
+                             {/* Botón de editar */}
+                             <button
+                                className="flex items-center"
+                                onClick={() => {
+                                    setSelectedProduct(product); // Establece el producto seleccionado
+                                    setIsEditModalOpen(true); // Abre la modal de edición
+                                }}
+                            >
+                                <FiEdit size={28} className="cursor-pointer " />
+                            </button>
+                        </div>
                     </div>
                 </section>
             ))}
+
+            {/* Modal de Eliminar Producto */}
+            {isDeleteModalOpen && selectedProduct && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={closeModals} // Cierra la modal al hacer clic fuera
+                >
+                    <div
+                        className="bg-white p-6 rounded-lg shadow-lg w-96"
+                        onClick={(e) => e.stopPropagation()} // Evita cerrar la modal al hacer clic dentro
+                    >
+                        <p className="text-gray-600 mb-6 text-center">
+                            ¿Seguro que quieres eliminar el producto <span className="font-bold">"{selectedProduct.name}"</span>?
+                        </p>
+                        <div className="flex gap-4 justify-center">
+                            <button
+                                className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
+                                onClick={handleDeleteProduct}
+                            >
+                                Sí
+                            </button>
+                            <button
+                                className="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
+                                onClick={closeModals}
+                            >
+                                No
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal de Editar Producto */}
             {isEditModalOpen && selectedProduct && (

@@ -98,7 +98,7 @@ export default function UserPage() {
           <p className="flex gap-2">| <IoLocationOutline className="text-xl self-center" />{`${userInfo.direccion} ${userInfo.ciudad} ${userInfo.codigo_postal} ${userInfo.alcaldia}`} |</p>
           <p className="flex gap-2">| <CiMail className="text-xl self-center" /> {`${userInfo.email}`} |</p>
           <p className="flex gap-2">| <FaPhoneAlt className="text-xl self-center" /> {`${userInfo.telefono}`} |</p>
-          <a className="flex gap-2 cursor-pointer">| <TbWorldShare className="text-xl self-center"/> www |</a>
+          <a className="flex gap-2 cursor-pointer" href={`http://189.147.92.232:3000/webmenu/${userInfo.user_uuid} `}>| <TbWorldShare className="text-xl self-center"/>Tu menú digital |</a>
         </div>
       </div>
       <div className="bg-white shadow-md rounded-lg p-4 mt-4">
