@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import kime from "@/pages/assets/img/kime.jpeg";
 import { FiEdit } from "react-icons/fi";
-import { BsTrash3 } from "react-icons/bs"
+import { BsTrash3 } from "react-icons/bs";
 import { Formik, Form, Field } from "formik";
-import { updateProduct } from "../useCases/updateProduct"; // Importar la función para actualizar productos
+import { updateProduct } from "../useCases/updateProduct";
+import { deleteProduct } from "../useCases/deleteProduct"; // Importar la función de eliminar
 import ModalMessage from "../components/ModalMessage"; // Importar la modal de mensajes
 
 export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh, availabilityFilter }) {
@@ -50,9 +51,8 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     // Función para eliminar el producto
     const handleDeleteProduct = async () => {
         try {
-            // Aquí llamarías a tu función de eliminación
-            // await deleteProduct(selectedProduct.id_products);
-            console.log(`Eliminando producto con ID: ${selectedProduct.id_products}`);
+            await deleteProduct(selectedProduct.id_products); // Llamar a la función de eliminación
+            console.log(`Producto eliminado con ID: ${selectedProduct.id_products}`);
             
             setModalMessage("Producto eliminado con éxito.");
             closeModals();

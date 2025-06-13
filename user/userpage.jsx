@@ -14,8 +14,43 @@ import { patchUserInfo } from "@/useCases/patchUserInfo";
 // Validaciones con Yup
 const personalInfoSchema = Yup.object().shape({
   telephone: Yup.string().required("Teléfono es requerido"),
-  profileImage: Yup.mixed().required("La imagen de perfil es requerida"),
+  // Removida la validación obligatoria de profileImage
 });
+
+// Función helper para limpiar valores
+const getCleanValue = (value) => {
+  if (!value || value === "string" || value === "undefined" || value === "null" || value === null || value === undefined) {
+    return "";
+  }
+  return value;
+};
+
+// Función helper para limpiar números
+const getCleanNumber = (value) => {
+  if (!value || value === "string" || value === "undefined" || value === "null" || value === null || value === undefined || value === 0) {
+    return "";
+  }
+  return value;
+};
+
+// Función helper para crear la dirección completa
+const getFullAddress = (userInfo) => {
+  const direccion = getCleanValue(userInfo?.direccion);
+  const ciudad = getCleanValue(userInfo?.ciudad);
+  const codigoPostal = getCleanNumber(userInfo?.codigo_postal);
+  const alcaldia = getCleanValue(userInfo?.alcaldia);
+  
+  // Crear un array con los valores que no están vacíos
+  const addressParts = [direccion, ciudad, codigoPostal, alcaldia].filter(part => part !== "");
+  
+  // Si no hay partes de dirección, devolver el mensaje por defecto
+  if (addressParts.length === 0) {
+    return "Sin dirección";
+  }
+  
+  // Unir las partes con espacios
+  return addressParts.join(" ");
+};
 
 // Componente principal
 export default function UserPage() {
@@ -50,6 +85,7 @@ export default function UserPage() {
         nombre_restaurante: values.restaurantName,
         whatsapp: values.whatsapp,
         image: values.profileImage,
+        Horario: values.Horario,
       };
 
       const updatedUser = await patchUserInfo(updateData);
@@ -87,32 +123,48 @@ export default function UserPage() {
       <div className='bg-white shadow-md rounded-lg p-4'>
         <div className="flex flex-col items-center">
           <div className='w-20 h-20 rounded-full overflow-hidden mb-3'>
-            <Image src={userInfo.image_user.url} alt="Imagen de perfil" width={80} height={80} className="object-cover" />
+            <Image 
+              src={userInfo?.image_user?.url || "/default-avatar.png"} 
+              alt="***LOGO" 
+              width={80} 
+              height={80} 
+              className="object-cover" 
+            />
           </div>
           <div className="flex flex-col">
-            <p className="font-bold text-xl">{userInfo.nombre}</p>
+            <p className="font-bold text-xl">{getCleanValue(userInfo?.nombre) || "Usuario"}</p>
           </div>
           <div className="border-b-1 w-full border-gray-500"></div>
         </div>
         <div className="pt-2 flex flex-col justify-center items-center md:flex-row ">
-          <p className="flex gap-2">| <IoLocationOutline className="text-xl self-center" />{`${userInfo.direccion} ${userInfo.ciudad} ${userInfo.codigo_postal} ${userInfo.alcaldia}`} |</p>
-          <p className="flex gap-2">| <CiMail className="text-xl self-center" /> {`${userInfo.email}`} |</p>
-          <p className="flex gap-2">| <FaPhoneAlt className="text-xl self-center" /> {`${userInfo.telefono}`} |</p>
-          <a className="flex gap-2 cursor-pointer" href={`http://189.147.92.232:3000/webmenu/${userInfo.user_uuid} `}>| <TbWorldShare className="text-xl self-center"/>Tu menú digital |</a>
+          <p className="flex gap-2">
+            | <IoLocationOutline className="text-xl self-center" />
+            {getFullAddress(userInfo)} |
+          </p>
+          <p className="flex gap-2">
+            | <CiMail className="text-xl self-center" /> {getCleanValue(userInfo?.email) || "email@ejemplo.com"} |
+          </p>
+          <p className="flex gap-2">
+            | <FaPhoneAlt className="text-xl self-center" /> {getCleanValue(userInfo?.telefono) || "Sin teléfono"} |
+          </p>
+          <a className="flex gap-2 cursor-pointer" href={`http://189.147.92.232:3000/webmenu/${userInfo?.user_uuid || ''}`}>
+            | <TbWorldShare className="text-xl self-center"/>Tu menú digital |
+          </a>
         </div>
       </div>
       <div className="bg-white shadow-md rounded-lg p-4 mt-4">
         <Formik
           initialValues={{
-            restaurantName: userInfo?.nombre_restaurante || "",
-            street: userInfo?.direccion || "",
-            neighborhood: userInfo?.ciudad || "",
-            delegation: userInfo?.alcaldia || "",
-            telephone: userInfo?.telefono || "",
-            whatsapp: userInfo?.whatsapp || "",
-            postalCode: userInfo?.codigo_postal || "",
+            restaurantName: getCleanValue(userInfo?.nombre_restaurante),
+            street: getCleanValue(userInfo?.direccion),
+            neighborhood: getCleanValue(userInfo?.ciudad),
+            delegation: getCleanValue(userInfo?.alcaldia),
+            telephone: getCleanValue(userInfo?.telefono),
+            whatsapp: getCleanValue(userInfo?.whatsapp),
+            postalCode: getCleanNumber(userInfo?.codigo_postal),
+            Horario: getCleanValue(userInfo?.Horario),
             profileImage: null,
-          }}  
+          }}
           validationSchema={personalInfoSchema}
           onSubmit={handleSubmit}
           enableReinitialize={true}
@@ -198,6 +250,17 @@ export default function UserPage() {
                     className="border p-2 rounded" 
                   />
                   <ErrorMessage name="postalCode" component="div" className="text-red-500 text-sm" />
+                </div>
+                <div className="flex flex-col">
+                  <label className="font-bold" htmlFor="Horario">Horario</label>
+                  <Field 
+                    type="text" 
+                    id="Horario" 
+                    name="Horario" 
+                    placeholder="Ej: Lun-Vie 9:00-18:00"
+                    className="border p-2 rounded" 
+                  />
+                  <ErrorMessage name="Horario" component="div" className="text-red-500 text-sm" />
                 </div>
                 <div className="flex flex-col">
                   <label className="font-bold cursor-pointer" htmlFor="profileImage">Imagen de perfil</label>
