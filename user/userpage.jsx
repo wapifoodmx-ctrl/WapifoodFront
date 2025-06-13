@@ -132,7 +132,7 @@ export default function UserPage() {
             />
           </div>
           <div className="flex flex-col">
-            <p className="font-bold text-xl">{getCleanValue(userInfo?.nombre) || "Usuario"}</p>
+            <p className="font-bold text-xl">{getCleanValue(userInfo?.nombre_restaurante) || "Usuario"}</p>
           </div>
           <div className="border-b-1 w-full border-gray-500"></div>
         </div>
