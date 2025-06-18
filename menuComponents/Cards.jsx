@@ -149,17 +149,6 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                         <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{product.category_name}</p>
                         <div className="flex gap-3 items-center">
                            
-                            
-                            {/* Botón de eliminar */}
-                            <button
-                                className="flex items-center"
-                                onClick={() => {
-                                    setSelectedProduct(product); // Establece el producto seleccionado
-                                    setIsDeleteModalOpen(true); // Abre la modal de eliminar
-                                }}
-                            >
-                                <BsTrash3 size={24} className="cursor-pointer text-red-500 hover:text-red-700" />
-                            </button>
                              {/* Botón de editar */}
                              <button
                                 className="flex items-center"
