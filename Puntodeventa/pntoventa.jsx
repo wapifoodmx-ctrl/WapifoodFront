@@ -7,6 +7,8 @@ import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { getProducts } from "@/useCases/getProducts";
+import { createSimpleOrder } from "@/useCases/OrderPntoVenta";
+import { getFinalOrder } from "@/useCases/getfinalOrderId";
 
 // Mock de ingredientes general
 const mockIngredientes = ["Tomate", "Cebolla", "Lechuga", "Queso", "Salsa"];
@@ -23,13 +25,19 @@ export default function Pntoventa() {
     const [historialPedidos, setHistorialPedidos] = useState([]);
     const [modalTotalOpen, setModalTotalOpen] = useState(false);
     const [totalPedidos, setTotalPedidos] = useState(0);
-    const [productoSeleccionado, setProductoSeleccionado] = useState(null); // Estado para el producto seleccionado
-    const [modalProductoOpen, setModalProductoOpen] = useState(false); // Estado para la modal de detalles del producto
+    const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+    const [modalProductoOpen, setModalProductoOpen] = useState(false);
+    
+    // Nuevos estados para manejar órdenes
+    const [ordenActiva, setOrdenActiva] = useState(null); // Almacenar UUID y datos de la orden activa
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false); // Estado de carga para crear orden
+    const [totalFinal, setTotalFinal] = useState(0); // Total final de todas las órdenes
 
-    // Recuperar carrito e historial del localStorage al cargar la página
+    // Recuperar datos del localStorage al cargar la página
     useEffect(() => {
         const carritoGuardado = localStorage.getItem("carrito");
         const historialGuardado = localStorage.getItem("historialPedidos");
+        const ordenActivaGuardada = localStorage.getItem("ordenActiva");
 
         if (carritoGuardado) {
             setCarrito(JSON.parse(carritoGuardado));
@@ -37,17 +45,42 @@ export default function Pntoventa() {
         if (historialGuardado) {
             setHistorialPedidos(JSON.parse(historialGuardado));
         }
+        if (ordenActivaGuardada) {
+            const orden = JSON.parse(ordenActivaGuardada);
+            setOrdenActiva(orden);
+            // Cargar el total final si hay una orden activa
+            if (orden && orden.order_uuid) {
+                cargarTotalFinal(orden.order_uuid);
+            }
+        }
     }, []);
 
-    // Guardar el carrito en localStorage cada vez que cambie
+    // Guardar datos en localStorage cuando cambien
     useEffect(() => {
         localStorage.setItem("carrito", JSON.stringify(carrito));
     }, [carrito]);
 
-    // Guardar el historial en localStorage cada vez que cambie
     useEffect(() => {
         localStorage.setItem("historialPedidos", JSON.stringify(historialPedidos));
     }, [historialPedidos]);
+
+    useEffect(() => {
+        if (ordenActiva) {
+            localStorage.setItem("ordenActiva", JSON.stringify(ordenActiva));
+        }
+    }, [ordenActiva]);
+
+    // Función para cargar el total final usando getFinalOrder
+    const cargarTotalFinal = async (uuid) => {
+        try {
+            const response = await getFinalOrder(uuid);
+            if (response && response.length > 0 && response[0].total_final) {
+                setTotalFinal(response[0].total_final);
+            }
+        } catch (error) {
+            console.error('Error al cargar el total final:', error);
+        }
+    };
 
     // Obtener productos desde la API
     useEffect(() => {
@@ -122,24 +155,89 @@ export default function Pntoventa() {
         });
     };
 
-    const terminarOrden = () => {
+    // Función modificada para crear/actualizar órdenes
+    const terminarOrden = async () => {
         if (carrito.length === 0) {
             setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
             return;
         }
 
-        setHistorialPedidos((prevHistorial) => [
-            ...prevHistorial,
-            ...carrito.map((item) => ({
-                name: item.name,
-                cantidad: item.cantidad,
-                price: item.price,
-                comentario: item.comentario || "",
-                ingredientesExcluidos: item.ingredientesExcluidos || [],
-            })),
-        ]);
+        setIsCreatingOrder(true);
+        setMensajeError("");
 
-        setCarrito([]);
+        try {
+            // Preparar productos para la API
+            const productosParaOrden = carrito.map(item => ({
+                id: item.id_products, // Usar el ID original del producto
+                cantidad: item.cantidad
+            }));
+
+            // Crear la orden (con UUID si existe una orden activa)
+            const ordenUuid = ordenActiva ? ordenActiva.order_uuid : null;
+            const response = await createSimpleOrder(productosParaOrden, ordenUuid);
+
+            console.log('Orden creada/actualizada:', response);
+
+            // Guardar la información de la orden activa
+            setOrdenActiva({
+                order_uuid: response.order_uuid,
+                id_orders: response.id_orders,
+                total: response.total,
+                state: response.state,
+                order_status: response.order_status,
+                date_time: response.date_time
+            });
+
+            // Mover productos del carrito al historial
+            setHistorialPedidos((prevHistorial) => [
+                ...prevHistorial,
+                ...carrito.map((item) => ({
+                    id_products: item.id_products, // Mantener el ID original
+                    name: item.name,
+                    cantidad: item.cantidad,
+                    price: item.price,
+                    comentario: item.comentario || "",
+                    ingredientesExcluidos: item.ingredientesExcluidos || [],
+                    // Agregar información adicional de la respuesta
+                    order_id: response.id_orders,
+                    fecha_orden: response.date_time
+                })),
+            ]);
+
+            // Limpiar el carrito
+            setCarrito([]);
+
+            // Cargar el total final actualizado
+            await cargarTotalFinal(response.order_uuid);
+
+            setMensajeError("¡Orden enviada exitosamente!");
+            
+            // Limpiar el mensaje después de 3 segundos
+            setTimeout(() => {
+                setMensajeError("");
+            }, 3000);
+
+        } catch (error) {
+            console.error('Error al crear la orden:', error);
+            setMensajeError(`Error al enviar la orden: ${error.message}`);
+        } finally {
+            setIsCreatingOrder(false);
+        }
+    };
+
+    // Función para finalizar todas las órdenes y limpiar el estado
+    const finalizarTodasOrdenes = () => {
+        if (historialPedidos.length === 0) {
+            setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
+            return;
+        }
+
+        setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
+        setHistorialPedidos([]);
+        setOrdenActiva(null);
+        setTotalFinal(0);
+        localStorage.removeItem("ordenActiva");
+        setModalTotalOpen(true);
         setMensajeError("");
     };
 
@@ -208,7 +306,7 @@ export default function Pntoventa() {
                 )}
             </button>
 
-            {/* Modal del carrito */}
+            {/* Modal del carrito - ACTUALIZADO */}
             {carritoModalOpen && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 z-[9998] flex justify-end"
@@ -220,6 +318,15 @@ export default function Pntoventa() {
                 >
                     <div className="bg-white w-80 h-full shadow-lg p-4 overflow-y-auto">
                         <h2 className="text-xl font-bold mb-4">Tu Pedido</h2>
+
+                        {/* Información de la orden activa */}
+                        {ordenActiva && (
+                            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <h3 className="text-sm font-semibold text-blue-800">Orden Activa</h3>
+                                <p className="text-xs text-blue-600">UUID: {ordenActiva.order_uuid.slice(0, 8)}...</p>
+                                <p className="text-xs text-blue-600">Estado: {ordenActiva.order_status}</p>
+                            </div>
+                        )}
 
                         {/* Carrito actual */}
                         {carrito.length > 0 ? (
@@ -294,13 +401,23 @@ export default function Pntoventa() {
                         <div className="border-t pt-4">
                             <p className="text-lg font-bold">Total: ${carrito.reduce((total, item) => total + item.price * item.cantidad, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                             {mensajeError && (
-                                <p className="text-red-500 text-sm font-bold mt-2">{mensajeError}</p>
+                                <p className={`text-sm font-bold mt-2 ${
+                                    mensajeError.includes('exitosamente') ? 'text-green-500' : 'text-red-500'
+                                }`}>
+                                    {mensajeError}
+                                </p>
                             )}
                             <button
-                                className="bg-green-500 text-white w-full py-2 rounded-lg mt-4 hover:bg-green-600"
+                                className={`w-full py-2 rounded-lg mt-4 ${
+                                    isCreatingOrder 
+                                        ? 'bg-gray-400 cursor-not-allowed' 
+                                        : 'bg-green-500 hover:bg-green-600'
+                                } text-white`}
                                 onClick={terminarOrden}
+                                disabled={isCreatingOrder}
                             >
-                                Añadir a la orden
+                                {isCreatingOrder ? 'Enviando...' : 
+                                 ordenActiva ? 'Agregar a la orden' : 'Añadir a la orden'}
                             </button>
                         </div>
 
@@ -325,45 +442,40 @@ export default function Pntoventa() {
                                             <p className="text-sm text-gray-500">
                                                 Precio: ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
                                             </p>
-                                            <p className="text-sm text-gray-500">
-                                                Total: ${item.cantidad * item.price}
-                                            </p>
+                                            {/* {item.order_id && (
+                                                <p className="text-xs text-blue-500">
+                                                    Orden #{item.order_id}
+                                                </p>
+                                            )} */}
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                         )}
-                        <p className="text-sm text-gray-500 pt-2" > Sub Total: ${historialPedidos.reduce((subtotal, item) => subtotal + item.price * item.cantidad, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} </p>
+                        
+                        {/* Total final de todas las órdenes */}
+                        {totalFinal > 0 && (
+                            <p className="text-sm text-gray-500 pt-2 font-semibold">
+                                Total Final: ${totalFinal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                        )}
                        
                         {/* Botón "Terminar Orden" */}
                         <div className="mt-4">
                             <button
-                                className={`w-full py-2 rounded-lg mt-4 ${historialPedidos.length > 0
-                                    ? "bg-red-500 text-white hover:bg-red-600"
-                                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                    }`}
-                                onClick={() => {
-                                    if (historialPedidos.length === 0) {
-                                        setMensajeError("No habilitado, debes primero añadir productos a la orden");
-                                        return;
-                                    }
-                                    const total = historialPedidos.reduce(
-                                        (acc, item) => acc + item.price * item.cantidad,
-                                        0
-                                    );
-                                    setTotalPedidos(total.toFixed(2));
-                                    setHistorialPedidos([]);
-                                    setModalTotalOpen(true);
-                                    setMensajeError(""); // Limpia el mensaje de error si todo está bien
-                                }}
+                                className={`w-full py-2 rounded-lg mt-4 ${
+                                    historialPedidos.length > 0
+                                        ? "bg-red-500 text-white hover:bg-red-600"
+                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                }`}
+                                onClick={finalizarTodasOrdenes}
                                 disabled={historialPedidos.length === 0}
                             >
                                 Terminar Orden
                             </button>
-                            {mensajeError && (
+                            {mensajeError && historialPedidos.length === 0 && (
                                 <p className="text-red-500 text-sm font-bold mt-2">{mensajeError}</p>
                             )}
-                            
                         </div>
                     </div>
                 </div>
@@ -372,7 +484,7 @@ export default function Pntoventa() {
             {/* Modal del total de pedidos */}
             {modalTotalOpen && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[9997]"
+                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[9999]"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {
                             setModalTotalOpen(false);
