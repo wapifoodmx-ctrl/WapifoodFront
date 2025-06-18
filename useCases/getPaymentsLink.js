@@ -1,5 +1,5 @@
 export default async function getPaymentsLink(propsData) {
-    const endpoint = 'http://189.147.92.232:8000/payments/create-checkout-session';
+    const endpoint = 'https://comandapp-api.h-dev.xyz/payments/create-checkout-session';
 
     try {
         // Obtener el token del localStorage

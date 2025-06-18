@@ -1,5 +1,5 @@
 export async function getCategoria() {
-    const endpoint = 'http://189.147.92.232:8000/categoria';
+    const endpoint = 'https://comandapp-api.h-dev.xyz/categoria';
 
     try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');

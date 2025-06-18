@@ -3,7 +3,7 @@ export async function getwebMenu(uuid) {
         throw new Error('UUID es requerido');
     }
 
-    const endpoint = `http://189.147.92.232:8000/categoria/web-menu/${uuid}`;
+    const endpoint = `/categoria/web-menu/${uuid}`;
     
     // Debug: Ver qué UUID y endpoint estamos usando
     console.log('UUID recibido:', uuid);

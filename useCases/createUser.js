@@ -1,5 +1,5 @@
 export async function createUser(user) {
-    const endpoint = 'http://189.147.92.232:8000/user'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
+    const endpoint = 'https://comandapp-api.h-dev.xyz/user'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
 
     try {
         const response = await fetch(endpoint, {

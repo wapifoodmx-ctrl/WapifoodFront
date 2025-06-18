@@ -1,5 +1,5 @@
 export async function patchUserInfo(userData) {
-    const endpoint = 'http://189.147.92.232:8000/user/me/info';
+    const endpoint = 'https://comandapp-api.h-dev.xyz/user/me/info';
 
     try {
         // Obtener el token del localStorage o sessionStorage
