@@ -3,7 +3,7 @@ export async function getwebMenu(uuid) {
         throw new Error('UUID es requerido');
     }
 
-    const endpoint = `/categoria/web-menu/${uuid}`;
+    const endpoint = `https://comandapp-api.h-dev.xyz/categoria/web-menu/${uuid}`;
     
     // Debug: Ver qué UUID y endpoint estamos usando
     console.log('UUID recibido:', uuid);
