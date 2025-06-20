@@ -1,3 +1,5 @@
+import { FaCreditCard } from "react-icons/fa";
+import { BsCashCoin } from "react-icons/bs";
 import Navbar from "@/dashboardComponents/navbar";
 import { FaRegEye } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
@@ -27,11 +29,11 @@ export default function Pntoventa() {
     const [totalPedidos, setTotalPedidos] = useState(0);
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [modalProductoOpen, setModalProductoOpen] = useState(false);
-    
-    // Nuevos estados para manejar órdenes
     const [ordenActiva, setOrdenActiva] = useState(null); // Almacenar UUID y datos de la orden activa
     const [isCreatingOrder, setIsCreatingOrder] = useState(false); // Estado de carga para crear orden
     const [totalFinal, setTotalFinal] = useState(0); // Total final de todas las órdenes
+    const [metodoPago, setMetodoPago] = useState('efectivo'); // Nuevo estado para método de pago
+    const [numeroReferencia, setNumeroReferencia] = useState(''); // Nuevo estado para el input
 
     // Recuperar datos del localStorage al cargar la página
     useEffect(() => {
@@ -493,12 +495,73 @@ export default function Pntoventa() {
                 >
                     <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
                         <h2 className="text-xl font-bold mb-4 text-center">Total de la Orden</h2>
-                        <p className="text-lg text-center mb-4">El total de tus pedidos es: <span className="font-bold">${parseFloat(totalPedidos).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
+                        <div className="flex justify-between gap-2">
+                            <button 
+                                className={`flex items-center justify-center border-1 w-5/12 h-10 rounded-md transition-colors ${
+                                    metodoPago === 'efectivo' 
+                                        ? 'bg-green-400 text-white border-green-400' 
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                                onClick={() => setMetodoPago('efectivo')}
+                            >
+                                <BsCashCoin className="text-2xl mr-2"/>
+                                Efectivo
+                            </button>
+                            <button 
+                                className={`flex items-center justify-center border-1 w-5/12 h-10 rounded-md transition-colors ${
+                                    metodoPago === 'tarjeta' 
+                                        ? 'bg-green-400 text-white border-green-400' 
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                                onClick={() => setMetodoPago('tarjeta')}
+                            >
+                                <FaCreditCard className="text-2xl mr-2"/>
+                                Tarjeta
+                            </button>
+                        </div>
+                        <p className="text-lg text-center mb-4 pt-4">
+                            El total de tus pedidos es: 
+                            <span className="font-bold">
+                                ${parseFloat(totalPedidos).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                        </p>
+                        <p className="text-center text-gray-600 mb-4">
+                            Método de pago: <span className="font-semibold capitalize">{metodoPago}</span>
+                        </p>
+                        
+                        {/* Input para número de referencia */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                                Número de referencia
+                            </label>
+                            <input
+                                type="text"
+                                value={numeroReferencia}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    // Solo permitir números y máximo 4 caracteres
+                                    if (/^\d{0,4}$/.test(value)) {
+                                        setNumeroReferencia(value);
+                                    }
+                                }}
+                                placeholder="0000"
+                                maxLength="4"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-center text-lg font-mono focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            />
+                        </div>
+
                         <button
                             className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
-                            onClick={() => setModalTotalOpen(false)}
+                            onClick={() => {
+                                console.log(`Pago procesado con ${metodoPago} por $${totalPedidos}`);
+                                console.log(`Número de referencia: ${numeroReferencia || 'Sin referencia'}`);
+                                setModalTotalOpen(false);
+                                // Resetear estados para la próxima vez
+                                setMetodoPago('efectivo');
+                                setNumeroReferencia('');
+                            }}
                         >
-                            Cerrar
+                            Confirmar Pago
                         </button>
                     </div>
                 </div>
