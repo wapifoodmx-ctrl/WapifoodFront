@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { getwebMenu } from '@/useCases/getwebmenu';
+import { getUserUUID } from '@/useCases/getUserUUID';
 import Image from 'next/image';
 import { FaWhatsapp, FaPhoneAlt, FaRegEye } from "react-icons/fa";
 import { MdOutlineWatchLater } from "react-icons/md";
@@ -21,6 +22,7 @@ export default function MenuWebDinamico() {
     const [isOpen, setIsOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+    const [datosRestaurante, setDatosRestaurante] = useState(null);
 
     // Transformar los datos de la API al formato esperado
     const transformarDatosAPI = (datosAPI) => {
@@ -49,10 +51,17 @@ export default function MenuWebDinamico() {
         const cargarDatos = async () => {
             try {
                 setLoading(true);
-                const datos = await getwebMenu(uuid);
-                setCategorias(datos);
                 
-                const productosTransformados = transformarDatosAPI(datos);
+                // Cargar datos del menú y del restaurante en paralelo
+                const [datosMenu, datosUsuario] = await Promise.all([
+                    getwebMenu(uuid),
+                    getUserUUID(uuid)
+                ]);
+                
+                setCategorias(datosMenu);
+                setDatosRestaurante(datosUsuario);
+                
+                const productosTransformados = transformarDatosAPI(datosMenu);
                 setProductosFiltrados(productosTransformados);
             } catch (error) {
                 console.error('Error al cargar datos:', error);
@@ -103,6 +112,42 @@ export default function MenuWebDinamico() {
     const closeModal = () => {
         setModalOpen(false);
         setProductoSeleccionado(null);
+    };
+
+    // Función para manejar clic en WhatsApp
+    const handleWhatsAppClick = () => {
+        if (datosRestaurante?.whatsapp) {
+            const whatsappUrl = `https://wa.me/${datosRestaurante.whatsapp}`;
+            window.open(whatsappUrl, '_blank');
+        }
+    };
+
+    // Función para obtener la URL completa de la imagen
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return Profile;
+        if (imagePath.startsWith('http')) return imagePath;
+        return `https://comandapp-api.h-dev.xyz/${imagePath}`;
+    };
+
+    // Función para construir la dirección completa
+    const construirDireccionCompleta = () => {
+        const { direccion, codigo_postal, ciudad, alcaldia } = datosRestaurante || {};
+        
+        let direccionCompleta = direccion || "";
+        
+        if (alcaldia) {
+            direccionCompleta += direccionCompleta ? `, ${alcaldia}` : alcaldia;
+        }
+        
+        if (ciudad) {
+            direccionCompleta += direccionCompleta ? `, ${ciudad}` : ciudad;
+        }
+        
+        if (codigo_postal) {
+            direccionCompleta += direccionCompleta ? `, CP ${codigo_postal}` : `CP ${codigo_postal}`;
+        }
+        
+        return direccionCompleta;
     };
 
     if (loading) {
@@ -173,19 +218,36 @@ export default function MenuWebDinamico() {
             <div className="w-full h-70 shadow-md bg-white flex px-4"> 
                 <div className="w-full flex items-center justify-center flex-col ">
                     <Image
-                        src={Profile}
+                        src={datosRestaurante?.image ? getImageUrl(datosRestaurante.image) : Profile}
                         alt="Perfil"
                         className="rounded-full w-20 h-20 object-cover mr-4"
                         width={48}
                         height={48}
                     />
-                    <p className="font-bold text-2xl ">Las flautas de pepe </p>
-                    <p className="text-sm pt-2">| Av. San Piter #43 col. Lomas de Pedro, Tlalpan |  </p>
+                    <p className="font-bold text-2xl ">
+                        {datosRestaurante?.nombre_restaurante || "Restaurante"}
+                    </p>
+                    
+                    {construirDireccionCompleta() && (
+                        <p className="text-sm pt-2">| {construirDireccionCompleta()} |</p>
+                    )}
+                    
                     <div className="flex items-center gap-2">
                         <p className="text-sm flex py-2">| <span className=" px-2 self-center"><MdOutlineWatchLater className="text-green-600" /></span> Lun - Vie 9:00 a 6:00 |  </p>
                     </div>
-                    <p className="text-sm flex">| <span className=" px-2 self-center"> <FaPhoneAlt className="text-green-600"/> </span>55-57-18-10-51 |  </p>
-                    <button className="cursor-pointer py-2"><FaWhatsapp className="text-xl"/> </button>
+                    
+                    {datosRestaurante?.telefono && (
+                        <p className="text-sm flex">| <span className=" px-2 self-center"> <FaPhoneAlt className="text-green-600"/> </span>{datosRestaurante.telefono} |</p>
+                    )}
+                    
+                    {datosRestaurante?.whatsapp && (
+                        <button 
+                            className="cursor-pointer py-2"
+                            onClick={handleWhatsAppClick}
+                        >
+                            <FaWhatsapp className="text-xl"/>
+                        </button>
+                    )}
                 </div>
             </div>
 

@@ -147,7 +147,7 @@ export default function UserPage() {
           <p className="flex gap-2">
             | <FaPhoneAlt className="text-xl self-center" /> {getCleanValue(userInfo?.telefono) || "Sin teléfono"} |
           </p>
-          <a className="flex gap-2 cursor-pointer" href={`http://189.147.63.88:3000/webmenu/${userInfo?.user_uuid || ''}`}>
+          <a className="flex gap-2 cursor-pointer" href={`http://comandapp.h-dev.xyz/webmenu/${userInfo?.user_uuid || ''}`}>
             | <TbWorldShare className="text-xl self-center"/>Tu menú digital |
           </a>
         </div>
