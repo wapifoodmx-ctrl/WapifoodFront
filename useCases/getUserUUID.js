@@ -42,7 +42,7 @@ export async function getUserUUID(userUuid) {
 
         // Parsear la respuesta exitosa como JSON
         const data = await response.json();
-        console.log('Datos del usuario recibidos de la API:', data); // Debug
+        console.log('XDXDXDD', data); // Debug
         return data;
     } catch (error) {
         console.error('Error al obtener la información del usuario:', error.message);

@@ -22,7 +22,12 @@ export default function MenuWebDinamico() {
     const [isOpen, setIsOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
-    const [datosRestaurante, setDatosRestaurante] = useState(null);
+    const [restauranteInfo, setRestauranteInfo] = useState(null);
+
+    // Función para validar si un valor es válido (no null ni "string")
+    const esValorValido = (valor) => {
+        return valor && valor !== "string" && valor.trim() !== "";
+    };
 
     // Transformar los datos de la API al formato esperado
     const transformarDatosAPI = (datosAPI) => {
@@ -51,18 +56,16 @@ export default function MenuWebDinamico() {
         const cargarDatos = async () => {
             try {
                 setLoading(true);
+                // Cargar datos del menú
+                const datos = await getwebMenu(uuid);
+                setCategorias(datos);
                 
-                // Cargar datos del menú y del restaurante en paralelo
-                const [datosMenu, datosUsuario] = await Promise.all([
-                    getwebMenu(uuid),
-                    getUserUUID(uuid)
-                ]);
-                
-                setCategorias(datosMenu);
-                setDatosRestaurante(datosUsuario);
-                
-                const productosTransformados = transformarDatosAPI(datosMenu);
+                const productosTransformados = transformarDatosAPI(datos);
                 setProductosFiltrados(productosTransformados);
+
+                // Cargar información del restaurante
+                const infoRestaurante = await getUserUUID(uuid);
+                setRestauranteInfo(infoRestaurante);
             } catch (error) {
                 console.error('Error al cargar datos:', error);
                 setError('Error al cargar el menú. Por favor, intenta más tarde.');
@@ -112,42 +115,6 @@ export default function MenuWebDinamico() {
     const closeModal = () => {
         setModalOpen(false);
         setProductoSeleccionado(null);
-    };
-
-    // Función para manejar clic en WhatsApp
-    const handleWhatsAppClick = () => {
-        if (datosRestaurante?.whatsapp) {
-            const whatsappUrl = `https://wa.me/${datosRestaurante.whatsapp}`;
-            window.open(whatsappUrl, '_blank');
-        }
-    };
-
-    // Función para obtener la URL completa de la imagen
-    const getImageUrl = (imagePath) => {
-        if (!imagePath) return Profile;
-        if (imagePath.startsWith('http')) return imagePath;
-        return `https://comandapp-api.h-dev.xyz/${imagePath}`;
-    };
-
-    // Función para construir la dirección completa
-    const construirDireccionCompleta = () => {
-        const { direccion, codigo_postal, ciudad, alcaldia } = datosRestaurante || {};
-        
-        let direccionCompleta = direccion || "";
-        
-        if (alcaldia) {
-            direccionCompleta += direccionCompleta ? `, ${alcaldia}` : alcaldia;
-        }
-        
-        if (ciudad) {
-            direccionCompleta += direccionCompleta ? `, ${ciudad}` : ciudad;
-        }
-        
-        if (codigo_postal) {
-            direccionCompleta += direccionCompleta ? `, CP ${codigo_postal}` : `CP ${codigo_postal}`;
-        }
-        
-        return direccionCompleta;
     };
 
     if (loading) {
@@ -218,32 +185,55 @@ export default function MenuWebDinamico() {
             <div className="w-full h-70 shadow-md bg-white flex px-4"> 
                 <div className="w-full flex items-center justify-center flex-col ">
                     <Image
-                        src={datosRestaurante?.image ? getImageUrl(datosRestaurante.image) : Profile}
+                        src={restauranteInfo?.image && esValorValido(restauranteInfo.image) 
+                            ? `https://comandapp-api.h-dev.xyz/${restauranteInfo.image}`
+                            : Profile}
                         alt="Perfil"
                         className="rounded-full w-20 h-20 object-cover mr-4"
                         width={48}
                         height={48}
                     />
                     <p className="font-bold text-2xl ">
-                        {datosRestaurante?.nombre_restaurante || "Restaurante"}
+                        {restauranteInfo?.nombre_restaurante && esValorValido(restauranteInfo.nombre_restaurante) 
+                            ? restauranteInfo.nombre_restaurante 
+                            : "Las flautas de pepe"}
                     </p>
                     
-                    {construirDireccionCompleta() && (
-                        <p className="text-sm pt-2">| {construirDireccionCompleta()} |</p>
+                    {/* Dirección - solo mostrar si es válida */}
+                    {restauranteInfo?.direccion && esValorValido(restauranteInfo.direccion) && (
+                        <p className="text-sm pt-2">| {restauranteInfo.direccion} |</p>
                     )}
-                    
+
+                    {/* Información adicional de ubicación - solo si alguno es válido */}
+                    {(
+                        (restauranteInfo?.ciudad && esValorValido(restauranteInfo.ciudad)) ||
+                        (restauranteInfo?.alcaldia && esValorValido(restauranteInfo.alcaldia)) ||
+                        (restauranteInfo?.codigo_postal && esValorValido(restauranteInfo.codigo_postal))
+                    ) && (
+                        <p className="text-sm">
+                            |
+                            {restauranteInfo?.ciudad && esValorValido(restauranteInfo.ciudad) && ` ${restauranteInfo.ciudad}`}
+                            {restauranteInfo?.alcaldia && esValorValido(restauranteInfo.alcaldia) && `, ${restauranteInfo.alcaldia}`}
+                            {restauranteInfo?.codigo_postal && esValorValido(restauranteInfo.codigo_postal) && ` CP: ${restauranteInfo.codigo_postal}`}
+                            |
+                        </p>
+                    )}
+
+                    {/* Horario - mantener el original por ahora */}
                     <div className="flex items-center gap-2">
-                        <p className="text-sm flex py-2">| <span className=" px-2 self-center"><MdOutlineWatchLater className="text-green-600" /></span> Lun - Vie 9:00 a 6:00 |  </p>
+                        <p className="text-sm flex py-2">| <span className=" px-2 self-center"><MdOutlineWatchLater className="text-green-600" /></span> Lun - Vie 9:00 a 6:00 |</p>
                     </div>
-                    
-                    {datosRestaurante?.telefono && (
-                        <p className="text-sm flex">| <span className=" px-2 self-center"> <FaPhoneAlt className="text-green-600"/> </span>{datosRestaurante.telefono} |</p>
+
+                    {/* Teléfono - solo mostrar si es válido */}
+                    {restauranteInfo?.telefono && esValorValido(restauranteInfo.telefono) && (
+                        <p className="text-sm flex">| <span className=" px-2 self-center"> <FaPhoneAlt className="text-green-600"/> </span>{restauranteInfo.telefono} |</p>
                     )}
-                    
-                    {datosRestaurante?.whatsapp && (
+
+                    {/* WhatsApp - solo mostrar si es válido */}
+                    {restauranteInfo?.whatsapp && esValorValido(restauranteInfo.whatsapp) && (
                         <button 
                             className="cursor-pointer py-2"
-                            onClick={handleWhatsAppClick}
+                            onClick={() => window.open(`https://wa.me/${restauranteInfo.whatsapp}`, '_blank')}
                         >
                             <FaWhatsapp className="text-xl"/>
                         </button>
