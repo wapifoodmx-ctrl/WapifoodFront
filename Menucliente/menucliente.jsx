@@ -9,6 +9,9 @@ import { LuSalad } from "react-icons/lu";
 import { IoHomeOutline } from "react-icons/io5";
 import { GoChecklist } from "react-icons/go";
 import { FaShoppingCart } from "react-icons/fa";
+import { FaCreditCard } from "react-icons/fa";
+import { BsCashCoin } from "react-icons/bs";
+import { MdTableRestaurant } from "react-icons/md"; // Nuevo icono para mesa
 import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/router';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
@@ -23,6 +26,10 @@ import Fruta from "@/pages/assets/img/fruta.jpg";
 import Image from "next/image";
 import { getProducts } from "@/useCases/getProducts";
 import { loginUser } from '@/useCases/login';
+import { createSimpleOrder } from "@/useCases/OrderPntoVenta";
+import { getFinalOrder } from "@/useCases/getfinalOrderId";
+import { getTables } from "@/useCases/getTables"; // Nueva importación
+import { updateTableStatus } from "@/useCases/tablesStatus"; // Nueva importación
 
 const categoriaOrden = {
     "Entradas": 0,
@@ -59,22 +66,199 @@ export default function MenuCliente() {
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false); // Nuevo estado para controlar la autenticación
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    // Estados nuevos para las funcionalidades de pntoventa
+    const [ordenActiva, setOrdenActiva] = useState(null);
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+    const [totalFinal, setTotalFinal] = useState(0);
+    const [metodoPago, setMetodoPago] = useState('efectivo');
+    const [numeroReferencia, setNumeroReferencia] = useState('');
+
+    // Estados para mesas
+    const [numeroMesa, setNumeroMesa] = useState('');
+    const [mesas, setMesas] = useState([]);
+    const [modalMesaOpen, setModalMesaOpen] = useState(false);
+    const [loadingMesas, setLoadingMesas] = useState(false);
+
+    // Función para seleccionar mesa - ACTUALIZADA con estado correcto
+    const seleccionarMesa = async (numeroMesaSeleccionada) => {
+        console.log('=== INICIO SELECCIONAR MESA ===');
+        console.log('Mesa seleccionada:', numeroMesaSeleccionada);
+        
+        if (numeroMesaSeleccionada && numeroMesaSeleccionada !== '') {
+            const mesaString = String(numeroMesaSeleccionada).trim();
+            console.log('Mesa a guardar:', mesaString);
+            
+            try {
+                // Cambiar el estatus de la mesa a "NoDisponible" (formato correcto)
+                console.log('Intentando actualizar mesa:', parseInt(mesaString), 'a estado: NoDisponible');
+                
+                const resultado = await updateTableStatus(parseInt(mesaString), 'NoDisponible');
+                console.log('Resultado de updateTableStatus:', resultado);
+                console.log(`Mesa ${mesaString} marcada como NoDisponible`);
+                
+                setNumeroMesa(mesaString);
+                localStorage.setItem('numeroMesa', mesaString);
+                setModalMesaOpen(false);
+                setMensajeError('');
+            } catch (error) {
+                console.error('Error al actualizar el estatus de la mesa:', error);
+                setMensajeError('Error al reservar la mesa. Inténtalo nuevamente.');
+            }
+        } else {
+            console.error('Número de mesa inválido');
+            setMensajeError('Por favor selecciona una mesa válida');
+        }
+        console.log('=== FIN SELECCIONAR MESA ===');
+    };
 
     // Verificar token al cargar el componente
     useEffect(() => {
         const token = localStorage.getItem('token');
+        const mesaGuardada = localStorage.getItem('numeroMesa');
+        
+        console.log('Token encontrado:', !!token); // Debug log
+        console.log('Mesa guardada encontrada:', mesaGuardada); // Debug log
+        
         if (!token) {
-            setLoginModalOpen(true); // Mostrar modal de login si no hay token
-            setLoading(false); // Detener el loading ya que no hay token
+            setLoginModalOpen(true);
+            setLoading(false);
         } else {
-            setIsAuthenticated(true); // Marcar como autenticado si hay token
+            setIsAuthenticated(true);
+            if (mesaGuardada) {
+                console.log('Estableciendo numero de mesa:', mesaGuardada); // Debug log
+                setNumeroMesa(mesaGuardada);
+            }
         }
     }, []);
 
+    // Verificar si necesita mostrar modal de mesa después de autenticarse
+    useEffect(() => {
+        if (isAuthenticated && !numeroMesa) {
+            cargarMesas();
+        }
+    }, [isAuthenticated, numeroMesa]);
+
+    // Función para cargar las mesas disponibles - ACTUALIZADA con estados correctos
+    const cargarMesas = async () => {
+        try {
+            setLoadingMesas(true);
+            console.log('Iniciando carga de mesas...');
+            
+            const mesasData = await getTables();
+            console.log('Datos recibidos de la API:', mesasData);
+            
+            let mesasArray = [];
+            
+            // Procesar la respuesta específica de tu API
+            if (mesasData && mesasData.table_status && typeof mesasData.table_status === 'object') {
+                console.log('Procesando table_status:', mesasData.table_status);
+                
+                // Convertir el objeto table_status en array de mesas
+                mesasArray = Object.entries(mesasData.table_status)
+                    .map(([numeroMesa, estado]) => ({
+                        id: parseInt(numeroMesa),
+                        number: parseInt(numeroMesa),
+                        status: estado // Mantener el estado original de la API
+                    }))
+                    .filter(mesa => !isNaN(mesa.number)) // Filtrar números válidos
+                    .sort((a, b) => a.number - b.number); // Ordenar por número
+                
+                console.log('Todas las mesas procesadas:', mesasArray);
+                
+                // Filtrar solo las mesas "Libre" para mostrar en el dropdown y excluir la mesa 1
+                const mesasLibres = mesasArray.filter(mesa => 
+                    mesa.status === 'Libre' && mesa.number !== 1
+                );
+                console.log('Mesas libres filtradas (sin mesa 1):', mesasLibres);
+                
+                // Guardar solo las mesas libres disponibles para selección
+                setMesas(mesasLibres);
+                
+            } else {
+                console.log('Estructura de datos no reconocida, usando mesas por defecto');
+                // Fallback con mesas por defecto (excluyendo mesa 1)
+                mesasArray = Array.from({ length: 25 }, (_, index) => ({
+                    id: index + 2, // Empezar desde mesa 2
+                    number: index + 2,
+                    status: 'Libre'
+                }));
+                setMesas(mesasArray);
+            }
+            
+            setModalMesaOpen(true);
+            setMensajeError('');
+            
+        } catch (error) {
+            console.error('Error al cargar las mesas:', error);
+            setMensajeError(`Error al cargar las mesas: ${error.message}`);
+            
+            // Fallback con mesas por defecto (todas libres, excluyendo mesa 1)
+            const mesasDefault = Array.from({ length: 25 }, (_, index) => ({
+                id: index + 2, // Empezar desde mesa 2
+                number: index + 2,
+                status: 'Libre'
+            }));
+            
+            setMesas(mesasDefault);
+            setModalMesaOpen(true);
+        } finally {
+            setLoadingMesas(false);
+        }
+    };
+
+    // Recuperar datos del localStorage al cargar la página
+    useEffect(() => {
+        const carritoGuardado = localStorage.getItem("carrito1");
+        const historialGuardado = localStorage.getItem("historialPedidos1");
+        const ordenActivaGuardada = localStorage.getItem("ordenActiva1");
+
+        if (carritoGuardado) {
+            setCarrito(JSON.parse(carritoGuardado));
+        }
+        if (historialGuardado) {
+            setHistorialPedidos(JSON.parse(historialGuardado));
+        }
+        if (ordenActivaGuardada) {
+            const orden = JSON.parse(ordenActivaGuardada);
+            setOrdenActiva(orden);
+            if (orden && orden.order_uuid) {
+                cargarTotalFinal(orden.order_uuid);
+            }
+        }
+    }, []);
+
+    // Guardar datos en localStorage cuando cambien
+    useEffect(() => {
+        localStorage.setItem("carrito1", JSON.stringify(carrito));
+    }, [carrito]);
+
+    useEffect(() => {
+        localStorage.setItem("historialPedidos1", JSON.stringify(historialPedidos));
+    }, [historialPedidos]);
+
+    useEffect(() => {
+        if (ordenActiva) {
+            localStorage.setItem("ordenActiva1", JSON.stringify(ordenActiva));
+        }
+    }, [ordenActiva]);
+
+    // Función para cargar el total final usando getFinalOrder
+    const cargarTotalFinal = async (uuid) => {
+        try {
+            const response = await getFinalOrder(uuid);
+            if (response && response.length > 0 && response[0].total_final) {
+                setTotalFinal(response[0].total_final);
+            }
+        } catch (error) {
+            console.error('Error al cargar el total final:', error);
+        }
+    };
+
     // Cargar productos solo después de autenticarse
     useEffect(() => {
-        if (!isAuthenticated) return; // No cargar productos si no está autenticado
+        if (!isAuthenticated) return;
 
         const cargarProductos = async () => {
             try {
@@ -99,62 +283,7 @@ export default function MenuCliente() {
         };
 
         cargarProductos();
-    }, [isAuthenticated]); // Ejecutar solo cuando isAuthenticated cambie a true
-
-    // Función para manejar el login
-    const handleLogin = async (values, { setSubmitting }) => {
-        setServerError('');
-        setIsLoading(true);
-        try {
-            const response = await loginUser(values);
-
-            if (response.ok) {
-                const data = await response.json();
-
-                if (data.access_token) {
-                    // Guardar token siempre en localStorage
-                    localStorage.setItem('token', data.access_token);
-                    
-                    // Cerrar modal de login y marcar como autenticado
-                    setLoginModalOpen(false);
-                    setServerError('');
-                    setIsAuthenticated(true); // Esto disparará la carga de productos
-                } else {
-                    setServerError('No se recibió un token válido. Por favor, intenta nuevamente.');
-                }
-            } else {
-                setServerError('Usuario y/o contraseña incorrectos. Por favor, verifica tus credenciales.');
-            }
-        } catch (error) {
-            setServerError('Ocurrió un error al intentar iniciar sesión. Inténtalo nuevamente.');
-        } finally {
-            setSubmitting(false);
-            setIsLoading(false);
-        }
-    };
-
-    // Validación del login simplificada (sin rememberMe)
-    const loginValidationSchema = Yup.object({
-        email: Yup.string().email('Correo electrónico inválido').required('Correo electrónico es requerido'),
-        password: Yup.string().min(6, 'La contraseña debe tener al menos 6 caracteres').required('Contraseña es requerida'),
-    });
-
-    // Función para transformar productos de la API al formato local
-    const transformarProductos = (productosAPI) => {
-        return productosAPI.map(producto => ({
-            id: producto.id_products,
-            nombre: producto.name,
-            precio: parseFloat(producto.price),
-            descripcion: producto.description,
-            categoria: producto.category_name || producto.nombre_categoria,
-            imagen: producto.image_url && producto.image_url.length > 0
-                ? producto.image_url[0]
-                : kime,
-            ingredientes: producto.ingredientes || [],
-            status: producto.status,
-            cantidad: 1
-        }));
-    };
+    }, [isAuthenticated]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -177,26 +306,59 @@ export default function MenuCliente() {
         );
     }, [categoriaSeleccionada, productos]);
 
-    useEffect(() => {
-        const carritoGuardado = localStorage.getItem("carrito1");
-        const historialGuardado = localStorage.getItem("historialPedidos1");
+    // Función para manejar el login
+    const handleLogin = async (values, { setSubmitting }) => {
+        setServerError('');
+        setIsLoading(true);
+        try {
+            const response = await loginUser(values);
 
-        if (carritoGuardado) {
-            setCarrito(JSON.parse(carritoGuardado));
+            if (response.ok) {
+                const data = await response.json();
+
+                if (data.access_token) {
+                    localStorage.setItem('token', data.access_token);
+                    setLoginModalOpen(false);
+                    setServerError('');
+                    setIsAuthenticated(true);
+                } else {
+                    setServerError('No se recibió un token válido. Por favor, intenta nuevamente.');
+                }
+            } else {
+                setServerError('Usuario y/o contraseña incorrectos. Por favor, verifica tus credenciales.');
+            }
+        } catch (error) {
+            setServerError('Ocurrió un error al intentar iniciar sesión. Inténtalo nuevamente.');
+        } finally {
+            setSubmitting(false);
+            setIsLoading(false);
         }
+    };
 
-        if (historialGuardado) {
-            setHistorialPedidos(JSON.parse(historialGuardado));
-        }
-    }, []);
+    const loginValidationSchema = Yup.object({
+        email: Yup.string().email('Correo electrónico inválido').required('Correo electrónico es requerido'),
+        password: Yup.string().min(6, 'La contraseña debe tener al menos 6 caracteres').required('Contraseña es requerida'),
+    });
 
-    useEffect(() => {
-        localStorage.setItem("carrito1", JSON.stringify(carrito));
-    }, [carrito]);
-
-    useEffect(() => {
-        localStorage.setItem("historialPedidos1", JSON.stringify(historialPedidos));
-    }, [historialPedidos]);
+    const transformarProductos = (productosAPI) => {
+        return productosAPI.map(producto => ({
+            id: producto.id_products,
+            id_products: producto.id_products, // Mantener ambos para compatibilidad
+            nombre: producto.name,
+            name: producto.name, // Mantener ambos para compatibilidad
+            precio: parseFloat(producto.price),
+            price: parseFloat(producto.price), // Corregido: era "produto.price"
+            descripcion: producto.description,
+            description: producto.description, // Mantener ambos para compatibilidad
+            categoria: producto.category_name || producto.nombre_categoria,
+            imagen: producto.image_url && producto.image_url.length > 0
+                ? producto.image_url[0]
+                : kime,
+            ingredientes: producto.ingredientes || [],
+            status: producto.status,
+            cantidad: 1
+        }));
+    };
 
     const openModal = (producto) => {
         setProductoSeleccionado(producto);
@@ -208,17 +370,19 @@ export default function MenuCliente() {
         setProductoSeleccionado(null);
     };
 
-    const agregarAlCarrito = (producto) => {
-        const ingredientesExcluidos = producto.ingredientes && producto.ingredientes.length > 0
+    const agregarAlCarrito = (producto, comentario = "", ingredientesExcluidos = []) => {
+        const ingredientesExcluidosModal = producto.ingredientes && producto.ingredientes.length > 0
             ? Array.from(
                 document.querySelectorAll('input[type="checkbox"]:checked')
             ).map((checkbox) => checkbox.nextSibling.textContent.replace("Sin ", "").trim())
-            : [];
+            : ingredientesExcluidos;
 
         const productoConExclusiones = {
             ...producto,
-            id: `${producto.id}-${ingredientesExcluidos.join(",")}`,
-            ingredientesExcluidos,
+            id: `${producto.id || producto.id_products}-${ingredientesExcluidosModal.join(",")}-${comentario}`,
+            id_products: producto.id_products || producto.id,
+            ingredientesExcluidos: ingredientesExcluidosModal,
+            comentario: comentario,
         };
 
         setCarrito((prevCarrito) => {
@@ -228,10 +392,10 @@ export default function MenuCliente() {
 
             if (existingItemIndex !== -1) {
                 const updatedCarrito = [...prevCarrito];
-                updatedCarrito[existingItemIndex].cantidad += 1;
+                updatedCarrito[existingItemIndex].cantidad += (producto.cantidad || 1);
                 return updatedCarrito;
             } else {
-                return [...prevCarrito, { ...productoConExclusiones, cantidad: 1 }];
+                return [...prevCarrito, { ...productoConExclusiones, cantidad: producto.cantidad || 1 }];
             }
         });
 
@@ -242,76 +406,101 @@ export default function MenuCliente() {
         if (!carrito || carrito.length === 0) {
             return "0.00";
         }
-        return carrito.reduce((total, item) => total + item.precio * item.cantidad, 0).toFixed(2);
+        return carrito.reduce((total, item) => {
+            const precio = item.precio || item.price || 0;
+            return total + precio * item.cantidad;
+        }, 0).toFixed(2);
     };
 
-    const realizarPedido = () => {
+    // Función modificada para crear/actualizar órdenes (adaptada de pntoventa)
+    const realizarPedido = async () => {
         if (carrito.length === 0) {
             setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
             return;
         }
 
-        const orden = {
-            fecha: new Date().toISOString(),
-            total: parseFloat(calcularTotal()),
-            items: carrito.map((item) => ({
-                producto_id: item.id.split('-')[0],
-                nombre: item.nombre,
-                cantidad: item.cantidad,
-                precio_unitario: item.precio,
-                precio_total: item.precio * item.cantidad,
-                categoria: item.categoria,
-                ingredientes_excluidos: item.ingredientesExcluidos || [],
-                personalizaciones: item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 
-                    ? `Sin: ${item.ingredientesExcluidos.join(", ")}` 
-                    : null
-            })),
-            resumen: {
-                total_items: carrito.reduce((total, item) => total + item.cantidad, 0),
-                subtotal: parseFloat(calcularTotal()),
-                total_final: parseFloat(calcularTotal())
-            }
-        };
-
-        console.log("=== ORDEN PARA ENVIAR A LA API ===");
-        console.log(JSON.stringify(orden, null, 2));
-        console.log("=== FIN DE LA ORDEN ===");
-
-        setHistorialPedidos((prevHistorial) => [
-            ...prevHistorial,
-            ...carrito.map((item) => ({
-                nombre: item.nombre,
-                cantidad: item.cantidad,
-                precio: item.precio,
-                ingredientesExcluidos: item.ingredientesExcluidos || [],
-            })),
-        ]);
-
-        setCarrito([]);
-        setCarritoModalOpen(false);
+        setIsCreatingOrder(true);
         setMensajeError("");
+
+        try {
+            // Preparar productos para la API
+            const productosParaOrden = carrito.map(item => ({
+                id: item.id_products || item.id.split('-')[0],
+                cantidad: item.cantidad
+            }));
+
+            // Crear la orden (con UUID si existe una orden activa)
+            const ordenUuid = ordenActiva ? ordenActiva.order_uuid : null;
+            const response = await createSimpleOrder(productosParaOrden, ordenUuid);
+
+            console.log('Orden creada/actualizada:', response);
+
+            // Guardar la información de la orden activa
+            setOrdenActiva({
+                order_uuid: response.order_uuid,
+                id_orders: response.id_orders,
+                total: response.total,
+                state: response.state,
+                order_status: response.order_status,
+                date_time: response.date_time
+            });
+
+            // Mover productos del carrito al historial
+            setHistorialPedidos((prevHistorial) => [
+                ...prevHistorial,
+                ...carrito.map((item) => ({
+                    id_products: item.id_products || item.id.split('-')[0],
+                    nombre: item.nombre || item.name,
+                    name: item.name || item.nombre,
+                    cantidad: item.cantidad,
+                    precio: item.precio || item.price,
+                    price: item.price || item.precio,
+                    comentario: item.comentario || "",
+                    ingredientesExcluidos: item.ingredientesExcluidos || [],
+                    order_id: response.id_orders,
+                    fecha_orden: response.date_time
+                })),
+            ]);
+
+            // Limpiar el carrito
+            setCarrito([]);
+
+            // Cargar el total final actualizado
+            await cargarTotalFinal(response.order_uuid);
+
+            setMensajeError("¡Orden enviada exitosamente!");
+            
+            // Limpiar el mensaje después de 3 segundos
+            setTimeout(() => {
+                setMensajeError("");
+            }, 3000);
+
+        } catch (error) {
+            console.error('Error al crear la orden:', error);
+            setMensajeError(`Error al enviar la orden: ${error.message}`);
+        } finally {
+            setIsCreatingOrder(false);
+        }
     };
 
+    // Función para finalizar todas las órdenes y limpiar el estado (adaptada de pntoventa)
     const terminarOrden = () => {
         if (historialPedidos.length === 0) {
             setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
             return;
         }
 
-        const total = historialPedidos.reduce(
-            (acc, item) => acc + item.precio * item.cantidad,
-            0
-        );
-
-        setTotalPedidos(total.toFixed(2));
+        setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
         setHistorialPedidos([]);
+        setOrdenActiva(null);
+        setTotalFinal(0);
+        localStorage.removeItem("ordenActiva1");
         setModalTotalOpen(true);
         setMensajeError("");
     };
 
     const categorias = ["Todos los platillos", ...new Set(productos.map(p => p.categoria))];
 
-    // Mostrar loading solo si está autenticado y cargando productos
     if (loading && isAuthenticated) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -322,7 +511,82 @@ export default function MenuCliente() {
 
     return (
         <section>
-            {/* Modal de Login */}
+            {/* Modal de selección de mesa - ACTUALIZADO sin mesa 1 y sin botón predeterminado */}
+            {modalMesaOpen && (
+                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1001]">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
+                        {loadingMesas ? (
+                            <div className="flex justify-center items-center h-32">
+                                <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin"></div>
+                                <p className="ml-4 text-gray-600">Cargando mesas...</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className='text-[#3fe283] text-4xl flex justify-center mb-4'>
+                                    <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
+                                        <MdTableRestaurant size={32} />
+                                    </div>
+                                </div>
+                                <h2 className="text-2xl text-center font-bold text-black mb-2">Elija número de mesa</h2>
+                                <p className='text-center text-gray-600 mb-4'>
+                                    Seleccione una mesa disponible ({mesas.length} mesas libres)
+                                </p>
+                                
+                                {mensajeError && (
+                                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                        <p className="text-sm text-yellow-800">{mensajeError}</p>
+                                    </div>
+                                )}
+                                
+                                {mesas.length === 0 ? (
+                                    <div className="text-center">
+                                        <p className="text-red-600 mb-4">No hay mesas disponibles en este momento</p>
+                                        <button
+                                            className="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                            onClick={() => setModalMesaOpen(false)}
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-4">
+                                        <div className='flex flex-col gap-2'>
+                                            <label className="text-sm font-medium text-gray-700">
+                                                Seleccionar Mesa Disponible
+                                            </label>
+                                            <select 
+                                                className="p-3 border border-gray-300 rounded-lg w-full text-lg"
+                                                onChange={(e) => {
+                                                    if (e.target.value) {
+                                                        seleccionarMesa(e.target.value);
+                                                    }
+                                                }}
+                                                defaultValue=""
+                                            >
+                                                <option value="" disabled>
+                                                    -- Seleccione una mesa --
+                                                </option>
+                                                {mesas.map((mesa) => (
+                                                    <option key={`mesa-${mesa.id}`} value={mesa.number}>
+                                                        Mesa {mesa.number} - Disponible
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        
+                                        {/* Mostrar información adicional */}
+                                        <div className="text-center text-sm text-gray-500">
+                                            Solo se muestran las mesas disponibles
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Login - sin cambios */}
             {loginModalOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1000]">
                     <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -394,6 +658,7 @@ export default function MenuCliente() {
                 </div>
             )}
 
+            {/* Header - ACTUALIZADO con información de mesa */}
             <header>
                 <nav className="w-full bg-gray-100 text-gray-800 p-4">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
@@ -402,20 +667,36 @@ export default function MenuCliente() {
                             <h1 className="text-3xl font-bold ml-2">WapiFood</h1>
                         </div>
 
-                        <button
-                            className="z-20 cursor-pointer py-3 hamburger-button"
-                            onClick={() => setIsOpen(!isOpen)}
-                            aria-label="Toggle menu"
-                        >
-                            <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-                            <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
-                            <div className={`w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
-                        </button>
+                        <div className="flex items-center gap-4">
+                            {/* Información de mesa - con debug mejorado */}
+                            {numeroMesa ? (
+                                <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-lg">
+                                    <MdTableRestaurant className="text-green-600" size={20} />
+                                    <span className="text-sm font-medium text-green-800">
+                                        Mesa {numeroMesa}
+                                        {/* Debugging temporal */}
+                                        {console.log('numeroMesa actual en header:', numeroMesa)}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="text-xs text-gray-500">Sin mesa</div>
+                            )}
+
+                            <button
+                                className="z-20 cursor-pointer py-3 hamburger-button"
+                                onClick={() => setIsOpen(!isOpen)}
+                                aria-label="Toggle menu"
+                            >
+                                <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+                                <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
+                                <div className={`w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                            </button>
+                        </div>
                     </div>
                 </nav>
             </header>
 
-            {/* Menú desplegable */}
+            {/* Menú desplegable - sin cambios */}
             <div
                 className={`
                     fixed top-0 left-0 h-full w-64 bg-gray-100 shadow-lg 
@@ -441,7 +722,7 @@ export default function MenuCliente() {
                 </ul>
             </div>
 
-            {/* Botón flotante del carrito */}
+            {/* Botón flotante del carrito - sin cambios */}
             <button
                 className="fixed bottom-10 right-4 bg-green-500 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-green-600"
                 onClick={() => setCarritoModalOpen(true)}
@@ -454,7 +735,7 @@ export default function MenuCliente() {
                 )}
             </button>
 
-            {/* Modal del carrito */}
+            {/* Modal del carrito - ACTUALIZADO con funcionalidades de pntoventa */}
             {carritoModalOpen && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 z-50 flex justify-end"
@@ -467,20 +748,34 @@ export default function MenuCliente() {
                     <div className="bg-white w-80 h-full shadow-lg p-4 overflow-y-auto">
                         <h2 className="text-xl font-bold mb-4">Tu Pedido</h2>
 
+                        {/* Información de la orden activa */}
+                        {ordenActiva && (
+                            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <h3 className="text-sm font-semibold text-blue-800">Orden Activa</h3>
+                                <p className="text-xs text-blue-600">UUID: {ordenActiva.order_uuid.slice(0, 8)}...</p>
+                                <p className="text-xs text-blue-600">Estado: {ordenActiva.order_status}</p>
+                            </div>
+                        )}
+
                         {/* Carrito actual */}
                         {carrito.length > 0 ? (
                             <ul className="mb-4">
                                 {carrito.map((item) => (
                                     <li key={item.id} className="flex justify-between items-center mb-4">
                                         <div>
-                                            <p className="font-bold">{item.nombre}</p>
+                                            <p className="font-bold">{item.nombre || item.name}</p>
                                             {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
                                                 <p className="text-sm text-gray-500">
                                                     Sin: {item.ingredientesExcluidos.join(", ")}
                                                 </p>
                                             )}
+                                            {item.comentario && (
+                                                <p className="text-sm text-gray-500">
+                                                    Comentario: {item.comentario}
+                                                </p>
+                                            )}
                                             <p className="text-sm text-gray-500">
-                                                ${item.precio.toFixed(2)} c/u
+                                                ${(item.precio || item.price || 0).toFixed(2)} c/u
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -536,13 +831,23 @@ export default function MenuCliente() {
                         <div className="border-t pt-4">
                             <p className="text-lg font-bold">Total: ${calcularTotal()}</p>
                             {mensajeError && (
-                                <p className="text-red-500 text-sm font-bold mt-2">{mensajeError}</p>
+                                <p className={`text-sm font-bold mt-2 ${
+                                    mensajeError.includes('exitosamente') ? 'text-green-500' : 'text-red-500'
+                                }`}>
+                                    {mensajeError}
+                                </p>
                             )}
                             <button
-                                className="bg-green-500 text-white w-full py-2 rounded-lg mt-4 hover:bg-green-600"
+                                className={`w-full py-2 rounded-lg mt-4 ${
+                                    isCreatingOrder 
+                                        ? 'bg-gray-400 cursor-not-allowed' 
+                                        : 'bg-green-500 hover:bg-green-600'
+                                } text-white`}
                                 onClick={realizarPedido}
+                                disabled={isCreatingOrder}
                             >
-                                Realizar Pedido
+                                {isCreatingOrder ? 'Enviando...' : 
+                                 ordenActiva ? 'Agregar a la orden' : 'Realizar Pedido'}
                             </button>
                         </div>
 
@@ -553,19 +858,31 @@ export default function MenuCliente() {
                                 <ul className="space-y-0">
                                     {historialPedidos.map((item, index) => (
                                         <li key={index} className="p-2 rounded shadow">
-                                            <p className="font-bold">{item.cantidad}x {item.nombre}</p>
-                                            {item.ingredientesExcluidos.length > 0 && (
+                                            <p className="font-bold">{item.cantidad} x {item.nombre || item.name}</p>
+                                            {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
                                                 <p className="text-sm text-gray-500">
                                                     Sin: {item.ingredientesExcluidos.join(", ")}
                                                 </p>
                                             )}
+                                            {item.comentario && (
+                                                <p className="text-sm text-gray-500">
+                                                    Comentario: {item.comentario}
+                                                </p>
+                                            )}
                                             <p className="text-sm text-gray-500">
-                                                Precio: ${item.precio.toFixed(2)} c/u
+                                                Precio: ${(item.precio || item.price || 0).toFixed(2)} c/u
                                             </p>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
+                        )}
+
+                        {/* Total final de todas las órdenes */}
+                        {totalFinal > 0 && (
+                            <p className="text-sm text-gray-500 pt-2 font-semibold">
+                                Total Final: ${totalFinal.toFixed(2)}
+                            </p>
                         )}
 
                         <button
@@ -583,7 +900,89 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal de producto */}
+            {/* Modal del total de pedidos - ACTUALIZADO con método de pago */}
+            {modalTotalOpen && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            setModalTotalOpen(false);
+                        }
+                    }}
+                >
+                    <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
+                        <h2 className="text-xl font-bold mb-4 text-center">Total de la Orden</h2>
+                        <div className="flex justify-between gap-2">
+                            <button 
+                                className={`flex items-center justify-center border-1 w-5/12 h-10 rounded-md transition-colors ${
+                                    metodoPago === 'efectivo' 
+                                        ? 'bg-green-400 text-white border-green-400' 
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                                onClick={() => setMetodoPago('efectivo')}
+                            >
+                                <BsCashCoin className="text-2xl mr-2"/>
+                                Efectivo
+                            </button>
+                            <button 
+                                className={`flex items-center justify-center border-1 w-5/12 h-10 rounded-md transition-colors ${
+                                    metodoPago === 'tarjeta' 
+                                        ? 'bg-green-400 text-white border-green-400' 
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                                onClick={() => setMetodoPago('tarjeta')}
+                            >
+                                <FaCreditCard className="text-2xl mr-2"/>
+                                Tarjeta
+                            </button>
+                        </div>
+                        <p className="text-lg text-center mb-4 pt-4">
+                            El total de tus pedidos es: 
+                            <span className="font-bold">
+                                ${parseFloat(totalPedidos).toFixed(2)}
+                            </span>
+                        </p>
+                        <p className="text-center text-gray-600 mb-4">
+                            Método de pago: <span className="font-semibold capitalize">{metodoPago}</span>
+                        </p>
+                        
+                        {/* Input para número de referencia */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                                Número de referencia
+                            </label>
+                            <input
+                                type="text"
+                                value={numeroReferencia}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (/^\d{0,4}$/.test(value)) {
+                                        setNumeroReferencia(value);
+                                    }
+                                }}
+                                placeholder="0000"
+                                maxLength="4"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-center text-lg font-mono focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <button
+                            className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
+                            onClick={() => {
+                                console.log(`Pago procesado con ${metodoPago} por $${totalPedidos}`);
+                                console.log(`Número de referencia: ${numeroReferencia || 'Sin referencia'}`);
+                                setModalTotalOpen(false);
+                                setMetodoPago('efectivo');
+                                setNumeroReferencia('');
+                            }}
+                        >
+                            Confirmar Pago
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de producto - sin cambios principales */}
             {modalOpen && productoSeleccionado && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
@@ -662,37 +1061,14 @@ export default function MenuCliente() {
                                     closeModal();
                                 }}
                             >
-                                Agregar - ${((productoSeleccionado.cantidad || 1) * productoSeleccionado.precio).toFixed(2)}
+                                Agregar - ${((productoSeleccionado.cantidad || 1) * (productoSeleccionado.precio || 0)).toFixed(2)}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Modal del total de pedidos */}
-            {modalTotalOpen && (
-                <div
-                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) {
-                            setModalTotalOpen(false);
-                        }
-                    }}
-                >
-                    <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
-                        <h2 className="text-xl font-bold mb-4 text-center">Total de la Orden</h2>
-                        <p className="text-lg text-center mb-4">El total de tus pedidos es: <span className="font-bold">${totalPedidos}</span></p>
-                        <button
-                            className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
-                            onClick={() => setModalTotalOpen(false)}
-                        >
-                            Cerrar
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Card Section */}
+            {/* Card Section - sin cambios principales */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12">
                 {productosFiltrados
                     .sort((a, b) => {
