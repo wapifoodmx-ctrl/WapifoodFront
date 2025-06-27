@@ -81,6 +81,12 @@ export default function MenuCliente() {
     const [modalMesaOpen, setModalMesaOpen] = useState(false);
     const [loadingMesas, setLoadingMesas] = useState(false);
 
+    // Nuevos estados para cambio de mesa
+    const [modalCambioMesaOpen, setModalCambioMesaOpen] = useState(false);
+    const [codigoCambioMesa, setCodigoCambioMesa] = useState('');
+    const [errorCodigoMesa, setErrorCodigoMesa] = useState('');
+    const [procesandoCambioMesa, setProcesandoCambioMesa] = useState(false);
+
     // Función para seleccionar mesa - ACTUALIZADA con estado correcto
     const seleccionarMesa = async (numeroMesaSeleccionada) => {
         console.log('=== INICIO SELECCIONAR MESA ===');
@@ -111,6 +117,49 @@ export default function MenuCliente() {
             setMensajeError('Por favor selecciona una mesa válida');
         }
         console.log('=== FIN SELECCIONAR MESA ===');
+    };
+
+    // Nueva función para manejar el click en el número de mesa
+    const handleClickMesa = () => {
+        setModalCambioMesaOpen(true);
+        setCodigoCambioMesa('');
+        setErrorCodigoMesa('');
+    };
+
+    // Nueva función para cambiar de mesa
+    const confirmarCambioMesa = async () => {
+        if (codigoCambioMesa !== '1234') {
+            setErrorCodigoMesa('Código incorrecto. Intenta nuevamente.');
+            return;
+        }
+
+        setProcesandoCambioMesa(true);
+        setErrorCodigoMesa('');
+
+        try {
+            // Cambiar el estatus de la mesa actual a "Libre"
+            if (numeroMesa) {
+                console.log('Liberando mesa actual:', numeroMesa);
+                await updateTableStatus(parseInt(numeroMesa), 'Libre');
+                console.log(`Mesa ${numeroMesa} liberada exitosamente`);
+            }
+
+            // Limpiar la mesa actual del localStorage
+            localStorage.removeItem('numeroMesa');
+            setNumeroMesa('');
+
+            // Cerrar modal de cambio de mesa
+            setModalCambioMesaOpen(false);
+            
+            // Abrir modal de selección de mesa
+            await cargarMesas();
+
+        } catch (error) {
+            console.error('Error al liberar la mesa:', error);
+            setErrorCodigoMesa('Error al cambiar de mesa. Inténtalo nuevamente.');
+        } finally {
+            setProcesandoCambioMesa(false);
+        }
     };
 
     // Verificar token al cargar el componente
@@ -658,7 +707,7 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Header - ACTUALIZADO con información de mesa */}
+            {/* Header - ACTUALIZADO con click en mesa */}
             <header>
                 <nav className="w-full bg-gray-100 text-gray-800 p-4">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
@@ -668,14 +717,16 @@ export default function MenuCliente() {
                         </div>
 
                         <div className="flex items-center gap-4">
-                            {/* Información de mesa - con debug mejorado */}
+                            {/* Información de mesa - ACTUALIZADA para ser clickeable */}
                             {numeroMesa ? (
-                                <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-lg">
+                                <div 
+                                    className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-lg cursor-pointer hover:bg-green-200 transition-colors"
+                                    onClick={handleClickMesa}
+                                    title="Click para cambiar de mesa"
+                                >
                                     <MdTableRestaurant className="text-green-600" size={20} />
                                     <span className="text-sm font-medium text-green-800">
                                         Mesa {numeroMesa}
-                                        {/* Debugging temporal */}
-                                        {console.log('numeroMesa actual en header:', numeroMesa)}
                                     </span>
                                 </div>
                             ) : (
@@ -695,6 +746,92 @@ export default function MenuCliente() {
                     </div>
                 </nav>
             </header>
+
+            {/* Nueva Modal de cambio de mesa */}
+            {modalCambioMesaOpen && (
+                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1002]">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
+                        {procesandoCambioMesa ? (
+                            <div className="flex flex-col justify-center items-center h-32">
+                                <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin mb-4"></div>
+                                <p className="text-gray-600">Cambiando de mesa...</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className='text-[#3fe283] text-4xl flex justify-center mb-4'>
+                                    <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
+                                        <MdTableRestaurant size={32} />
+                                    </div>
+                                </div>
+                                <h2 className="text-2xl text-center font-bold text-black mb-2">Cambiar Mesa</h2>
+                                <p className='text-center text-gray-600 mb-4'>
+                                    Ingrese código de 4 dígitos para cambiar el número de mesa
+                                </p>
+                                
+                                <div className="flex flex-col gap-4">
+                                    <div className='flex flex-col gap-2'>
+                                        <label className="text-sm font-medium text-gray-700 text-center">
+                                            Código de Seguridad
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={codigoCambioMesa}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                // Solo permitir números y máximo 4 dígitos
+                                                if (/^\d{0,4}$/.test(value)) {
+                                                    setCodigoCambioMesa(value);
+                                                    if (errorCodigoMesa) {
+                                                        setErrorCodigoMesa('');
+                                                    }
+                                                }
+                                            }}
+                                            placeholder="****"
+                                            maxLength="4"
+                                            className="p-3 border border-gray-300 rounded-lg w-full text-lg text-center font-mono focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            autoFocus
+                                        />
+                                        
+                                        {errorCodigoMesa && (
+                                            <p className="text-red-500 text-sm text-center mt-1">
+                                                {errorCodigoMesa}
+                                            </p>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="flex gap-3">
+                                        <button
+                                            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                                setModalCambioMesaOpen(false);
+                                                setCodigoCambioMesa('');
+                                                setErrorCodigoMesa('');
+                                            }}
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            className={`flex-1 py-2 px-4 rounded-lg transition-colors ${
+                                                codigoCambioMesa.length === 4
+                                                    ? 'bg-green-500 text-white hover:bg-green-600'
+                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                            onClick={confirmarCambioMesa}
+                                            disabled={codigoCambioMesa.length !== 4}
+                                        >
+                                            Aceptar
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="text-center text-xs text-gray-500">
+                                        Al cambiar de mesa, la mesa actual quedará disponible
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Menú desplegable - sin cambios */}
             <div
