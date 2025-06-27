@@ -26,7 +26,7 @@ export default function MenuWebDinamico() {
 
     // Función para validar si un valor es válido (no null ni "string")
     const esValorValido = (valor) => {
-        return valor && valor !== "string" && valor.trim() !== "";
+        return valor && valor !== "string" && typeof valor === 'string' && valor.trim() !== "";
     };
 
     // Transformar los datos de la API al formato esperado
@@ -159,7 +159,7 @@ export default function MenuWebDinamico() {
             <div
                 className={`
                     fixed top-0 left-0 h-full w-64 bg-gray-100 shadow-lg 
-                    transition-transform duration-300 ease-in-out menu-container
+                    transition-transform duration-300 ease-in-out menu-container z-50
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
             >
@@ -181,15 +181,23 @@ export default function MenuWebDinamico() {
                 </ul>
             </div>
 
+            {/* Overlay para cerrar el menú al hacer clic fuera */}
+            {isOpen && (
+                <div 
+                    className="fixed inset-0  z-40 backdrop-brightness-50"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+
             {/* Header del restaurante */}
             <div className="w-full h-70 shadow-md bg-white flex px-4"> 
                 <div className="w-full flex items-center justify-center flex-col ">
                     <Image
                         src={restauranteInfo?.image && esValorValido(restauranteInfo.image) 
-                            ? `https://comandapp-api.h-dev.xyz/${restauranteInfo.image}`
+                            ? `${restauranteInfo.image}`
                             : Profile}
                         alt="Perfil"
-                        className="rounded-full w-20 h-20 object-cover mr-4"
+                        className="rounded-full w-20 h-20 mr-4 object-contain"
                         width={48}
                         height={48}
                     />
@@ -219,10 +227,12 @@ export default function MenuWebDinamico() {
                         </p>
                     )}
 
-                    {/* Horario - mantener el original por ahora */}
-                    <div className="flex items-center gap-2">
-                        <p className="text-sm flex py-2">| <span className=" px-2 self-center"><MdOutlineWatchLater className="text-green-600" /></span> Lun - Vie 9:00 a 6:00 |</p>
-                    </div>
+                    {/* Horario - solo mostrar si es válido */}
+                    {restauranteInfo?.horario && esValorValido(restauranteInfo.horario) && (
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm flex py-2">| <span className=" px-2 self-center"><MdOutlineWatchLater className="text-green-600" /></span> {restauranteInfo.horario} |</p>
+                        </div>
+                    )}
 
                     {/* Teléfono - solo mostrar si es válido */}
                     {restauranteInfo?.telefono && esValorValido(restauranteInfo.telefono) && (
@@ -233,7 +243,7 @@ export default function MenuWebDinamico() {
                     {restauranteInfo?.whatsapp && esValorValido(restauranteInfo.whatsapp) && (
                         <button 
                             className="cursor-pointer py-2"
-                            onClick={() => window.open(`https://wa.me/${restauranteInfo.whatsapp}`, '_blank')}
+                            onClick={() => window.open(`${restauranteInfo.whatsapp}`, '_blank')}
                         >
                             <FaWhatsapp className="text-xl"/>
                         </button>

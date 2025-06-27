@@ -2,7 +2,7 @@ import { TbWorldShare } from "react-icons/tb";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { IoLocationOutline } from "react-icons/io5";
-import { FaPhoneAlt } from "react-icons/fa";
+import { FaPhoneAlt, FaCheckCircle } from "react-icons/fa";
 import { CiMail } from "react-icons/ci";
 import Image from "next/image";
 import Miokon from "@/pages/assets/images/Miokon.png";
@@ -14,6 +14,13 @@ import { patchUserInfo } from "@/useCases/patchUserInfo";
 // Validaciones con Yup
 const personalInfoSchema = Yup.object().shape({
   telephone: Yup.string().required("Teléfono es requerido"),
+  restaurantName: Yup.string().required("Nombre del restaurante es requerido"),
+  confirmationCode: Yup.string()
+    .matches(/^\d{4}$/, 'El código debe tener exactamente 4 números')
+    .test('positive-numbers', 'Solo se permiten números positivos (1-9)', function(value) {
+      if (!value) return true; // Campo opcional
+      return /^[1-9]{4}$/.test(value);
+    }),
   // Removida la validación obligatoria de profileImage
 });
 
@@ -56,6 +63,7 @@ const getFullAddress = (userInfo) => {
 export default function UserPage() {
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -85,7 +93,8 @@ export default function UserPage() {
         nombre_restaurante: values.restaurantName,
         whatsapp: values.whatsapp,
         image: values.profileImage,
-        Horario: values.Horario,
+        horario: values.horario,
+        codigo_confirmacion: values.confirmationCode ? parseInt(values.confirmationCode) : null,
       };
 
       const updatedUser = await patchUserInfo(updateData);
@@ -94,13 +103,19 @@ export default function UserPage() {
       // Actualizar el estado local con los nuevos datos
       setUserInfo(updatedUser);
       
-      alert('Información actualizada exitosamente');
+      // Mostrar modal de éxito en lugar de alert
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error al actualizar:', error);
       alert('Error al actualizar la información');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Función para cerrar el modal de éxito
+  const closeSuccessModal = () => {
+    setShowSuccessModal(false);
   };
 
   if (loading) {
@@ -117,6 +132,30 @@ export default function UserPage() {
   return (
     <section>
       <Navbar />
+      
+      {/* Modal de éxito */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center shadow-2xl">
+            <div className="mb-4">
+              <FaCheckCircle className="text-green-500 text-6xl mx-auto" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              ¡Información actualizada exitosamente!
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Todos tus cambios han sido guardados correctamente.
+            </p>
+            <button
+              onClick={closeSuccessModal}
+              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              Continuar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex space-x-4 p-4">
         <h2 className="font-bold text-2xl">Mi Perfil</h2>
       </div>
@@ -136,20 +175,100 @@ export default function UserPage() {
           </div>
           <div className="border-b-1 w-full border-gray-500"></div>
         </div>
-        <div className="pt-2 flex flex-col justify-center items-center md:flex-row ">
-          <p className="flex gap-2">
-            | <IoLocationOutline className="text-xl self-center" />
-            {getFullAddress(userInfo)} |
-          </p>
-          <p className="flex gap-2">
-            | <CiMail className="text-xl self-center" /> {getCleanValue(userInfo?.email) || "email@ejemplo.com"} |
-          </p>
-          <p className="flex gap-2">
-            | <FaPhoneAlt className="text-xl self-center" /> {getCleanValue(userInfo?.telefono) || "Sin teléfono"} |
-          </p>
-          <a className="flex gap-2 cursor-pointer" href={`http://localhost:3000/webmenu/${userInfo?.user_uuid || ''}`}>
-            | <TbWorldShare className="text-xl self-center"/>Tu menú digital |
-          </a>
+        <div className="pt-4 flex flex-col justify-center items-center space-y-2">
+          {/* Vista móvil - elementos apilados */}
+          <div className="md:hidden flex flex-col space-y-2 w-full max-w-md">
+            {/* Dirección */}
+            <div className="px-2">
+              <div className="flex justify-center items-start gap-2 text-center">
+                <span className="text-gray-600 flex-shrink-0">|</span>
+                <div className="flex flex-col items-center min-w-0 flex-1">
+                  <IoLocationOutline className="text-xl text-green-600 mb-1" />
+                  <span className="text-sm break-words leading-tight">
+                    {getFullAddress(userInfo)}
+                  </span>
+                </div>
+                <span className="text-gray-600 flex-shrink-0">|</span>
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="px-2">
+              <div className="flex justify-center items-center gap-2 text-center">
+                <span className="text-gray-600 flex-shrink-0">|</span>
+                <div className="flex items-center justify-center min-w-0 flex-1 gap-2">
+                  <CiMail className="text-xl text-green-600 flex-shrink-0" />
+                  <span className="text-sm break-words">
+                    {getCleanValue(userInfo?.email) || "email@ejemplo.com"}
+                  </span>
+                </div>
+                <span className="text-gray-600 flex-shrink-0">|</span>
+              </div>
+            </div>
+
+            {/* Teléfono */}
+            <div className="px-2">
+              <div className="flex justify-center items-center gap-2 text-center">
+                <span className="text-gray-600 flex-shrink-0">|</span>
+                <div className="flex items-center justify-center min-w-0 flex-1 gap-2">
+                  <FaPhoneAlt className="text-xl text-green-600 flex-shrink-0" />
+                  <span className="text-sm break-words">
+                    {getCleanValue(userInfo?.telefono) || "Sin teléfono"}
+                  </span>
+                </div>
+                <span className="text-gray-600 flex-shrink-0">|</span>
+              </div>
+            </div>
+
+            {/* Enlace al menú digital */}
+            <div className="px-2">
+              <div className="flex justify-center items-center gap-2 text-center">
+                <span className="text-gray-600 flex-shrink-0">|</span>
+                <div className="flex items-center justify-center min-w-0 flex-1 gap-2">
+                  <TbWorldShare className="text-xl text-green-600 flex-shrink-0" />
+                  <a 
+                    className="text-sm text-blue-600 hover:text-blue-800 underline break-words transition-colors"
+                    href={`http://localhost:3000/webmenu/${userInfo?.user_uuid || ''}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Tu menú digital
+                  </a>
+                </div>
+                <span className="text-gray-600 flex-shrink-0">|</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Vista desktop - todo en una línea */}
+          <div className="hidden md:flex items-center justify-center gap-1 text-center flex-wrap">
+            <span className="text-gray-600">|</span>
+            <IoLocationOutline className="text-xl text-green-600" />
+            <span className="text-sm">
+              {getFullAddress(userInfo)}
+            </span>
+            <span className="text-gray-600">|</span>
+            <CiMail className="text-xl text-green-600" />
+            <span className="text-sm">
+              {getCleanValue(userInfo?.email) || "email@ejemplo.com"}
+            </span>
+            <span className="text-gray-600">|</span>
+            <FaPhoneAlt className="text-xl text-green-600" />
+            <span className="text-sm">
+              {getCleanValue(userInfo?.telefono) || "Sin teléfono"}
+            </span>
+            <span className="text-gray-600">|</span>
+            <TbWorldShare className="text-xl text-green-600" />
+            <a 
+              className="text-sm text-blue-600 hover:text-blue-800 underline transition-colors"
+              href={`http://localhost:3000/webmenu/${userInfo?.user_uuid || ''}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Tu menú digital
+            </a>
+            <span className="text-gray-600">|</span>
+          </div>
         </div>
       </div>
       <div className="bg-white shadow-md rounded-lg p-4 mt-4">
@@ -162,7 +281,8 @@ export default function UserPage() {
             telephone: getCleanValue(userInfo?.telefono),
             whatsapp: getCleanValue(userInfo?.whatsapp),
             postalCode: getCleanNumber(userInfo?.codigo_postal),
-            Horario: getCleanValue(userInfo?.Horario),
+            horario: getCleanValue(userInfo?.horario),
+            confirmationCode: getCleanNumber(userInfo?.codigo_confirmacion),
             profileImage: null,
           }}
           validationSchema={personalInfoSchema}
@@ -175,7 +295,9 @@ export default function UserPage() {
               <p>NOTA: Los siguientes datos apareceran en su página web, favor de revisar antes de dar click en "Guardar Cambios"</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col">
-                  <label className="font-bold" htmlFor="restaurantName">Nombre del restaurante</label>
+                  <label className="font-bold" htmlFor="restaurantName">
+                    Nombre del restaurante <span className="text-red-500">*</span>
+                  </label>
                   <Field 
                     type="text" 
                     id="restaurantName" 
@@ -219,7 +341,9 @@ export default function UserPage() {
                   <ErrorMessage name="delegation" component="div" className="text-red-500 text-sm" />
                 </div>
                 <div className="flex flex-col">
-                  <label className="font-bold" htmlFor="telephone">Teléfono</label>
+                  <label className="font-bold" htmlFor="telephone">
+                    Teléfono <span className="text-red-500">*</span>
+                  </label>
                   <Field 
                     type="tel" 
                     id="telephone" 
@@ -243,7 +367,7 @@ export default function UserPage() {
                 <div className="flex flex-col">
                   <label className="font-bold" htmlFor="postalCode">Código Postal</label>
                   <Field 
-                    type="number" 
+                    type="text" 
                     id="postalCode" 
                     name="postalCode" 
                     placeholder="Ej: 06100"
@@ -252,16 +376,42 @@ export default function UserPage() {
                   <ErrorMessage name="postalCode" component="div" className="text-red-500 text-sm" />
                 </div>
                 <div className="flex flex-col">
-                  <label className="font-bold" htmlFor="Horario">Horario</label>
+                  <label className="font-bold" htmlFor="horario">Horario</label>
                   <Field 
                     type="text" 
-                    id="Horario" 
-                    name="Horario" 
+                    id="horario" 
+                    name="horario" 
                     placeholder="Ej: Lun-Vie 9:00-18:00"
                     className="border p-2 rounded" 
                   />
-                  <ErrorMessage name="Horario" component="div" className="text-red-500 text-sm" />
+                  <ErrorMessage name="horario" component="div" className="text-red-500 text-sm" />
                 </div>
+
+                {/* Nuevo campo: Código de confirmación */}
+                <div className="flex flex-col">
+                  <label className="font-bold" htmlFor="confirmationCode">
+                    Código de confirmación
+                  </label>
+                  <Field 
+                    type="text" 
+                    id="confirmationCode" 
+                    name="confirmationCode" 
+                    placeholder="Ej: 1234"
+                    maxLength="4"
+                    className="border p-2 rounded" 
+                    onInput={(e) => {
+                      // Solo permitir números del 1-9
+                      e.target.value = e.target.value.replace(/[^1-9]/g, '');
+                      // Limitar a 4 caracteres
+                      if (e.target.value.length > 4) {
+                        e.target.value = e.target.value.slice(0, 4);
+                      }
+                    }}
+                  />
+                  <ErrorMessage name="confirmationCode" component="div" className="text-red-500 text-sm" />
+                  <p className="text-gray-500 text-xs mt-1">4 números del 1 al 9 (opcional)</p>
+                </div>
+                
                 <div className="flex flex-col">
                   <label className="font-bold cursor-pointer" htmlFor="profileImage">Imagen de perfil</label>
                   <input
@@ -277,11 +427,14 @@ export default function UserPage() {
                   <ErrorMessage name="profileImage" component="div" className="text-red-500 text-sm" />
                 </div>
               </div>
+              
               <button 
                 type="submit" 
                 disabled={isSubmitting}
-                className={`mt-4 p-2 rounded cursor-pointer text-white ${
-                  isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+                className={`p-2 rounded font-bold text-white ${
+                  isSubmitting 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-green-500 hover:bg-green-600'
                 }`}
               >
                 {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
