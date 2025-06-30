@@ -11,6 +11,8 @@ import React, { useState, useEffect } from "react";
 import { getProducts } from "@/useCases/getProducts";
 import { createSimpleOrder } from "@/useCases/OrderPntoVenta";
 import { getFinalOrder } from "@/useCases/getfinalOrderId";
+import { endOrder } from "@/useCases/endOrder";
+import TicketModal from "@/components/TicketModal";
 
 // Mock de ingredientes general
 const mockIngredientes = ["Tomate", "Cebolla", "Lechuga", "Queso", "Salsa"];
@@ -29,11 +31,22 @@ export default function Pntoventa() {
     const [totalPedidos, setTotalPedidos] = useState(0);
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [modalProductoOpen, setModalProductoOpen] = useState(false);
-    const [ordenActiva, setOrdenActiva] = useState(null); // Almacenar UUID y datos de la orden activa
-    const [isCreatingOrder, setIsCreatingOrder] = useState(false); // Estado de carga para crear orden
-    const [totalFinal, setTotalFinal] = useState(0); // Total final de todas las órdenes
-    const [metodoPago, setMetodoPago] = useState('efectivo'); // Nuevo estado para método de pago
-    const [numeroReferencia, setNumeroReferencia] = useState(''); // Nuevo estado para el input
+    const [ordenActiva, setOrdenActiva] = useState(null);
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+    const [totalFinal, setTotalFinal] = useState(0);
+    const [metodoPago, setMetodoPago] = useState('efectivo');
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+    
+    // Estados para el TicketModal
+    const [showTicketModal, setShowTicketModal] = useState(false);
+    const [completedOrderUuid, setCompletedOrderUuid] = useState(null);
+
+    // Mock para establecer permisos de ticket automáticamente
+    useEffect(() => {
+        // Establecer permisos de ticket para testing
+        localStorage.setItem('tickets', 'true');
+        console.log('Permisos de ticket establecidos automáticamente');
+    }, []);
 
     // Recuperar datos del localStorage al cargar la página
     useEffect(() => {
@@ -227,7 +240,7 @@ export default function Pntoventa() {
         }
     };
 
-    // Función para finalizar todas las órdenes y limpiar el estado
+    // Función para finalizar todas las órdenes y abrir modal (SIN limpiar estado)
     const finalizarTodasOrdenes = () => {
         if (historialPedidos.length === 0) {
             setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
@@ -235,12 +248,89 @@ export default function Pntoventa() {
         }
 
         setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
-        setHistorialPedidos([]);
-        setOrdenActiva(null);
-        setTotalFinal(0);
-        localStorage.removeItem("ordenActiva");
         setModalTotalOpen(true);
         setMensajeError("");
+    };
+
+    // Función confirmarPago modificada para mostrar ticket
+    const confirmarPago = async () => {
+        if (!ordenActiva || !ordenActiva.order_uuid) {
+            setMensajeError("No hay una orden activa para finalizar.");
+            return;
+        }
+
+        if (isProcessingPayment) {
+            return;
+        }
+
+        setIsProcessingPayment(true);
+        setMensajeError(""); // Limpiar mensajes de error anteriores
+
+        try {
+            console.log(`Procesando pago con ${metodoPago} por $${totalPedidos}`);
+            
+            // Guardar el UUID antes de limpiar el estado
+            const currentOrderUuid = ordenActiva.order_uuid;
+            
+            const response = await endOrder(currentOrderUuid, metodoPago);
+            
+            // Verificar que la respuesta sea exitosa
+            if (response && (response.success !== false)) {
+                console.log('Orden finalizada exitosamente:', response);
+                
+                // Limpiar todo después de que la API confirme el éxito
+                setHistorialPedidos([]);
+                setOrdenActiva(null);
+                setTotalFinal(0);
+                localStorage.removeItem("ordenActiva");
+                localStorage.removeItem("historialPedidos");
+                localStorage.removeItem("carrito");
+                
+                setModalTotalOpen(false);
+                setMetodoPago('efectivo');
+                
+                setMensajeError("¡Pago procesado exitosamente!");
+                
+                // Verificar si debe mostrar el modal de ticket
+                const ticketsEnabled = localStorage.getItem('tickets');
+                if (ticketsEnabled === 'true') {
+                    setCompletedOrderUuid(currentOrderUuid);
+                    setShowTicketModal(true);
+                }
+                
+                // Limpiar el mensaje después de 3 segundos
+                setTimeout(() => {
+                    setMensajeError("");
+                }, 3000);
+                
+            } else {
+                // ❌ La API respondió pero indicó un fallo
+                throw new Error(response?.message || 'La API indicó que el pago no se pudo procesar');
+            }
+            
+        } catch (error) {
+            console.error('Error al procesar el pago:', error);
+            
+            let mensajeErrorUsuario = "Error al procesar el pago. ";
+            
+            // Personalizar mensaje según el tipo de error
+            if (error.message.includes('fetch')) {
+                mensajeErrorUsuario += "Problemas de conexión. Verifica tu internet e intenta nuevamente.";
+            } else if (error.message.includes('token')) {
+                mensajeErrorUsuario += "Sesión expirada. Por favor, inicia sesión nuevamente.";
+            } else if (error.message.includes('404')) {
+                mensajeErrorUsuario += "Orden no encontrada. Contacta con el administrador.";
+            } else if (error.message.includes('500')) {
+                mensajeErrorUsuario += "Error del servidor. Intenta nuevamente en unos momentos.";
+            } else {
+                mensajeErrorUsuario += error.message || "Error desconocido. Intenta nuevamente.";
+            }
+            
+            setMensajeError(mensajeErrorUsuario);
+            
+        } finally {
+            setIsProcessingPayment(false);
+        }
     };
 
     return (
@@ -483,11 +573,13 @@ export default function Pntoventa() {
                 </div>
             )}
 
-            {/* Modal del total de pedidos */}
+            {/* Modal del total de pedidos - ACTUALIZADO CON SEGURIDAD */}
             {modalTotalOpen && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[9999]"
                     onClick={(e) => {
+                        // Prevenir cierre accidental durante el procesamiento
+                        if (isProcessingPayment) return;
                         if (e.target === e.currentTarget) {
                             setModalTotalOpen(false);
                         }
@@ -501,8 +593,9 @@ export default function Pntoventa() {
                                     metodoPago === 'efectivo' 
                                         ? 'bg-green-400 text-white border-green-400' 
                                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                }`}
-                                onClick={() => setMetodoPago('efectivo')}
+                                } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={() => !isProcessingPayment && setMetodoPago('efectivo')}
+                                disabled={isProcessingPayment}
                             >
                                 <BsCashCoin className="text-2xl mr-2"/>
                                 Efectivo
@@ -512,8 +605,9 @@ export default function Pntoventa() {
                                     metodoPago === 'tarjeta' 
                                         ? 'bg-green-400 text-white border-green-400' 
                                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                }`}
-                                onClick={() => setMetodoPago('tarjeta')}
+                                } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={() => !isProcessingPayment && setMetodoPago('tarjeta')}
+                                disabled={isProcessingPayment}
                             >
                                 <FaCreditCard className="text-2xl mr-2"/>
                                 Tarjeta
@@ -528,41 +622,40 @@ export default function Pntoventa() {
                         <p className="text-center text-gray-600 mb-4">
                             Método de pago: <span className="font-semibold capitalize">{metodoPago}</span>
                         </p>
-                        
-                        {/* Input para número de referencia */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-                                Número de referencia
-                            </label>
-                            <input
-                                type="text"
-                                value={numeroReferencia}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    // Solo permitir números y máximo 4 caracteres
-                                    if (/^\d{0,4}$/.test(value)) {
-                                        setNumeroReferencia(value);
-                                    }
-                                }}
-                                placeholder="0000"
-                                maxLength="4"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-center text-lg font-mono focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            />
-                        </div>
+
+                        {/* Mostrar mensajes de error/éxito */}
+                        {mensajeError && (
+                            <div className={`text-sm font-bold text-center mb-4 p-3 rounded-lg ${
+                                mensajeError.includes('exitosamente') 
+                                    ? 'text-green-700 bg-green-100 border border-green-300' 
+                                    : 'text-red-700 bg-red-100 border border-red-300'
+                            }`}>
+                                {mensajeError}
+                            </div>
+                        )}
 
                         <button
-                            className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
-                            onClick={() => {
-                                console.log(`Pago procesado con ${metodoPago} por $${totalPedidos}`);
-                                console.log(`Número de referencia: ${numeroReferencia || 'Sin referencia'}`);
-                                setModalTotalOpen(false);
-                                // Resetear estados para la próxima vez
-                                setMetodoPago('efectivo');
-                                setNumeroReferencia('');
-                            }}
+                            className={`w-full py-2 rounded-lg transition-colors ${
+                                isProcessingPayment 
+                                    ? 'bg-gray-400 cursor-not-allowed' 
+                                    : 'bg-green-500 hover:bg-green-600'
+                            } text-white`}
+                            onClick={confirmarPago}
+                            disabled={isProcessingPayment}
                         >
-                            Confirmar Pago
+                            {isProcessingPayment ? 'Procesando...' : 'Confirmar Pago'}
                         </button>
+
+                        {/* Botón para cerrar y reintentar más tarde */}
+                        {mensajeError && !mensajeError.includes('exitosamente') && (
+                            <button
+                                className="w-full py-2 rounded-lg mt-2 bg-gray-500 hover:bg-gray-600 text-white"
+                                onClick={() => setModalTotalOpen(false)}
+                                disabled={isProcessingPayment}
+                            >
+                                Cerrar y reintentar más tarde
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
@@ -729,6 +822,16 @@ export default function Pntoventa() {
                     </div>
                 ))}
             </section>
+
+            {/* Modal de Ticket */}
+            <TicketModal
+                isOpen={showTicketModal}
+                onClose={() => {
+                    setShowTicketModal(false);
+                    setCompletedOrderUuid(null);
+                }}
+                orderUuid={completedOrderUuid}
+            />
         </section>
     );
 }

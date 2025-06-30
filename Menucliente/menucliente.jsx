@@ -1,35 +1,25 @@
-import { FaRegEye } from "react-icons/fa";
-import { IoTrashOutline } from "react-icons/io5";
-import { TbSoup } from "react-icons/tb";
-import { LuCupSoda } from "react-icons/lu";
-import { GiCakeSlice } from "react-icons/gi";
-import { CiPizza } from "react-icons/ci";
-import { GiForkKnifeSpoon } from "react-icons/gi";
-import { LuSalad } from "react-icons/lu";
-import { IoHomeOutline } from "react-icons/io5";
-import { GoChecklist } from "react-icons/go";
-import { FaShoppingCart } from "react-icons/fa";
-import { FaCreditCard } from "react-icons/fa";
-import { BsCashCoin } from "react-icons/bs";
-import { MdTableRestaurant } from "react-icons/md"; // Nuevo icono para mesa
 import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/router';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import kime from "@/pages/assets/img/kime.jpeg";
-import Burger from "@/pages/assets/img/Burger.jpg";
-import Sopadetomate from "@/pages/assets/img/sopatomate.jpg";
-import Sopadepollo from "@/pages/assets/img/sopadepollo.jpeg";
-import Clubsandwich from "@/pages/assets/img/clubsandwich.jpg";
-import Cesar from "@/pages/assets/img/Cesar.jpg";
-import Fruta from "@/pages/assets/img/fruta.jpg";
 import Image from "next/image";
+import { IoHomeOutline } from "react-icons/io5";
+import { FaShoppingCart } from "react-icons/fa";
+import { IoTrashOutline } from "react-icons/io5";
+import { FaRegEye } from "react-icons/fa";
+import { FaCreditCard } from "react-icons/fa";
+import { BsCashCoin } from "react-icons/bs";
+import { GoChecklist } from "react-icons/go";
+import { MdTableRestaurant } from "react-icons/md";
+import kime from "@/pages/assets/img/kime.jpeg";
 import { getProducts } from "@/useCases/getProducts";
 import { loginUser } from '@/useCases/login';
 import { createSimpleOrder } from "@/useCases/OrderPntoVenta";
 import { getFinalOrder } from "@/useCases/getfinalOrderId";
-import { getTables } from "@/useCases/getTables"; // Nueva importación
-import { updateTableStatus } from "@/useCases/tablesStatus"; // Nueva importación
+import { getTables } from "@/useCases/getTables";
+import { updateTableStatus } from "@/useCases/tablesStatus";
+import { endOrder } from "@/useCases/endOrder";
+import TicketModal from "@/components/TicketModal";
 
 const categoriaOrden = {
     "Entradas": 0,
@@ -41,10 +31,7 @@ const categoriaOrden = {
     "Termos": 6,
 };
 
-// Productos estáticos como fallback
-const productosEstaticos = [
-    // Agrega aquí tus productos estáticos como respaldo
-];
+const productosEstaticos = [];
 
 export default function MenuCliente() {
     const router = useRouter();
@@ -73,7 +60,8 @@ export default function MenuCliente() {
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
     const [totalFinal, setTotalFinal] = useState(0);
     const [metodoPago, setMetodoPago] = useState('efectivo');
-    const [numeroReferencia, setNumeroReferencia] = useState('');
+    const [codigoConfirmacion, setCodigoConfirmacion] = useState(''); // Renombrado de numeroReferencia
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false); // Nuevo estado
 
     // Estados para mesas
     const [numeroMesa, setNumeroMesa] = useState('');
@@ -86,6 +74,16 @@ export default function MenuCliente() {
     const [codigoCambioMesa, setCodigoCambioMesa] = useState('');
     const [errorCodigoMesa, setErrorCodigoMesa] = useState('');
     const [procesandoCambioMesa, setProcesandoCambioMesa] = useState(false);
+
+    // Estados para el TicketModal
+    const [showTicketModal, setShowTicketModal] = useState(false);
+    const [completedOrderUuid, setCompletedOrderUuid] = useState(null);
+
+    // Mock para establecer permisos de ticket automáticamente
+    useEffect(() => {
+        localStorage.setItem('tickets', 'true');
+        console.log('Permisos de ticket establecidos automáticamente');
+    }, []);
 
     // Función para seleccionar mesa - ACTUALIZADA con estado correcto
     const seleccionarMesa = async (numeroMesaSeleccionada) => {
@@ -532,7 +530,7 @@ export default function MenuCliente() {
         }
     };
 
-    // Función para finalizar todas las órdenes y limpiar el estado (adaptada de pntoventa)
+    // Función para finalizar todas las órdenes y abrir modal (SIN limpiar estado)
     const terminarOrden = () => {
         if (historialPedidos.length === 0) {
             setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
@@ -540,12 +538,87 @@ export default function MenuCliente() {
         }
 
         setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
-        setHistorialPedidos([]);
-        setOrdenActiva(null);
-        setTotalFinal(0);
-        localStorage.removeItem("ordenActiva1");
         setModalTotalOpen(true);
         setMensajeError("");
+    };
+
+    // Nueva función confirmarPago con TicketModal - AGREGAR ESTA FUNCIÓN
+    const confirmarPago = async () => {
+        if (!ordenActiva || !ordenActiva.order_uuid) {
+            setMensajeError("No hay una orden activa para finalizar.");
+            return;
+        }
+
+        if (isProcessingPayment) {
+            return;
+        }
+
+        setIsProcessingPayment(true);
+        setMensajeError("");
+
+        try {
+            console.log(`Procesando pago con ${metodoPago} por $${totalPedidos}`);
+            console.log(`Código de confirmación: ${codigoConfirmacion || 'Sin código'}`);
+            
+            // Guardar el UUID antes de limpiar el estado
+            const currentOrderUuid = ordenActiva.order_uuid;
+            
+            const response = await endOrder(currentOrderUuid, metodoPago);
+            
+            if (response && (response.success !== false)) {
+                console.log('Orden finalizada exitosamente:', response);
+                
+                // SOLO limpiar todo después de que la API confirme el éxito
+                setHistorialPedidos([]);
+                setOrdenActiva(null);
+                setTotalFinal(0);
+                localStorage.removeItem("ordenActiva1");
+                localStorage.removeItem("historialPedidos1");
+                localStorage.removeItem("carrito1");
+                
+                setModalTotalOpen(false);
+                setMetodoPago('efectivo');
+                setCodigoConfirmacion('');
+                
+                setMensajeError("¡Pago procesado exitosamente!");
+                
+                // Verificar si debe mostrar el modal de ticket
+                const ticketsEnabled = localStorage.getItem('tickets');
+                if (ticketsEnabled === 'true') {
+                    setCompletedOrderUuid(currentOrderUuid);
+                    setShowTicketModal(true);
+                }
+                
+                setTimeout(() => {
+                    setMensajeError("");
+                }, 3000);
+                
+            } else {
+                throw new Error(response?.message || 'La API indicó que el pago no se pudo procesar');
+            }
+            
+        } catch (error) {
+            console.error('Error al procesar el pago:', error);
+            
+            let mensajeErrorUsuario = "Error al procesar el pago. ";
+            
+            if (error.message.includes('fetch')) {
+                mensajeErrorUsuario += "Problemas de conexión. Verifica tu internet e intenta nuevamente.";
+            } else if (error.message.includes('token')) {
+                mensajeErrorUsuario += "Sesión expirada. Por favor, inicia sesión nuevamente.";
+            } else if (error.message.includes('404')) {
+                mensajeErrorUsuario += "Orden no encontrada. Contacta con el administrador.";
+            } else if (error.message.includes('500')) {
+                mensajeErrorUsuario += "Error del servidor. Intenta nuevamente en unos momentos.";
+            } else {
+                mensajeErrorUsuario += error.message || "Error desconocido. Intenta nuevamente.";
+            }
+            
+            setMensajeError(mensajeErrorUsuario);
+            
+        } finally {
+            setIsProcessingPayment(false);
+        }
     };
 
     const categorias = ["Todos los platillos", ...new Set(productos.map(p => p.categoria))];
@@ -1037,11 +1110,13 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal del total de pedidos - ACTUALIZADO con método de pago */}
+            {/* Modal del total de pedidos - ACTUALIZADO con seguridad y código de confirmación */}
             {modalTotalOpen && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
+                    className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[9999]"
                     onClick={(e) => {
+                        // Prevenir cierre accidental durante el procesamiento
+                        if (isProcessingPayment) return;
                         if (e.target === e.currentTarget) {
                             setModalTotalOpen(false);
                         }
@@ -1055,8 +1130,9 @@ export default function MenuCliente() {
                                     metodoPago === 'efectivo' 
                                         ? 'bg-green-400 text-white border-green-400' 
                                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                }`}
-                                onClick={() => setMetodoPago('efectivo')}
+                                } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={() => !isProcessingPayment && setMetodoPago('efectivo')}
+                                disabled={isProcessingPayment}
                             >
                                 <BsCashCoin className="text-2xl mr-2"/>
                                 Efectivo
@@ -1066,8 +1142,9 @@ export default function MenuCliente() {
                                     metodoPago === 'tarjeta' 
                                         ? 'bg-green-400 text-white border-green-400' 
                                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                }`}
-                                onClick={() => setMetodoPago('tarjeta')}
+                                } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={() => !isProcessingPayment && setMetodoPago('tarjeta')}
+                                disabled={isProcessingPayment}
                             >
                                 <FaCreditCard className="text-2xl mr-2"/>
                                 Tarjeta
@@ -1083,38 +1160,60 @@ export default function MenuCliente() {
                             Método de pago: <span className="font-semibold capitalize">{metodoPago}</span>
                         </p>
                         
-                        {/* Input para número de referencia */}
+                        {/* Input para código de confirmación */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-                                Número de referencia
+                                Código de confirmación
                             </label>
                             <input
                                 type="text"
-                                value={numeroReferencia}
+                                value={codigoConfirmacion}
                                 onChange={(e) => {
                                     const value = e.target.value;
                                     if (/^\d{0,4}$/.test(value)) {
-                                        setNumeroReferencia(value);
+                                        setCodigoConfirmacion(value);
                                     }
                                 }}
                                 placeholder="0000"
                                 maxLength="4"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-center text-lg font-mono focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                disabled={isProcessingPayment}
                             />
                         </div>
 
+                        {/* Mostrar mensajes de error/éxito */}
+                        {mensajeError && (
+                            <div className={`text-sm font-bold text-center mb-4 p-3 rounded-lg ${
+                                mensajeError.includes('exitosamente') 
+                                    ? 'text-green-700 bg-green-100 border border-green-300' 
+                                    : 'text-red-700 bg-red-100 border border-red-300'
+                            }`}>
+                                {mensajeError}
+                            </div>
+                        )}
+
                         <button
-                            className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
-                            onClick={() => {
-                                console.log(`Pago procesado con ${metodoPago} por $${totalPedidos}`);
-                                console.log(`Número de referencia: ${numeroReferencia || 'Sin referencia'}`);
-                                setModalTotalOpen(false);
-                                setMetodoPago('efectivo');
-                                setNumeroReferencia('');
-                            }}
+                            className={`w-full py-2 rounded-lg transition-colors ${
+                                isProcessingPayment 
+                                    ? 'bg-gray-400 cursor-not-allowed' 
+                                    : 'bg-green-500 hover:bg-green-600'
+                            } text-white`}
+                            onClick={confirmarPago}
+                            disabled={isProcessingPayment}
                         >
-                            Confirmar Pago
+                            {isProcessingPayment ? 'Procesando...' : 'Confirmar Pago'}
                         </button>
+
+                        {/* Botón para cerrar y reintentar más tarde */}
+                        {mensajeError && !mensajeError.includes('exitosamente') && (
+                            <button
+                                className="w-full py-2 rounded-lg mt-2 bg-gray-500 hover:bg-gray-600 text-white"
+                                onClick={() => setModalTotalOpen(false)}
+                                disabled={isProcessingPayment}
+                            >
+                                Cerrar y reintentar más tarde
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
@@ -1304,6 +1403,16 @@ export default function MenuCliente() {
                         </div>
                     ))}
             </section>
+
+            {/* Ticket Modal - AGREGAR AL FINAL DEL JSX */}
+            <TicketModal
+                isOpen={showTicketModal}
+                onClose={() => {
+                    setShowTicketModal(false);
+                    setCompletedOrderUuid(null);
+                }}
+                orderUuid={completedOrderUuid}
+            />
         </section>
     );
 }
