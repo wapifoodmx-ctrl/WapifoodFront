@@ -163,7 +163,7 @@ export default function Ticketview() {
             if (producto.status === "cancelado") {
                 return sum; // No sumar productos cancelados
             }
-            return sum + (producto.cantidad * producto.precio);
+            return sum + (producto.cantidad * producto.precio); // Multiplicar cantidad por precio
         }, 0);
     };
 
@@ -204,31 +204,61 @@ export default function Ticketview() {
                 {ticketsData.map((ticket) => (
                     <div 
                         key={ticket.id}
-                        className="w-full border-l-green-600 border-l-3 shadow-md rounded-xl cursor-pointer hover:shadow-lg transition-shadow"
+                        className="w-full border-l-green-600 border-l-5 bg-white shadow-md rounded-lg flex flex-col"
                         onClick={() => handleCardClick(ticket)}
                     >
-                        <div className="px-3 py-6">
-                            <h2 className="font-bold text-xl">{ticket.id}</h2>
-                            <p className="text-gray-600">{ticket.mesa}</p>
-                            <h3 className="font-bold text-xl py-3">Productos</h3>
-                            <div className="pb-2">
-                                <ul>
-                                    {renderProductsForCard(ticket.productos)}
-                                </ul>
+                        <div className="py-2 flex-grow">
+                            <div className="flex pl-4">
+                                <p className="font-bold text-xl pl-2">Ticket UUID: {ticket.id}</p>
                             </div>
-                            <div className="flex justify-between">
+                            <div className="flex justify-between px-4 pb-2">
                                 <div className="flex">
-                                    <LuCalendarDays className="self-center" />
-                                    <p className="pl-1">{ticket.fecha}</p>
+                                    <LuCalendarDays className="text-gray-500 text-sm self-center" />
+                                    <p className="text-sm text-gray-500 pl-1">{ticket.fecha}</p>
                                 </div>
                                 <div className="flex">
-                                    <BsClock className="self-center" />
-                                    <p className="pl-1">{ticket.hora}</p>
+                                    <BsClock className="text-gray-500 text-sm self-center" />
+                                    <p className="text-sm text-gray-500 pl-1">{ticket.hora}</p>
                                 </div>
                             </div>
-                            <div className="pt-2">
-                                <p className="font-bold">Total</p>
-                                <p>$ {calculateTotal(ticket.productos).toFixed(2)}</p>
+
+                            {/* Productos */}
+                            <div className="flex flex-col bg-gray-100 rounded-lg flex-grow overflow-y-auto">
+                                <p className="pl-4 pt-2 text-gray-500 font-bold">Productos</p>
+                                {ticket.productos.map((producto, index) => (
+                                    <div
+                                        key={index}
+                                        className="bg-white rounded-lg mx-4 flex flex-col h-auto py-2 mb-4 justify-between"
+                                    >
+                                        <div className="flex justify-between px-2 items-center flex-wrap">
+                                            <p className="h-auto text-xl font-bold max-w-[60%] truncate">{producto.nombre}</p>
+                                            <div className="flex w-auto gap-2">
+                                                <div className="border rounded-md border-gray-500 px-2 py-1">
+                                                    <p className="text-md self-center text-gray-500 font-bold">
+                                                        x{producto.cantidad}
+                                                    </p>
+                                                </div>
+                                                <div className="border rounded-md border-gray-500 px-2 py-1">
+                                                    <p className="text-md self-center text-gray-500 font-bold">
+                                                        ${producto.precio.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {producto.status === "cancelado" && (
+                                            <p className="text-xs pl-2 py-1 font-bold text-red-500 line-through">
+                                                Cancelado
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="pt-2">
+                            <div className="px-4 py-2 justify-between w-full flex">
+                                <p className="font-bold text-lg">Total:</p>
+                                <p className="font-bold text-lg">${calculateTotal(ticket.productos).toFixed(2)}</p>
                             </div>
                         </div>
                     </div>
@@ -261,7 +291,7 @@ export default function Ticketview() {
 
                         {/* Información del ticket */}
                         <div className="mb-4">
-                            <h2 className="font-bold text-xl">{selectedTicket.id}</h2>
+                            <h2 className="font-bold text-xl">Ticket UUID: {selectedTicket.id}</h2>
                             <p className="text-gray-600">{selectedTicket.mesa}</p>
                             <div className="flex justify-between mt-2 text-sm">
                                 <div className="flex">
