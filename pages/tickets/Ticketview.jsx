@@ -130,66 +130,73 @@ export default function Ticketview() {
 
     return (
         <div className="pt-20 px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {ticketsData.map((ticket) => (
-                    
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {ticketsData
+                    .filter(ticket => ticket.statusOrden === 'Finalizado')
+                    .map((ticket) => (
                     <div 
                         key={ticket.id}
-                        className="w-full border-l-green-600 border-l-5 bg-white shadow-md rounded-lg flex flex-col"
+                        className="w-full border-l-green-600 border-l-4 bg-white shadow-md rounded-lg flex flex-col cursor-pointer hover:shadow-lg transition-shadow"
                         onClick={() => handleCardClick(ticket)}
                     >
-                        <div className="py-2 flex-grow">
-                            <div className="flex pl-4">
-                                <p className="font-bold text-xl pl-2">Ticket UUID: {ticket.id}</p>
+                        {/* Header de la card */}
+                        <div className="p-3">
+                            <div className="flex justify-between items-center mb-2">
+                                <p className="font-bold text-lg">{ticket.mesa}</p>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    ticket.statusOrden === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                                    ticket.statusOrden === 'Finalizado' ? 'bg-green-100 text-green-800' :
+                                    'bg-gray-100 text-gray-800'
+                                }`}>
+                                    {ticket.statusOrden}
+                                </span>
                             </div>
-                            <div className="flex justify-between px-4 pb-2">
-                                <div className="flex">
-                                    <LuCalendarDays className="text-gray-500 text-sm self-center" />
-                                    <p className="text-sm text-gray-500 pl-1">{ticket.fecha}</p>
+                            
+                            <div className="flex justify-between text-xs text-gray-500 mb-3">
+                                <div className="flex items-center">
+                                    <LuCalendarDays className="mr-1" />
+                                    <span>{ticket.fecha}</span>
                                 </div>
-                                <div className="flex">
-                                    <BsClock className="text-gray-500 text-sm self-center" />
-                                    <p className="text-sm text-gray-500 pl-1">{ticket.hora}</p>
+                                <div className="flex items-center">
+                                    <BsClock className="mr-1" />
+                                    <span>{ticket.hora}</span>
                                 </div>
                             </div>
 
-                            {/* Productos */}
-                            <div className="flex flex-col bg-gray-100 rounded-lg flex-grow overflow-y-auto">
-                                <p className="pl-4 pt-2 text-gray-500 font-bold">Productos</p>
-                                {ticket.productos.map((producto, index) => (
-                                    <div
-                                        key={index}
-                                        className="bg-white rounded-lg mx-4 flex flex-col h-auto py-2 mb-4 justify-between"
-                                    >
-                                        <div className="flex justify-between px-2 items-center flex-wrap">
-                                            <p className="h-auto text-xl font-bold max-w-[60%] truncate">{producto.nombre}</p>
-                                            <div className="flex w-auto gap-2">
-                                                <div className="border rounded-md border-gray-500 px-2 py-1">
-                                                    <p className="text-md self-center text-gray-500 font-bold">
-                                                        x{producto.cantidad}
-                                                    </p>
-                                                </div>
-                                                <div className="border rounded-md border-gray-500 px-2 py-1">
-                                                    <p className="text-md self-center text-gray-500 font-bold">
-                                                        ${producto.precio.toFixed(2)}
-                                                    </p>
-                                                </div>
-                                            </div>
+                            {/* Mostrar solo el primer producto */}
+                            {ticket.productos.length > 0 && (
+                                <div className="bg-gray-50 rounded-lg p-2 mb-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className={`text-sm font-medium truncate flex-1 mr-2 ${
+                                            ticket.productos[0].status === "cancelado" ? "text-red-500 line-through" : ""
+                                        }`}>
+                                            {ticket.productos[0].nombre}
+                                        </span>
+                                        <div className="flex items-center gap-1 text-xs">
+                                            <span className="bg-white px-2 py-1 rounded border">
+                                                x{ticket.productos[0].cantidad}
+                                            </span>
+                                            <span className="bg-white px-2 py-1 rounded border">
+                                                ${ticket.productos[0].precio.toFixed(2)}
+                                            </span>
                                         </div>
-                                        {producto.status === "cancelado" && (
-                                            <p className="text-xs pl-2 py-1 font-bold text-red-500 line-through">
-                                                Cancelado
-                                            </p>
-                                        )}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                </div>
+                            )}
 
-                        <div className="pt-2">
-                            <div className="px-4 py-2 justify-between w-full flex">
-                                <p className="font-bold text-lg">Total:</p>
-                                <p className="font-bold text-lg">${calculateTotal(ticket.productos).toFixed(2)}</p>
+                            {/* Leyenda para más productos */}
+                            {ticket.productos.length > 1 && (
+                                <p className="text-xs text-gray-500 italic text-center mb-2">
+                                    +{ticket.productos.length - 1} producto(s) más. Da click para ver detalles.
+                                </p>
+                            )}
+
+                            {/* Total */}
+                            <div className="flex justify-between items-center pt-2 border-t">
+                                <span className="font-bold text-sm">Total:</span>
+                                <span className="font-bold text-sm text-green-600">
+                                    ${calculateTotal(ticket.productos).toFixed(2)}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -222,8 +229,8 @@ export default function Ticketview() {
 
                         {/* Información del ticket */}
                         <div className="mb-4">
-                            <h2 className="font-bold text-xl">Ticket UUID: {selectedTicket.id}</h2>
-                            <p className="text-gray-600">{selectedTicket.mesa}</p>
+                            <h2 className="font-bold text-xl">{selectedTicket.mesa}</h2>
+                            <p className="text-gray-600">UUID: {selectedTicket.id}</p>
                             <div className="flex justify-between mt-2 text-sm">
                                 <div className="flex">
                                     <LuCalendarDays className="self-center" />
