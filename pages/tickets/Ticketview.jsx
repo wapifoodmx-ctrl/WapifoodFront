@@ -1,139 +1,69 @@
 import { LuCalendarDays } from "react-icons/lu";
 import { BsClock } from "react-icons/bs";
 import { IoClose } from "react-icons/io5";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiPrinter } from "react-icons/fi";
+import getOrderTickets from "../../useCases/getOrderTickets"; // Importar la nueva función
 
 export default function Ticketview() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [email, setEmail] = useState("");
     const [selectedTicket, setSelectedTicket] = useState(null);
+    const [ticketsData, setTicketsData] = useState([]);
 
-    // Array de tickets con diferentes productos
-    const ticketsData = [
-        {
-            id: "T01",
-            mesa: "Mesa 2",
-            fecha: "30/05/2025",
-            hora: "13:33",
-            productos: [
-                { nombre: "Pizza Méxicana", cantidad: 2, precio: 150.00 },
-                { nombre: "Dip de Queso", cantidad: 1, precio: 50.00 },
-                { nombre: "Sprite", cantidad: 3, precio: 38.33, status: "cancelado" },
-            ]
-        },
-        {
-            id: "T02",
-            mesa: "Mesa 5",
-            fecha: "30/05/2025",
-            hora: "14:15",
-            productos: [
-                { nombre: "Hamburguesa Clásica", cantidad: 1, precio: 120.00 },
-                { nombre: "Papas Fritas", cantidad: 2, precio: 45.00 },
-                { nombre: "Coca Cola", cantidad: 1, precio: 35.00 },
-                { nombre: "Ensalada César", cantidad: 1, precio: 85.00 },
-                { nombre: "Helado de Vainilla", cantidad: 2, precio: 40.00 },
-            ]
-        },
-        {
-            id: "T03",
-            mesa: "Mesa 1",
-            fecha: "30/05/2025",
-            hora: "12:45",
-            productos: [
-                { nombre: "Tacos al Pastor", cantidad: 4, precio: 25.00 },
-                { nombre: "Agua de Horchata", cantidad: 2, precio: 30.00 }
-            ]
-        },
-        {
-            id: "T04",
-            mesa: "Mesa 8",
-            fecha: "30/05/2025",
-            hora: "15:20",
-            productos: [
-                { nombre: "Spaghetti Bolognesa", cantidad: 1, precio: 140.00 },
-                { nombre: "Pan de Ajo", cantidad: 3, precio: 20.00 },
-                { nombre: "Vino Tinto", cantidad: 1, precio: 180.00 },
-                { nombre: "Tiramisu", cantidad: 2, precio: 65.00 }
-            ]
-        },
-        {
-            id: "T05",
-            mesa: "Mesa 3",
-            fecha: "30/05/2025",
-            hora: "11:30",
-            productos: [
-                { nombre: "Desayuno Completo", cantidad: 1, precio: 95.00 },
-                { nombre: "Café Americano", cantidad: 2, precio: 25.00 },
-                { nombre: "Jugo de Naranja", cantidad: 1, precio: 35.00 },
-                { nombre: "Tostadas Francesas", cantidad: 1, precio: 55.00 },
-                { nombre: "Fruta de Temporada", cantidad: 1, precio: 40.00 },
-                { nombre: "Yogurt con Granola", cantidad: 1, precio: 45.00 }
-            ]
-        },
-        {
-            id: "T06",
-            mesa: "Mesa 12",
-            fecha: "30/05/2025",
-            hora: "16:10",
-            productos: [
-                { nombre: "Pollo a la Plancha", cantidad: 1, precio: 135.00 },
-                { nombre: "Arroz Blanco", cantidad: 1, precio: 25.00 },
-                { nombre: "Ensalada Verde", cantidad: 1, precio: 40.00 }
-            ]
-        },
-        {
-            id: "T07",
-            mesa: "Mesa 6",
-            fecha: "30/05/2025",
-            hora: "13:50",
-            productos: [
-                { nombre: "Sushi Variado", cantidad: 2, precio: 180.00 },
-                { nombre: "Sopa Miso", cantidad: 2, precio: 45.00 },
-                { nombre: "Té Verde", cantidad: 2, precio: 30.00 },
-                { nombre: "Edamame", cantidad: 1, precio: 35.00 },
-                { nombre: "Tempura de Camarón", cantidad: 1, precio: 85.00 }
-            ]
-        },
-        {
-            id: "T08",
-            mesa: "Mesa 15",
-            fecha: "30/05/2025",
-            hora: "17:25",
-            productos: [
-                { nombre: "Carne Asada", cantidad: 1, precio: 220.00 },
-                { nombre: "Guacamole", cantidad: 1, precio: 60.00 }
-            ]
-        },
-        {
-            id: "T09",
-            mesa: "Mesa 4",
-            fecha: "30/05/2025",
-            hora: "14:40",
-            productos: [
-                { nombre: "Pizza Hawaiana", cantidad: 1, precio: 165.00 },
-                { nombre: "Alitas BBQ", cantidad: 12, precio: 15.00 },
-                { nombre: "Cerveza", cantidad: 3, precio: 40.00 },
-                { nombre: "Nachos", cantidad: 1, precio: 75.00 }
-            ]
-        },
-        {
-            id: "T10",
-            mesa: "Mesa 9",
-            fecha: "30/05/2025",
-            hora: "18:15",
-            productos: [
-                { nombre: "Lasagna de Carne", cantidad: 1, precio: 155.00 },
-                { nombre: "Ensalada Caprese", cantidad: 1, precio: 85.00 },
-                { nombre: "Limonada", cantidad: 2, precio: 32.00 },
-                { nombre: "Bruschetta", cantidad: 4, precio: 18.00 },
-                { nombre: "Cheesecake", cantidad: 1, precio: 70.00 },
-                { nombre: "Café Espresso", cantidad: 2, precio: 28.00 },
-                { nombre: "Agua Mineral", cantidad: 1, precio: 25.00 }
-            ]
-        }
-    ];
+    useEffect(() => {
+        const fetchTickets = async () => {
+            try {
+                const apiData = await getOrderTickets();
+                
+                // Agrupar órdenes por order_uuid y combinar productos
+                const groupedOrders = apiData.reduce((acc, order) => {
+                    const uuid = order.order_uuid;
+                    
+                    if (!acc[uuid]) {
+                        // Primera vez que vemos este UUID, crear la entrada
+                        acc[uuid] = {
+                            id: order.order_uuid,
+                            mesa: `Mesa ${order.mesa_number}`,
+                            fecha: new Date(order.date_time).toLocaleDateString(),
+                            hora: new Date(order.date_time).toLocaleTimeString(),
+                            restaurante: order.restaurant_name,
+                            estado: order.state,
+                            statusOrden: order.order_status,
+                            metodoPago: order.metodo_pago,
+                            productos: [],
+                            total: 0
+                        };
+                    }
+                    
+                    // Agregar productos de esta orden
+                    const mappedProducts = order.products.map(product => ({
+                        nombre: product.product_name,
+                        cantidad: product.quantity,
+                        precio: parseFloat(product.unit_price),
+                        subtotal: parseFloat(product.subtotal),
+                        status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase()
+                    }));
+                    
+                    acc[uuid].productos.push(...mappedProducts);
+                    // Sumar solo una vez por orden, no por total acumulado
+                    acc[uuid].total += parseFloat(order.total);
+                    
+                    return acc;
+                }, {});
+                
+                // Convertir el objeto agrupado a array
+                const mappedTickets = Object.values(groupedOrders);
+                
+                setTicketsData(mappedTickets);
+            } catch (error) {
+                console.error("Error fetching tickets:", error);
+            }
+        };
+
+        fetchTickets();
+    }, []);
 
     // Datos del restaurante
     const restauranteData = {
@@ -202,6 +132,7 @@ export default function Ticketview() {
         <div className="pt-20 px-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {ticketsData.map((ticket) => (
+                    
                     <div 
                         key={ticket.id}
                         className="w-full border-l-green-600 border-l-5 bg-white shadow-md rounded-lg flex flex-col"
