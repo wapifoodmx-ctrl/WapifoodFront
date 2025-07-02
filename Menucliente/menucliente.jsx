@@ -14,7 +14,7 @@ import { MdTableRestaurant } from "react-icons/md";
 import kime from "@/pages/assets/img/kime.jpeg";
 import { getProducts } from "@/useCases/getProducts";
 import { loginUser } from '@/useCases/login';
-import { createSimpleOrder } from "@/useCases/OrderPntoVenta";
+import { createSimpleClientOrder } from "@/useCases/orderClientMenu";
 import { getFinalOrder } from "@/useCases/getfinalOrderId";
 import { getTables } from "@/useCases/getTables";
 import { updateTableStatus } from "@/useCases/tablesStatus";
@@ -459,10 +459,16 @@ export default function MenuCliente() {
         }, 0).toFixed(2);
     };
 
-    // Función modificada para crear/actualizar órdenes (adaptada de pntoventa)
+    // Función modificada para crear/actualizar órdenes (ACTUALIZADA para usar orderClientMenu)
     const realizarPedido = async () => {
         if (carrito.length === 0) {
             setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
+            return;
+        }
+
+        // Validar que hay un número de mesa
+        if (!numeroMesa) {
+            setMensajeError("Debes seleccionar una mesa antes de realizar el pedido");
             return;
         }
 
@@ -476,11 +482,28 @@ export default function MenuCliente() {
                 cantidad: item.cantidad
             }));
 
-            // Crear la orden (con UUID si existe una orden activa)
+            // CAMBIO PRINCIPAL: Usar createSimpleClientOrder con número de mesa
             const ordenUuid = ordenActiva ? ordenActiva.order_uuid : null;
-            const response = await createSimpleOrder(productosParaOrden, ordenUuid);
+            const response = await createSimpleClientOrder(
+                productosParaOrden, 
+                parseInt(numeroMesa), // Pasar el número de mesa como parámetro
+                ordenUuid
+            );
 
             console.log('Orden creada/actualizada:', response);
+
+            // NUEVO: Cambiar el estado de la mesa a "Ocupado" solo en la primera orden
+            if (!ordenActiva && numeroMesa) {
+                try {
+                    console.log(`Cambiando mesa ${numeroMesa} a estado Ocupado`);
+                    await updateTableStatus(parseInt(numeroMesa), 'Ocupado');
+                    console.log(`Mesa ${numeroMesa} marcada como Ocupado exitosamente`);
+                } catch (error) {
+                    console.error('Error al cambiar mesa a Ocupado:', error);
+                    // No detener el proceso si falla el cambio de estado de mesa
+                    console.warn('Continuando con la orden a pesar del error de mesa');
+                }
+            }
 
             // Guardar la información de la orden activa
             setOrdenActiva({
@@ -542,7 +565,7 @@ export default function MenuCliente() {
         setMensajeError("");
     };
 
-    // Nueva función confirmarPago con TicketModal - AGREGAR ESTA FUNCIÓN
+    // Nueva función confirmarPago con TicketModal - MODIFICADA para mantener mesa
     const confirmarPago = async () => {
         if (!ordenActiva || !ordenActiva.order_uuid) {
             setMensajeError("No hay una orden activa para finalizar.");
@@ -568,7 +591,25 @@ export default function MenuCliente() {
             if (response && (response.success !== false)) {
                 console.log('Orden finalizada exitosamente:', response);
                 
-                // SOLO limpiar todo después de que la API confirme el éxito
+                // CAMBIO: Cambiar el estado de la mesa a "Libre" después del pago exitoso
+                // pero NO eliminar del localStorage para permitir nuevas órdenes
+                if (numeroMesa) {
+                    try {
+                        console.log(`Cambiando mesa ${numeroMesa} a estado Libre después del pago`);
+                        await updateTableStatus(parseInt(numeroMesa), 'Libre');
+                        console.log(`Mesa ${numeroMesa} liberada exitosamente`);
+                        
+                        // NO eliminar la mesa del localStorage - mantenerla para futuras órdenes
+                        // localStorage.removeItem('numeroMesa'); // REMOVIDO
+                        // setNumeroMesa(''); // REMOVIDO
+                    } catch (error) {
+                        console.error('Error al liberar la mesa:', error);
+                        // Continuar con el proceso aunque falle la liberación de mesa
+                        console.warn('Mesa no se pudo liberar automáticamente, pero el pago fue exitoso');
+                    }
+                }
+                
+                // SOLO limpiar la información de la orden después de que la API confirme el éxito
                 setHistorialPedidos([]);
                 setOrdenActiva(null);
                 setTotalFinal(0);
@@ -591,6 +632,12 @@ export default function MenuCliente() {
                 
                 setTimeout(() => {
                     setMensajeError("");
+                    // CAMBIO: No forzar selección de nueva mesa ya que mantenemos la actual
+                    // if (!numeroMesa) {
+                    //     setTimeout(() => {
+                    //         cargarMesas();
+                    //     }, 1000);
+                    // }
                 }, 3000);
                 
             } else {
