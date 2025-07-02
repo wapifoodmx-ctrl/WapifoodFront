@@ -2,13 +2,11 @@ import { LuCalendarDays } from "react-icons/lu";
 import { BsClock } from "react-icons/bs";
 import { IoClose } from "react-icons/io5";
 import { useState, useEffect } from "react";
-import { FiPrinter } from "react-icons/fi";
-import getOrderTickets from "../../useCases/getOrderTickets"; // Importar la nueva función
+import { QRCodeCanvas } from 'qrcode.react';
+import getOrderTickets from "../../useCases/getOrderTickets";
 
 export default function Ticketview() {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-    const [email, setEmail] = useState("");
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [ticketsData, setTicketsData] = useState([]);
 
@@ -33,7 +31,13 @@ export default function Ticketview() {
                             statusOrden: order.order_status,
                             metodoPago: order.metodo_pago,
                             productos: [],
-                            total: 0
+                            total: 0,
+                            // Datos adicionales para el formato de ticket
+                            date_time: order.date_time,
+                            order_uuid: order.order_uuid,
+                            restaurant_name: order.restaurant_name,
+                            order_status: order.order_status,
+                            metodo_pago: order.metodo_pago
                         };
                     }
                     
@@ -43,7 +47,11 @@ export default function Ticketview() {
                         cantidad: product.quantity,
                         precio: parseFloat(product.unit_price),
                         subtotal: parseFloat(product.subtotal),
-                        status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase()
+                        status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase(),
+                        // Formato para ticket
+                        quantity: product.quantity,
+                        product_name: product.product_name,
+                        unit_price: product.unit_price
                     }));
                     
                     acc[uuid].productos.push(...mappedProducts);
@@ -65,26 +73,9 @@ export default function Ticketview() {
         fetchTickets();
     }, []);
 
-    // Datos del restaurante
-    const restauranteData = {
-        nombre: "Restaurante El Buen Sabor",
-        direccion: "Av. Principal #123, Ciudad, Estado"
-    };
-
     const handleCardClick = (ticket) => {
         setSelectedTicket(ticket);
         setIsModalOpen(true);
-    };
-
-    const handlePrintTicket = () => {
-        setIsEmailModalOpen(true);
-    };
-
-    const handleSendEmail = () => {
-        console.log(`Enviando ticket a: ${email}`);
-        setIsEmailModalOpen(false);
-        setEmail("");
-        setIsModalOpen(false);
     };
 
     // Función para calcular el total de un ticket (excluyendo productos cancelados)
@@ -95,37 +86,6 @@ export default function Ticketview() {
             }
             return sum + (producto.cantidad * producto.precio); // Multiplicar cantidad por precio
         }, 0);
-    };
-
-    // Función para mostrar productos en la card (máximo 2, resto como "+x productos")
-    const renderProductsForCard = (productos) => {
-        if (productos.length <= 2) {
-            return productos.map((producto, index) => (
-                <li key={index} className="flex justify-between py-1">
-                    <span className={producto.status === "cancelado" ? "text-red-500 line-through" : ""}>
-                        {producto.nombre}
-                    </span>
-                    <span className="text-gray-600">x{producto.cantidad}</span>
-                </li>
-            ));
-        } else {
-            const firstTwo = productos.slice(0, 2);
-            const remaining = productos.length - 2;
-            return [
-                ...firstTwo.map((producto, index) => (
-                    <li key={index} className="flex justify-between py-1">
-                        <span className={producto.status === "cancelado" ? "text-red-500 line-through" : ""}>
-                            {producto.nombre}
-                        </span>
-                        <span className="text-gray-600">x{producto.cantidad}</span>
-                    </li>
-                )),
-                <li key="more" className="flex justify-between py-1">
-                    <span className="text-gray-500 italic">+{remaining} productos</span>
-                    <span></span>
-                </li>
-            ];
-        }
     };
 
     return (
@@ -203,137 +163,119 @@ export default function Ticketview() {
                 ))}
             </div>
 
-            {/* Modal principal del ticket */}
+            {/* Modal principal del ticket - Formato idéntico a TicketModal */}
             {isModalOpen && selectedTicket && (
                 <div
-                    className={`fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[998]`}
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000]"
                     onClick={() => setIsModalOpen(false)}
                 >
                     <div
-                        className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto relative"
+                        className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto relative shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Botón de cerrar (X) */}
                         <button
-                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl z-10"
                             onClick={() => setIsModalOpen(false)}
                         >
                             <IoClose />
                         </button>
 
-                        {/* Información del restaurante */}
-                        <div className="text-center mb-4 border-b pb-4">
-                            <h1 className="font-bold text-lg">{restauranteData.nombre}</h1>
-                            <p className="text-gray-600 text-sm">{restauranteData.direccion}</p>
-                        </div>
+                        {/* Título */}
+                        <h2 className="text-xl font-bold mb-6 text-center pr-8">
+                            Ticket generado para imprimir
+                        </h2>
 
-                        {/* Información del ticket */}
-                        <div className="mb-4">
-                            <h2 className="font-bold text-xl">{selectedTicket.mesa}</h2>
-                            <p className="text-gray-600">UUID: {selectedTicket.id}</p>
-                            <div className="flex justify-between mt-2 text-sm">
-                                <div className="flex">
-                                    <LuCalendarDays className="self-center" />
-                                    <p className="pl-1">{selectedTicket.fecha}</p>
+                        {/* Contenido del ticket - Formato idéntico a TicketModal */}
+                        <div className="border-2 border-dashed border-gray-300 p-4 mb-6">
+                            {/* Información del restaurante */}
+                            <div className="text-center mb-4 border-b pb-4">
+                                <h3 className="font-bold text-lg">{selectedTicket.restaurant_name || selectedTicket.restaurante}</h3>
+                                <p className="text-gray-600 text-sm">Restaurant Digital</p>
+                            </div>
+
+                            {/* Información de la orden */}
+                            <div className="mb-4">
+                                <div className="flex justify-between text-sm">
+                                    <span>ID:</span>
+                                    <span className="font-mono text-xs">{selectedTicket.order_uuid?.slice(0, 8)}...</span>
                                 </div>
-                                <div className="flex">
-                                    <BsClock className="self-center" />
-                                    <p className="pl-1">{selectedTicket.hora}</p>
+                                <div className="flex justify-between text-sm">
+                                    <span>Fecha:</span>
+                                    <span>{selectedTicket.fecha}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span>Hora:</span>
+                                    <span>{selectedTicket.hora}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span>Estado:</span>
+                                    <span className="font-semibold text-green-600">{selectedTicket.order_status || selectedTicket.statusOrden}</span>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Productos con precios */}
-                        <div className="mb-4">
-                            <h3 className="font-bold text-lg mb-3">Productos</h3>
-                            <div className="space-y-2">
-                                {selectedTicket.productos.map((producto, index) => (
-                                    <div key={index} className="flex justify-between items-center">
-                                        <div className="flex-1">
-                                            <span className={`font-medium ${producto.status === "cancelado" ? "text-red-500 line-through" : ""}`}>
-                                                {producto.nombre}
+                            {/* Productos */}
+                            <div className="mb-4">
+                                <h4 className="font-bold mb-2 border-b pb-1">Productos:</h4>
+                                {selectedTicket.productos?.map((product, index) => (
+                                    <div key={index} className="mb-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className={`flex-1 ${product.status === "cancelado" ? "text-red-500 line-through" : ""}`}>
+                                                {product.quantity || product.cantidad}x {product.product_name || product.nombre}
                                             </span>
-                                            <div className="text-sm text-gray-600">
-                                                x{producto.cantidad} - ${producto.precio.toFixed(2)} c/u
-                                            </div>
+                                            <span className={`font-semibold ${product.status === "cancelado" ? "text-red-500 line-through" : ""}`}>
+                                                ${(parseFloat(product.subtotal) || (product.cantidad * product.precio)).toFixed(2)}
+                                            </span>
                                         </div>
-                                        <div className={`font-bold ${producto.status === "cancelado" ? "text-red-500 line-through" : ""}`}>
-                                            ${(producto.cantidad * producto.precio).toFixed(2)}
+                                        <div className="flex justify-between text-xs text-gray-500 ml-4">
+                                            <span>Precio unitario: ${(parseFloat(product.unit_price) || product.precio).toFixed(2)}</span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        </div>
 
-                        {/* Total */}
-                        <div className="border-t pt-3 mb-4">
-                            <div className="flex justify-between items-center">
-                                <span className="font-bold text-lg">Total:</span>
-                                <span className="font-bold text-lg">${calculateTotal(selectedTicket.productos).toFixed(2)}</span>
+                            {/* Total */}
+                            <div className="border-t pt-2 mb-4">
+                                <div className="flex justify-between font-bold text-lg">
+                                    <span>Total:</span>
+                                    <span>${calculateTotal(selectedTicket.productos).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span>Método de pago:</span>
+                                    <span className="capitalize font-semibold">{selectedTicket.metodo_pago || selectedTicket.metodoPago}</span>
+                                </div>
+                            </div>
+
+                            {/* Código QR */}
+                            <div className="text-center">
+                                <p className="text-sm text-gray-600 mb-2">Código QR del ticket:</p>
+                                <div className="flex justify-center">
+                                    <QRCodeCanvas
+                                        value={selectedTicket.order_uuid || selectedTicket.id}
+                                        size={150}
+                                        level="M"
+                                        includeMargin={true}
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Escanea con la app móvil para imprimir
+                                </p>
+                            </div>
+
+                            {/* Pie del ticket */}
+                            <div className="text-center mt-4 pt-2 border-t text-xs text-gray-500">
+                                <p>¡Gracias por su visita!</p>
+                                <p>Conserve este ticket como comprobante</p>
                             </div>
                         </div>
 
-                        {/* Botón de imprimir */}
-                        <button
-                            className="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded cursor-pointer transition-colors flex items-center justify-center gap-2"
-                            onClick={handlePrintTicket}
-                        >
-                            <FiPrinter />
-                            Imprimir Ticket
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de envío por email */}
-            {isEmailModalOpen && (
-                <div
-                    className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-[999]"
-                    onClick={() => setIsEmailModalOpen(false)}
-                >
-                    <div
-                        className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 relative shadow-2xl border"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Botón de cerrar (X) */}
-                        <button
-                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
-                            onClick={() => setIsEmailModalOpen(false)}
-                        >
-                            <IoClose />
-                        </button>
-
-                        {/* Título */}
-                        <h2 className="text-xl font-bold mb-4">Enviar Ticket por Email</h2>
-
-                        {/* Campo de email */}
-                        <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">
-                                E-mail
-                            </label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Ingresa el email"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            />
-                        </div>
-
-                        {/* Botones */}
-                        <div className="flex gap-3">
+                        {/* Botón de cerrar */}
+                        <div className="flex justify-center">
                             <button
-                                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded cursor-pointer transition-colors"
-                                onClick={handleSendEmail}
-                                disabled={!email}
+                                className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-6 rounded cursor-pointer transition-colors"
+                                onClick={() => setIsModalOpen(false)}
                             >
-                                Enviar
-                            </button>
-                            <button
-                                className="bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded cursor-pointer transition-colors"
-                                onClick={() => setIsEmailModalOpen(false)}
-                            >
-                                Cancelar
+                                Cerrar
                             </button>
                         </div>
                     </div>
