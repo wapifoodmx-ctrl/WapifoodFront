@@ -60,8 +60,8 @@ export default function MenuCliente() {
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
     const [totalFinal, setTotalFinal] = useState(0);
     const [metodoPago, setMetodoPago] = useState('efectivo');
-    const [codigoConfirmacion, setCodigoConfirmacion] = useState(''); // Renombrado de numeroReferencia
-    const [isProcessingPayment, setIsProcessingPayment] = useState(false); // Nuevo estado
+    const [codigoConfirmacion, setCodigoConfirmacion] = useState('');
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
     // Estados para mesas
     const [numeroMesa, setNumeroMesa] = useState('');
@@ -82,25 +82,15 @@ export default function MenuCliente() {
     // Mock para establecer permisos de ticket automáticamente
     useEffect(() => {
         localStorage.setItem('tickets', 'true');
-        console.log('Permisos de ticket establecidos automáticamente');
     }, []);
 
-    // Función para seleccionar mesa - ACTUALIZADA con estado correcto
+    // Función para seleccionar mesa
     const seleccionarMesa = async (numeroMesaSeleccionada) => {
-        console.log('=== INICIO SELECCIONAR MESA ===');
-        console.log('Mesa seleccionada:', numeroMesaSeleccionada);
-        
         if (numeroMesaSeleccionada && numeroMesaSeleccionada !== '') {
             const mesaString = String(numeroMesaSeleccionada).trim();
-            console.log('Mesa a guardar:', mesaString);
             
             try {
-                // Cambiar el estatus de la mesa a "NoDisponible" (formato correcto)
-                console.log('Intentando actualizar mesa:', parseInt(mesaString), 'a estado: NoDisponible');
-                
                 const resultado = await updateTableStatus(parseInt(mesaString), 'NoDisponible');
-                console.log('Resultado de updateTableStatus:', resultado);
-                console.log(`Mesa ${mesaString} marcada como NoDisponible`);
                 
                 setNumeroMesa(mesaString);
                 localStorage.setItem('numeroMesa', mesaString);
@@ -111,10 +101,8 @@ export default function MenuCliente() {
                 setMensajeError('Error al reservar la mesa. Inténtalo nuevamente.');
             }
         } else {
-            console.error('Número de mesa inválido');
             setMensajeError('Por favor selecciona una mesa válida');
         }
-        console.log('=== FIN SELECCIONAR MESA ===');
     };
 
     // Nueva función para manejar el click en el número de mesa
@@ -135,21 +123,14 @@ export default function MenuCliente() {
         setErrorCodigoMesa('');
 
         try {
-            // Cambiar el estatus de la mesa actual a "Libre"
             if (numeroMesa) {
-                console.log('Liberando mesa actual:', numeroMesa);
                 await updateTableStatus(parseInt(numeroMesa), 'Libre');
-                console.log(`Mesa ${numeroMesa} liberada exitosamente`);
             }
 
-            // Limpiar la mesa actual del localStorage
             localStorage.removeItem('numeroMesa');
             setNumeroMesa('');
-
-            // Cerrar modal de cambio de mesa
             setModalCambioMesaOpen(false);
             
-            // Abrir modal de selección de mesa
             await cargarMesas();
 
         } catch (error) {
@@ -165,16 +146,12 @@ export default function MenuCliente() {
         const token = localStorage.getItem('token');
         const mesaGuardada = localStorage.getItem('numeroMesa');
         
-        console.log('Token encontrado:', !!token); // Debug log
-        console.log('Mesa guardada encontrada:', mesaGuardada); // Debug log
-        
         if (!token) {
             setLoginModalOpen(true);
             setLoading(false);
         } else {
             setIsAuthenticated(true);
             if (mesaGuardada) {
-                console.log('Estableciendo numero de mesa:', mesaGuardada); // Debug log
                 setNumeroMesa(mesaGuardada);
             }
         }
@@ -187,47 +164,33 @@ export default function MenuCliente() {
         }
     }, [isAuthenticated, numeroMesa]);
 
-    // Función para cargar las mesas disponibles - ACTUALIZADA con estados correctos
+    // Función para cargar las mesas disponibles
     const cargarMesas = async () => {
         try {
             setLoadingMesas(true);
-            console.log('Iniciando carga de mesas...');
             
             const mesasData = await getTables();
-            console.log('Datos recibidos de la API:', mesasData);
-            
             let mesasArray = [];
             
-            // Procesar la respuesta específica de tu API
             if (mesasData && mesasData.table_status && typeof mesasData.table_status === 'object') {
-                console.log('Procesando table_status:', mesasData.table_status);
-                
-                // Convertir el objeto table_status en array de mesas
                 mesasArray = Object.entries(mesasData.table_status)
                     .map(([numeroMesa, estado]) => ({
                         id: parseInt(numeroMesa),
                         number: parseInt(numeroMesa),
-                        status: estado // Mantener el estado original de la API
+                        status: estado
                     }))
-                    .filter(mesa => !isNaN(mesa.number)) // Filtrar números válidos
-                    .sort((a, b) => a.number - b.number); // Ordenar por número
+                    .filter(mesa => !isNaN(mesa.number))
+                    .sort((a, b) => a.number - b.number);
                 
-                console.log('Todas las mesas procesadas:', mesasArray);
-                
-                // Filtrar solo las mesas "Libre" para mostrar en el dropdown y excluir la mesa 1
                 const mesasLibres = mesasArray.filter(mesa => 
                     mesa.status === 'Libre' && mesa.number !== 1
                 );
-                console.log('Mesas libres filtradas (sin mesa 1):', mesasLibres);
                 
-                // Guardar solo las mesas libres disponibles para selección
                 setMesas(mesasLibres);
                 
             } else {
-                console.log('Estructura de datos no reconocida, usando mesas por defecto');
-                // Fallback con mesas por defecto (excluyendo mesa 1)
                 mesasArray = Array.from({ length: 25 }, (_, index) => ({
-                    id: index + 2, // Empezar desde mesa 2
+                    id: index + 2,
                     number: index + 2,
                     status: 'Libre'
                 }));
@@ -241,9 +204,8 @@ export default function MenuCliente() {
             console.error('Error al cargar las mesas:', error);
             setMensajeError(`Error al cargar las mesas: ${error.message}`);
             
-            // Fallback con mesas por defecto (todas libres, excluyendo mesa 1)
             const mesasDefault = Array.from({ length: 25 }, (_, index) => ({
-                id: index + 2, // Empezar desde mesa 2
+                id: index + 2,
                 number: index + 2,
                 status: 'Libre'
             }));
@@ -390,13 +352,13 @@ export default function MenuCliente() {
     const transformarProductos = (productosAPI) => {
         return productosAPI.map(producto => ({
             id: producto.id_products,
-            id_products: producto.id_products, // Mantener ambos para compatibilidad
+            id_products: producto.id_products,
             nombre: producto.name,
-            name: producto.name, // Mantener ambos para compatibilidad
+            name: producto.name,
             precio: parseFloat(producto.price),
-            price: parseFloat(producto.price), // Corregido: era "produto.price"
+            price: parseFloat(producto.price),
             descripcion: producto.description,
-            description: producto.description, // Mantener ambos para compatibilidad
+            description: producto.description,
             categoria: producto.category_name || producto.nombre_categoria,
             imagen: producto.image_url && producto.image_url.length > 0
                 ? producto.image_url[0]
@@ -459,14 +421,13 @@ export default function MenuCliente() {
         }, 0).toFixed(2);
     };
 
-    // Función modificada para crear/actualizar órdenes (ACTUALIZADA para usar orderClientMenu)
+    // Función modificada para crear/actualizar órdenes
     const realizarPedido = async () => {
         if (carrito.length === 0) {
             setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
             return;
         }
 
-        // Validar que hay un número de mesa
         if (!numeroMesa) {
             setMensajeError("Debes seleccionar una mesa antes de realizar el pedido");
             return;
@@ -476,36 +437,26 @@ export default function MenuCliente() {
         setMensajeError("");
 
         try {
-            // Preparar productos para la API
             const productosParaOrden = carrito.map(item => ({
                 id: item.id_products || item.id.split('-')[0],
                 cantidad: item.cantidad
             }));
 
-            // CAMBIO PRINCIPAL: Usar createSimpleClientOrder con número de mesa
             const ordenUuid = ordenActiva ? ordenActiva.order_uuid : null;
             const response = await createSimpleClientOrder(
                 productosParaOrden, 
-                parseInt(numeroMesa), // Pasar el número de mesa como parámetro
+                parseInt(numeroMesa),
                 ordenUuid
             );
 
-            console.log('Orden creada/actualizada:', response);
-
-            // NUEVO: Cambiar el estado de la mesa a "Ocupado" solo en la primera orden
             if (!ordenActiva && numeroMesa) {
                 try {
-                    console.log(`Cambiando mesa ${numeroMesa} a estado Ocupado`);
                     await updateTableStatus(parseInt(numeroMesa), 'Ocupado');
-                    console.log(`Mesa ${numeroMesa} marcada como Ocupado exitosamente`);
                 } catch (error) {
                     console.error('Error al cambiar mesa a Ocupado:', error);
-                    // No detener el proceso si falla el cambio de estado de mesa
-                    console.warn('Continuando con la orden a pesar del error de mesa');
                 }
             }
 
-            // Guardar la información de la orden activa
             setOrdenActiva({
                 order_uuid: response.order_uuid,
                 id_orders: response.id_orders,
@@ -515,7 +466,6 @@ export default function MenuCliente() {
                 date_time: response.date_time
             });
 
-            // Mover productos del carrito al historial
             setHistorialPedidos((prevHistorial) => [
                 ...prevHistorial,
                 ...carrito.map((item) => ({
@@ -532,15 +482,10 @@ export default function MenuCliente() {
                 })),
             ]);
 
-            // Limpiar el carrito
             setCarrito([]);
-
-            // Cargar el total final actualizado
             await cargarTotalFinal(response.order_uuid);
-
             setMensajeError("¡Orden enviada exitosamente!");
             
-            // Limpiar el mensaje después de 3 segundos
             setTimeout(() => {
                 setMensajeError("");
             }, 3000);
@@ -553,7 +498,7 @@ export default function MenuCliente() {
         }
     };
 
-    // Función para finalizar todas las órdenes y abrir modal (SIN limpiar estado)
+    // Función para finalizar todas las órdenes y abrir modal
     const terminarOrden = () => {
         if (historialPedidos.length === 0) {
             setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
@@ -580,36 +525,19 @@ export default function MenuCliente() {
         setMensajeError("");
 
         try {
-            console.log(`Procesando pago con ${metodoPago} por $${totalPedidos}`);
-            console.log(`Código de confirmación: ${codigoConfirmacion || 'Sin código'}`);
-            
-            // Guardar el UUID antes de limpiar el estado
             const currentOrderUuid = ordenActiva.order_uuid;
-            
             const response = await endOrder(currentOrderUuid, metodoPago);
             
             if (response && (response.success !== false)) {
-                console.log('Orden finalizada exitosamente:', response);
-                
-                // CAMBIO: Cambiar el estado de la mesa a "Libre" después del pago exitoso
-                // pero NO eliminar del localStorage para permitir nuevas órdenes
                 if (numeroMesa) {
                     try {
-                        console.log(`Cambiando mesa ${numeroMesa} a estado Libre después del pago`);
-                        await updateTableStatus(parseInt(numeroMesa), 'Libre');
-                        console.log(`Mesa ${numeroMesa} liberada exitosamente`);
-                        
-                        // NO eliminar la mesa del localStorage - mantenerla para futuras órdenes
-                        // localStorage.removeItem('numeroMesa'); // REMOVIDO
-                        // setNumeroMesa(''); // REMOVIDO
+                        // CAMBIO: Cambiar a 'NoDisponible' en lugar de 'Libre'
+                        await updateTableStatus(parseInt(numeroMesa), 'NoDisponible');
                     } catch (error) {
-                        console.error('Error al liberar la mesa:', error);
-                        // Continuar con el proceso aunque falle la liberación de mesa
-                        console.warn('Mesa no se pudo liberar automáticamente, pero el pago fue exitoso');
+                        console.error('Error al cambiar mesa a NoDisponible:', error);
                     }
                 }
                 
-                // SOLO limpiar la información de la orden después de que la API confirme el éxito
                 setHistorialPedidos([]);
                 setOrdenActiva(null);
                 setTotalFinal(0);
@@ -623,7 +551,6 @@ export default function MenuCliente() {
                 
                 setMensajeError("¡Pago procesado exitosamente!");
                 
-                // Verificar si debe mostrar el modal de ticket
                 const ticketsEnabled = localStorage.getItem('tickets');
                 if (ticketsEnabled === 'true') {
                     setCompletedOrderUuid(currentOrderUuid);
@@ -632,12 +559,6 @@ export default function MenuCliente() {
                 
                 setTimeout(() => {
                     setMensajeError("");
-                    // CAMBIO: No forzar selección de nueva mesa ya que mantenemos la actual
-                    // if (!numeroMesa) {
-                    //     setTimeout(() => {
-                    //         cargarMesas();
-                    //     }, 1000);
-                    // }
                 }, 3000);
                 
             } else {
@@ -680,7 +601,7 @@ export default function MenuCliente() {
 
     return (
         <section>
-            {/* Modal de selección de mesa - ACTUALIZADO sin mesa 1 y sin botón predeterminado */}
+            {/* Modal de selección de mesa */}
             {modalMesaOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1001]">
                     <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -743,7 +664,6 @@ export default function MenuCliente() {
                                             </select>
                                         </div>
                                         
-                                        {/* Mostrar información adicional */}
                                         <div className="text-center text-sm text-gray-500">
                                             Solo se muestran las mesas disponibles
                                         </div>
@@ -755,7 +675,7 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal de Login - sin cambios */}
+            {/* Modal de Login */}
             {loginModalOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1000]">
                     <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -827,7 +747,7 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Header - ACTUALIZADO con click en mesa */}
+            {/* Header */}
             <header>
                 <nav className="w-full bg-gray-100 text-gray-800 p-4">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
@@ -837,7 +757,6 @@ export default function MenuCliente() {
                         </div>
 
                         <div className="flex items-center gap-4">
-                            {/* Información de mesa - ACTUALIZADA para ser clickeable */}
                             {numeroMesa ? (
                                 <div 
                                     className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-lg cursor-pointer hover:bg-green-200 transition-colors"
@@ -867,7 +786,7 @@ export default function MenuCliente() {
                 </nav>
             </header>
 
-            {/* Nueva Modal de cambio de mesa */}
+            {/* Modal de cambio de mesa */}
             {modalCambioMesaOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1002]">
                     <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -898,7 +817,6 @@ export default function MenuCliente() {
                                             value={codigoCambioMesa}
                                             onChange={(e) => {
                                                 const value = e.target.value;
-                                                // Solo permitir números y máximo 4 dígitos
                                                 if (/^\d{0,4}$/.test(value)) {
                                                     setCodigoCambioMesa(value);
                                                     if (errorCodigoMesa) {
@@ -953,7 +871,7 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Menú desplegable - sin cambios */}
+            {/* Menú desplegable */}
             <div
                 className={`
                     fixed top-0 left-0 h-full w-64 bg-gray-100 shadow-lg 
@@ -979,7 +897,7 @@ export default function MenuCliente() {
                 </ul>
             </div>
 
-            {/* Botón flotante del carrito - sin cambios */}
+            {/* Botón flotante del carrito */}
             <button
                 className="fixed bottom-10 right-4 bg-green-500 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-green-600"
                 onClick={() => setCarritoModalOpen(true)}
@@ -992,7 +910,7 @@ export default function MenuCliente() {
                 )}
             </button>
 
-            {/* Modal del carrito - ACTUALIZADO con funcionalidades de pntoventa */}
+            {/* Modal del carrito */}
             {carritoModalOpen && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 z-50 flex justify-end"
@@ -1005,7 +923,6 @@ export default function MenuCliente() {
                     <div className="bg-white w-80 h-full shadow-lg p-4 overflow-y-auto">
                         <h2 className="text-xl font-bold mb-4">Tu Pedido</h2>
 
-                        {/* Información de la orden activa */}
                         {ordenActiva && (
                             <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                                 <h3 className="text-sm font-semibold text-blue-800">Orden Activa</h3>
@@ -1014,7 +931,6 @@ export default function MenuCliente() {
                             </div>
                         )}
 
-                        {/* Carrito actual */}
                         {carrito.length > 0 ? (
                             <ul className="mb-4">
                                 {carrito.map((item) => (
@@ -1062,7 +978,6 @@ export default function MenuCliente() {
                                                         )
                                                     );
                                                 }}
-
                                             >
                                                 +
                                             </button>
@@ -1084,7 +999,6 @@ export default function MenuCliente() {
                             <p className="text-gray-500">Tu carrito está vacío.</p>
                         )}
 
-                        {/* Total del carrito */}
                         <div className="border-t pt-4">
                             <p className="text-lg font-bold">Total: ${calcularTotal()}</p>
                             {mensajeError && (
@@ -1108,7 +1022,6 @@ export default function MenuCliente() {
                             </button>
                         </div>
 
-                        {/* Historial de pedidos */}
                         {historialPedidos.length > 0 && (
                             <div className="mt-8">
                                 <h3 className="text-lg font-bold text-gray-500 mb-2">Historial de Pedidos</h3>
@@ -1135,7 +1048,6 @@ export default function MenuCliente() {
                             </div>
                         )}
 
-                        {/* Total final de todas las órdenes */}
                         {totalFinal > 0 && (
                             <p className="text-sm text-gray-500 pt-2 font-semibold">
                                 Total Final: ${totalFinal.toFixed(2)}
@@ -1157,12 +1069,11 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal del total de pedidos - ACTUALIZADO con seguridad y código de confirmación */}
+            {/* Modal del total de pedidos */}
             {modalTotalOpen && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[9999]"
                     onClick={(e) => {
-                        // Prevenir cierre accidental durante el procesamiento
                         if (isProcessingPayment) return;
                         if (e.target === e.currentTarget) {
                             setModalTotalOpen(false);
@@ -1207,7 +1118,6 @@ export default function MenuCliente() {
                             Método de pago: <span className="font-semibold capitalize">{metodoPago}</span>
                         </p>
                         
-                        {/* Input para código de confirmación */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
                                 Código de confirmación
@@ -1228,7 +1138,6 @@ export default function MenuCliente() {
                             />
                         </div>
 
-                        {/* Mostrar mensajes de error/éxito */}
                         {mensajeError && (
                             <div className={`text-sm font-bold text-center mb-4 p-3 rounded-lg ${
                                 mensajeError.includes('exitosamente') 
@@ -1251,7 +1160,6 @@ export default function MenuCliente() {
                             {isProcessingPayment ? 'Procesando...' : 'Confirmar Pago'}
                         </button>
 
-                        {/* Botón para cerrar y reintentar más tarde */}
                         {mensajeError && !mensajeError.includes('exitosamente') && (
                             <button
                                 className="w-full py-2 rounded-lg mt-2 bg-gray-500 hover:bg-gray-600 text-white"
@@ -1265,7 +1173,7 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal de producto - sin cambios principales */}
+            {/* Modal de producto */}
             {modalOpen && productoSeleccionado && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
@@ -1275,9 +1183,7 @@ export default function MenuCliente() {
                         }
                     }}
                 >
-                    <div
-                        className="bg-white rounded-lg p-4 w-11/12 md:w-8/10 max-h-screen overflow-y-auto relative"
-                    >
+                    <div className="bg-white rounded-lg p-4 w-11/12 md:w-8/10 max-h-screen overflow-y-auto relative">
                         <button
                             className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
                             onClick={closeModal}
@@ -1351,7 +1257,7 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Card Section - sin cambios principales */}
+            {/* Card Section */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12">
                 {productosFiltrados
                     .sort((a, b) => {
@@ -1451,7 +1357,6 @@ export default function MenuCliente() {
                     ))}
             </section>
 
-            {/* Ticket Modal - AGREGAR AL FINAL DEL JSX */}
             <TicketModal
                 isOpen={showTicketModal}
                 onClose={() => {
