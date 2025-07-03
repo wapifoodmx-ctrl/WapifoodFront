@@ -422,76 +422,84 @@ export default function Pntoventa() {
 
                         {/* Carrito actual */}
                         {carrito.length > 0 ? (
-                            <ul className="mb-4">
-                                {carrito.map((item) => (
-                                    <li key={item.id} className="flex justify-between items-center mb-4">
-                                        <div>
-                                            <p className="font-bold">{item.name}</p>
-                                            {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                            <div className="max-h-48 overflow-y-auto mb-4">
+                                <ul className="space-y-2">
+                                    {carrito.map((item) => (
+                                        <li key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded shadow">
+                                            <div>
+                                                <p className="font-bold">{item.name}</p>
+                                                {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                                    <p className="text-sm text-gray-500">
+                                                        Sin: {item.ingredientesExcluidos.join(", ")}
+                                                    </p>
+                                                )}
+                                                {item.comentario && (
+                                                    <p className="text-sm text-gray-500">
+                                                        Comentario: {item.comentario}
+                                                    </p>
+                                                )}
                                                 <p className="text-sm text-gray-500">
-                                                    Sin: {item.ingredientesExcluidos.join(", ")}
+                                                    ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
                                                 </p>
-                                            )}
-                                            {item.comentario && (
-                                                <p className="text-sm text-gray-500">
-                                                    Comentario: {item.comentario}
-                                                </p>
-                                            )}
-                                            <p className="text-sm text-gray-500">
-                                                ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
-                                                onClick={() => {
-                                                    setCarrito((prevCarrito) =>
-                                                        prevCarrito.map((producto) =>
-                                                            producto.id === item.id
-                                                                ? { ...producto, cantidad: Math.max(producto.cantidad - 1, 1) }
-                                                                : producto
-                                                        )
-                                                    );
-                                                }}
-                                            >
-                                                -
-                                            </button>
-                                            <span className="text-sm font-bold">{item.cantidad}</span>
-                                            <button
-                                                className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
-                                                onClick={() => {
-                                                    setCarrito((prevCarrito) =>
-                                                        prevCarrito.map((producto) =>
-                                                            producto.id === item.id
-                                                                ? { ...producto, cantidad: producto.cantidad + 1 }
-                                                                : producto
-                                                        )
-                                                    );
-                                                }}
-                                            >
-                                                +
-                                            </button>
-                                            <button
-                                                className="text-xl"
-                                                onClick={() => {
-                                                    setCarrito((prevCarrito) =>
-                                                        prevCarrito.filter((producto) => producto.id !== item.id)
-                                                    );
-                                                }}
-                                            >
-                                                <IoTrashOutline />
-                                            </button>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
+                                                    onClick={() => {
+                                                        setCarrito((prevCarrito) =>
+                                                            prevCarrito.map((producto) =>
+                                                                producto.id === item.id
+                                                                    ? { ...producto, cantidad: Math.max(producto.cantidad - 1, 1) }
+                                                                    : producto
+                                                            )
+                                                        );
+                                                    }}
+                                                >
+                                                    -
+                                                </button>
+                                                <span className="text-sm font-bold">{item.cantidad}</span>
+                                                <button
+                                                    className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
+                                                    onClick={() => {
+                                                        setCarrito((prevCarrito) =>
+                                                            prevCarrito.map((producto) =>
+                                                                producto.id === item.id
+                                                                    ? { ...producto, cantidad: producto.cantidad + 1 }
+                                                                    : producto
+                                                            )
+                                                        );
+                                                    }}
+                                                >
+                                                    +
+                                                </button>
+                                                <button
+                                                    className="text-xl"
+                                                    onClick={() => {
+                                                        setCarrito((prevCarrito) =>
+                                                            prevCarrito.filter((producto) => producto.id !== item.id)
+                                                        );
+                                                    }}
+                                                >
+                                                    <IoTrashOutline />
+                                                </button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         ) : (
                             <p className="text-gray-500">Tu carrito está vacío.</p>
                         )}
 
                         {/* Total del carrito */}
+                        <p className="text-lg font-bold">Total: ${carrito.reduce((total, item) => total + item.price * item.cantidad, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        {carrito.length > 3 && (
+                            <p className="text-xs text-gray-400 text-center mt-2">
+                                Mostrando {carrito.length} productos - Desliza para ver más
+                            </p>
+                        )}
+
                         <div className="border-t pt-4">
-                            <p className="text-lg font-bold">Total: ${carrito.reduce((total, item) => total + item.price * item.cantidad, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                             {mensajeError && (
                                 <p className={`text-sm font-bold mt-2 ${
                                     mensajeError.includes('exitosamente') ? 'text-green-500' : 'text-red-500'
@@ -517,31 +525,33 @@ export default function Pntoventa() {
                         {historialPedidos.length > 0 && (
                             <div className="mt-8">
                                 <h3 className="text-lg font-bold text-gray-500 mb-2">Historial de Pedidos</h3>
-                                <ul className="space-y-0">
-                                    {historialPedidos.map((item, index) => (
-                                        <li key={index} className="p-2 rounded shadow">
-                                            <p className="font-bold">{item.cantidad} x {item.name}</p>
-                                            {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                <div className="max-h-48 overflow-y-auto">
+                                    <ul className="space-y-2">
+                                        {historialPedidos.map((item, index) => (
+                                            <li key={index} className="p-2 rounded shadow bg-gray-50">
+                                                <p className="font-bold">{item.cantidad} x {item.name}</p>
+                                                {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                                    <p className="text-sm text-gray-500">
+                                                        Sin: {item.ingredientesExcluidos.join(", ")}
+                                                    </p>
+                                                )}
+                                                {item.comentario && (
+                                                    <p className="text-sm text-gray-500">
+                                                        Comentario: {item.comentario}
+                                                    </p>
+                                                )}
                                                 <p className="text-sm text-gray-500">
-                                                    Sin: {item.ingredientesExcluidos.join(", ")}
+                                                    Precio: ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
                                                 </p>
-                                            )}
-                                            {item.comentario && (
-                                                <p className="text-sm text-gray-500">
-                                                    Comentario: {item.comentario}
-                                                </p>
-                                            )}
-                                            <p className="text-sm text-gray-500">
-                                                Precio: ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                            </p>
-                                            {/* {item.order_id && (
-                                                <p className="text-xs text-blue-500">
-                                                    Orden #{item.order_id}
-                                                </p>
-                                            )} */}
-                                        </li>
-                                    ))}
-                                </ul>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                {historialPedidos.length > 3 && (
+                                    <p className="text-xs text-gray-400 text-center mt-2">
+                                        Mostrando {historialPedidos.length} productos - Desliza para ver más
+                                    </p>
+                                )}
                             </div>
                         )}
                         

@@ -80,7 +80,6 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                             {/* Información del restaurante */}
                             <div className="text-center mb-4 border-b pb-4">
                                 <h3 className="font-bold text-lg">{ticketData.restaurant_name || 'WapiFood'}</h3>
-                                <p className="text-gray-600 text-sm">Restaurant Digital</p>
                             </div>
 
                             {/* Información de la orden */}

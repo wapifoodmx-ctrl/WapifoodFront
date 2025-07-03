@@ -932,75 +932,83 @@ export default function MenuCliente() {
                         )}
 
                         {carrito.length > 0 ? (
-                            <ul className="mb-4">
-                                {carrito.map((item) => (
-                                    <li key={item.id} className="flex justify-between items-center mb-4">
-                                        <div>
-                                            <p className="font-bold">{item.nombre || item.name}</p>
-                                            {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                            <div className="max-h-48 overflow-y-auto mb-4">
+                                <ul className="space-y-2">
+                                    {carrito.map((item) => (
+                                        <li key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded shadow">
+                                            <div>
+                                                <p className="font-bold">{item.nombre || item.name}</p>
+                                                {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                                    <p className="text-sm text-gray-500">
+                                                        Sin: {item.ingredientesExcluidos.join(", ")}
+                                                    </p>
+                                                )}
+                                                {item.comentario && (
+                                                    <p className="text-sm text-gray-500">
+                                                        Comentario: {item.comentario}
+                                                    </p>
+                                                )}
                                                 <p className="text-sm text-gray-500">
-                                                    Sin: {item.ingredientesExcluidos.join(", ")}
+                                                    ${(item.precio || item.price || 0).toFixed(2)} c/u
                                                 </p>
-                                            )}
-                                            {item.comentario && (
-                                                <p className="text-sm text-gray-500">
-                                                    Comentario: {item.comentario}
-                                                </p>
-                                            )}
-                                            <p className="text-sm text-gray-500">
-                                                ${(item.precio || item.price || 0).toFixed(2)} c/u
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
-                                                onClick={() => {
-                                                    setCarrito((prevCarrito) =>
-                                                        prevCarrito.map((producto) =>
-                                                            producto.id === item.id
-                                                                ? { ...producto, cantidad: Math.max(producto.cantidad - 1, 1) }
-                                                                : producto
-                                                        )
-                                                    );
-                                                }}
-                                            >
-                                                -
-                                            </button>
-                                            <span className="text-sm font-bold">{item.cantidad}</span>
-                                            <button
-                                                className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
-                                                onClick={() => {
-                                                    setCarrito((prevCarrito) =>
-                                                        prevCarrito.map((producto) =>
-                                                            producto.id === item.id
-                                                                ? { ...producto, cantidad: producto.cantidad + 1 }
-                                                                : producto
-                                                        )
-                                                    );
-                                                }}
-                                            >
-                                                +
-                                            </button>
-                                            <button
-                                                className="text-xl"
-                                                onClick={() => {
-                                                    setCarrito((prevCarrito) =>
-                                                        prevCarrito.filter((producto) => producto.id !== item.id)
-                                                    );
-                                                }}
-                                            >
-                                                <IoTrashOutline />
-                                            </button>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
+                                                    onClick={() => {
+                                                        setCarrito((prevCarrito) =>
+                                                            prevCarrito.map((producto) =>
+                                                                producto.id === item.id
+                                                                    ? { ...producto, cantidad: Math.max(producto.cantidad - 1, 1) }
+                                                                    : producto
+                                                            )
+                                                        );
+                                                    }}
+                                                >
+                                                    -
+                                                </button>
+                                                <span className="text-sm font-bold">{item.cantidad}</span>
+                                                <button
+                                                    className="bg-gray-300 text-gray-800 px-2 py-0.5 rounded hover:bg-gray-400"
+                                                    onClick={() => {
+                                                        setCarrito((prevCarrito) =>
+                                                            prevCarrito.map((producto) =>
+                                                                producto.id === item.id
+                                                                    ? { ...producto, cantidad: producto.cantidad + 1 }
+                                                                    : producto
+                                                            )
+                                                        );
+                                                    }}
+                                                >
+                                                    +
+                                                </button>
+                                                <button
+                                                    className="text-xl"
+                                                    onClick={() => {
+                                                        setCarrito((prevCarrito) =>
+                                                            prevCarrito.filter((producto) => producto.id !== item.id)
+                                                        );
+                                                    }}
+                                                >
+                                                    <IoTrashOutline />
+                                                </button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         ) : (
                             <p className="text-gray-500">Tu carrito está vacío.</p>
                         )}
 
+                        <p className="text-lg font-bold">Total: ${calcularTotal()}</p>
+                        {carrito.length > 3 && (
+                            <p className="text-xs text-gray-400 text-center mt-2">
+                                Mostrando {carrito.length} productos - Desliza para ver más
+                            </p>
+                        )}
+
                         <div className="border-t pt-4">
-                            <p className="text-lg font-bold">Total: ${calcularTotal()}</p>
                             {mensajeError && (
                                 <p className={`text-sm font-bold mt-2 ${
                                     mensajeError.includes('exitosamente') ? 'text-green-500' : 'text-red-500'
@@ -1025,46 +1033,57 @@ export default function MenuCliente() {
                         {historialPedidos.length > 0 && (
                             <div className="mt-8">
                                 <h3 className="text-lg font-bold text-gray-500 mb-2">Historial de Pedidos</h3>
-                                <ul className="space-y-0">
-                                    {historialPedidos.map((item, index) => (
-                                        <li key={index} className="p-2 rounded shadow">
-                                            <p className="font-bold">{item.cantidad} x {item.nombre || item.name}</p>
-                                            {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                <div className="max-h-48 overflow-y-auto">
+                                    <ul className="space-y-2">
+                                        {historialPedidos.map((item, index) => (
+                                            <li key={index} className="p-2 rounded shadow bg-gray-50">
+                                                <p className="font-bold">{item.cantidad} x {item.nombre || item.name}</p>
+                                                {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                                    <p className="text-sm text-gray-500">
+                                                        Sin: {item.ingredientesExcluidos.join(", ")}
+                                                    </p>
+                                                )}
+                                                {item.comentario && (
+                                                    <p className="text-sm text-gray-500">
+                                                        Comentario: {item.comentario}
+                                                    </p>
+                                                )}
                                                 <p className="text-sm text-gray-500">
-                                                    Sin: {item.ingredientesExcluidos.join(", ")}
+                                                    Precio: ${(item.precio || item.price || 0).toFixed(2)} c/u
                                                 </p>
-                                            )}
-                                            {item.comentario && (
-                                                <p className="text-sm text-gray-500">
-                                                    Comentario: {item.comentario}
-                                                </p>
-                                            )}
-                                            <p className="text-sm text-gray-500">
-                                                Precio: ${(item.precio || item.price || 0).toFixed(2)} c/u
-                                            </p>
-                                        </li>
-                                    ))}
-                                </ul>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                {historialPedidos.length > 3 && (
+                                    <p className="text-xs text-gray-400 text-center mt-2">
+                                        Mostrando {historialPedidos.length} productos - Desliza para ver más
+                                    </p>
+                                )}
                             </div>
                         )}
 
+                        {/* Total final de todas las órdenes */}
                         {totalFinal > 0 && (
                             <p className="text-sm text-gray-500 pt-2 font-semibold">
                                 Total Final: ${totalFinal.toFixed(2)}
                             </p>
                         )}
 
-                        <button
-                            className={`w-full py-2 rounded-lg mt-4 transition-colors ${
-                                historialPedidos.length > 0 
-                                    ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer' 
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            }`}
-                            onClick={terminarOrden}
-                            disabled={historialPedidos.length === 0}
-                        >
-                            Terminar Orden {historialPedidos.length > 0 && `(${historialPedidos.length} productos)`}
-                        </button>
+                        {/* Botón "Terminar Orden" */}
+                        <div className="mt-4">
+                            <button
+                                className={`w-full py-2 rounded-lg ${
+                                    historialPedidos.length > 0
+                                        ? "bg-red-500 text-white hover:bg-red-600"
+                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                }`}
+                                onClick={terminarOrden}
+                                disabled={historialPedidos.length === 0}
+                            >
+                                Terminar Orden
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
