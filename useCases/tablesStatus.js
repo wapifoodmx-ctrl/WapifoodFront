@@ -1,6 +1,6 @@
 export const updateTableStatus = async (tableId, status) => {
     try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         
         if (!token) {
             throw new Error('No hay token de autenticación');

@@ -35,16 +35,18 @@ export default function VistaCocina() {
                 getTables()
             ]);
 
-            console.log("Orders data:", ordersData); // Para verificar los datos
+            console.log("Orders data:", ordersData);
+            console.log("Tables data:", tablesData);
             
             const pendingOrders = ordersData.filter(order => order.order_status === "Pendiente");
 
             const tableGroups = pendingOrders.reduce((groups, order) => {
-                const tableNumber = order.mesa_number; // Asegúrate de que esto sea un número
+                const tableNumber = order.mesa_number;
                 if (!groups[tableNumber]) {
+                    const realStatus = tablesData.table_status[tableNumber.toString()] || "Libre";
                     groups[tableNumber] = {
-                        tableNumber: tableNumber, // Este debe ser el número de mesa
-                        status: "Ocupado",
+                        tableNumber: tableNumber,
+                        status: realStatus,
                         products: [],
                         timestamp: order.date_time,
                         isEmpty: false,
@@ -68,7 +70,10 @@ export default function VistaCocina() {
                 return groups;
             }, {});
 
-            const tablesWithOrders = Object.values(tableGroups);
+            // Filtrar solo las mesas que NO tienen estatus "Libre"
+            const tablesWithOrders = Object.values(tableGroups).filter(table => 
+                table.status !== "Libre"
+            );
 
             const unavailableTables = Object.entries(tablesData.table_status)
                 .filter(([tableNumber, status]) => status === "NoDisponible")
@@ -82,13 +87,10 @@ export default function VistaCocina() {
 
             const allTables = [...tablesWithOrders, ...unavailableTables];
 
-            // Ordenar: primero las mesas ocupadas (por número), luego las no disponibles (por número)
             allTables.sort((a, b) => {
-                // Si ambas tienen el mismo status, ordenar por número de mesa
                 if (a.status === b.status) {
                     return a.tableNumber - b.tableNumber;
                 }
-                // Las mesas "Ocupado" van primero (false < true en JS)
                 return a.isEmpty - b.isEmpty;
             });
 
