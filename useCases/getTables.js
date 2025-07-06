@@ -21,6 +21,17 @@ export const getTables = async () => {
         if (!response.ok) {
             const errorText = await response.text();
             console.log('Error response:', errorText);
+            
+            // Manejar específicamente el error 403 (falta de pago)
+            if (response.status === 403) {
+                return {
+                    error: true,
+                    status: 403,
+                    message: 'Favor de renovar su suscripción',
+                    showModal: true
+                };
+            }
+            
             throw new Error(`Error HTTP: ${response.status}`);
         }
 

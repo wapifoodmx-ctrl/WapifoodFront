@@ -14,6 +14,7 @@ import ModalCocina from "./modalCocina.jsx";
 // ...existing code...
 
 export default function VistaCocina() {
+    const router = useRouter();
     const [visibleDropdown, setVisibleDropdown] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeModal, setActiveModal] = useState(null);
@@ -38,6 +39,13 @@ export default function VistaCocina() {
                 getOrderTickets(),
                 getTables()
             ]);
+
+            // Verificar si hay error 403 en getTables
+            if (tablesData.error && tablesData.status === 403) {
+                setShowSubscriptionModal(true);
+                setLoading(false);
+                return;
+            }
 
             console.log("Orders data:", ordersData);
             console.log("Tables data:", tablesData);
@@ -407,6 +415,11 @@ export default function VistaCocina() {
     };
 
     const allActiveTables = apiTables;
+
+    const handleGoToPayments = () => {
+        setShowSubscriptionModal(false);
+        router.push('/payments');
+    };
 
     return (
         <div className="w-full mt-16">
