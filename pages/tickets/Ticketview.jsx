@@ -1,6 +1,7 @@
 import { LuCalendarDays } from "react-icons/lu";
 import { BsClock } from "react-icons/bs";
 import { IoClose } from "react-icons/io5";
+import { IoMdInformationCircleOutline } from "react-icons/io";
 import { useState, useEffect } from "react";
 import { QRCodeCanvas } from 'qrcode.react';
 import getOrderTickets from "../../useCases/getOrderTickets";
@@ -9,6 +10,7 @@ export default function Ticketview() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [ticketsData, setTicketsData] = useState([]);
+    const [activeTab, setActiveTab] = useState("hoy");
 
     useEffect(() => {
         const fetchTickets = async () => {
@@ -31,7 +33,7 @@ export default function Ticketview() {
                             statusOrden: order.order_status,
                             metodoPago: order.metodo_pago,
                             productos: [],
-                            total: 0,
+                            total: parseFloat(order.total), // Usar el total de la API
                             // Datos adicionales para el formato de ticket
                             date_time: order.date_time,
                             order_uuid: order.order_uuid,
@@ -55,8 +57,6 @@ export default function Ticketview() {
                     }));
                     
                     acc[uuid].productos.push(...mappedProducts);
-                    // Sumar solo una vez por orden, no por total acumulado
-                    acc[uuid].total += parseFloat(order.total);
                     
                     return acc;
                 }, {});
@@ -78,92 +78,175 @@ export default function Ticketview() {
         setIsModalOpen(true);
     };
 
-    // Función para calcular el total de un ticket (excluyendo productos cancelados)
-    const calculateTotal = (productos) => {
-        return productos.reduce((sum, producto) => {
-            if (producto.status === "cancelado") {
-                return sum; // No sumar productos cancelados
-            }
-            return sum + (producto.cantidad * producto.precio); // Multiplicar cantidad por precio
-        }, 0);
+    // Función para obtener el total del ticket desde la API
+    const getTicketTotal = (ticket) => {
+        return ticket.total || 0;
     };
 
-    return (
-        <div className="pt-20 px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {ticketsData
-                    .filter(ticket => ticket.statusOrden === 'Finalizado')
-                    .map((ticket) => (
-                    <div 
-                        key={ticket.id}
-                        className="w-full border-l-green-600 border-l-4 bg-white shadow-md rounded-lg flex flex-col cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleCardClick(ticket)}
-                    >
-                        {/* Header de la card */}
-                        <div className="p-3">
-                            <div className="flex justify-between items-center mb-2">
-                                <p className="font-bold text-lg">{ticket.mesa}</p>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    ticket.statusOrden === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                                    ticket.statusOrden === 'Finalizado' ? 'bg-green-100 text-green-800' :
-                                    'bg-gray-100 text-gray-800'
-                                }`}>
-                                    {ticket.statusOrden}
-                                </span>
-                            </div>
-                            
-                            <div className="flex justify-between text-xs text-gray-500 mb-3">
-                                <div className="flex items-center">
-                                    <LuCalendarDays className="mr-1" />
-                                    <span>{ticket.fecha}</span>
-                                </div>
-                                <div className="flex items-center">
-                                    <BsClock className="mr-1" />
-                                    <span>{ticket.hora}</span>
-                                </div>
-                            </div>
+    // Función para filtrar tickets por fecha
+    const filterTicketsByDate = (tickets, filter) => {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        
+        return tickets.filter(ticket => {
+            const ticketDate = new Date(ticket.date_time);
+            const ticketDateOnly = new Date(ticketDate.getFullYear(), ticketDate.getMonth(), ticketDate.getDate());
+            
+            switch (filter) {
+                case "hoy":
+                    return ticketDateOnly.getTime() === today.getTime();
+                case "semana":
+                    return ticketDateOnly.getTime() < today.getTime() && ticketDateOnly.getTime() >= oneWeekAgo.getTime();
+                case "mes":
+                    return ticketDateOnly.getTime() < oneWeekAgo.getTime();
+                default:
+                    return true;
+            }
+        });
+    };
 
-                            {/* Mostrar solo el primer producto */}
-                            {ticket.productos.length > 0 && (
-                                <div className="bg-gray-50 rounded-lg p-2 mb-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className={`text-sm font-medium truncate flex-1 mr-2 ${
-                                            ticket.productos[0].status === "cancelado" ? "text-red-500 line-through" : ""
-                                        }`}>
-                                            {ticket.productos[0].nombre}
-                                        </span>
-                                        <div className="flex items-center gap-1 text-xs">
-                                            <span className="bg-white px-2 py-1 rounded border">
-                                                x{ticket.productos[0].cantidad}
+    // Obtener tickets filtrados
+    const filteredTickets = filterTicketsByDate(
+        ticketsData.filter(ticket => ticket.statusOrden === 'Finalizado'),
+        activeTab
+    );
+
+    return (
+        <div className="w-full mt-16">
+            {/* Pestañas - Mismo estilo que VistaCocina */}
+            <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b">
+                <button
+                    className={`px-4 py-2 cursor-pointer ${
+                        activeTab === "hoy" ? "border-b-2 border-green-600 font-bold" : ""
+                    }`}
+                    onClick={() => setActiveTab("hoy")}
+                >
+                    Hoy
+                </button>
+                <button
+                    className={`px-4 py-2 cursor-pointer ${
+                        activeTab === "semana" ? "border-b-2 border-green-600 font-bold" : ""
+                    }`}
+                    onClick={() => setActiveTab("semana")}
+                >
+                    Semana
+                </button>
+                <button
+                    className={`px-4 py-2 cursor-pointer ${
+                        activeTab === "mes" ? "border-b-2 border-green-600 font-bold" : ""
+                    }`}
+                    onClick={() => setActiveTab("mes")}
+                >
+                    Mes
+                </button>
+            </div>
+
+            {/* Contenido principal */}
+            <div className="py-5 px-5">
+                {/* Título dinámico */}
+                <div className="mb-4">
+                    <h2 className="text-lg font-bold">
+                        {activeTab === "hoy" && "Tickets de Hoy"}
+                        {activeTab === "semana" && "Tickets de esta Semana"}
+                        {activeTab === "mes" && "Tickets del Mes"}
+                    </h2>
+                    <p className="text-gray-600 text-sm">
+                        {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''} encontrado{filteredTickets.length !== 1 ? 's' : ''}
+                    </p>
+                </div>
+
+                {/* Grid de tickets */}
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {filteredTickets.length === 0 ? (
+                        <div className="col-span-full text-center py-12">
+                            <p className="text-gray-500 text-center">
+                                No hay tickets disponibles para {activeTab === "hoy" ? "hoy" : activeTab === "semana" ? "esta semana" : "este mes"}
+                            </p>
+                        </div>
+                    ) : (
+                        filteredTickets.map((ticket) => (
+                            <div 
+                                key={ticket.id}
+                                className="cursor-pointer transition-opacity hover:opacity-80"
+                                onClick={() => handleCardClick(ticket)}
+                            >
+                                <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col">
+                                    <div className="p-3 flex-grow flex flex-col overflow-hidden">
+                                        {/* Header fijo */}
+                                        <div className="flex items-center mb-2 flex-shrink-0">
+                                            <p className="font-bold text-base truncate">{ticket.mesa}</p>
+                                            <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex-shrink-0 ${
+                                                ticket.statusOrden === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                                                ticket.statusOrden === 'Finalizado' ? 'bg-green-100 text-green-800' :
+                                                'bg-gray-100 text-gray-800'
+                                            }`}>
+                                                {ticket.statusOrden}
                                             </span>
-                                            <span className="bg-white px-2 py-1 rounded border">
-                                                ${ticket.productos[0].precio.toFixed(2)}
+                                        </div>
+                                        
+                                        {/* Fecha y hora - fija */}
+                                        <div className="flex justify-between text-xs text-gray-500 mb-2 flex-shrink-0">
+                                            <div className="flex items-center">
+                                                <LuCalendarDays className="mr-1" />
+                                                <span>{ticket.fecha}</span>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <BsClock className="mr-1" />
+                                                <span>{ticket.hora}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Área flexible para productos */}
+                                        <div className="flex-grow flex flex-col min-h-0">
+                                            <p className="text-xs text-gray-500 font-semibold mb-1 flex-shrink-0">
+                                                Productos ({ticket.productos.length})
+                                            </p>
+                                            
+                                            {ticket.productos.length > 0 && (
+                                                <div className="bg-gray-50 rounded p-2 mb-1 flex-shrink-0">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className={`font-semibold text-xs truncate pr-1 ${
+                                                            ticket.productos[0].status === "cancelado" ? "text-red-500 line-through" : ""
+                                                        }`}>
+                                                            {ticket.productos[0].nombre}
+                                                        </p>
+                                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                                            <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
+                                                                X{ticket.productos[0].cantidad}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Información adicional - flexible */}
+                                            <div className="flex-grow flex items-center justify-center">
+                                                {ticket.productos.length > 1 && (
+                                                    <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
+                                                        <IoMdInformationCircleOutline className="mr-1" />
+                                                        <span className="text-center">Click para ver más</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Total fijo en la parte inferior */}
+                                        <div className="flex justify-between items-center pt-2 border-t flex-shrink-0">
+                                            <span className="font-bold text-sm">Total:</span>
+                                            <span className="font-bold text-sm text-green-600">
+                                                ${getTicketTotal(ticket).toFixed(2)}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
-                            )}
-
-                            {/* Leyenda para más productos */}
-                            {ticket.productos.length > 1 && (
-                                <p className="text-xs text-gray-500 italic text-center mb-2">
-                                    +{ticket.productos.length - 1} producto(s) más. Da click para ver detalles.
-                                </p>
-                            )}
-
-                            {/* Total */}
-                            <div className="flex justify-between items-center pt-2 border-t">
-                                <span className="font-bold text-sm">Total:</span>
-                                <span className="font-bold text-sm text-green-600">
-                                    ${calculateTotal(ticket.productos).toFixed(2)}
-                                </span>
                             </div>
-                        </div>
-                    </div>
-                ))}
+                        ))
+                    )}
+                </div>
             </div>
 
-            {/* Modal principal del ticket - Formato idéntico a TicketModal */}
+            {/* Modal principal del ticket */}
             {isModalOpen && selectedTicket && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000]"
@@ -186,7 +269,7 @@ export default function Ticketview() {
                             Ticket generado para imprimir
                         </h2>
 
-                        {/* Contenido del ticket - Formato idéntico a TicketModal */}
+                        {/* Contenido del ticket */}
                         <div className="border-2 border-dashed border-gray-300 p-4 mb-6">
                             {/* Información del restaurante */}
                             <div className="text-center mb-4 border-b pb-4">
@@ -237,7 +320,7 @@ export default function Ticketview() {
                             <div className="border-t pt-2 mb-4">
                                 <div className="flex justify-between font-bold text-lg">
                                     <span>Total:</span>
-                                    <span>${calculateTotal(selectedTicket.productos).toFixed(2)}</span>
+                                    <span>${getTicketTotal(selectedTicket).toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span>Método de pago:</span>
