@@ -191,7 +191,6 @@ export default function Ticketview() {
                             {/* Información del restaurante */}
                             <div className="text-center mb-4 border-b pb-4">
                                 <h3 className="font-bold text-lg">{selectedTicket.restaurant_name || selectedTicket.restaurante}</h3>
-                                <p className="text-gray-600 text-sm">Restaurant Digital</p>
                             </div>
 
                             {/* Información de la orden */}

@@ -11,8 +11,8 @@ import React, { useState, useEffect } from "react";
 import { getProducts } from "@/useCases/getProducts";
 import { createSimpleOrder } from "@/useCases/OrderPntoVenta";
 import { getFinalOrder } from "@/useCases/getfinalOrderId";
-import { endOrder } from "@/useCases/endOrder";
 import TicketModal from "@/components/TicketModal";
+import { endOrderPuntoDeVenta } from "@/useCases/endOrderPuntoDeVenta";
 
 // Mock de ingredientes general
 const mockIngredientes = ["Tomate", "Cebolla", "Lechuga", "Queso", "Salsa"];
@@ -272,7 +272,7 @@ export default function Pntoventa() {
             // Guardar el UUID antes de limpiar el estado
             const currentOrderUuid = ordenActiva.order_uuid;
             
-            const response = await endOrder(currentOrderUuid, metodoPago);
+            const response = await endOrderPuntoDeVenta(currentOrderUuid, metodoPago);
             
             // Verificar que la respuesta sea exitosa
             if (response && (response.success !== false)) {

@@ -1,12 +1,17 @@
-import { useState, useEffect, useRef } from "react";
-import { FaTrashAlt, FaTimes, FaPlus } from "react-icons/fa";
+import { useState, useEffect } from "react";
 import { GoDotFill } from "react-icons/go";
 import { MdTableBar } from "react-icons/md";
-import { BsClock, BsThreeDotsVertical } from "react-icons/bs";
+import { BsClock } from "react-icons/bs";
 import { LuCalendarDays } from "react-icons/lu";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { getTables } from "../../useCases/getTables.js";
 import getOrderTickets from "../../useCases/getOrderTickets.js";
+import { updateProductStatus } from "../../useCases/updateProductStatus.js";
+import { cancelOrder } from "../../useCases/cancelOrder.js";
+import { endPuntoDeVenta } from "../../useCases/endPuntoDeVenta.js";
+import ModalCocina from "./modalCocina.jsx";
+
+// ...existing code...
 
 export default function VistaCocina() {
     const [visibleDropdown, setVisibleDropdown] = useState(null);
@@ -16,8 +21,6 @@ export default function VistaCocina() {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [view, setView] = useState("all");
     const [isTableDetailModalOpen, setIsTableDetailModalOpen] = useState(false);
-    const dropdownRef = useRef(null);
-    const buttonRef = useRef(null);
 
     const [apiTables, setApiTables] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -25,6 +28,7 @@ export default function VistaCocina() {
 
     const [completedTables, setCompletedTables] = useState([]);
     const [cancelledTables, setCancelledTables] = useState([]);
+    const [finishedTables, setFinishedTables] = useState([]);
 
     const fetchTablesData = async () => {
         try {
@@ -37,25 +41,144 @@ export default function VistaCocina() {
 
             console.log("Orders data:", ordersData);
             console.log("Tables data:", tablesData);
-            
-            const pendingOrders = ordersData.filter(order => order.order_status === "Pendiente");
 
-            const tableGroups = pendingOrders.reduce((groups, order) => {
+            // Agrupar órdenes por mesa y tipo de producto
+            const tableGroups = {};
+
+            ordersData.forEach(order => {
                 const tableNumber = order.mesa_number;
-                if (!groups[tableNumber]) {
-                    const realStatus = tablesData.table_status[tableNumber.toString()] || "Libre";
-                    groups[tableNumber] = {
+                const realStatus = tablesData.table_status[tableNumber.toString()] || "Libre";
+
+                // Separar productos por estado
+                const pendingProducts = order.products.filter(product => product.order_detail_status === "Pendiente");
+                const completedProducts = order.products.filter(product => product.order_detail_status === "Preparado");
+                const finishedProducts = order.products.filter(product => product.order_detail_status === "Finalizado");
+                const cancelledProducts = order.products.filter(product => product.order_detail_status === "Cancelado");
+
+                // Crear entrada para productos pendientes
+                if (pendingProducts.length > 0) {
+                    const pendingKey = `${tableNumber}-${order.id_orders}-pending`;
+                    if (!tableGroups[pendingKey]) {
+                        tableGroups[pendingKey] = {
+                            tableNumber: tableNumber,
+                            status: realStatus,
+                            products: [],
+                            timestamp: order.date_time,
+                            isEmpty: false,
+                            orders: [],
+                            type: 'pending',
+                            orderId: order.id_orders,
+                            orderUuid: order.order_uuid
+                        };
+                    }
+
+                    pendingProducts.forEach(product => {
+                        tableGroups[pendingKey].products.push({
+                            id: product.id_orders_details,
+                            name: product.product_name,
+                            quantity: product.quantity,
+                            note: "",
+                            orderId: order.id_orders,
+                            orderUuid: order.order_uuid,
+                            status: product.order_detail_status
+                        });
+                    });
+
+                    // Agregar método de pago y otros datos de la orden
+                    tableGroups[pendingKey].metodoPago = order.metodo_pago || 'efectivo';
+                    tableGroups[pendingKey].orders.push(order);
+                }
+
+                // Crear entrada para productos completados/preparados
+                if (completedProducts.length > 0) {
+                    const completedKey = `${tableNumber}-${order.id_orders}-completed`;
+                    if (!tableGroups[completedKey]) {
+                        tableGroups[completedKey] = {
+                            tableNumber: tableNumber,
+                            status: realStatus,
+                            products: [],
+                            timestamp: order.date_time,
+                            isEmpty: false,
+                            orders: [],
+                            type: 'completed',
+                            orderId: order.id_orders,
+                            orderUuid: order.order_uuid
+                        };
+                    }
+
+                    completedProducts.forEach(product => {
+                        tableGroups[completedKey].products.push({
+                            id: product.id_orders_details,
+                            name: product.product_name,
+                            quantity: product.quantity,
+                            note: "",
+                            orderId: order.id_orders,
+                            orderUuid: order.order_uuid,
+                            status: product.order_detail_status
+                        });
+                    });
+
+                    tableGroups[completedKey].orders.push(order);
+                }
+
+                // Crear entrada para productos finalizados - CADA ORDEN POR SEPARADO
+                if (finishedProducts.length > 0) {
+                    const finishedKey = `${tableNumber}-${order.id_orders}-finished`;
+                    if (!tableGroups[finishedKey]) {
+                        tableGroups[finishedKey] = {
+                            tableNumber: tableNumber,
+                            status: realStatus,
+                            products: [],
+                            timestamp: order.date_time,
+                            isEmpty: false,
+                            orders: [],
+                            type: 'finished',
+                            orderId: order.id_orders,
+                            orderUuid: order.order_uuid
+                        };
+                    }
+
+                    // Solo incluir los productos de ESTA orden específica
+                    order.products.forEach(product => {
+                        tableGroups[finishedKey].products.push({
+                            id: product.id_orders_details,
+                            name: product.product_name,
+                            quantity: product.quantity,
+                            note: "",
+                            orderId: order.id_orders,
+                            orderUuid: order.order_uuid,
+                            status: product.order_detail_status
+                        });
+                    });
+
+                    tableGroups[finishedKey].orders.push(order);
+                }
+            });
+
+            // Filtrar órdenes completamente canceladas
+            const cancelledOrders = ordersData.filter(order => order.order_status === "Cancelado");
+
+            cancelledOrders.forEach(order => {
+                const tableNumber = order.mesa_number;
+                const realStatus = tablesData.table_status[tableNumber.toString()] || "Libre";
+                const cancelledKey = `${tableNumber}-${order.id_orders}-cancelled`;
+
+                if (!tableGroups[cancelledKey]) {
+                    tableGroups[cancelledKey] = {
                         tableNumber: tableNumber,
                         status: realStatus,
                         products: [],
                         timestamp: order.date_time,
                         isEmpty: false,
-                        orders: []
+                        orders: [],
+                        type: 'cancelled',
+                        orderId: order.id_orders,
+                        orderUuid: order.order_uuid
                     };
                 }
 
                 order.products.forEach(product => {
-                    groups[tableNumber].products.push({
+                    tableGroups[cancelledKey].products.push({
                         id: product.id_orders_details,
                         name: product.product_name,
                         quantity: product.quantity,
@@ -66,15 +189,10 @@ export default function VistaCocina() {
                     });
                 });
 
-                groups[tableNumber].orders.push(order);
-                return groups;
-            }, {});
+                tableGroups[cancelledKey].orders.push(order);
+            });
 
-            // Filtrar solo las mesas que NO tienen estatus "Libre"
-            const tablesWithOrders = Object.values(tableGroups).filter(table => 
-                table.status !== "Libre"
-            );
-
+            // Agregar mesas no disponibles
             const unavailableTables = Object.entries(tablesData.table_status)
                 .filter(([tableNumber, status]) => status === "NoDisponible")
                 .map(([tableNumber, status]) => ({
@@ -83,9 +201,10 @@ export default function VistaCocina() {
                     products: [],
                     timestamp: new Date().toISOString(),
                     isEmpty: true,
+                    type: 'unavailable'
                 }));
 
-            const allTables = [...tablesWithOrders, ...unavailableTables];
+            const allTables = [...Object.values(tableGroups), ...unavailableTables];
 
             allTables.sort((a, b) => {
                 if (a.status === b.status) {
@@ -94,7 +213,17 @@ export default function VistaCocina() {
                 return a.isEmpty - b.isEmpty;
             });
 
-            setApiTables(allTables);
+            // Separar por tipo
+            const pendingTables = allTables.filter(table => table.type === 'pending' || table.isEmpty);
+            const completedTables = allTables.filter(table => table.type === 'completed');
+            const finishedTables = allTables.filter(table => table.type === 'finished');
+            const cancelledTables = allTables.filter(table => table.type === 'cancelled');
+
+            setApiTables(pendingTables);
+            setCompletedTables(completedTables);
+            setCancelledTables(cancelledTables);
+            setFinishedTables(finishedTables);
+
         } catch (err) {
             setError(err.message);
             console.error("Error al cargar las órdenes:", err);
@@ -107,7 +236,7 @@ export default function VistaCocina() {
         fetchTablesData();
         const interval = setInterval(() => {
             fetchTablesData();
-        }, 30000);
+        }, 60000);
         return () => clearInterval(interval);
     }, []);
 
@@ -115,61 +244,161 @@ export default function VistaCocina() {
         setVisibleDropdown(visibleDropdown === id ? null : id);
     };
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target) &&
-                (!buttonRef.current || !buttonRef.current.contains(event.target))
-            ) {
-                setVisibleDropdown(null);
+
+
+    const handleCancelProduct = async (productId) => {
+        try {
+            const product = selectedTable.products.find(p => p.id === productId);
+            if (!product) {
+                console.error('Producto no encontrado');
+                return;
             }
-        };
 
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
+            // Usar el orderUuid de la mesa seleccionada (más confiable)
+            const orderUuid = selectedTable.orderUuid;
 
-    const handleDeleteProduct = (productId) => {
-        setApiTables((prevTables) =>
-            prevTables
-                .map((table) => ({
-                    ...table,
-                    products: table.products.filter((product) => product.id !== productId),
-                }))
-                .filter((table) => table.products.length > 0 || table.isEmpty)
-        );
-        setIsModalOpen(false);
+            // Actualizar el estado del producto a "Cancelado"
+            await updateProductStatus(orderUuid, product.id, 'Cancelado');
+
+            // Recargar los datos para reflejar los cambios
+            await fetchTablesData();
+
+            setIsModalOpen(false);
+            setVisibleDropdown(null); // Cerrar el dropdown
+            console.log('Producto cancelado exitosamente');
+        } catch (error) {
+            console.error('Error al cancelar el producto:', error);
+            alert('Error al cancelar el producto: ' + error.message);
+        }
     };
 
-    const handleCancelOrder = () => {
-        setApiTables((prevTables) =>
-            prevTables.filter((table) => {
-                if (table.tableNumber === selectedTable.tableNumber) {
-                    setCancelledTables((prevCancelled) => [...prevCancelled, table]);
-                    return false;
-                }
-                return true;
-            })
-        );
-        setActiveModal(null);
-        setIsTableDetailModalOpen(false);
+    const handleCompleteOrder = async () => {
+        try {
+            if (!selectedTable || !selectedTable.products || selectedTable.products.length === 0) {
+                console.error('No hay productos para completar');
+                return;
+            }
+
+            // Filtrar solo productos que no estén cancelados
+            const activeProducts = selectedTable.products.filter(p => p.status !== 'Cancelado');
+            
+            if (activeProducts.length === 0) {
+                alert('No hay productos activos para completar');
+                return;
+            }
+
+            const orderUuid = selectedTable.orderUuid;
+
+            // CONDICIÓN ESPECIAL: Si es la mesa 1, usar endPuntoDeVenta
+            if (selectedTable.tableNumber === 1) {
+                console.log('Mesa 1 detectada - usando endPuntoDeVenta');
+                
+                const metodoPago = selectedTable.metodoPago || 'efectivo';
+                
+                console.log('Finalizando orden con endPuntoDeVenta:', {
+                    orderUuid,
+                    metodoPago,
+                    tableNumber: selectedTable.tableNumber
+                });
+
+                // Usar endPuntoDeVenta para finalizar la orden completa
+                await endPuntoDeVenta(orderUuid, metodoPago);
+
+                // Mover la mesa de pendientes a finalizadas
+                setApiTables((prevTables) =>
+                    prevTables.filter((table) => {
+                        if (table.orderUuid === orderUuid) {
+                            setFinishedTables((prevFinished) => [...prevFinished, {
+                                ...table,
+                                type: 'finished',
+                                products: table.products.map(p => ({ ...p, status: 'Finalizado' }))
+                            }]);
+                            return false;
+                        }
+                        return true;
+                    })
+                );
+
+                console.log('Orden finalizada exitosamente con endPuntoDeVenta');
+            } else {
+                // FLUJO NORMAL: Para todas las demás mesas, usar updateProductStatus
+                console.log('Mesa normal - usando updateProductStatus');
+                
+                const productIds = activeProducts.map(product => product.id);
+
+                // Actualizar el estado de todos los productos activos a "Preparado"
+                await updateProductStatus(orderUuid, productIds, 'Preparado');
+
+                // Mover la mesa de pendientes a completadas
+                setApiTables((prevTables) =>
+                    prevTables.filter((table) => {
+                        if (table.orderUuid === orderUuid) {
+                            setCompletedTables((prevCompleted) => [...prevCompleted, {
+                                ...table,
+                                type: 'completed',
+                                products: table.products.map(p => ({ ...p, status: 'Preparado' }))
+                            }]);
+                            return false;
+                        }
+                        return true;
+                    })
+                );
+
+                console.log('Orden completada exitosamente con updateProductStatus');
+            }
+
+            // Recargar los datos para reflejar los cambios
+            await fetchTablesData();
+
+            setActiveModal(null);
+            setIsTableDetailModalOpen(false);
+            
+        } catch (error) {
+            console.error('Error al completar la orden:', error);
+            alert('Error al completar la orden: ' + error.message);
+        }
     };
 
-    const handleCompleteOrder = () => {
-        setApiTables((prevTables) =>
-            prevTables.filter((table) => {
-                if (table.tableNumber === selectedTable.tableNumber) {
-                    setCompletedTables((prevCompleted) => [...prevCompleted, table]);
-                    return false;
-                }
-                return true;
-            })
-        );
-        setActiveModal(null);
-        setIsTableDetailModalOpen(false);
+    const handleCancelOrder = async () => {
+        try {
+            if (!selectedTable || !selectedTable.orderUuid) {
+                console.error('No se encontró la orden para cancelar');
+                return;
+            }
+
+            const orderUuid = selectedTable.orderUuid;
+
+            console.log('Cancelando orden completa:', orderUuid);
+
+            // Cancelar toda la orden usando la función cancelOrder
+            await cancelOrder(orderUuid);
+
+            // Actualizar el estado local - mover la mesa de pendientes a canceladas
+            setApiTables((prevTables) =>
+                prevTables.filter((table) => {
+                    if (table.orderUuid === orderUuid) {
+                        // Agregar a la lista de canceladas
+                        setCancelledTables((prevCancelled) => [...prevCancelled, {
+                            ...table,
+                            type: 'cancelled',
+                            products: table.products.map(p => ({ ...p, status: 'Cancelado' }))
+                        }]);
+                        return false; // Remover de pendientes
+                    }
+                    return true;
+                })
+            );
+
+            // Recargar los datos para reflejar los cambios del servidor
+            await fetchTablesData();
+
+            setActiveModal(null);
+            setIsTableDetailModalOpen(false);
+            console.log('Orden cancelada exitosamente');
+        } catch (error) {
+            console.error('Error al cancelar la orden:', error);
+            alert('Error al cancelar la orden: ' + error.message);
+        }
     };
 
     const openTableDetail = (table) => {
@@ -181,223 +410,49 @@ export default function VistaCocina() {
 
     return (
         <div className="w-full mt-16">
-            {isTableDetailModalOpen && selectedTable && (
-                <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 p-4"
-                    onClick={() => setIsTableDetailModalOpen(false)}
-                >
-                    <div
-                        className="bg-white rounded-lg p-6 modal max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex justify-between items-center mb-4">
-                            <div className="flex items-center">
-                                <MdTableBar className="text-2xl mr-2" />
-                                <h2 className="text-2xl font-bold">Mesa {selectedTable.tableNumber}</h2>
-                                <span className={`ml-2 px-2 py-1 text-xs rounded ${
-                                    selectedTable.status === "Ocupado" 
-                                        ? "bg-blue-100 text-blue-800" 
-                                        : "bg-orange-100 text-orange-800"
-                                }`}>
-                                    {selectedTable.status}
-                                </span>
-                            </div>
-                            <button
-                                onClick={() => setIsTableDetailModalOpen(false)}
-                                className="text-gray-500 hover:text-gray-700 text-2xl"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        
-                        <div className="flex justify-between mb-4 text-sm text-gray-500">
-                            <div className="flex items-center">
-                                <LuCalendarDays className="mr-1" />
-                                <span>{new Date(selectedTable.timestamp).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex items-center">
-                                <BsClock className="mr-1" />
-                                <span>{new Date(selectedTable.timestamp).toLocaleTimeString()}</span>
-                            </div>
-                        </div>
-
-                        {selectedTable.isEmpty ? (
-                            <div className="text-center py-8">
-                                <p className="text-xl text-gray-400">Mesa sin ocupar</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-bold mb-3">Productos ({selectedTable.products.length})</h3>
-                                    <div className="space-y-3 max-h-60 overflow-y-auto">
-                                        {selectedTable.products.map((product) => (
-                                            <div
-                                                key={product.id}
-                                                className="bg-gray-50 rounded-lg p-3 flex justify-between items-center"
-                                            >
-                                                <div className="flex-1">
-                                                    <p className="font-semibold">{product.name}</p>
-                                                    {product.note && (
-                                                        <p className="text-xs text-gray-600 flex items-center mt-1">
-                                                            {product.note.toLowerCase().includes("sin") ? 
-                                                                <FaTimes className="text-red-500 mr-1" />
-                                                            : <FaPlus className="text-green-600 mr-1" />}
-                                                            {product.note}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center space-x-3">
-                                                    <span className="bg-white px-2 py-1 rounded border text-sm font-semibold">
-                                                        X{product.quantity}
-                                                    </span>
-                                                    <div className="relative" ref={dropdownRef}>
-                                                        <button
-                                                            className="p-1 hover:bg-gray-200 rounded"
-                                                            onClick={() => toggleDropdown(product.id)}
-                                                        >
-                                                            <BsThreeDotsVertical className="text-gray-500" />
-                                                        </button>
-                                                        {visibleDropdown === product.id && (
-                                                            <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-10">
-                                                                <button
-                                                                    ref={buttonRef}
-                                                                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center"
-                                                                    onClick={() => {
-                                                                        setSelectedProduct(product);
-                                                                        setIsModalOpen(true);
-                                                                    }}
-                                                                >
-                                                                    <FaTrashAlt className="mr-2" />
-                                                                    Eliminar producto
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-between space-x-4">
-                                    <button
-                                        className="bg-green-600 text-white text-lg font-bold cursor-pointer rounded-md py-3 px-6 flex-1"
-                                        onClick={() => setActiveModal("realizado")}
-                                    >
-                                        Realizado
-                                    </button>
-                                    <button
-                                        className="bg-red-600 text-white text-lg font-bold cursor-pointer rounded-md py-3 px-6 flex-1"
-                                        onClick={() => setActiveModal("cancelar")}
-                                    >
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {activeModal === "realizado" && (
-                <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
-                    onClick={() => setActiveModal(null)}
-                >
-                    <div
-                        className="bg-white rounded-lg p-6 modal"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <p className="text-lg font-bold mb-4">El producto está listo para entregar</p>
-                        <button
-                            className="bg-green-500 text-white px-4 py-2 rounded-md"
-                            onClick={handleCompleteOrder}
-                        >
-                            Aceptar
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {activeModal === "cancelar" && (
-                <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
-                    onClick={() => setActiveModal(null)}
-                >
-                    <div
-                        className="bg-white rounded-lg p-6 modal"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <p className="text-lg font-bold mb-4">¿Estás seguro de cancelar la orden?</p>
-                        <div className="flex justify-end space-x-4">
-                            <button
-                                className="bg-gray-300 px-4 py-2 rounded-md"
-                                onClick={() => setActiveModal(null)}
-                            >
-                                No
-                            </button>
-                            <button
-                                className="bg-red-500 text-white px-4 py-2 rounded-md"
-                                onClick={handleCancelOrder}
-                            >
-                                Sí
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isModalOpen && selectedProduct && (
-                <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
-                    onClick={() => setIsModalOpen(false)}
-                >
-                    <div
-                        className="bg-white rounded-lg p-6 modal"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <p className="text-lg font-bold mb-4">
-                            ¿Seguro que desea eliminar el producto "{selectedProduct.name}"?
-                        </p>
-                        <div className="flex justify-end space-x-4">
-                            <button
-                                className="bg-gray-300 px-4 py-2 rounded-md"
-                                onClick={() => setIsModalOpen(false)}
-                            >
-                                No
-                            </button>
-                            <button
-                                className="bg-red-500 text-white px-4 py-2 rounded-md"
-                                onClick={() => handleDeleteProduct(selectedProduct.id)}
-                            >
-                                Sí
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Componente de modales */}
+            <ModalCocina
+                isTableDetailModalOpen={isTableDetailModalOpen}
+                setIsTableDetailModalOpen={setIsTableDetailModalOpen}
+                selectedTable={selectedTable}
+                visibleDropdown={visibleDropdown}
+                toggleDropdown={toggleDropdown}
+                setSelectedProduct={setSelectedProduct}
+                setIsModalOpen={setIsModalOpen}
+                setActiveModal={setActiveModal}
+                activeModal={activeModal}
+                handleCompleteOrder={handleCompleteOrder}
+                handleCancelOrder={handleCancelOrder}
+                isModalOpen={isModalOpen}
+                selectedProduct={selectedProduct}
+                handleCancelProduct={handleCancelProduct}
+            />
 
             <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b">
                 <button
-                    className={`px-4 py-2 cursor-pointer ${
-                        view === "all" ? "border-b-2 border-green-600 font-bold" : ""
-                    }`}
+                    className={`px-4 py-2 cursor-pointer ${view === "all" ? "border-b-2 border-green-600 font-bold" : ""
+                        }`}
                     onClick={() => setView("all")}
                 >
                     Comandas Recibidas
                 </button>
                 <button
-                    className={`px-4 py-2 cursor-pointer ${
-                        view === "completed" ? "border-b-2 border-green-600 font-bold" : ""
-                    }`}
+                    className={`px-4 py-2 cursor-pointer ${view === "completed" ? "border-b-2 border-green-600 font-bold" : ""
+                        }`}
                     onClick={() => setView("completed")}
                 >
                     Comandas Completadas
                 </button>
                 <button
-                    className={`px-4 py-2 cursor-pointer ${
-                        view === "cancelled" ? "border-b-2 border-green-600 font-bold" : ""
-                    }`}
+                    className={`px-4 py-2 cursor-pointer ${view === "finished" ? "border-b-2 border-green-600 font-bold" : ""
+                        }`}
+                    onClick={() => setView("finished")}
+                >
+                    Comandas Finalizadas
+                </button>
+                <button
+                    className={`px-4 py-2 cursor-pointer ${view === "cancelled" ? "border-b-2 border-green-600 font-bold" : ""
+                        }`}
                     onClick={() => setView("cancelled")}
                 >
                     Comandas Canceladas
@@ -428,16 +483,20 @@ export default function VistaCocina() {
                                             <div className="flex items-center mb-2">
                                                 <MdTableBar className="text-lg mr-2" />
                                                 <p className="font-bold text-base">Mesa {table.tableNumber}</p>
-                                                <GoDotFill className="text-green-600 mx-1 text-sm" />
-                                                <span className={`px-1.5 py-0.5 text-xs rounded ${
-                                                    table.status === "Ocupado" 
-                                                        ? "bg-blue-100 text-blue-800" 
-                                                        : "bg-orange-100 text-orange-800"
-                                                }`}>
-                                                    {table.status}
-                                                </span>
+                                                <GoDotFill className="text-blue-800 mx-1 text-sm" />
+                                                {/* Solo mostrar Pendiente para comandas activas */}
+                                                {!table.isEmpty && (
+                                                    <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
+                                                        Pendiente
+                                                    </span>
+                                                )}
+                                                {table.isEmpty && (
+                                                    <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 rounded">
+                                                        Sin ocupar
+                                                    </span>
+                                                )}
                                             </div>
-                                            
+
                                             <div className="flex justify-between text-xs text-gray-500 mb-2">
                                                 <div className="flex items-center">
                                                     <LuCalendarDays className="mr-1" />
@@ -445,7 +504,7 @@ export default function VistaCocina() {
                                                 </div>
                                                 <div className="flex items-center">
                                                     <BsClock className="mr-1" />
-                                                    <span>{new Date(table.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                    <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                 </div>
                                             </div>
 
@@ -487,7 +546,7 @@ export default function VistaCocina() {
                         </div>
                     </div>
                 )}
-                
+
                 {view === "completed" && (
                     <div>
                         <p className="text-lg font-bold mb-4">Comandas Completadas:</p>
@@ -497,7 +556,7 @@ export default function VistaCocina() {
                             ) : (
                                 completedTables.map((table) => (
                                     <div
-                                        key={table.tableNumber}
+                                        key={`${table.tableNumber}-${table.orderId}-completed`}
                                         className="cursor-pointer"
                                         onClick={() => openTableDetail(table)}
                                     >
@@ -508,10 +567,10 @@ export default function VistaCocina() {
                                                     <p className="font-bold text-base">Mesa {table.tableNumber}</p>
                                                     <GoDotFill className="text-green-600 mx-1 text-sm" />
                                                     <span className="px-1.5 py-0.5 text-xs bg-green-100 text-green-800 rounded">
-                                                        Completado
+                                                        Preparado
                                                     </span>
                                                 </div>
-                                                
+
                                                 <div className="flex justify-between text-xs text-gray-500 mb-2">
                                                     <div className="flex items-center">
                                                         <LuCalendarDays className="mr-1" />
@@ -519,7 +578,7 @@ export default function VistaCocina() {
                                                     </div>
                                                     <div className="flex items-center">
                                                         <BsClock className="mr-1" />
-                                                        <span>{new Date(table.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                        <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                     </div>
                                                 </div>
 
@@ -555,6 +614,74 @@ export default function VistaCocina() {
                     </div>
                 )}
 
+                {view === "finished" && (
+                    <div>
+                        <p className="text-lg font-bold mb-4">Comandas Finalizadas:</p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                            {finishedTables.length === 0 ? (
+                                <p className="text-gray-500 text-center col-span-full">No hay comandas finalizadas</p>
+                            ) : (
+                                finishedTables.map((table) => (
+                                    <div
+                                        key={`${table.tableNumber}-${table.orderId}-finished`}
+                                        className="cursor-pointer"
+                                        onClick={() => openTableDetail(table)}
+                                    >
+                                        <div className="border-l-gray-600 border-l-5 bg-white shadow-md rounded-lg h-40 flex flex-col">
+                                            <div className="p-3 flex-grow flex flex-col">
+                                                <div className="flex items-center mb-2">
+                                                    <MdTableBar className="text-lg mr-2" />
+                                                    <p className="font-bold text-base">Mesa {table.tableNumber}</p>
+                                                    <GoDotFill className="text-gray-600 mx-1 text-sm" />
+                                                    <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 rounded">
+                                                        Finalizado
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex justify-between text-xs text-gray-500 mb-2">
+                                                    <div className="flex items-center">
+                                                        <LuCalendarDays className="mr-1" />
+                                                        <span>{new Date(table.timestamp).toLocaleDateString()}</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <BsClock className="mr-1" />
+                                                        <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex-grow">
+                                                    <p className="text-xs text-gray-500 font-semibold mb-1">
+                                                        Productos ({table.products.length})
+                                                    </p>
+                                                    {table.products.length > 0 && (
+                                                        <div className="bg-gray-50 rounded p-2 mb-1">
+                                                            <div className="flex justify-between items-center">
+                                                                <p className={`font-semibold text-xs truncate pr-1 ${table.products[0].status === 'Cancelado' ? 'line-through text-red-500' : ''
+                                                                    }`}>
+                                                                    {table.products[0].name}
+                                                                </p>
+                                                                <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
+                                                                    X{table.products[0].quantity}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {table.products.length > 1 && (
+                                                        <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
+                                                            <IoMdInformationCircleOutline className="mr-1" />
+                                                            <span className="text-center">Click para ver más</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {view === "cancelled" && (
                     <div>
                         <p className="text-lg font-bold mb-4">Comandas Canceladas:</p>
@@ -564,7 +691,7 @@ export default function VistaCocina() {
                             ) : (
                                 cancelledTables.map((table) => (
                                     <div
-                                        key={table.tableNumber}
+                                        key={`${table.tableNumber}-${table.orderId}-cancelled`}
                                         className="cursor-pointer"
                                         onClick={() => openTableDetail(table)}
                                     >
@@ -578,7 +705,7 @@ export default function VistaCocina() {
                                                         Cancelado
                                                     </span>
                                                 </div>
-                                                
+
                                                 <div className="flex justify-between text-xs text-gray-500 mb-2">
                                                     <div className="flex items-center">
                                                         <LuCalendarDays className="mr-1" />
@@ -586,7 +713,7 @@ export default function VistaCocina() {
                                                     </div>
                                                     <div className="flex items-center">
                                                         <BsClock className="mr-1" />
-                                                        <span>{new Date(table.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                        <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                     </div>
                                                 </div>
 
@@ -597,7 +724,7 @@ export default function VistaCocina() {
                                                     {table.products.length > 0 && (
                                                         <div className="bg-gray-50 rounded p-2 mb-1">
                                                             <div className="flex justify-between items-center">
-                                                                <p className="font-semibold text-xs truncate pr-1">
+                                                                <p className="font-semibold text-xs truncate pr-1 line-through text-red-500">
                                                                     {table.products[0].name}
                                                                 </p>
                                                                 <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
