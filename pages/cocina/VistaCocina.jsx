@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from 'next/router';
 import { FaTrashAlt, FaTimes, FaPlus } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
 import { MdTableBar } from "react-icons/md";
@@ -9,6 +10,7 @@ import { getTables } from "../../useCases/getTables.js";
 import getOrderTickets from "../../useCases/getOrderTickets.js";
 
 export default function VistaCocina() {
+    const router = useRouter();
     const [visibleDropdown, setVisibleDropdown] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeModal, setActiveModal] = useState(null);
@@ -16,6 +18,7 @@ export default function VistaCocina() {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [view, setView] = useState("all");
     const [isTableDetailModalOpen, setIsTableDetailModalOpen] = useState(false);
+    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
     const dropdownRef = useRef(null);
     const buttonRef = useRef(null);
 
@@ -34,6 +37,13 @@ export default function VistaCocina() {
                 getOrderTickets(),
                 getTables()
             ]);
+
+            // Verificar si hay error 403 en getTables
+            if (tablesData.error && tablesData.status === 403) {
+                setShowSubscriptionModal(true);
+                setLoading(false);
+                return;
+            }
 
             console.log("Orders data:", ordersData);
             console.log("Tables data:", tablesData);
@@ -179,8 +189,54 @@ export default function VistaCocina() {
 
     const allActiveTables = apiTables;
 
+    const handleGoToPayments = () => {
+        setShowSubscriptionModal(false);
+        router.push('/payments');
+    };
+
     return (
         <div className="w-full mt-16">
+            {/* Modal de suscripción */}
+            {showSubscriptionModal && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={() => setShowSubscriptionModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-lg p-8 modal max-w-md w-full mx-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="text-center">
+                            <div className="mb-4">
+                                <div className="w-16 h-16 bg-green-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">Suscripción Requerida</h2>
+                                <p className="text-gray-600 text-lg">
+                                    Favor de renovar su suscripción para continuar usando el sistema
+                                </p>
+                            </div>
+                            <div className="flex justify-center space-x-4">
+                                <button
+                                    onClick={() => setShowSubscriptionModal(false)}
+                                    className="bg-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                                >
+                                    Cerrar
+                                </button>
+                                <button
+                                    onClick={handleGoToPayments}
+                                    className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+                                >
+                                    Ir a pagos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isTableDetailModalOpen && selectedTable && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 p-4"
