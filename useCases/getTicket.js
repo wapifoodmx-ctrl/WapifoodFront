@@ -1,7 +1,7 @@
 export const getTicket = async (orderUuid) => {
     try {
         // Obtener el token del localStorage
-        const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         
         if (!token) {
             throw new Error('No se encontró el token de autenticación');

@@ -143,7 +143,7 @@ export default function MenuCliente() {
 
     // Verificar token al cargar el componente
     useEffect(() => {
-        const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         const mesaGuardada = localStorage.getItem('numeroMesa');
         
         if (!token) {

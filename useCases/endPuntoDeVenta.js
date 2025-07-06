@@ -1,4 +1,4 @@
-export const endPuntoDeVenta1 = async (orderUuid, metodoPago) => {
+export const endPuntoDeVenta = async (orderUuid, metodoPago) => {
     try {
         // Obtener el token del localStorage
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
