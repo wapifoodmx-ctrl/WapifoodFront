@@ -1,3 +1,4 @@
+import { AiTwotonePrinter } from "react-icons/ai";
 import { IoMdTime } from "react-icons/io";
 import { FaCheck } from "react-icons/fa6";
 import { LuNotebookPen } from "react-icons/lu";
@@ -46,6 +47,17 @@ export default function PlanDeVentas() {
             ],
             image: Pntoventa,
         },
+        {
+            id: 4,
+            icon: <AiTwotonePrinter className="text-3xl bg-green-200 p-2 w-9 h-8 rounded-full" />,
+            title: "Imprime tikets desde Wapiticket",
+            features: [
+                "Impresión de tikets de venta",
+                "Busqueda con código QR",
+                "Impresora térmica incluida",
+            ],
+            image: Pntoventa,
+        },
     ];
 
     const [planesAdicionales, setPlanesAdicionales] = useState([
@@ -71,7 +83,7 @@ export default function PlanDeVentas() {
         },
         {
             id: 3,
-            title: "Plan Restaurante +",
+            title: "Plan Restaurante Plus",
             description: "App de punto de venta + 25 mesas para tu negocio.",
             price: "$350.00 mxn al mes",
             promoPrice: "$300.00 mxn al mes",
@@ -79,6 +91,36 @@ export default function PlanDeVentas() {
             buttonText: "Seleccionar",
             prop: "empresarial",
         },
+        {
+            id: 4,
+            title: "Plan Ventas + Impresora",
+            description: "App de punto de venta + Impresora + un año de servicio.",
+            price: "$1700.00 mxn al mes",
+            promoPrice: "$1500.00 mxn al mes",
+            promoText: "Precio de apertura",
+            buttonText: "Seleccionar",
+            prop: "premium",
+        },
+        {
+            id: 5,
+            title: "Plan Restaurante + Impresora",
+            description: "App de punto de venta + 15 mesas para tu negocio + impresora + 1 año de servicio.",
+            price: "$2700.00 mxn al mes",
+            promoPrice: "$2500.00 mxn al mes",
+            promoText: "Precio de apertura",
+            buttonText: "Seleccionar",
+            prop: "max",
+        },
+        {
+            id: 6,
+            title: "Plan Restaurante Plus + Impresora",
+            description: "App de punto de venta + 25 mesas para tu negocio + impresora + 1 año de servicio.",
+            price: "$3700.00 mxn al mes",
+            promoPrice: "$3500.00 mxn al mes",
+            promoText: "Precio de apertura",
+            buttonText: "Seleccionar",
+            prop: "plus",    
+        }
     ]);
 
     async function getLink(prop) {

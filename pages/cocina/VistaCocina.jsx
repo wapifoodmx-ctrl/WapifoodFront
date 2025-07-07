@@ -31,6 +31,9 @@ export default function VistaCocina() {
     const [completedTables, setCompletedTables] = useState([]);
     const [cancelledTables, setCancelledTables] = useState([]);
     const [finishedTables, setFinishedTables] = useState([]);
+    
+    // Agregar el estado que falta
+    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
     const fetchTablesData = async () => {
         try {
