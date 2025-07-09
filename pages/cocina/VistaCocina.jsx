@@ -12,8 +12,6 @@ import { cancelOrder } from "../../useCases/cancelOrder.js";
 import { endPuntoDeVenta } from "../../useCases/endPuntoDeVenta.js";
 import ModalCocina from "./modalCocina.jsx";
 
-// ...existing code...
-
 export default function VistaCocina() {
     const router = useRouter();
     const [visibleDropdown, setVisibleDropdown] = useState(null);
@@ -32,7 +30,6 @@ export default function VistaCocina() {
     const [cancelledTables, setCancelledTables] = useState([]);
     const [finishedTables, setFinishedTables] = useState([]);
     
-    // Agregar el estado que falta
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
     const fetchTablesData = async () => {
@@ -44,7 +41,6 @@ export default function VistaCocina() {
                 getTables()
             ]);
 
-            // Verificar si hay error 403 en getTables
             if (tablesData.error && tablesData.status === 403) {
                 setShowSubscriptionModal(true);
                 setLoading(false);
@@ -54,20 +50,17 @@ export default function VistaCocina() {
             console.log("Orders data:", ordersData);
             console.log("Tables data:", tablesData);
 
-            // Agrupar órdenes por mesa y tipo de producto
             const tableGroups = {};
 
             ordersData.forEach(order => {
                 const tableNumber = order.mesa_number;
                 const realStatus = tablesData.table_status[tableNumber.toString()] || "Libre";
 
-                // Separar productos por estado
                 const pendingProducts = order.products.filter(product => product.order_detail_status === "Pendiente");
                 const completedProducts = order.products.filter(product => product.order_detail_status === "Preparado");
                 const finishedProducts = order.products.filter(product => product.order_detail_status === "Finalizado");
                 const cancelledProducts = order.products.filter(product => product.order_detail_status === "Cancelado");
 
-                // Crear entrada para productos pendientes
                 if (pendingProducts.length > 0) {
                     const pendingKey = `${tableNumber}-${order.id_orders}-pending`;
                     if (!tableGroups[pendingKey]) {
@@ -96,12 +89,10 @@ export default function VistaCocina() {
                         });
                     });
 
-                    // Agregar método de pago y otros datos de la orden
                     tableGroups[pendingKey].metodoPago = order.metodo_pago || 'efectivo';
                     tableGroups[pendingKey].orders.push(order);
                 }
 
-                // Crear entrada para productos completados/preparados
                 if (completedProducts.length > 0) {
                     const completedKey = `${tableNumber}-${order.id_orders}-completed`;
                     if (!tableGroups[completedKey]) {
@@ -133,7 +124,6 @@ export default function VistaCocina() {
                     tableGroups[completedKey].orders.push(order);
                 }
 
-                // Crear entrada para productos finalizados - CADA ORDEN POR SEPARADO
                 if (finishedProducts.length > 0) {
                     const finishedKey = `${tableNumber}-${order.id_orders}-finished`;
                     if (!tableGroups[finishedKey]) {
@@ -150,7 +140,6 @@ export default function VistaCocina() {
                         };
                     }
 
-                    // Solo incluir los productos de ESTA orden específica
                     order.products.forEach(product => {
                         tableGroups[finishedKey].products.push({
                             id: product.id_orders_details,
@@ -167,7 +156,6 @@ export default function VistaCocina() {
                 }
             });
 
-            // Filtrar órdenes completamente canceladas
             const cancelledOrders = ordersData.filter(order => order.order_status === "Cancelado");
 
             cancelledOrders.forEach(order => {
@@ -204,7 +192,6 @@ export default function VistaCocina() {
                 tableGroups[cancelledKey].orders.push(order);
             });
 
-            // Agregar mesas no disponibles
             const unavailableTables = Object.entries(tablesData.table_status)
                 .filter(([tableNumber, status]) => status === "NoDisponible")
                 .map(([tableNumber, status]) => ({
@@ -225,7 +212,6 @@ export default function VistaCocina() {
                 return a.isEmpty - b.isEmpty;
             });
 
-            // Separar por tipo
             const pendingTables = allTables.filter(table => table.type === 'pending' || table.isEmpty);
             const completedTables = allTables.filter(table => table.type === 'completed');
             const finishedTables = allTables.filter(table => table.type === 'finished');
@@ -256,8 +242,6 @@ export default function VistaCocina() {
         setVisibleDropdown(visibleDropdown === id ? null : id);
     };
 
-
-
     const handleCancelProduct = async (productId) => {
         try {
             const product = selectedTable.products.find(p => p.id === productId);
@@ -266,17 +250,14 @@ export default function VistaCocina() {
                 return;
             }
 
-            // Usar el orderUuid de la mesa seleccionada (más confiable)
             const orderUuid = selectedTable.orderUuid;
 
-            // Actualizar el estado del producto a "Cancelado"
             await updateProductStatus(orderUuid, product.id, 'Cancelado');
 
-            // Recargar los datos para reflejar los cambios
             await fetchTablesData();
 
             setIsModalOpen(false);
-            setVisibleDropdown(null); // Cerrar el dropdown
+            setVisibleDropdown(null);
             console.log('Producto cancelado exitosamente');
         } catch (error) {
             console.error('Error al cancelar el producto:', error);
@@ -291,7 +272,6 @@ export default function VistaCocina() {
                 return;
             }
 
-            // Filtrar solo productos que no estén cancelados
             const activeProducts = selectedTable.products.filter(p => p.status !== 'Cancelado');
             
             if (activeProducts.length === 0) {
@@ -301,7 +281,6 @@ export default function VistaCocina() {
 
             const orderUuid = selectedTable.orderUuid;
 
-            // CONDICIÓN ESPECIAL: Si es la mesa 1, usar endPuntoDeVenta
             if (selectedTable.tableNumber === 1) {
                 console.log('Mesa 1 detectada - usando endPuntoDeVenta');
                 
@@ -313,10 +292,8 @@ export default function VistaCocina() {
                     tableNumber: selectedTable.tableNumber
                 });
 
-                // Usar endPuntoDeVenta para finalizar la orden completa
                 await endPuntoDeVenta(orderUuid, metodoPago);
 
-                // Mover la mesa de pendientes a finalizadas
                 setApiTables((prevTables) =>
                     prevTables.filter((table) => {
                         if (table.orderUuid === orderUuid) {
@@ -333,15 +310,12 @@ export default function VistaCocina() {
 
                 console.log('Orden finalizada exitosamente con endPuntoDeVenta');
             } else {
-                // FLUJO NORMAL: Para todas las demás mesas, usar updateProductStatus
                 console.log('Mesa normal - usando updateProductStatus');
                 
                 const productIds = activeProducts.map(product => product.id);
 
-                // Actualizar el estado de todos los productos activos a "Preparado"
                 await updateProductStatus(orderUuid, productIds, 'Preparado');
 
-                // Mover la mesa de pendientes a completadas
                 setApiTables((prevTables) =>
                     prevTables.filter((table) => {
                         if (table.orderUuid === orderUuid) {
@@ -359,7 +333,6 @@ export default function VistaCocina() {
                 console.log('Orden completada exitosamente con updateProductStatus');
             }
 
-            // Recargar los datos para reflejar los cambios
             await fetchTablesData();
 
             setActiveModal(null);
@@ -382,26 +355,22 @@ export default function VistaCocina() {
 
             console.log('Cancelando orden completa:', orderUuid);
 
-            // Cancelar toda la orden usando la función cancelOrder
             await cancelOrder(orderUuid);
 
-            // Actualizar el estado local - mover la mesa de pendientes a canceladas
             setApiTables((prevTables) =>
                 prevTables.filter((table) => {
                     if (table.orderUuid === orderUuid) {
-                        // Agregar a la lista de canceladas
                         setCancelledTables((prevCancelled) => [...prevCancelled, {
                             ...table,
                             type: 'cancelled',
                             products: table.products.map(p => ({ ...p, status: 'Cancelado' }))
                         }]);
-                        return false; // Remover de pendientes
+                        return false;
                     }
                     return true;
                 })
             );
 
-            // Recargar los datos para reflejar los cambios del servidor
             await fetchTablesData();
 
             setActiveModal(null);
@@ -427,6 +396,28 @@ export default function VistaCocina() {
 
     return (
         <div className="w-full mt-16">
+            {/* Modal de suscripción */}
+            {showSubscriptionModal && (
+                <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+                        <h2 className="text-xl font-bold mb-4 text-red-600">Suscripción Requerida</h2>
+                        <p className="text-gray-700 mb-6">
+                            Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
+                            Por favor, renueva tu suscripción para continuar.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleGoToPayments}
+                                className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                            >
+                                Ir a Pagos
+                            </button>
+                           
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Componente de modales */}
             <ModalCocina
                 isTableDetailModalOpen={isTableDetailModalOpen}
@@ -501,7 +492,6 @@ export default function VistaCocina() {
                                                 <MdTableBar className="text-lg mr-2" />
                                                 <p className="font-bold text-base">Mesa {table.tableNumber}</p>
                                                 <GoDotFill className="text-blue-800 mx-1 text-sm" />
-                                                {/* Solo mostrar Pendiente para comandas activas */}
                                                 {!table.isEmpty && (
                                                     <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
                                                         Pendiente

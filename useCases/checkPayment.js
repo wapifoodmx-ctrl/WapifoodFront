@@ -1,10 +1,10 @@
-async function checkPayment() {
+export async function checkPayment() {
     try {
-        // Obtener el token del localStorage
-        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        // Obtener el token del localStorage o sessionStorage
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         
         if (!token) {
-            throw new Error('Token de autenticación no encontrado');
+            throw new Error('No se encontró un token en el localStorage o sessionStorage');
         }
 
         // Realizar la petición GET
@@ -30,6 +30,3 @@ async function checkPayment() {
         throw error;
     }
 }
-
-// Exportar la función
-export { checkPayment };

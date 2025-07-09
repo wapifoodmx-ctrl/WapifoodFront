@@ -8,16 +8,19 @@ import { FiFilter } from "react-icons/fi";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { getProducts } from "@/useCases/getProducts";
 import { createSimpleOrder } from "@/useCases/OrderPntoVenta";
 import { getFinalOrder } from "@/useCases/getfinalOrderId";
 import TicketModal from "@/components/TicketModal";
 import { endOrderPuntoDeVenta } from "@/useCases/endOrderPuntoDeVenta";
+import { checkPayment } from "@/useCases/checkPayment";
 
 // Mock de ingredientes general
 const mockIngredientes = ["Tomate", "Cebolla", "Lechuga", "Queso", "Salsa"];
 
 export default function Pntoventa() {
+    const router = useRouter();
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Categorías");
     const [disponibilidadSeleccionada, setDisponibilidadSeleccionada] = useState("Disponibles");
     const [busqueda, setBusqueda] = useState("");
@@ -36,6 +39,7 @@ export default function Pntoventa() {
     const [totalFinal, setTotalFinal] = useState(0);
     const [metodoPago, setMetodoPago] = useState('efectivo');
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
     
     // Estados para el TicketModal
     const [showTicketModal, setShowTicketModal] = useState(false);
@@ -97,43 +101,36 @@ export default function Pntoventa() {
         }
     };
 
-    // Obtener productos desde la API
+    // Obtener productos desde la API - MODIFICADO para verificar suscripción
     useEffect(() => {
         const fetchProductos = async () => {
             try {
+                // Verificar suscripción primero
+                const subscriptionData = await checkPayment();
+                if (!subscriptionData.has_active_subscription) {
+                    setShowSubscriptionModal(true);
+                    return;
+                }
+
                 const data = await getProducts();
                 setProductos(data); // Guardar los productos obtenidos
                 setProductosFiltrados(data); // Inicializar los productos filtrados
             } catch (error) {
                 console.error("Error al obtener los productos:", error.message);
                 setProductos([]); // Si ocurre un error, deja los productos vacíos
+                // Si hay error, también mostrar modal de suscripción
+                setShowSubscriptionModal(true);
             }
         };
 
         fetchProductos();
     }, []);
 
-    useEffect(() => {
-        const productosFiltradosPorCategoria =
-            categoriaSeleccionada === "Categorías" || categoriaSeleccionada === "Todos los platillos"
-                ? productos
-                : productos.filter((producto) => producto.category_name === categoriaSeleccionada);
-
-        const productosFiltradosPorDisponibilidad =
-            disponibilidadSeleccionada === "Todas"
-                ? productosFiltradosPorCategoria
-                : productosFiltradosPorCategoria.filter((producto) =>
-                    disponibilidadSeleccionada === "Disponibles"
-                        ? producto.status === "activo"
-                        : producto.status !== "activo"
-                );
-
-        const productosFiltradosPorBusqueda = productosFiltradosPorDisponibilidad.filter((producto) =>
-            producto.name.toLowerCase().includes(busqueda.toLowerCase())
-        );
-
-        setProductosFiltrados(productosFiltradosPorBusqueda);
-    }, [categoriaSeleccionada, disponibilidadSeleccionada, busqueda, productos]);
+    // Función para ir a la página de pagos
+    const handleGoToPayments = () => {
+        setShowSubscriptionModal(false);
+        router.push('/payments');
+    };
 
     // Función para abrir la modal de detalles del producto
     const openModal = (producto) => {
@@ -336,6 +333,27 @@ export default function Pntoventa() {
     return (
         <section className="mt-16">
             <Navbar />
+
+            {/* Modal de suscripción */}
+            {showSubscriptionModal && (
+                <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+                        <h2 className="text-xl font-bold mb-4 text-red-600">Suscripción Requerida</h2>
+                        <p className="text-gray-700 mb-6">
+                            Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
+                            Por favor, renueva tu suscripción para continuar.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleGoToPayments}
+                                className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                            >
+                                Ir a Pagos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Barra de búsqueda y dropdowns */}
             <div className="p-4 ">

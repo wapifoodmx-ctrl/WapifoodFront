@@ -3,18 +3,29 @@ import { BsClock } from "react-icons/bs";
 import { IoClose } from "react-icons/io5";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { QRCodeCanvas } from 'qrcode.react';
 import getOrderTickets from "../../useCases/getOrderTickets";
+import { checkPayment } from "../../useCases/checkPayment";
 
 export default function Ticketview() {
+    const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [ticketsData, setTicketsData] = useState([]);
     const [activeTab, setActiveTab] = useState("hoy");
+    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
     useEffect(() => {
         const fetchTickets = async () => {
             try {
+                // Verificar suscripción primero
+                const subscriptionData = await checkPayment();
+                if (!subscriptionData.has_active_subscription) {
+                    setShowSubscriptionModal(true);
+                    return;
+                }
+
                 const apiData = await getOrderTickets();
                 
                 // Agrupar órdenes por order_uuid y combinar productos
@@ -67,6 +78,8 @@ export default function Ticketview() {
                 setTicketsData(mappedTickets);
             } catch (error) {
                 console.error("Error fetching tickets:", error);
+                // Si hay error, también mostrar modal de suscripción
+                setShowSubscriptionModal(true);
             }
         };
 
@@ -76,6 +89,11 @@ export default function Ticketview() {
     const handleCardClick = (ticket) => {
         setSelectedTicket(ticket);
         setIsModalOpen(true);
+    };
+
+    const handleGoToPayments = () => {
+        setShowSubscriptionModal(false);
+        router.push('/payments');
     };
 
     // Función para obtener el total del ticket desde la API
@@ -114,6 +132,27 @@ export default function Ticketview() {
 
     return (
         <div className="w-full mt-16">
+            {/* Modal de suscripción */}
+            {showSubscriptionModal && (
+                <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+                        <h2 className="text-xl font-bold mb-4 text-red-600">Suscripción Requerida</h2>
+                        <p className="text-gray-700 mb-6">
+                            Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
+                            Por favor, renueva tu suscripción para continuar.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleGoToPayments}
+                                className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                            >
+                                Ir a Pagos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Pestañas - Mismo estilo que VistaCocina */}
             <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b">
                 <button
