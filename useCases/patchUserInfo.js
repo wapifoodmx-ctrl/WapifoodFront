@@ -21,6 +21,7 @@ export async function patchUserInfo(userData) {
         if (userData.nombre_restaurante) formData.append('nombre_restaurante', userData.nombre_restaurante);
         if (userData.whatsapp) formData.append('whatsapp', userData.whatsapp);
         if (userData.horario) formData.append('horario', userData.horario);
+        if (userData.codigo_confirmacion) formData.append('codigo_confirmacion', userData.codigo_confirmacion);
         
         // Agregar imagen si existe
         if (userData.image && userData.image instanceof File) {

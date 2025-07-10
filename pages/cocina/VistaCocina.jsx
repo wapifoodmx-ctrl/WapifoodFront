@@ -205,17 +205,33 @@ export default function VistaCocina() {
 
             const allTables = [...Object.values(tableGroups), ...unavailableTables];
 
+            // Ordenar por timestamp descendente (más reciente primero) y luego por número de mesa
             allTables.sort((a, b) => {
-                if (a.status === b.status) {
-                    return a.tableNumber - b.tableNumber;
+                // Primero ordenar por si están vacías (mesas no disponibles van al final)
+                if (a.isEmpty !== b.isEmpty) {
+                    return a.isEmpty - b.isEmpty;
                 }
-                return a.isEmpty - b.isEmpty;
+                
+                // Para mesas con órdenes, ordenar por timestamp descendente (más reciente primero)
+                if (!a.isEmpty && !b.isEmpty) {
+                    const dateA = new Date(a.timestamp);
+                    const dateB = new Date(b.timestamp);
+                    return dateB.getTime() - dateA.getTime(); // Descendente
+                }
+                
+                // Para mesas vacías, ordenar por número de mesa
+                return a.tableNumber - b.tableNumber;
             });
 
             const pendingTables = allTables.filter(table => table.type === 'pending' || table.isEmpty);
             const completedTables = allTables.filter(table => table.type === 'completed');
             const finishedTables = allTables.filter(table => table.type === 'finished');
             const cancelledTables = allTables.filter(table => table.type === 'cancelled');
+
+            // Ordenar cada tipo por timestamp descendente también
+            completedTables.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            finishedTables.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            cancelledTables.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
             setApiTables(pendingTables);
             setCompletedTables(completedTables);

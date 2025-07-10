@@ -4,9 +4,10 @@ import { FaCheck } from "react-icons/fa6";
 import { LuNotebookPen } from "react-icons/lu";
 import { GiModernCity } from "react-icons/gi";
 import Image from "next/image";
-import Vistadecocina from "@/pages/assets/images/Vistadecocina.png";
+import Cocina from "@/pages/assets/images/Cocina.png";
 import Menu1 from "@/pages/assets/images/Menu1.png";
 import Pntoventa from "@/pages/assets/images/Pntoventa.png";
+import Tickets1 from "@/pages/assets/images/Tickets1.png";
 import Creditos from "@/components/Creditos";
 import getPaymentsLink, { getAllPaymentLinks } from "@/useCases/getPaymentsLink";
 import { useEffect, useState } from "react";
@@ -23,7 +24,7 @@ export default function PlanDeVentas() {
                 "Se registran ventas y rendimiento hasta anualmente",
                 "Grafica tu rendimiento para mejor comprencion",
             ],
-            image: Vistadecocina,
+            image: Cocina,
         },
         {
             id: 2,
@@ -45,7 +46,7 @@ export default function PlanDeVentas() {
                 "Actualízate con la vanguardia tecnológica",
                 "Acepta cualquier forma de pago",
             ],
-            image: Pntoventa,
+            image: Tickets1,
         },
         {
             id: 4,
