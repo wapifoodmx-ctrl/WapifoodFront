@@ -5,15 +5,17 @@ import { IoLocationOutline } from "react-icons/io5";
 import { FaPhoneAlt, FaCheckCircle } from "react-icons/fa";
 import { CiMail } from "react-icons/ci";
 import Image from "next/image";
-import Miokon from "@/pages/assets/images/Miokon.png";
 import Navbar from "@/dashboardComponents/navbar";
 import { useEffect, useState } from "react";
 import { getUserInfo } from "@/useCases/getUserInfo";
 import { patchUserInfo } from "@/useCases/patchUserInfo";
+import Profile from "@/pages/assets/images/Profile.jpg";
 
 // Validaciones con Yup
 const personalInfoSchema = Yup.object().shape({
-  telephone: Yup.string().required("Teléfono es requerido"),
+  telephone: Yup.string()
+    .matches(/^\d{10}$/, 'El teléfono debe tener exactamente 10 números')
+    .required("Teléfono es requerido"),
   restaurantName: Yup.string().required("Nombre del restaurante es requerido"),
   confirmationCode: Yup.string()
     .matches(/^\d{4}$/, 'El código debe tener exactamente 4 números')
@@ -163,8 +165,8 @@ export default function UserPage() {
         <div className="flex flex-col items-center">
           <div className='w-20 h-20 rounded-full overflow-hidden mb-3'>
             <Image 
-              src={userInfo?.image_user?.url || "/default-avatar.png"} 
-              alt="***LOGO" 
+              src={userInfo?.image_user?.url || Profile} 
+              alt= "Imagen de perfil" 
               width={80} 
               height={80} 
               className="object-cover" 
@@ -348,10 +350,20 @@ export default function UserPage() {
                     type="tel" 
                     id="telephone" 
                     name="telephone" 
-                    placeholder="Ej: 55-1234-5678"
+                    placeholder="Ej: 5512345678"
+                    maxLength="10"
                     className="border p-2 rounded" 
+                    onInput={(e) => {
+                      // Solo permitir números
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                      // Limitar a 10 caracteres
+                      if (e.target.value.length > 10) {
+                        e.target.value = e.target.value.slice(0, 10);
+                      }
+                    }}
                   />
                   <ErrorMessage name="telephone" component="div" className="text-red-500 text-sm" />
+                  <p className="text-gray-500 text-xs mt-1">Solo números, máximo 10 dígitos</p>
                 </div>
                 <div className="flex flex-col">
                   <label className="font-bold" htmlFor="whatsapp">WhatsApp</label>

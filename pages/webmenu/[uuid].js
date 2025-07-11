@@ -42,7 +42,7 @@ export default function MenuWebDinamico() {
                     categoria: producto.nombre_categoria,
                     imagen: producto.image_url && producto.image_url.length > 0
                         ? producto.image_url[0]
-                        : Profile,
+                        : null,
                     status: producto.status,
                 });
             });
@@ -190,17 +190,21 @@ export default function MenuWebDinamico() {
             )}
 
             {/* Header del restaurante */}
-            <div className="w-full h-70 shadow-md bg-white flex px-4"> 
+            <div className={`w-full shadow-md bg-white flex px-4 ${
+                restauranteInfo?.image && esValorValido(restauranteInfo.image) 
+                    ? 'h-70' 
+                    : 'h-30'
+            }`}> 
                 <div className="w-full flex items-center justify-center flex-col ">
-                    <Image
-                        src={restauranteInfo?.image && esValorValido(restauranteInfo.image) 
-                            ? `${restauranteInfo.image}`
-                            : Profile}
-                        alt="Perfil"
-                        className="rounded-full w-20 h-20 mr-4 object-contain"
-                        width={48}
-                        height={48}
-                    />
+                    {restauranteInfo?.image && esValorValido(restauranteInfo.image) && (
+                        <Image
+                            src={restauranteInfo.image}
+                            alt="Perfil"
+                            className="rounded-full w-20 h-20 mr-4 object-contain"
+                            width={48}
+                            height={48}
+                        />
+                    )}
                     <p className="font-bold text-2xl ">
                         {restauranteInfo?.nombre_restaurante && esValorValido(restauranteInfo.nombre_restaurante) 
                             ? restauranteInfo.nombre_restaurante 

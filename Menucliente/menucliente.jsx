@@ -19,6 +19,7 @@ import { getFinalOrder } from "@/useCases/getfinalOrderId";
 import { getTables } from "@/useCases/getTables";
 import { updateTableStatus } from "@/useCases/tablesStatus";
 import { endOrder } from "@/useCases/endOrder";
+import getCodigoConfirmacion from "@/useCases/getCodogoConfirmacion";
 import TicketModal from "@/components/TicketModal";
 
 const categoriaOrden = {
@@ -79,6 +80,9 @@ export default function MenuCliente() {
     const [showTicketModal, setShowTicketModal] = useState(false);
     const [completedOrderUuid, setCompletedOrderUuid] = useState(null);
 
+    // Estado para el modal de advertencia de orden activa
+    const [modalOrdenActivaOpen, setModalOrdenActivaOpen] = useState(false);
+
     // Mock para establecer permisos de ticket automáticamente
     useEffect(() => {
         localStorage.setItem('tickets', 'true');
@@ -105,8 +109,14 @@ export default function MenuCliente() {
         }
     };
 
-    // Nueva función para manejar el click en el número de mesa
+    // Función modificada para manejar el click en el número de mesa
     const handleClickMesa = () => {
+        // Verificar si hay una orden activa
+        if (ordenActiva && ordenActiva.order_uuid) {
+            setModalOrdenActivaOpen(true);
+            return;
+        }
+        
         setModalCambioMesaOpen(true);
         setCodigoCambioMesa('');
         setErrorCodigoMesa('');
@@ -114,15 +124,19 @@ export default function MenuCliente() {
 
     // Nueva función para cambiar de mesa
     const confirmarCambioMesa = async () => {
-        if (codigoCambioMesa !== '1234') {
-            setErrorCodigoMesa('Código incorrecto. Intenta nuevamente.');
-            return;
-        }
-
-        setProcesandoCambioMesa(true);
-        setErrorCodigoMesa('');
-
         try {
+            // Obtener el código de confirmación de la API
+            const codigoAPI = await getCodigoConfirmacion();
+            const codigoEsperado = codigoAPI.codigo_confirmacion;
+            
+            if (codigoCambioMesa !== codigoEsperado.toString()) {
+                setErrorCodigoMesa('Código incorrecto. Intenta nuevamente.');
+                return;
+            }
+
+            setProcesandoCambioMesa(true);
+            setErrorCodigoMesa('');
+
             if (numeroMesa) {
                 await updateTableStatus(parseInt(numeroMesa), 'Libre');
             }
@@ -134,8 +148,58 @@ export default function MenuCliente() {
             await cargarMesas();
 
         } catch (error) {
-            console.error('Error al liberar la mesa:', error);
-            setErrorCodigoMesa('Error al cambiar de mesa. Inténtalo nuevamente.');
+            console.error('Error al cambiar de mesa:', error);
+            setErrorCodigoMesa('Error al obtener código de confirmación o al cambiar de mesa.');
+        } finally {
+            setProcesandoCambioMesa(false);
+        }
+    };
+
+    // Nueva función para cerrar sesión
+    const cerrarSesion = async () => {
+        try {
+            // Obtener el código de confirmación de la API
+            const codigoAPI = await getCodigoConfirmacion();
+            const codigoEsperado = codigoAPI.codigo_confirmacion;
+            
+            if (codigoCambioMesa !== codigoEsperado.toString()) {
+                setErrorCodigoMesa('Código incorrecto. Intenta nuevamente.');
+                return;
+            }
+
+            setProcesandoCambioMesa(true);
+            setErrorCodigoMesa('');
+
+            // Cambiar mesa a "Libre" si existe
+            if (numeroMesa) {
+                await updateTableStatus(parseInt(numeroMesa), 'Libre');
+            }
+
+            // Limpiar localStorage
+            localStorage.removeItem('token');
+            localStorage.removeItem('numeroMesa');
+            localStorage.removeItem("carrito1");
+            localStorage.removeItem("historialPedidos1");
+            localStorage.removeItem("ordenActiva1");
+
+            // Limpiar sessionStorage también por si acaso
+            sessionStorage.removeItem('token');
+
+            // Resetear estados
+            setNumeroMesa('');
+            setCarrito([]);
+            setHistorialPedidos([]);
+            setOrdenActiva(null);
+            setTotalFinal(0);
+            setModalCambioMesaOpen(false);
+            setIsAuthenticated(false);
+            
+            // Mostrar modal de login
+            setLoginModalOpen(true);
+
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            setErrorCodigoMesa('Error al obtener código de confirmación o al cerrar sesión.');
         } finally {
             setProcesandoCambioMesa(false);
         }
@@ -786,6 +850,55 @@ export default function MenuCliente() {
                 </nav>
             </header>
 
+            {/* Modal de advertencia de orden activa */}
+            {modalOrdenActivaOpen && (
+                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1003]">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
+                        <div className='text-red-500 text-4xl flex justify-center mb-4'>
+                            <div className='bg-red-500 text-white p-2 rounded-lg'>
+                                <MdTableRestaurant size={32} />
+                            </div>
+                        </div>
+                        <h2 className="text-2xl text-center font-bold text-black mb-2">
+                            No se puede cambiar de mesa
+                        </h2>
+                        <p className='text-center text-gray-600 mb-6'>
+                            No se puede cambiar la mesa porque tienes una orden activa. 
+                            Por favor, termina la orden para poder cambiar de mesa.
+                        </p>
+                        
+                        {ordenActiva && (
+                            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <p className="text-sm text-yellow-800 text-center">
+                                    <strong>Orden Activa:</strong> {ordenActiva.order_uuid.slice(0, 8)}...
+                                </p>
+                                <p className="text-sm text-yellow-800 text-center">
+                                    <strong>Estado:</strong> {ordenActiva.order_status || 'Activa'}
+                                </p>
+                            </div>
+                        )}
+                        
+                        <div className="flex gap-3">
+                            <button
+                                className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-red-600 transition-colors"
+                                onClick={() => setModalOrdenActivaOpen(false)}
+                            >
+                                Entendido
+                            </button>
+                            <button
+                                className="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                onClick={() => {
+                                    setModalOrdenActivaOpen(false);
+                                    terminarOrden();
+                                }}
+                            >
+                                Terminar Orden
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Modal de cambio de mesa */}
             {modalCambioMesaOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1002]">
@@ -793,7 +906,7 @@ export default function MenuCliente() {
                         {procesandoCambioMesa ? (
                             <div className="flex flex-col justify-center items-center h-32">
                                 <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin mb-4"></div>
-                                <p className="text-gray-600">Cambiando de mesa...</p>
+                                <p className="text-gray-600">Procesando...</p>
                             </div>
                         ) : (
                             <>
@@ -804,7 +917,7 @@ export default function MenuCliente() {
                                 </div>
                                 <h2 className="text-2xl text-center font-bold text-black mb-2">Cambiar Mesa</h2>
                                 <p className='text-center text-gray-600 mb-4'>
-                                    Ingrese código de 4 dígitos para cambiar el número de mesa
+                                    Ingrese código de 4 dígitos para cambiar el número de mesa o cerrar sesión
                                 </p>
                                 
                                 <div className="flex flex-col gap-4">
@@ -857,12 +970,26 @@ export default function MenuCliente() {
                                             onClick={confirmarCambioMesa}
                                             disabled={codigoCambioMesa.length !== 4}
                                         >
-                                            Aceptar
+                                            Cambiar Mesa
                                         </button>
                                     </div>
                                     
+                                    {/* Nuevo botón de Cerrar Sesión */}
+                                    <button
+                                        className={`w-full py-2 px-4 rounded-lg transition-colors ${
+                                            codigoCambioMesa.length === 4
+                                                ? 'bg-red-500 text-white hover:bg-red-600'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                        onClick={cerrarSesion}
+                                        disabled={codigoCambioMesa.length !== 4}
+                                    >
+                                        Cerrar Sesión
+                                    </button>
+                                    
                                     <div className="text-center text-xs text-gray-500">
-                                        Al cambiar de mesa, la mesa actual quedará disponible
+                                        Al cambiar de mesa, la mesa actual quedará disponible.<br/>
+                                        Al cerrar sesión se liberará la mesa y perderás todos los datos.
                                     </div>
                                 </div>
                             </>

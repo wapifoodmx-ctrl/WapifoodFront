@@ -2,7 +2,6 @@ import { IoLocationOutline } from "react-icons/io5";
 import { FaWhatsapp } from "react-icons/fa";
 import { FaPhoneAlt } from "react-icons/fa";
 import { MdOutlineWatchLater } from "react-icons/md";
-import Profile from "@/pages/assets/images/Profile.jpg";
 import { FaRegEye } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
 import { TbSoup } from "react-icons/tb";

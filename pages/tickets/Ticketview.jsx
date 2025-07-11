@@ -7,6 +7,9 @@ import { useRouter } from "next/router";
 import { QRCodeCanvas } from 'qrcode.react';
 import getOrderTickets from "../../useCases/getOrderTickets";
 import { checkPayment } from "../../useCases/checkPayment";
+// Importaciones para el selector de fecha
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function Ticketview() {
     const router = useRouter();
@@ -15,6 +18,10 @@ export default function Ticketview() {
     const [ticketsData, setTicketsData] = useState([]);
     const [activeTab, setActiveTab] = useState("hoy");
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+    // Estados para el modal de selección de fecha
+    const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
 
     useEffect(() => {
         const fetchTickets = async () => {
@@ -118,9 +125,42 @@ export default function Ticketview() {
                     return ticketDateOnly.getTime() < today.getTime() && ticketDateOnly.getTime() >= oneWeekAgo.getTime();
                 case "mes":
                     return ticketDateOnly.getTime() < oneWeekAgo.getTime();
+                case "Seleccionar Fecha":
+                    // Si hay fechas seleccionadas, filtrar por ese rango
+                    if (startDate && endDate) {
+                        const start = new Date(startDate);
+                        const end = new Date(endDate);
+                        start.setHours(0, 0, 0, 0);
+                        end.setHours(23, 59, 59, 999);
+                        const ticketDateTime = new Date(ticket.date_time);
+                        return ticketDateTime >= start && ticketDateTime <= end;
+                    }
+                    return []; // No mostrar nada si no hay fechas seleccionadas
                 default:
                     return true;
             }
+        });
+    };
+
+    // Función para manejar el click en la pestaña "Seleccionar Fecha"
+    const handleDateTabClick = () => {
+        setActiveTab("Seleccionar Fecha");
+        setShowDatePickerModal(true);
+    };
+
+    // Función para aplicar el filtro de fechas
+    const handleApplyDateFilter = () => {
+        setShowDatePickerModal(false);
+        // Los tickets se filtrarán automáticamente
+    };
+
+    // Función para formatear fecha
+    const formatDate = (date) => {
+        if (!date) return '';
+        return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
         });
     };
 
@@ -179,6 +219,14 @@ export default function Ticketview() {
                 >
                     Mes
                 </button>
+                <button
+                    className={`px-4 py-2 cursor-pointer ${
+                        activeTab === "Seleccionar Fecha" ? "border-b-2 border-green-600 font-bold" : ""
+                    }`}
+                    onClick={handleDateTabClick}
+                >
+                    Seleccionar Fecha
+                </button>
             </div>
 
             {/* Contenido principal */}
@@ -189,6 +237,7 @@ export default function Ticketview() {
                         {activeTab === "hoy" && "Tickets de Hoy"}
                         {activeTab === "semana" && "Tickets de esta Semana"}
                         {activeTab === "mes" && "Tickets del Mes"}
+                        {activeTab === "Seleccionar Fecha" && "Tickets por Rango de Fecha"}
                     </h2>
                     <p className="text-gray-600 text-sm">
                         {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''} encontrado{filteredTickets.length !== 1 ? 's' : ''}
@@ -197,10 +246,21 @@ export default function Ticketview() {
 
                 {/* Grid de tickets */}
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                    {filteredTickets.length === 0 ? (
+                    {activeTab === "Seleccionar Fecha" && (!startDate || !endDate) ? (
                         <div className="col-span-full text-center py-12">
                             <p className="text-gray-500 text-center">
-                                No hay tickets disponibles para {activeTab === "hoy" ? "hoy" : activeTab === "semana" ? "esta semana" : "este mes"}
+                                Selecciona un rango de fechas para ver los tickets
+                            </p>
+                        </div>
+                    ) : filteredTickets.length === 0 ? (
+                        <div className="col-span-full text-center py-12">
+                            <p className="text-gray-500 text-center">
+                                No hay tickets disponibles para {
+                                    activeTab === "hoy" ? "hoy" : 
+                                    activeTab === "semana" ? "esta semana" : 
+                                    activeTab === "mes" ? "este mes" :
+                                    "el rango seleccionado"
+                                }
                             </p>
                         </div>
                     ) : (
@@ -284,6 +344,101 @@ export default function Ticketview() {
                     )}
                 </div>
             </div>
+
+            {/* Modal para selector de fechas */}
+            {showDatePickerModal && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000]"
+                    onClick={() => setShowDatePickerModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-2xl relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Botón de cerrar */}
+                        <button
+                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+                            onClick={() => setShowDatePickerModal(false)}
+                        >
+                            <IoClose />
+                        </button>
+
+                        {/* Título */}
+                        <h2 className="text-xl font-bold mb-6 text-center">
+                            Seleccionar Rango de Fechas
+                        </h2>
+
+                        {/* Selector de fechas */}
+                        <div className="mb-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Fecha de inicio
+                                </label>
+                                <DatePicker
+                                    selected={startDate}
+                                    onChange={(date) => setStartDate(date)}
+                                    selectsStart
+                                    startDate={startDate}
+                                    endDate={endDate}
+                                    placeholderText="Selecciona fecha de inicio"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    dateFormat="dd/MM/yyyy"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Fecha de fin
+                                </label>
+                                <DatePicker
+                                    selected={endDate}
+                                    onChange={(date) => setEndDate(date)}
+                                    selectsEnd
+                                    startDate={startDate}
+                                    endDate={endDate}
+                                    minDate={startDate}
+                                    placeholderText="Selecciona fecha de fin"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    dateFormat="dd/MM/yyyy"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Información del rango seleccionado */}
+                        {startDate && endDate && (
+                            <div className="mb-4 p-3 bg-green-50 rounded-lg">
+                                <p className="text-sm text-green-700">
+                                    <strong>Rango seleccionado:</strong><br />
+                                    Desde: {formatDate(startDate)}<br />
+                                    Hasta: {formatDate(endDate)}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Botones */}
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => {
+                                    setShowDatePickerModal(false);
+                                    setActiveTab("hoy"); // Cambiar a otra pestaña al cancelar
+                                    setStartDate(null);
+                                    setEndDate(null);
+                                }}
+                                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleApplyDateFilter}
+                                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                disabled={!startDate || !endDate}
+                            >
+                                Aplicar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal principal del ticket */}
             {isModalOpen && selectedTicket && (
