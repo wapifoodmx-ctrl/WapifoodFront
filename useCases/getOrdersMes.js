@@ -1,10 +1,10 @@
 async function getOrdersMes() {
   try {
-    // Obtener el token del localStorage o sessionStorage
+    // Intentar obtener el token del localStorage primero, luego del sessionStorage
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     
     if (!token) {
-      throw new Error('Token de autenticación no encontrado');
+      throw new Error('No se encontró el token de autenticación');
     }
 
     const response = await fetch('https://comandapp-api.h-dev.xyz/orders/orders/ultimo-mes', {
@@ -16,7 +16,7 @@ async function getOrdersMes() {
     });
 
     if (!response.ok) {
-      throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -28,5 +28,5 @@ async function getOrdersMes() {
   }
 }
 
-// Exportar la función para uso en otros módulos
-export { getOrdersMes };
+// Exportar la función
+export default getOrdersMes;

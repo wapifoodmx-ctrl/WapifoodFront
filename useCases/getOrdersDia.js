@@ -23,6 +23,14 @@ async function getOrdersDia() {
       throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
     }
 
+    // Si es 204 (No Content), retornar array vacío directamente
+    if (response.status === 204) {
+      return {
+        success: true,
+        data: []
+      };
+    }
+
     const data = await response.json();
     return {
       success: true,

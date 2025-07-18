@@ -5,7 +5,9 @@ import { IoMdInformationCircleOutline } from "react-icons/io";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { QRCodeCanvas } from 'qrcode.react';
-import getOrderTickets from "../../useCases/getOrderTickets";
+import getOrdersDia from "../../useCases/getOrdersDia";
+import { getOrdersSemana } from "../../useCases/getOrdersSemana";
+import getOrdersMes from "../../useCases/getOrdersMes";
 import { checkPayment } from "../../useCases/checkPayment";
 // Importaciones para el selector de fecha
 import DatePicker from "react-datepicker";
@@ -33,65 +35,139 @@ export default function Ticketview() {
                     return;
                 }
 
-                const apiData = await getOrderTickets();
-                
-                // Agrupar órdenes por order_uuid y combinar productos
-                const groupedOrders = apiData.reduce((acc, order) => {
-                    const uuid = order.order_uuid;
+                if (activeTab === "hoy") {
+                    const response = await getOrdersDia();
                     
-                    if (!acc[uuid]) {
-                        // Primera vez que vemos este UUID, crear la entrada
-                        acc[uuid] = {
-                            id: order.order_uuid,
-                            mesa: `Mesa ${order.mesa_number}`,
-                            fecha: new Date(order.date_time).toLocaleDateString(),
-                            hora: new Date(order.date_time).toLocaleTimeString(),
-                            restaurante: order.restaurant_name,
-                            estado: order.state,
-                            statusOrden: order.order_status,
-                            metodoPago: order.metodo_pago,
-                            productos: [],
-                            total: parseFloat(order.total), // Usar el total de la API
-                            // Datos adicionales para el formato de ticket
-                            date_time: order.date_time,
-                            order_uuid: order.order_uuid,
-                            restaurant_name: order.restaurant_name,
-                            order_status: order.order_status,
-                            metodo_pago: order.metodo_pago
-                        };
+                    if (!response.success) {
+                        console.error("Error fetching orders:", response.error);
+                        setShowSubscriptionModal(true);
+                        return;
                     }
+
+                    const apiData = response.data;
                     
-                    // Agregar productos de esta orden
-                    const mappedProducts = order.products.map(product => ({
-                        nombre: product.product_name,
-                        cantidad: product.quantity,
-                        precio: parseFloat(product.unit_price),
-                        subtotal: parseFloat(product.subtotal),
-                        status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase(),
-                        // Formato para ticket
-                        quantity: product.quantity,
-                        product_name: product.product_name,
-                        unit_price: product.unit_price
+                    // Mapear los datos de la API al formato esperado por el componente
+                    const mappedTickets = apiData.map(order => ({
+                        id: order.order_uuid,
+                        mesa: `Mesa ${order.mesa_number}`,
+                        fecha: new Date(order.date_time).toLocaleDateString(),
+                        hora: new Date(order.date_time).toLocaleTimeString(),
+                        restaurante: order.restaurant_name,
+                        estado: order.state,
+                        statusOrden: order.order_status,
+                        metodoPago: order.metodo_pago,
+                        productos: order.products.map(product => ({
+                            nombre: product.product_name,
+                            cantidad: product.quantity,
+                            precio: parseFloat(product.unit_price),
+                            subtotal: parseFloat(product.subtotal),
+                            status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase(),
+                            // Formato para ticket
+                            quantity: product.quantity,
+                            product_name: product.product_name,
+                            unit_price: product.unit_price
+                        })),
+                        total: parseFloat(order.total),
+                        // Datos adicionales para el formato de ticket
+                        date_time: order.date_time,
+                        order_uuid: order.order_uuid,
+                        restaurant_name: order.restaurant_name,
+                        order_status: order.order_status,
+                        metodo_pago: order.metodo_pago
                     }));
                     
-                    acc[uuid].productos.push(...mappedProducts);
+                    setTicketsData(mappedTickets);
+                } else if (activeTab === "semana") {
+                    const response = await getOrdersSemana();
                     
-                    return acc;
-                }, {});
-                
-                // Convertir el objeto agrupado a array
-                const mappedTickets = Object.values(groupedOrders);
-                
-                setTicketsData(mappedTickets);
+                    if (!response.success) {
+                        console.error("Error fetching orders:", response.error);
+                        setShowSubscriptionModal(true);
+                        return;
+                    }
+
+                    const apiData = response.data;
+                    
+                    // Mapear los datos de la API al formato esperado por el componente
+                    const mappedTickets = apiData.map(order => ({
+                        id: order.order_uuid,
+                        mesa: `Mesa ${order.mesa_number}`,
+                        fecha: new Date(order.date_time).toLocaleDateString(),
+                        hora: new Date(order.date_time).toLocaleTimeString(),
+                        restaurante: order.restaurant_name,
+                        estado: order.state,
+                        statusOrden: order.order_status,
+                        metodoPago: order.metodo_pago,
+                        productos: order.products.map(product => ({
+                            nombre: product.product_name,
+                            cantidad: product.quantity,
+                            precio: parseFloat(product.unit_price),
+                            subtotal: parseFloat(product.subtotal),
+                            status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase(),
+                            // Formato para ticket
+                            quantity: product.quantity,
+                            product_name: product.product_name,
+                            unit_price: product.unit_price
+                        })),
+                        total: parseFloat(order.total),
+                        // Datos adicionales para el formato de ticket
+                        date_time: order.date_time,
+                        order_uuid: order.order_uuid,
+                        restaurant_name: order.restaurant_name,
+                        order_status: order.order_status,
+                        metodo_pago: order.metodo_pago
+                    }));
+                    
+                    setTicketsData(mappedTickets);
+                } else if (activeTab === "mes") {
+                    const response = await getOrdersMes();
+                    
+                    // La API de getOrdersMes devuelve directamente el array de órdenes
+                    const apiData = response;
+                    
+                    // Mapear los datos de la API al formato esperado por el componente
+                    const mappedTickets = apiData.map(order => ({
+                        id: order.order_uuid,
+                        mesa: `Mesa ${order.mesa_number}`,
+                        fecha: new Date(order.date_time).toLocaleDateString(),
+                        hora: new Date(order.date_time).toLocaleTimeString(),
+                        restaurante: order.restaurant_name,
+                        estado: order.state,
+                        statusOrden: order.order_status,
+                        metodoPago: order.metodo_pago,
+                        productos: order.products.map(product => ({
+                            nombre: product.product_name,
+                            cantidad: product.quantity,
+                            precio: parseFloat(product.unit_price),
+                            subtotal: parseFloat(product.subtotal),
+                            status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase(),
+                            // Formato para ticket
+                            quantity: product.quantity,
+                            product_name: product.product_name,
+                            unit_price: product.unit_price
+                        })),
+                        total: parseFloat(order.total),
+                        // Datos adicionales para el formato de ticket
+                        date_time: order.date_time,
+                        order_uuid: order.order_uuid,
+                        restaurant_name: order.restaurant_name,
+                        order_status: order.order_status,
+                        metodo_pago: order.metodo_pago
+                    }));
+                    
+                    setTicketsData(mappedTickets);
+                } else {
+                    // Para otras pestañas, limpiar los datos por ahora
+                    setTicketsData([]);
+                }
             } catch (error) {
                 console.error("Error fetching tickets:", error);
-                // Si hay error, también mostrar modal de suscripción
                 setShowSubscriptionModal(true);
             }
         };
 
         fetchTickets();
-    }, []);
+    }, [activeTab]); // Agregar activeTab como dependencia
 
     const handleCardClick = (ticket) => {
         setSelectedTicket(ticket);
@@ -110,36 +186,28 @@ export default function Ticketview() {
 
     // Función para filtrar tickets por fecha
     const filterTicketsByDate = (tickets, filter) => {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        
-        return tickets.filter(ticket => {
-            const ticketDate = new Date(ticket.date_time);
-            const ticketDateOnly = new Date(ticketDate.getFullYear(), ticketDate.getMonth(), ticketDate.getDate());
-            
-            switch (filter) {
-                case "hoy":
-                    return ticketDateOnly.getTime() === today.getTime();
-                case "semana":
-                    return ticketDateOnly.getTime() < today.getTime() && ticketDateOnly.getTime() >= oneWeekAgo.getTime();
-                case "mes":
-                    return ticketDateOnly.getTime() < oneWeekAgo.getTime();
-                case "Seleccionar Fecha":
-                    // Si hay fechas seleccionadas, filtrar por ese rango
-                    if (startDate && endDate) {
-                        const start = new Date(startDate);
-                        const end = new Date(endDate);
-                        start.setHours(0, 0, 0, 0);
-                        end.setHours(23, 59, 59, 999);
+        switch (filter) {
+            case "hoy":
+            case "semana":
+            case "mes":
+                // Los datos ya vienen filtrados de la API
+                return tickets;
+            case "Seleccionar Fecha":
+                // Si hay fechas seleccionadas, filtrar por ese rango
+                if (startDate && endDate) {
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    start.setHours(0, 0, 0, 0);
+                    end.setHours(23, 59, 59, 999);
+                    return tickets.filter(ticket => {
                         const ticketDateTime = new Date(ticket.date_time);
                         return ticketDateTime >= start && ticketDateTime <= end;
-                    }
-                    return []; // No mostrar nada si no hay fechas seleccionadas
-                default:
-                    return true;
-            }
-        });
+                    });
+                }
+                return [];
+            default:
+                return tickets;
+        }
     };
 
     // Función para manejar el click en la pestaña "Seleccionar Fecha"
@@ -241,6 +309,7 @@ export default function Ticketview() {
                     </h2>
                     <p className="text-gray-600 text-sm">
                         {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''} encontrado{filteredTickets.length !== 1 ? 's' : ''}
+                        
                     </p>
                 </div>
 
@@ -278,6 +347,7 @@ export default function Ticketview() {
                                             <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex-shrink-0 ${
                                                 ticket.statusOrden === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
                                                 ticket.statusOrden === 'Finalizado' ? 'bg-green-100 text-green-800' :
+                                                ticket.statusOrden === 'Cancelado' ? 'bg-red-100 text-red-800' :
                                                 'bg-gray-100 text-gray-800'
                                             }`}>
                                                 {ticket.statusOrden}

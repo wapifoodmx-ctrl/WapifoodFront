@@ -16,18 +16,53 @@ async function getOrdersSemana() {
             }
         });
 
-        // Verificar si la respuesta es exitosa
+        // Verificar si la respuesta es exitosa, incluyendo 204 (No Content)
         if (!response.ok) {
             throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
         }
 
-        // Parsear la respuesta JSON
-        const data = await response.json();
-        return data;
+        // Si es 204 (No Content), retornar array vacío directamente
+        if (response.status === 204) {
+            return {
+                success: true,
+                data: []
+            };
+        }
+
+        // Obtener el texto de la respuesta primero para debuggear
+        const responseText = await response.text();
+        
+        // Verificar si la respuesta está vacía
+        if (!responseText) {
+            console.warn('Respuesta vacía del servidor');
+            return {
+                success: true,
+                data: []
+            };
+        }
+
+        // Intentar parsear el JSON
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Error al parsear JSON:', parseError);
+            console.error('Respuesta del servidor:', responseText);
+            throw new Error('Respuesta del servidor no es JSON válido');
+        }
+        
+        // Retornar en el mismo formato que getOrdersDia
+        return {
+            success: true,
+            data: data
+        };
 
     } catch (error) {
         console.error('Error al obtener las órdenes de la última semana:', error);
-        throw error;
+        return {
+            success: false,
+            error: error.message
+        };
     }
 }
 
