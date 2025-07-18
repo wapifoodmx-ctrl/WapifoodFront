@@ -2,12 +2,14 @@ import { LuCalendarDays } from "react-icons/lu";
 import { BsClock } from "react-icons/bs";
 import { IoClose } from "react-icons/io5";
 import { IoMdInformationCircleOutline } from "react-icons/io";
+import { IoChevronDown, IoChevronUp } from "react-icons/io5";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { QRCodeCanvas } from 'qrcode.react';
 import getOrdersDia from "../../useCases/getOrdersDia";
 import { getOrdersSemana } from "../../useCases/getOrdersSemana";
 import getOrdersMes from "../../useCases/getOrdersMes";
+import { getOrdersFecha } from "../../useCases/getOrdesFecha";
 import { checkPayment } from "../../useCases/checkPayment";
 // Importaciones para el selector de fecha
 import DatePicker from "react-datepicker";
@@ -24,6 +26,57 @@ export default function Ticketview() {
     const [showDatePickerModal, setShowDatePickerModal] = useState(false);
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
+    // Estados para el filtro de fechas desplegables
+    const [expandedDates, setExpandedDates] = useState(new Set());
+
+    // Función para formatear fecha a YYYY-MM-DD
+    const formatDateToAPI = (date) => {
+        if (!date) return null;
+        return date.toISOString().split('T')[0];
+    };
+
+    // Función para agrupar tickets por fecha
+    const groupTicketsByDate = (tickets) => {
+        const groups = {};
+        tickets.forEach(ticket => {
+            const date = ticket.fecha;
+            if (!groups[date]) {
+                groups[date] = [];
+            }
+            groups[date].push(ticket);
+        });
+        
+        // Ordenar las fechas de más reciente a más antigua
+        const sortedDates = Object.keys(groups).sort((a, b) => {
+            const dateA = new Date(a.split('/').reverse().join('-'));
+            const dateB = new Date(b.split('/').reverse().join('-'));
+            return dateB - dateA;
+        });
+        
+        // Crear objeto ordenado
+        const sortedGroups = {};
+        sortedDates.forEach(date => {
+            // Ordenar tickets dentro de cada fecha por hora (más recientes primero)
+            sortedGroups[date] = groups[date].sort((a, b) => {
+                const timeA = new Date(`${a.fecha} ${a.hora}`);
+                const timeB = new Date(`${b.fecha} ${b.hora}`);
+                return timeB - timeA;
+            });
+        });
+        
+        return sortedGroups;
+    };
+
+    // Función para alternar la visibilidad de una fecha
+    const toggleDateExpansion = (date) => {
+        const newExpanded = new Set(expandedDates);
+        if (newExpanded.has(date)) {
+            newExpanded.delete(date);
+        } else {
+            newExpanded.add(date);
+        }
+        setExpandedDates(newExpanded);
+    };
 
     useEffect(() => {
         const fetchTickets = async () => {
@@ -76,7 +129,12 @@ export default function Ticketview() {
                         metodo_pago: order.metodo_pago
                     }));
                     
-                    setTicketsData(mappedTickets);
+                    // Ordenar por fecha descendente (más recientes primero)
+                    const sortedTickets = mappedTickets.sort((a, b) => 
+                        new Date(b.date_time) - new Date(a.date_time)
+                    );
+                    
+                    setTicketsData(sortedTickets);
                 } else if (activeTab === "semana") {
                     const response = await getOrdersSemana();
                     
@@ -118,7 +176,12 @@ export default function Ticketview() {
                         metodo_pago: order.metodo_pago
                     }));
                     
-                    setTicketsData(mappedTickets);
+                    // Ordenar por fecha descendente (más recientes primero)
+                    const sortedTickets = mappedTickets.sort((a, b) => 
+                        new Date(b.date_time) - new Date(a.date_time)
+                    );
+                    
+                    setTicketsData(sortedTickets);
                 } else if (activeTab === "mes") {
                     const response = await getOrdersMes();
                     
@@ -155,7 +218,60 @@ export default function Ticketview() {
                         metodo_pago: order.metodo_pago
                     }));
                     
-                    setTicketsData(mappedTickets);
+                    // Ordenar por fecha descendente (más recientes primero)
+                    const sortedTickets = mappedTickets.sort((a, b) => 
+                        new Date(b.date_time) - new Date(a.date_time)
+                    );
+                    
+                    setTicketsData(sortedTickets);
+                } else if (activeTab === "Seleccionar Fecha") {
+                    // Si hay fechas seleccionadas, hacer la petición a la API
+                    if (startDate && endDate) {
+                        const fechaInicio = formatDateToAPI(startDate);
+                        const fechaFin = formatDateToAPI(endDate);
+                        
+                        const response = await getOrdersFecha(fechaInicio, fechaFin);
+                        
+                        // Mapear los datos de la API al formato esperado por el componente
+                        const mappedTickets = response.map(order => ({
+                            id: order.order_uuid,
+                            mesa: `Mesa ${order.mesa_number}`,
+                            fecha: new Date(order.date_time).toLocaleDateString(),
+                            hora: new Date(order.date_time).toLocaleTimeString(),
+                            restaurante: order.restaurant_name,
+                            estado: order.state,
+                            statusOrden: order.order_status,
+                            metodoPago: order.metodo_pago,
+                            productos: order.products.map(product => ({
+                                nombre: product.product_name,
+                                cantidad: product.quantity,
+                                precio: parseFloat(product.unit_price),
+                                subtotal: parseFloat(product.subtotal),
+                                status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase(),
+                                // Formato para ticket
+                                quantity: product.quantity,
+                                product_name: product.product_name,
+                                unit_price: product.unit_price
+                            })),
+                            total: parseFloat(order.total),
+                            // Datos adicionales para el formato de ticket
+                            date_time: order.date_time,
+                            order_uuid: order.order_uuid,
+                            restaurant_name: order.restaurant_name,
+                            order_status: order.order_status,
+                            metodo_pago: order.metodo_pago
+                        }));
+                        
+                        // Ordenar por fecha descendente (más recientes primero)
+                        const sortedTickets = mappedTickets.sort((a, b) => 
+                            new Date(b.date_time) - new Date(a.date_time)
+                        );
+                        
+                        setTicketsData(sortedTickets);
+                    } else {
+                        // Si no hay fechas seleccionadas, limpiar los datos
+                        setTicketsData([]);
+                    }
                 } else {
                     // Para otras pestañas, limpiar los datos por ahora
                     setTicketsData([]);
@@ -167,7 +283,12 @@ export default function Ticketview() {
         };
 
         fetchTickets();
-    }, [activeTab]); // Agregar activeTab como dependencia
+    }, [activeTab, startDate, endDate]);
+
+    // Limpiar fechas expandidas cuando cambie la pestaña
+    useEffect(() => {
+        setExpandedDates(new Set());
+    }, [activeTab]);
 
     const handleCardClick = (ticket) => {
         setSelectedTicket(ticket);
@@ -184,27 +305,23 @@ export default function Ticketview() {
         return ticket.total || 0;
     };
 
+    // Función para aplicar el filtro de fechas
+    const handleApplyDateFilter = async () => {
+        setShowDatePickerModal(false);
+        
+        // No necesitamos hacer nada aquí porque el useEffect ya se ejecutará
+        // cuando cambien startDate y endDate
+    };
+
     // Función para filtrar tickets por fecha
     const filterTicketsByDate = (tickets, filter) => {
         switch (filter) {
             case "hoy":
             case "semana":
             case "mes":
+            case "Seleccionar Fecha":
                 // Los datos ya vienen filtrados de la API
                 return tickets;
-            case "Seleccionar Fecha":
-                // Si hay fechas seleccionadas, filtrar por ese rango
-                if (startDate && endDate) {
-                    const start = new Date(startDate);
-                    const end = new Date(endDate);
-                    start.setHours(0, 0, 0, 0);
-                    end.setHours(23, 59, 59, 999);
-                    return tickets.filter(ticket => {
-                        const ticketDateTime = new Date(ticket.date_time);
-                        return ticketDateTime >= start && ticketDateTime <= end;
-                    });
-                }
-                return [];
             default:
                 return tickets;
         }
@@ -214,12 +331,9 @@ export default function Ticketview() {
     const handleDateTabClick = () => {
         setActiveTab("Seleccionar Fecha");
         setShowDatePickerModal(true);
-    };
-
-    // Función para aplicar el filtro de fechas
-    const handleApplyDateFilter = () => {
-        setShowDatePickerModal(false);
-        // Los tickets se filtrarán automáticamente
+        // Limpiar las fechas anteriores
+        setStartDate(null);
+        setEndDate(null);
     };
 
     // Función para formatear fecha
@@ -237,6 +351,12 @@ export default function Ticketview() {
         ticketsData.filter(ticket => ticket.statusOrden === 'Finalizado'),
         activeTab
     );
+
+    // Verificar si la pestaña actual necesita agrupación por fecha
+    const shouldGroupByDate = ["semana", "mes", "Seleccionar Fecha"].includes(activeTab);
+    
+    // Agrupar tickets por fecha si es necesario
+    const groupedTickets = shouldGroupByDate ? groupTicketsByDate(filteredTickets) : null;
 
     return (
         <div className="w-full mt-16">
@@ -309,110 +429,227 @@ export default function Ticketview() {
                     </h2>
                     <p className="text-gray-600 text-sm">
                         {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''} encontrado{filteredTickets.length !== 1 ? 's' : ''}
-                        
                     </p>
                 </div>
 
-                {/* Grid de tickets */}
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                    {activeTab === "Seleccionar Fecha" && (!startDate || !endDate) ? (
-                        <div className="col-span-full text-center py-12">
-                            <p className="text-gray-500 text-center">
-                                Selecciona un rango de fechas para ver los tickets
-                            </p>
-                        </div>
-                    ) : filteredTickets.length === 0 ? (
-                        <div className="col-span-full text-center py-12">
-                            <p className="text-gray-500 text-center">
-                                No hay tickets disponibles para {
-                                    activeTab === "hoy" ? "hoy" : 
-                                    activeTab === "semana" ? "esta semana" : 
-                                    activeTab === "mes" ? "este mes" :
-                                    "el rango seleccionado"
-                                }
-                            </p>
-                        </div>
-                    ) : (
-                        filteredTickets.map((ticket) => (
-                            <div 
-                                key={ticket.id}
-                                className="cursor-pointer transition-opacity hover:opacity-80"
-                                onClick={() => handleCardClick(ticket)}
-                            >
-                                <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col">
-                                    <div className="p-3 flex-grow flex flex-col overflow-hidden">
-                                        {/* Header fijo */}
-                                        <div className="flex items-center mb-2 flex-shrink-0">
-                                            <p className="font-bold text-base truncate">{ticket.mesa}</p>
-                                            <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex-shrink-0 ${
-                                                ticket.statusOrden === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                                                ticket.statusOrden === 'Finalizado' ? 'bg-green-100 text-green-800' :
-                                                ticket.statusOrden === 'Cancelado' ? 'bg-red-100 text-red-800' :
-                                                'bg-gray-100 text-gray-800'
-                                            }`}>
-                                                {ticket.statusOrden}
+                {/* Contenido condicional según el tipo de vista */}
+                {shouldGroupByDate ? (
+                    /* Vista agrupada por fecha */
+                    <div className="space-y-4">
+                        {activeTab === "Seleccionar Fecha" && (!startDate || !endDate) ? (
+                            <div className="text-center py-12">
+                                <p className="text-gray-500 text-center">
+                                    Selecciona un rango de fechas para ver los tickets
+                                </p>
+                            </div>
+                        ) : Object.keys(groupedTickets).length === 0 ? (
+                            <div className="text-center py-12">
+                                <p className="text-gray-500 text-center">
+                                    No hay tickets disponibles para {
+                                        activeTab === "semana" ? "esta semana" : 
+                                        activeTab === "mes" ? "este mes" :
+                                        "el rango seleccionado"
+                                    }
+                                </p>
+                            </div>
+                        ) : (
+                            Object.entries(groupedTickets).map(([date, tickets]) => (
+                                <div key={date} className="border rounded-lg overflow-hidden">
+                                    {/* Botón de fecha */}
+                                    <button
+                                        onClick={() => toggleDateExpansion(date)}
+                                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <LuCalendarDays className="text-green-600" />
+                                            <span className="font-semibold text-gray-800">{date}</span>
+                                            <span className="text-sm text-gray-500">
+                                                ({tickets.length} ticket{tickets.length !== 1 ? 's' : ''})
                                             </span>
                                         </div>
-                                        
-                                        {/* Fecha y hora - fija */}
-                                        <div className="flex justify-between text-xs text-gray-500 mb-2 flex-shrink-0">
-                                            <div className="flex items-center">
-                                                <LuCalendarDays className="mr-1" />
-                                                <span>{ticket.fecha}</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <BsClock className="mr-1" />
-                                                <span>{ticket.hora}</span>
-                                            </div>
-                                        </div>
+                                        {expandedDates.has(date) ? (
+                                            <IoChevronUp className="text-gray-500" />
+                                        ) : (
+                                            <IoChevronDown className="text-gray-500" />
+                                        )}
+                                    </button>
 
-                                        {/* Área flexible para productos */}
-                                        <div className="flex-grow flex flex-col min-h-0">
-                                            <p className="text-xs text-gray-500 font-semibold mb-1 flex-shrink-0">
-                                                Productos ({ticket.productos.length})
-                                            </p>
-                                            
-                                            {ticket.productos.length > 0 && (
-                                                <div className="bg-gray-50 rounded p-2 mb-1 flex-shrink-0">
-                                                    <div className="flex justify-between items-center">
-                                                        <p className={`font-semibold text-xs truncate pr-1 ${
-                                                            ticket.productos[0].status === "cancelado" ? "text-red-500 line-through" : ""
-                                                        }`}>
-                                                            {ticket.productos[0].nombre}
-                                                        </p>
-                                                        <div className="flex items-center gap-1 flex-shrink-0">
-                                                            <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
-                                                                X{ticket.productos[0].cantidad}
-                                                            </span>
+                                    {/* Contenido desplegable */}
+                                    {expandedDates.has(date) && (
+                                        <div className="p-4 bg-white">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                                                {tickets.map((ticket) => (
+                                                    <div 
+                                                        key={ticket.id}
+                                                        className="cursor-pointer transition-opacity hover:opacity-80"
+                                                        onClick={() => handleCardClick(ticket)}
+                                                    >
+                                                        <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col">
+                                                            <div className="p-3 flex-grow flex flex-col overflow-hidden">
+                                                                {/* Header fijo */}
+                                                                <div className="flex items-center mb-2 flex-shrink-0">
+                                                                    <p className="font-bold text-base truncate">{ticket.mesa}</p>
+                                                                    <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex-shrink-0 ${
+                                                                        ticket.statusOrden === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                                                                        ticket.statusOrden === 'Finalizado' ? 'bg-green-100 text-green-800' :
+                                                                        ticket.statusOrden === 'Cancelado' ? 'bg-red-100 text-red-800' :
+                                                                        'bg-gray-100 text-gray-800'
+                                                                    }`}>
+                                                                        {ticket.statusOrden}
+                                                                    </span>
+                                                                </div>
+                                                                
+                                                                {/* Hora - fija (fecha ya está en el header) */}
+                                                                <div className="flex justify-center text-xs text-gray-500 mb-2 flex-shrink-0">
+                                                                    <div className="flex items-center">
+                                                                        <BsClock className="mr-1" />
+                                                                        <span>{ticket.hora}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Área flexible para productos */}
+                                                                <div className="flex-grow flex flex-col min-h-0">
+                                                                    <p className="text-xs text-gray-500 font-semibold mb-1 flex-shrink-0">
+                                                                        Productos ({ticket.productos.length})
+                                                                    </p>
+                                                                    
+                                                                    {ticket.productos.length > 0 && (
+                                                                        <div className="bg-gray-50 rounded p-2 mb-1 flex-shrink-0">
+                                                                            <div className="flex justify-between items-center">
+                                                                                <p className={`font-semibold text-xs truncate pr-1 ${
+                                                                                    ticket.productos[0].status === "cancelado" ? "text-red-500 line-through" : ""
+                                                                                }`}>
+                                                                                    {ticket.productos[0].nombre}
+                                                                                </p>
+                                                                                <div className="flex items-center gap-1 flex-shrink-0">
+                                                                                    <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
+                                                                                        X{ticket.productos[0].cantidad}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {/* Información adicional - flexible */}
+                                                                    <div className="flex-grow flex items-center justify-center">
+                                                                        {ticket.productos.length > 1 && (
+                                                                            <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
+                                                                                <IoMdInformationCircleOutline className="mr-1" />
+                                                                                <span className="text-center">Click para ver más</span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Total fijo en la parte inferior */}
+                                                                <div className="flex justify-between items-center pt-2 border-t flex-shrink-0">
+                                                                    <span className="font-bold text-sm">Total:</span>
+                                                                    <span className="font-bold text-sm text-green-600">
+                                                                        ${getTicketTotal(ticket).toFixed(2)}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                            
-                                            {/* Información adicional - flexible */}
-                                            <div className="flex-grow flex items-center justify-center">
-                                                {ticket.productos.length > 1 && (
-                                                    <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
-                                                        <IoMdInformationCircleOutline className="mr-1" />
-                                                        <span className="text-center">Click para ver más</span>
-                                                    </div>
-                                                )}
+                                                ))}
                                             </div>
                                         </div>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                ) : (
+                    /* Vista normal (para "hoy") */
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                        {filteredTickets.length === 0 ? (
+                            <div className="col-span-full text-center py-12">
+                                <p className="text-gray-500 text-center">
+                                    No hay tickets disponibles para hoy
+                                </p>
+                            </div>
+                        ) : (
+                            filteredTickets.map((ticket) => (
+                                <div 
+                                    key={ticket.id}
+                                    className="cursor-pointer transition-opacity hover:opacity-80"
+                                    onClick={() => handleCardClick(ticket)}
+                                >
+                                    <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col">
+                                        <div className="p-3 flex-grow flex flex-col overflow-hidden">
+                                            {/* Header fijo */}
+                                            <div className="flex items-center mb-2 flex-shrink-0">
+                                                <p className="font-bold text-base truncate">{ticket.mesa}</p>
+                                                <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex-shrink-0 ${
+                                                    ticket.statusOrden === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                                                    ticket.statusOrden === 'Finalizado' ? 'bg-green-100 text-green-800' :
+                                                    ticket.statusOrden === 'Cancelado' ? 'bg-red-100 text-red-800' :
+                                                    'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                    {ticket.statusOrden}
+                                                </span>
+                                            </div>
+                                            
+                                            {/* Fecha y hora - fija */}
+                                            <div className="flex justify-between text-xs text-gray-500 mb-2 flex-shrink-0">
+                                                <div className="flex items-center">
+                                                    <LuCalendarDays className="mr-1" />
+                                                    <span>{ticket.fecha}</span>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <BsClock className="mr-1" />
+                                                    <span>{ticket.hora}</span>
+                                                </div>
+                                            </div>
 
-                                        {/* Total fijo en la parte inferior */}
-                                        <div className="flex justify-between items-center pt-2 border-t flex-shrink-0">
-                                            <span className="font-bold text-sm">Total:</span>
-                                            <span className="font-bold text-sm text-green-600">
-                                                ${getTicketTotal(ticket).toFixed(2)}
-                                            </span>
+                                            {/* Área flexible para productos */}
+                                            <div className="flex-grow flex flex-col min-h-0">
+                                                <p className="text-xs text-gray-500 font-semibold mb-1 flex-shrink-0">
+                                                    Productos ({ticket.productos.length})
+                                                </p>
+                                                
+                                                {ticket.productos.length > 0 && (
+                                                    <div className="bg-gray-50 rounded p-2 mb-1 flex-shrink-0">
+                                                        <div className="flex justify-between items-center">
+                                                            <p className={`font-semibold text-xs truncate pr-1 ${
+                                                                ticket.productos[0].status === "cancelado" ? "text-red-500 line-through" : ""
+                                                            }`}>
+                                                                {ticket.productos[0].nombre}
+                                                            </p>
+                                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                                <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
+                                                                    X{ticket.productos[0].cantidad}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Información adicional - flexible */}
+                                                <div className="flex-grow flex items-center justify-center">
+                                                    {ticket.productos.length > 1 && (
+                                                        <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
+                                                            <IoMdInformationCircleOutline className="mr-1" />
+                                                            <span className="text-center">Click para ver más</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Total fijo en la parte inferior */}
+                                            <div className="flex justify-between items-center pt-2 border-t flex-shrink-0">
+                                                <span className="font-bold text-sm">Total:</span>
+                                                <span className="font-bold text-sm text-green-600">
+                                                    ${getTicketTotal(ticket).toFixed(2)}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
-                    )}
-                </div>
+                            ))
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Modal para selector de fechas */}
@@ -513,112 +750,130 @@ export default function Ticketview() {
             {/* Modal principal del ticket */}
             {isModalOpen && selectedTicket && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000]"
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000] p-2 sm:p-4"
                     onClick={() => setIsModalOpen(false)}
                 >
                     <div
-                        className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto relative shadow-2xl"
+                        className="bg-white rounded-lg p-2 sm:p-6 w-full max-w-md h-full max-h-[98vh] sm:max-h-[95vh] overflow-hidden relative shadow-2xl flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Botón de cerrar (X) */}
                         <button
-                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl z-10"
+                            className="absolute top-1 right-1 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-700 text-lg sm:text-2xl z-10 p-1"
                             onClick={() => setIsModalOpen(false)}
                         >
                             <IoClose />
                         </button>
 
                         {/* Título */}
-                        <h2 className="text-xl font-bold mb-6 text-center pr-8">
+                        <h2 className="text-sm sm:text-xl font-bold mb-2 sm:mb-6 text-center pr-5 sm:pr-8 flex-shrink-0">
                             Ticket generado para imprimir
                         </h2>
 
-                        {/* Contenido del ticket */}
-                        <div className="border-2 border-dashed border-gray-300 p-4 mb-6">
-                            {/* Información del restaurante */}
-                            <div className="text-center mb-4 border-b pb-4">
-                                <h3 className="font-bold text-lg">{selectedTicket.restaurant_name || selectedTicket.restaurante}</h3>
-                            </div>
+                        {/* Contenido del ticket - scrollable */}
+                        <div className="flex-1 overflow-y-auto min-h-0">
+                            <div className="border-2 border-dashed border-gray-300 p-1 sm:p-4 mb-2 sm:mb-6">
+                                {/* Información del restaurante */}
+                                <div className="text-center mb-2 sm:mb-4 border-b pb-1 sm:pb-4">
+                                    <h3 className="font-bold text-xs sm:text-lg break-words">
+                                        {selectedTicket.restaurant_name || selectedTicket.restaurante}
+                                    </h3>
+                                </div>
 
-                            {/* Información de la orden */}
-                            <div className="mb-4">
-                                <div className="flex justify-between text-sm">
-                                    <span>ID:</span>
-                                    <span className="font-mono text-xs">{selectedTicket.order_uuid?.slice(0, 8)}...</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>Fecha:</span>
-                                    <span>{selectedTicket.fecha}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>Hora:</span>
-                                    <span>{selectedTicket.hora}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>Estado:</span>
-                                    <span className="font-semibold text-green-600">{selectedTicket.order_status || selectedTicket.statusOrden}</span>
-                                </div>
-                            </div>
-
-                            {/* Productos */}
-                            <div className="mb-4">
-                                <h4 className="font-bold mb-2 border-b pb-1">Productos:</h4>
-                                {selectedTicket.productos?.map((product, index) => (
-                                    <div key={index} className="mb-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className={`flex-1 ${product.status === "cancelado" ? "text-red-500 line-through" : ""}`}>
-                                                {product.quantity || product.cantidad}x {product.product_name || product.nombre}
-                                            </span>
-                                            <span className={`font-semibold ${product.status === "cancelado" ? "text-red-500 line-through" : ""}`}>
-                                                ${(parseFloat(product.subtotal) || (product.cantidad * product.precio)).toFixed(2)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between text-xs text-gray-500 ml-4">
-                                            <span>Precio unitario: ${(parseFloat(product.unit_price) || product.precio).toFixed(2)}</span>
-                                        </div>
+                                {/* Información de la orden */}
+                                <div className="mb-2 sm:mb-4 space-y-0.5">
+                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
+                                        <span className="flex-shrink-0">ID:</span>
+                                        <span className="font-mono text-xs break-all text-right">
+                                            {selectedTicket.order_uuid?.slice(0, 8)}...
+                                        </span>
                                     </div>
-                                ))}
-                            </div>
-
-                            {/* Total */}
-                            <div className="border-t pt-2 mb-4">
-                                <div className="flex justify-between font-bold text-lg">
-                                    <span>Total:</span>
-                                    <span>${getTicketTotal(selectedTicket).toFixed(2)}</span>
+                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
+                                        <span className="flex-shrink-0">Fecha:</span>
+                                        <span className="break-words text-right">{selectedTicket.fecha}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
+                                        <span className="flex-shrink-0">Hora:</span>
+                                        <span className="break-words text-right">{selectedTicket.hora}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
+                                        <span className="flex-shrink-0">Estado:</span>
+                                        <span className="font-semibold text-green-600 break-words text-right">
+                                            {selectedTicket.order_status || selectedTicket.statusOrden}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>Método de pago:</span>
-                                    <span className="capitalize font-semibold">{selectedTicket.metodo_pago || selectedTicket.metodoPago}</span>
-                                </div>
-                            </div>
 
-                            {/* Código QR */}
-                            <div className="text-center">
-                                <p className="text-sm text-gray-600 mb-2">Código QR del ticket:</p>
-                                <div className="flex justify-center">
-                                    <QRCodeCanvas
-                                        value={selectedTicket.order_uuid || selectedTicket.id}
-                                        size={150}
-                                        level="M"
-                                        includeMargin={true}
-                                    />
+                                {/* Productos */}
+                                <div className="mb-2 sm:mb-4">
+                                    <h4 className="font-bold mb-1 border-b pb-0.5 text-xs sm:text-base">Productos:</h4>
+                                    <div className="space-y-1">
+                                        {selectedTicket.productos?.map((product, index) => (
+                                            <div key={index} className="bg-gray-50 p-1 sm:p-2 rounded">
+                                                <div className="flex justify-between text-xs sm:text-sm gap-1 mb-0.5">
+                                                    <span className={`flex-1 min-w-0 break-words pr-1 ${
+                                                        product.status === "cancelado" ? "text-red-500 line-through" : ""
+                                                    }`}>
+                                                        {product.quantity || product.cantidad}x {product.product_name || product.nombre}
+                                                    </span>
+                                                    <span className={`font-semibold flex-shrink-0 ${
+                                                        product.status === "cancelado" ? "text-red-500 line-through" : ""
+                                                    }`}>
+                                                        ${(parseFloat(product.subtotal) || (product.cantidad * product.precio)).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs text-gray-500 ml-1">
+                                                    <span className="break-words">
+                                                        Precio unitario: ${(parseFloat(product.unit_price) || product.precio).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Escanea con la app móvil para imprimir
-                                </p>
-                            </div>
 
-                            {/* Pie del ticket */}
-                            <div className="text-center mt-4 pt-2 border-t text-xs text-gray-500">
-                                <p>¡Gracias por su visita!</p>
-                                <p>Conserve este ticket como comprobante</p>
+                                {/* Total */}
+                                <div className="border-t pt-1 sm:pt-2 mb-2 sm:mb-4">
+                                    <div className="flex justify-between font-bold text-sm sm:text-lg mb-0.5">
+                                        <span>Total:</span>
+                                        <span>${getTicketTotal(selectedTicket).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
+                                        <span className="flex-shrink-0">Método de pago:</span>
+                                        <span className="capitalize font-semibold break-words text-right">
+                                            {selectedTicket.metodo_pago || selectedTicket.metodoPago}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Código QR */}
+                                <div className="text-center py-1 sm:py-2">
+                                    <p className="text-xs sm:text-sm text-gray-600 mb-1">Código QR del ticket:</p>
+                                    <div className="flex justify-center mb-1">
+                                        <QRCodeCanvas
+                                            value={selectedTicket.order_uuid || selectedTicket.id}
+                                            size={window.innerWidth < 640 ? 70 : 120}
+                                            level="M"
+                                            includeMargin={true}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500">
+                                        Escanea con la app móvil para imprimir
+                                    </p>
+                                </div>
+
+                                {/* Pie del ticket */}
+                                <div className="text-center mt-2 sm:mt-4 pt-1 sm:pt-2 border-t text-xs text-gray-500 space-y-0.5">
+                                    <p>¡Gracias por su visita!</p>
+                                    <p>Conserve este ticket como comprobante</p>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Botón de cerrar */}
-                        <div className="flex justify-center">
+                        {/* Botón de cerrar - fijo en la parte inferior */}
+                        <div className="flex justify-center pt-1 sm:pt-4 border-t bg-white flex-shrink-0">
                             <button
-                                className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-6 rounded cursor-pointer transition-colors"
+                                className="bg-gray-500 hover:bg-gray-600 text-white py-1 px-3 sm:py-2 sm:px-6 rounded cursor-pointer transition-colors text-xs sm:text-base"
                                 onClick={() => setIsModalOpen(false)}
                             >
                                 Cerrar
@@ -630,3 +885,4 @@ export default function Ticketview() {
         </div>
     );
 }
+
