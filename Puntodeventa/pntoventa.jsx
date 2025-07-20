@@ -15,6 +15,7 @@ import { getFinalOrder } from "@/useCases/getfinalOrderId";
 import TicketModal from "@/components/TicketModal";
 import { endOrderPuntoDeVenta } from "@/useCases/endOrderPuntoDeVenta";
 import { checkPayment } from "@/useCases/checkPayment";
+import { getTicket } from "@/useCases/getTicket";
 
 // Mock de ingredientes general
 const mockIngredientes = ["Tomate", "Cebolla", "Lechuga", "Queso", "Salsa"];
@@ -237,16 +238,68 @@ export default function Pntoventa() {
         }
     };
 
-    // Función para finalizar todas las órdenes y abrir modal (SIN limpiar estado)
-    const finalizarTodasOrdenes = () => {
+    // Función modificada para verificar el estado de la orden antes de finalizar
+    const finalizarTodasOrdenes = async () => {
         if (historialPedidos.length === 0) {
             setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
             return;
         }
 
-        setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
-        setModalTotalOpen(true);
-        setMensajeError("");
+        // Verificar si hay una orden activa para validar su estado
+        if (ordenActiva && ordenActiva.order_uuid) {
+            try {
+                // Hacer petición a getTicket para verificar el estado
+                const ticketData = await getTicket(ordenActiva.order_uuid);
+                
+                // Verificar si la orden está cancelada
+                if (ticketData.order_status === "Cancelado") {
+                    // Mostrar modal de orden cancelada
+                    setShowCancelledOrderModal(true);
+                    return;
+                }
+                
+                // Si la orden no está cancelada, continuar con el flujo normal
+                setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
+                setModalTotalOpen(true);
+                setMensajeError("");
+                
+            } catch (error) {
+                console.error('Error al verificar el estado de la orden:', error);
+                setMensajeError("Error al verificar el estado de la orden. Intenta nuevamente.");
+                return;
+            }
+        } else {
+            // Si no hay orden activa, proceder normalmente
+            setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
+            setModalTotalOpen(true);
+            setMensajeError("");
+        }
+    };
+
+    // Agregar estado para el modal de orden cancelada
+    const [showCancelledOrderModal, setShowCancelledOrderModal] = useState(false);
+
+    // Función para limpiar todo cuando la orden esté cancelada
+    const limpiarOrdenCancelada = () => {
+        // Limpiar estados
+        setHistorialPedidos([]);
+        setOrdenActiva(null);
+        setTotalFinal(0);
+        setCarrito([]);
+        
+        // Limpiar localStorage
+        localStorage.removeItem("ordenActiva");
+        localStorage.removeItem("historialPedidos");
+        localStorage.removeItem("carrito");
+        
+        // Cerrar modal
+        setShowCancelledOrderModal(false);
+        
+        // Mensaje de confirmación
+        setMensajeError("Los datos de la orden cancelada han sido limpiados.");
+        setTimeout(() => {
+            setMensajeError("");
+        }, 3000);
     };
 
     // Función confirmarPago modificada para mostrar ticket
@@ -333,6 +386,36 @@ export default function Pntoventa() {
     return (
         <section className="mt-16">
             <Navbar />
+
+            {/* Modal de orden cancelada */}
+            {showCancelledOrderModal && (
+                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[10000]">
+                    <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
+                        <div className="text-center">
+                            <div className="mb-4">
+                                <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h2 className="text-xl font-bold mb-4 text-red-600">Orden Cancelada</h2>
+                            <p className="text-gray-700 mb-6">
+                                La orden ha sido cancelada desde cocina. No es posible procesar el pago.
+                                Se limpiarán todos los datos relacionados con esta orden.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={limpiarOrdenCancelada}
+                                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                                >
+                                    Entendido
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal de suscripción */}
             {showSubscriptionModal && (
