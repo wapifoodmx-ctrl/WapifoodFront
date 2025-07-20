@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { getUserInfo } from "@/useCases/getUserInfo";
 import { patchUserInfo } from "@/useCases/patchUserInfo";
 import Profile from "@/pages/assets/images/Profile.jpg";
+import { useRouter } from 'next/router';
 
 // Validaciones con Yup
 const personalInfoSchema = Yup.object().shape({
@@ -66,6 +67,7 @@ export default function UserPage() {
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -228,14 +230,12 @@ export default function UserPage() {
                 <span className="text-gray-600 flex-shrink-0">|</span>
                 <div className="flex items-center justify-center min-w-0 flex-1 gap-2">
                   <TbWorldShare className="text-xl text-green-600 flex-shrink-0" />
-                  <a 
-                    className="text-sm text-blue-600 hover:text-blue-800 underline break-words transition-colors"
-                    href={`http://localhost:3000/webmenu/${userInfo?.user_uuid || ''}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button 
+                    onClick={() => router.push(`/webmenu/${userInfo?.user_uuid}`)}
+                    className="text-sm text-blue-600 hover:text-blue-800 underline transition-colors"
                   >
                     Tu menú digital
-                  </a>
+                  </button>
                 </div>
                 <span className="text-gray-600 flex-shrink-0">|</span>
               </div>
