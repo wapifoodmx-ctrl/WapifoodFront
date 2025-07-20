@@ -605,26 +605,45 @@ export default function MenuCliente() {
     const [showCancelledOrderModal, setShowCancelledOrderModal] = useState(false);
 
     // Función para limpiar todo cuando la orden esté cancelada
-    const limpiarOrdenCancelada = () => {
-        // Limpiar estados
-        setHistorialPedidos([]);
-        setOrdenActiva(null);
-        setTotalFinal(0);
-        setCarrito([]);
-        
-        // Limpiar localStorage específico del menú cliente
-        localStorage.removeItem("ordenActiva1");
-        localStorage.removeItem("historialPedidos1");
-        localStorage.removeItem("carrito1");
-        
-        // Cerrar modal
-        setShowCancelledOrderModal(false);
-        
-        // Mensaje de confirmación
-        setMensajeError("Los datos de la orden cancelada han sido limpiados.");
-        setTimeout(() => {
-            setMensajeError("");
-        }, 3000);
+    const limpiarOrdenCancelada = async () => {
+        try {
+            // Cambiar mesa a "NoDisponible" si existe
+            if (numeroMesa) {
+                try {
+                    await updateTableStatus(parseInt(numeroMesa), 'NoDisponible');
+                    console.log(`Mesa ${numeroMesa} cambiada a NoDisponible`);
+                } catch (error) {
+                    console.error('Error al cambiar mesa a NoDisponible:', error);
+                }
+            }
+            
+            // Limpiar estados
+            setHistorialPedidos([]);
+            setOrdenActiva(null);
+            setTotalFinal(0);
+            setCarrito([]);
+            
+            // Limpiar localStorage específico del menú cliente
+            localStorage.removeItem("ordenActiva1");
+            localStorage.removeItem("historialPedidos1");
+            localStorage.removeItem("carrito1");
+            
+            // Cerrar modal
+            setShowCancelledOrderModal(false);
+            
+            // Mensaje de confirmación
+            setMensajeError("Los datos de la orden cancelada han sido limpiados.");
+            setTimeout(() => {
+                setMensajeError("");
+            }, 3000);
+            
+        } catch (error) {
+            console.error('Error al limpiar orden cancelada:', error);
+            setMensajeError("Error al procesar la limpieza. Algunos datos pueden no haberse actualizado correctamente.");
+            setTimeout(() => {
+                setMensajeError("");
+            }, 3000);
+        }
     };
 
     // Nueva función confirmarPago con TicketModal - MODIFICADA para mantener mesa

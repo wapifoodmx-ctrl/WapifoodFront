@@ -25,7 +25,7 @@ const data = [
         title: "Informes y estadísticas",
         interm: "Visualiza informes y estadísticas en tiempo real. Comprende el rendimiento de tu negocio y toma decisiones informadas.",
     },
-
+    
 
 
 
