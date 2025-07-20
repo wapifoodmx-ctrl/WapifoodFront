@@ -1,4 +1,4 @@
-export default async function getPaymentsLink(propsData) {
+export default async function getPaymentsLink(propsData) { 
     const endpoint = 'https://comandapp-api.h-dev.xyz/payments/create-checkout-session';
 
     try {
