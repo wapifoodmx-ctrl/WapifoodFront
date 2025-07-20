@@ -16,6 +16,7 @@ import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/router';
 import kime from "@/pages/assets/img/kime.jpeg";
+import Profile from "@/pages/assets/images/Profile.jpg";
 import Burger from "@/pages/assets/img/Burger.jpg";
 import Sopadetomate from "@/pages/assets/img/sopatomate.jpg";
 import Sopadepollo from "@/pages/assets/img/sopadepollo.jpeg";
