@@ -6,7 +6,7 @@ import { BsClock } from "react-icons/bs";
 import { LuCalendarDays } from "react-icons/lu";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { getTables } from "../../useCases/getTables.js";
-import getOrderTickets from "../../useCases/getOrderTickets.js";
+import getOrdersDia from "../../useCases/getOrdersDia.js";
 import { updateProductStatus } from "../../useCases/updateProductStatus.js";
 import { cancelOrder } from "../../useCases/cancelOrder.js";
 import { endPuntoDeVenta } from "../../useCases/endPuntoDeVenta.js";
@@ -36,16 +36,24 @@ export default function VistaCocina() {
         try {
             setLoading(true);
 
-            const [ordersData, tablesData] = await Promise.all([
-                getOrderTickets(),
+            const [ordersResponse, tablesData] = await Promise.all([
+                getOrdersDia(),
                 getTables()
             ]);
 
+            // Verificar errores en la respuesta de órdenes
+            if (!ordersResponse.success) {
+                throw new Error(ordersResponse.error);
+            }
+
+            // Verificar errores de suscripción en las tablas
             if (tablesData.error && tablesData.status === 403) {
                 setShowSubscriptionModal(true);
                 setLoading(false);
                 return;
             }
+
+            const ordersData = ordersResponse.data;
 
             console.log("Orders data:", ordersData);
             console.log("Tables data:", tablesData);

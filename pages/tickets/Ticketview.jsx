@@ -750,82 +750,90 @@ export default function Ticketview() {
             {/* Modal principal del ticket */}
             {isModalOpen && selectedTicket && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000] p-2 sm:p-4"
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000] p-2"
                     onClick={() => setIsModalOpen(false)}
                 >
                     <div
-                        className="bg-white rounded-lg p-2 sm:p-6 w-full max-w-md h-full max-h-[98vh] sm:max-h-[95vh] overflow-hidden relative shadow-2xl flex flex-col"
+                        className="bg-white rounded-lg w-full max-w-sm h-full max-h-[95vh] overflow-hidden relative shadow-2xl flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Botón de cerrar (X) */}
                         <button
-                            className="absolute top-1 right-1 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-700 text-lg sm:text-2xl z-10 p-1"
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl z-10 p-1 bg-white rounded-full shadow-md"
                             onClick={() => setIsModalOpen(false)}
                         >
                             <IoClose />
                         </button>
 
                         {/* Título */}
-                        <h2 className="text-sm sm:text-xl font-bold mb-2 sm:mb-6 text-center pr-5 sm:pr-8 flex-shrink-0">
-                            Ticket generado para imprimir
-                        </h2>
+                        <div className="p-3 pb-2 text-center border-b flex-shrink-0">
+                            <h2 className="text-base font-bold pr-8">
+                                Ticket de Venta
+                            </h2>
+                        </div>
 
                         {/* Contenido del ticket - scrollable */}
-                        <div className="flex-1 overflow-y-auto min-h-0">
-                            <div className="border-2 border-dashed border-gray-300 p-1 sm:p-4 mb-2 sm:mb-6">
+                        <div className="flex-1 overflow-y-auto p-3">
+                            <div className="border-2 border-dashed border-gray-300 p-3 bg-gray-50">
                                 {/* Información del restaurante */}
-                                <div className="text-center mb-2 sm:mb-4 border-b pb-1 sm:pb-4">
-                                    <h3 className="font-bold text-xs sm:text-lg break-words">
+                                <div className="text-center mb-3 pb-2 border-b border-gray-300">
+                                    <h3 className="font-bold text-sm leading-tight">
                                         {selectedTicket.restaurant_name || selectedTicket.restaurante}
                                     </h3>
                                 </div>
 
                                 {/* Información de la orden */}
-                                <div className="mb-2 sm:mb-4 space-y-0.5">
-                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
-                                        <span className="flex-shrink-0">ID:</span>
-                                        <span className="font-mono text-xs break-all text-right">
-                                            {selectedTicket.order_uuid?.slice(0, 8)}...
+                                <div className="mb-3 space-y-1 text-xs">
+                                    <div className="flex justify-between">
+                                        <span className="font-medium">Orden:</span>
+                                        <span className="font-mono text-xs">
+                                            #{selectedTicket.order_uuid?.slice(-8)}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
-                                        <span className="flex-shrink-0">Fecha:</span>
-                                        <span className="break-words text-right">{selectedTicket.fecha}</span>
+                                    <div className="flex justify-between">
+                                        <span className="font-medium">Mesa:</span>
+                                        <span>{selectedTicket.mesa}</span>
                                     </div>
-                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
-                                        <span className="flex-shrink-0">Hora:</span>
-                                        <span className="break-words text-right">{selectedTicket.hora}</span>
+                                    <div className="flex justify-between">
+                                        <span className="font-medium">Fecha:</span>
+                                        <span>{selectedTicket.fecha}</span>
                                     </div>
-                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
-                                        <span className="flex-shrink-0">Estado:</span>
-                                        <span className="font-semibold text-green-600 break-words text-right">
+                                    <div className="flex justify-between">
+                                        <span className="font-medium">Hora:</span>
+                                        <span>{selectedTicket.hora}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="font-medium">Estado:</span>
+                                        <span className="font-semibold text-green-600">
                                             {selectedTicket.order_status || selectedTicket.statusOrden}
                                         </span>
                                     </div>
                                 </div>
 
                                 {/* Productos */}
-                                <div className="mb-2 sm:mb-4">
-                                    <h4 className="font-bold mb-1 border-b pb-0.5 text-xs sm:text-base">Productos:</h4>
-                                    <div className="space-y-1">
+                                <div className="mb-3">
+                                    <h4 className="font-bold text-xs mb-2 pb-1 border-b border-gray-300">
+                                        PRODUCTOS
+                                    </h4>
+                                    <div className="space-y-2">
                                         {selectedTicket.productos?.map((product, index) => (
-                                            <div key={index} className="bg-gray-50 p-1 sm:p-2 rounded">
-                                                <div className="flex justify-between text-xs sm:text-sm gap-1 mb-0.5">
-                                                    <span className={`flex-1 min-w-0 break-words pr-1 ${
-                                                        product.status === "cancelado" ? "text-red-500 line-through" : ""
-                                                    }`}>
-                                                        {product.quantity || product.cantidad}x {product.product_name || product.nombre}
-                                                    </span>
-                                                    <span className={`font-semibold flex-shrink-0 ${
-                                                        product.status === "cancelado" ? "text-red-500 line-through" : ""
+                                            <div key={index} className="bg-white p-2 rounded border">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <div className="flex-1 min-w-0 pr-2">
+                                                        <div className={`text-xs font-medium leading-tight ${
+                                                            product.status === "cancelado" ? "text-red-500 line-through" : ""
+                                                        }`}>
+                                                            {product.product_name || product.nombre}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-0.5">
+                                                            {product.quantity || product.cantidad} × ${(parseFloat(product.unit_price) || product.precio).toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                    <div className={`text-xs font-bold flex-shrink-0 ${
+                                                        product.status === "cancelado" ? "text-red-500 line-through" : "text-green-600"
                                                     }`}>
                                                         ${(parseFloat(product.subtotal) || (product.cantidad * product.precio)).toFixed(2)}
-                                                    </span>
-                                                </div>
-                                                <div className="text-xs text-gray-500 ml-1">
-                                                    <span className="break-words">
-                                                        Precio unitario: ${(parseFloat(product.unit_price) || product.precio).toFixed(2)}
-                                                    </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -833,47 +841,54 @@ export default function Ticketview() {
                                 </div>
 
                                 {/* Total */}
-                                <div className="border-t pt-1 sm:pt-2 mb-2 sm:mb-4">
-                                    <div className="flex justify-between font-bold text-sm sm:text-lg mb-0.5">
-                                        <span>Total:</span>
-                                        <span>${getTicketTotal(selectedTicket).toFixed(2)}</span>
+                                <div className="border-t border-gray-300 pt-2 mb-3">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold text-sm">TOTAL:</span>
+                                        <span className="font-bold text-lg text-green-600">
+                                            ${getTicketTotal(selectedTicket).toFixed(2)}
+                                        </span>
                                     </div>
-                                    <div className="flex justify-between text-xs sm:text-sm gap-2">
-                                        <span className="flex-shrink-0">Método de pago:</span>
-                                        <span className="capitalize font-semibold break-words text-right">
+                                    <div className="flex justify-between text-xs">
+                                        <span>Método de pago:</span>
+                                        <span className="capitalize font-medium">
                                             {selectedTicket.metodo_pago || selectedTicket.metodoPago}
                                         </span>
                                     </div>
                                 </div>
 
                                 {/* Código QR */}
-                                <div className="text-center py-1 sm:py-2">
-                                    <p className="text-xs sm:text-sm text-gray-600 mb-1">Código QR del ticket:</p>
-                                    <div className="flex justify-center mb-1">
+                                <div className="text-center py-2 border-t border-gray-300">
+                                    <p className="text-xs text-gray-600 mb-2">Código QR del ticket</p>
+                                    <div className="flex justify-center mb-2">
                                         <QRCodeCanvas
                                             value={selectedTicket.order_uuid || selectedTicket.id}
-                                            size={window.innerWidth < 640 ? 70 : 120}
+                                            size={80}
                                             level="M"
                                             includeMargin={true}
                                         />
                                     </div>
-                                    <p className="text-xs text-gray-500">
-                                        Escanea con la app móvil para imprimir
+                                    <p className="text-xs text-gray-500 leading-tight">
+                                        Escanea para imprimir desde la app móvil
                                     </p>
                                 </div>
 
                                 {/* Pie del ticket */}
-                                <div className="text-center mt-2 sm:mt-4 pt-1 sm:pt-2 border-t text-xs text-gray-500 space-y-0.5">
-                                    <p>¡Gracias por su visita!</p>
-                                    <p>Conserve este ticket como comprobante</p>
+                                <div className="text-center mt-3 pt-2 border-t border-gray-300">
+                                    <div className="text-xs text-gray-600 space-y-0.5">
+                                        <p className="font-medium">¡Gracias por su visita!</p>
+                                        <p>Conserve este ticket como comprobante</p>
+                                        <p className="text-gray-500 mt-1">
+                                            {new Date().toLocaleString()}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Botón de cerrar - fijo en la parte inferior */}
-                        <div className="flex justify-center pt-1 sm:pt-4 border-t bg-white flex-shrink-0">
+                        <div className="p-3 border-t bg-white flex-shrink-0">
                             <button
-                                className="bg-gray-500 hover:bg-gray-600 text-white py-1 px-3 sm:py-2 sm:px-6 rounded cursor-pointer transition-colors text-xs sm:text-base"
+                                className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded transition-colors text-sm font-medium"
                                 onClick={() => setIsModalOpen(false)}
                             >
                                 Cerrar
