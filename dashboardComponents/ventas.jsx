@@ -4,23 +4,46 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+import { IoClose } from "react-icons/io5";
 import Populares from './populares';
 import IdPedidos from './idpedidos';
 import MainStats from './mainStats';
 import { LineChartFull } from './chart';
 import { getADataGrafico } from '@/useCases/getDataGrafico';
 import { getGraficaSemana } from '@/useCases/getGraficaSemana';
+import { getGraficaMes } from '@/useCases/getGraficaMes';
+import { getGraficaFechas } from '@/useCases/getGraficaFechas';
 import BarChartBreakdown from './chartbar';
+// Importaciones para el selector de fecha
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function Ventas() {
   const [value, setValue] = React.useState('1');
   const [subTabValue, setSubTabValue] = React.useState('semana');
-  const [ventasSemanales, setVentasSemanales] = React.useState([]);
+  
+  // Estados para todas las secciones
   const [datosSemana, setDatosSemana] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  const [datosMes, setDatosMes] = React.useState([]);
+  const [datosFechas, setDatosFechas] = React.useState([]);
+  const [datosTodo, setDatosTodo] = React.useState([]);
+  
+  // Estados de loading
   const [loadingSemana, setLoadingSemana] = React.useState(false);
-  const [error, setError] = React.useState(null);
+  const [loadingMes, setLoadingMes] = React.useState(false);
+  const [loadingFechas, setLoadingFechas] = React.useState(false);
+  const [loadingTodo, setLoadingTodo] = React.useState(false);
+  
+  // Estados de error
   const [errorSemana, setErrorSemana] = React.useState(null);
+  const [errorMes, setErrorMes] = React.useState(null);
+  const [errorFechas, setErrorFechas] = React.useState(null);
+  const [errorTodo, setErrorTodo] = React.useState(null);
+  
+  // Estados para el modal de selección de fecha
+  const [showDatePickerModal, setShowDatePickerModal] = React.useState(false);
+  const [startDate, setStartDate] = React.useState(null);
+  const [endDate, setEndDate] = React.useState(null);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -28,21 +51,30 @@ export default function Ventas() {
 
   const handleSubTabChange = (event, newValue) => {
     setSubTabValue(newValue);
-  };
-
-  // Función para transformar los datos de la API al formato esperado
-  const transformarDatosAPI = (datosAPI) => {
-    if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
-      return [];
+    
+    // Si se selecciona "Entre fechas", abrir el modal
+    if (newValue === "Entre fechas") {
+      setShowDatePickerModal(true);
     }
-
-    return datosAPI.map(item => ({
-      date: item.date.split('T')[0],
-      value: item.value
-    }));
   };
 
-  // Función para procesar datos de ventas por semana
+  // Función para formatear fecha a YYYY-MM-DD
+  const formatDateToAPI = (date) => {
+    if (!date) return null;
+    return date.toISOString().split('T')[0];
+  };
+
+  // Función para formatear fecha para mostrar
+  const formatDate = (date) => {
+    if (!date) return '';
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  // Función para transformar datos de semana
   const procesarDatosSemana = (datosAPI) => {
     if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
       return [];
@@ -60,78 +92,197 @@ export default function Ventas() {
       
       return {
         date: `Semana ${weekNumber}, ${year}`,
-        value: totalSemana,
-        ordenes: semana.orders.filter(order => order.order_status === 'Finalizado').length,
-        week: semana.week
+        value: totalSemana
       };
     });
   };
 
-  // Cargar datos originales de la API
-  React.useEffect(() => {
-    const cargarDatosVentas = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Función para transformar datos de mes
+  const procesarDatosMes = (datosAPI) => {
+    if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
+      return [];
+    }
 
-        const resultado = await getADataGrafico();
+    return datosAPI.map(mes => {
+      // Calcular total de ventas del mes (solo órdenes finalizadas)
+      const totalMes = mes.orders
+        .filter(order => order.order_status === 'Finalizado')
+        .reduce((total, order) => total + parseFloat(order.total || 0), 0);
 
-        if (resultado.success) {
-          const datosTransformados = transformarDatosAPI(resultado.data);
-          setVentasSemanales(datosTransformados);
-          console.log('Datos de ventas semanales cargados:', datosTransformados);
-        } else {
-          console.log('Error controlado:', resultado.error, resultado.message);
+      // Convertir formato de mes a fecha más legible
+      const [year, month] = mes.month.split('-');
+      const monthNames = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      ];
+      
+      return {
+        date: `${monthNames[parseInt(month) - 1]} ${year}`,
+        value: totalMes
+      };
+    });
+  };
 
-          if (resultado.error === 'sin-ventas' || resultado.error === 'sin-permisos') {
-            setError('sin-ventas');
-          } else {
-            setError(resultado.message);
-          }
+  // Función para transformar datos de fechas personalizadas
+  const procesarDatosFechas = (datosAPI) => {
+    if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
+      return [];
+    }
 
-          setVentasSemanales([]);
-        }
-      } catch (error) {
-        console.error('Error inesperado:', error);
-        setError('Error inesperado al cargar los datos');
-        setVentasSemanales([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    return datosAPI.map(periodo => ({
+      date: periodo.period,
+      value: periodo.total_sales
+    }));
+  };
 
-    cargarDatosVentas();
-  }, []);
+  // Función para transformar datos de "Todo"
+  const transformarDatosAPI = (datosAPI) => {
+    if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
+      return [];
+    }
+
+    return datosAPI.map(item => ({
+      date: item.date.split('T')[0],
+      value: item.value
+    }));
+  };
 
   // Cargar datos de ventas por semana
   React.useEffect(() => {
-    const cargarDatosSemana = async () => {
-      try {
-        setLoadingSemana(true);
-        setErrorSemana(null);
+    if (subTabValue === 'semana') {
+      const cargarDatosSemana = async () => {
+        try {
+          setLoadingSemana(true);
+          setErrorSemana(null);
 
-        const resultado = await getGraficaSemana();
+          const resultado = await getGraficaSemana();
 
-        if (resultado.success) {
-          const datosTransformados = procesarDatosSemana(resultado.data);
-          setDatosSemana(datosTransformados);
-          console.log('Datos de ventas por semana cargados:', datosTransformados);
-        } else {
-          console.log('Error al cargar datos de semana:', resultado.error);
-          setErrorSemana(resultado.error);
+          if (resultado.success) {
+            const datosTransformados = procesarDatosSemana(resultado.data);
+            setDatosSemana(datosTransformados);
+            console.log('Datos de ventas por semana cargados:', datosTransformados);
+          } else {
+            console.log('Error al cargar datos de semana:', resultado.error);
+            setErrorSemana(resultado.error);
+            setDatosSemana([]);
+          }
+        } catch (error) {
+          console.error('Error inesperado al cargar datos de semana:', error);
+          setErrorSemana('Error inesperado al cargar los datos');
           setDatosSemana([]);
+        } finally {
+          setLoadingSemana(false);
         }
-      } catch (error) {
-        console.error('Error inesperado al cargar datos de semana:', error);
-        setErrorSemana('Error inesperado al cargar los datos');
-        setDatosSemana([]);
-      } finally {
-        setLoadingSemana(false);
-      }
-    };
+      };
 
-    cargarDatosSemana();
-  }, []);
+      cargarDatosSemana();
+    }
+  }, [subTabValue]);
+
+  // Cargar datos de ventas por mes
+  React.useEffect(() => {
+    if (subTabValue === 'mes') {
+      const cargarDatosMes = async () => {
+        try {
+          setLoadingMes(true);
+          setErrorMes(null);
+
+          const resultado = await getGraficaMes();
+
+          if (resultado.success) {
+            const datosTransformados = procesarDatosMes(resultado.data);
+            setDatosMes(datosTransformados);
+            console.log('Datos de ventas por mes cargados:', datosTransformados);
+          } else {
+            console.log('Error al cargar datos de mes:', resultado.error);
+            setErrorMes(resultado.error);
+            setDatosMes([]);
+          }
+        } catch (error) {
+          console.error('Error inesperado al cargar datos de mes:', error);
+          setErrorMes('Error inesperado al cargar los datos');
+          setDatosMes([]);
+        } finally {
+          setLoadingMes(false);
+        }
+      };
+
+      cargarDatosMes();
+    }
+  }, [subTabValue]);
+
+  // Cargar datos por fechas personalizadas
+  React.useEffect(() => {
+    if (subTabValue === 'Entre fechas' && startDate && endDate) {
+      const cargarDatosFechas = async () => {
+        try {
+          setLoadingFechas(true);
+          setErrorFechas(null);
+
+          const fechaInicio = formatDateToAPI(startDate);
+          const fechaFin = formatDateToAPI(endDate);
+
+          const resultado = await getGraficaFechas(fechaInicio, fechaFin);
+
+          if (resultado.success) {
+            const datosTransformados = procesarDatosFechas(resultado.data);
+            setDatosFechas(datosTransformados);
+            console.log('Datos de ventas por fechas cargados:', datosTransformados);
+          } else {
+            console.log('Error al cargar datos de fechas:', resultado.error);
+            setErrorFechas(resultado.error);
+            setDatosFechas([]);
+          }
+        } catch (error) {
+          console.error('Error inesperado al cargar datos de fechas:', error);
+          setErrorFechas('Error inesperado al cargar los datos');
+          setDatosFechas([]);
+        } finally {
+          setLoadingFechas(false);
+        }
+      };
+
+      cargarDatosFechas();
+    }
+  }, [subTabValue, startDate, endDate]);
+
+  // Cargar datos de "Todo"
+  React.useEffect(() => {
+    if (subTabValue === 'Todo') {
+      const cargarDatosTodo = async () => {
+        try {
+          setLoadingTodo(true);
+          setErrorTodo(null);
+
+          const resultado = await getADataGrafico();
+
+          if (resultado.success) {
+            const datosTransformados = transformarDatosAPI(resultado.data);
+            setDatosTodo(datosTransformados);
+            console.log('Datos de ventas totales cargados:', datosTransformados);
+          } else {
+            console.log('Error al cargar datos totales:', resultado.error);
+            setErrorTodo(resultado.error);
+            setDatosTodo([]);
+          }
+        } catch (error) {
+          console.error('Error inesperado al cargar datos totales:', error);
+          setErrorTodo('Error inesperado al cargar los datos');
+          setDatosTodo([]);
+        } finally {
+          setLoadingTodo(false);
+        }
+      };
+
+      cargarDatosTodo();
+    }
+  }, [subTabValue]);
+
+  // Función para aplicar el filtro de fechas
+  const handleApplyDateFilter = async () => {
+    setShowDatePickerModal(false);
+    // El useEffect ya se ejecutará cuando cambien startDate y endDate
+  };
 
   return (
     <div>
@@ -150,29 +301,31 @@ export default function Ventas() {
             </div>
           </TabPanel>
           <TabPanel value="2">
+            {/* MainStats debe ir aquí, fuera de las sub-pestañas */}
+            <MainStats />
+            
             {/* Sub-pestañas para Ventas */}
-            <Box sx={{ width: '100%', typography: 'body1' }}>
+            <Box sx={{ width: '100%', typography: 'body1', mt: 3 }}>
               <TabContext value={subTabValue}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
                   <TabList onChange={handleSubTabChange} aria-label="ventas tabs">
                     <Tab label="Semana" value="semana" />
                     <Tab label="Mes" value="mes" />
-                    <Tab label="Año" value="año" />
+                    <Tab label="Entre fechas" value="Entre fechas" />
+                    <Tab label="Todo" value="Todo" />
                   </TabList>
                 </Box>
                 
                 <TabPanel value="semana" sx={{ p: 0 }}>
                   <div className="space-y-6">
-                    <MainStats />
-
-                    {/* Mostrar estado de carga para datos de semana */}
+                    {/* Estado de carga para datos de semana */}
                     {loadingSemana && (
                       <div className="bg-white rounded-lg shadow-md p-6">
                         <div className="text-center text-gray-500">Cargando datos de ventas semanales...</div>
                       </div>
                     )}
 
-                    {/* Mostrar error específico para datos de semana */}
+                    {/* Error específico para datos de semana */}
                     {errorSemana && !loadingSemana && (
                       <div className="bg-white rounded-lg shadow-md p-6">
                         <div className="text-center text-gray-500">
@@ -205,32 +358,254 @@ export default function Ventas() {
 
                 <TabPanel value="mes" sx={{ p: 0 }}>
                   <div className="space-y-6">
-                    <MainStats />
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                      <div className="text-center text-gray-500">
-                        <p className="font-semibold">🚧 Vista de Mes</p>
-                        <p className="text-sm mt-2">Esta funcionalidad estará disponible próximamente.</p>
+                    {/* Estado de carga para datos de mes */}
+                    {loadingMes && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">Cargando datos de ventas mensuales...</div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* Error específico para datos de mes */}
+                    {errorMes && !loadingMes && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">
+                          <p className="font-semibold">📊 No hay datos de ventas mensuales</p>
+                          <p className="text-sm mt-2">No se pudieron cargar los datos de ventas por mes.</p>
+                          <p className="text-xs mt-1 text-gray-400">Error: {errorMes}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gráfico de ventas por mes */}
+                    {!loadingMes && !errorMes && datosMes.length > 0 && (
+                      <LineChartFull
+                        data={datosMes}
+                        title="Ventas por Mes"
+                      />
+                    )}
+
+                    {/* Mensaje cuando no hay datos de mes */}
+                    {!loadingMes && !errorMes && datosMes.length === 0 && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">
+                          <p className="font-semibold">📊 No hay ventas registradas por mes</p>
+                          <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </TabPanel>
 
-                <TabPanel value="año" sx={{ p: 0 }}>
+                <TabPanel value="Entre fechas" sx={{ p: 0 }}>
                   <div className="space-y-6">
-                    <MainStats />
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                      <div className="text-center text-gray-500">
-                        <p className="font-semibold">🚧 Vista de Año</p>
-                        <p className="text-sm mt-2">Esta funcionalidad estará disponible próximamente.</p>
+                    {/* Mostrar información del rango seleccionado */}
+                    {startDate && endDate && (
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <p className="text-blue-800 font-semibold">
+                          Rango seleccionado: {formatDate(startDate)} - {formatDate(endDate)}
+                        </p>
+                        <button
+                          onClick={() => setShowDatePickerModal(true)}
+                          className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
+                        >
+                          Cambiar fechas
+                        </button>
                       </div>
-                    </div>
+                    )}
+
+                    {/* Estado de carga para datos de fechas */}
+                    {loadingFechas && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">Cargando datos de ventas por fechas...</div>
+                      </div>
+                    )}
+
+                    {/* Error específico para datos de fechas */}
+                    {errorFechas && !loadingFechas && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">
+                          <p className="font-semibold">📊 No hay datos de ventas para las fechas seleccionadas</p>
+                          <p className="text-sm mt-2">No se pudieron cargar los datos de ventas para el rango especificado.</p>
+                          <p className="text-xs mt-1 text-gray-400">Error: {errorFechas}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gráfico de ventas por fechas */}
+                    {!loadingFechas && !errorFechas && datosFechas.length > 0 && (
+                      <LineChartFull
+                        data={datosFechas}
+                        title="Ventas por Rango de Fechas"
+                      />
+                    )}
+
+                    {/* Mensaje cuando no hay fechas seleccionadas o no hay datos */}
+                    {(!startDate || !endDate) && !loadingFechas && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">
+                          <p className="font-semibold">📅 Selecciona un rango de fechas</p>
+                          <p className="text-sm mt-2">Haz clic en el botón de arriba para seleccionar las fechas que deseas consultar.</p>
+                          <button
+                            onClick={() => setShowDatePickerModal(true)}
+                            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                          >
+                            Seleccionar fechas
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!loadingFechas && !errorFechas && startDate && endDate && datosFechas.length === 0 && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">
+                          <p className="font-semibold">📊 No hay ventas en el rango seleccionado</p>
+                          <p className="text-sm mt-2">No se encontraron ventas para las fechas especificadas.</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </TabPanel>
+
+                <TabPanel value="Todo" sx={{ p: 0 }}>
+                  <div className="space-y-6">
+                    {/* Estado de carga para datos totales */}
+                    {loadingTodo && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">Cargando todos los datos de ventas...</div>
+                      </div>
+                    )}
+
+                    {/* Error específico para datos totales */}
+                    {errorTodo && !loadingTodo && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">
+                          <p className="font-semibold">📊 No hay datos de ventas totales</p>
+                          <p className="text-sm mt-2">No se pudieron cargar todos los datos de ventas.</p>
+                          <p className="text-xs mt-1 text-gray-400">Error: {errorTodo}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gráfico de todas las ventas */}
+                    {!loadingTodo && !errorTodo && datosTodo.length > 0 && (
+                      <LineChartFull
+                        data={datosTodo}
+                        title="Todas las Ventas"
+                      />
+                    )}
+
+                    {/* Mensaje cuando no hay datos totales */}
+                    {!loadingTodo && !errorTodo && datosTodo.length === 0 && (
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center text-gray-500">
+                          <p className="font-semibold">📊 No hay ventas registradas</p>
+                          <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabPanel>
+                
               </TabContext>
             </Box>
           </TabPanel>
         </TabContext>
       </Box>
+
+      {/* Modal para selector de fechas */}
+      {showDatePickerModal && (
+        <div
+          className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000]"
+          onClick={() => setShowDatePickerModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Botón de cerrar */}
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+              onClick={() => setShowDatePickerModal(false)}
+            >
+              <IoClose />
+            </button>
+
+            {/* Título */}
+            <h2 className="text-xl font-bold mb-6 text-center">
+              Seleccionar Rango de Fechas
+            </h2>
+
+            {/* Selector de fechas */}
+            <div className="mb-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha de inicio
+                </label>
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date) => setStartDate(date)}
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  placeholderText="Selecciona fecha de inicio"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  dateFormat="dd/MM/yyyy"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha de fin
+                </label>
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date) => setEndDate(date)}
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  minDate={startDate}
+                  placeholderText="Selecciona fecha de fin"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  dateFormat="dd/MM/yyyy"
+                />
+              </div>
+            </div>
+
+            {/* Información del rango seleccionado */}
+            {startDate && endDate && (
+              <div className="mb-4 p-3 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-700">
+                  <strong>Rango seleccionado:</strong><br />
+                  Desde: {formatDate(startDate)}<br />
+                  Hasta: {formatDate(endDate)}
+                </p>
+              </div>
+            )}
+
+            {/* Botones */}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDatePickerModal(false);
+                  setSubTabValue("semana"); // Cambiar a otra pestaña al cancelar
+                  setStartDate(null);
+                  setEndDate(null);
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleApplyDateFilter}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                disabled={!startDate || !endDate}
+              >
+                Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

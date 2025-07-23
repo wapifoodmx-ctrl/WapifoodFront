@@ -46,6 +46,12 @@ export default function Pntoventa() {
     const [showTicketModal, setShowTicketModal] = useState(false);
     const [completedOrderUuid, setCompletedOrderUuid] = useState(null);
 
+    // Agregar nuevo estado para pedidos pendientes (no enviados a cocina)
+    const [pedidosPendientes, setPedidosPendientes] = useState([]);
+
+    // AGREGAR ESTE ESTADO QUE FALTA:
+    const [showCancelledOrderModal, setShowCancelledOrderModal] = useState(false);
+
     // Mock para establecer permisos de ticket automáticamente
     useEffect(() => {
         // Establecer permisos de ticket para testing
@@ -56,22 +62,18 @@ export default function Pntoventa() {
     // Recuperar datos del localStorage al cargar la página
     useEffect(() => {
         const carritoGuardado = localStorage.getItem("carrito");
-        const historialGuardado = localStorage.getItem("historialPedidos");
+        const pedidosPendientesGuardados = localStorage.getItem("pedidosPendientes");
         const ordenActivaGuardada = localStorage.getItem("ordenActiva");
 
         if (carritoGuardado) {
             setCarrito(JSON.parse(carritoGuardado));
         }
-        if (historialGuardado) {
-            setHistorialPedidos(JSON.parse(historialGuardado));
+        if (pedidosPendientesGuardados) {
+            setPedidosPendientes(JSON.parse(pedidosPendientesGuardados));
         }
         if (ordenActivaGuardada) {
             const orden = JSON.parse(ordenActivaGuardada);
             setOrdenActiva(orden);
-            // Cargar el total final si hay una orden activa
-            if (orden && orden.order_uuid) {
-                cargarTotalFinal(orden.order_uuid);
-            }
         }
     }, []);
 
@@ -89,6 +91,11 @@ export default function Pntoventa() {
             localStorage.setItem("ordenActiva", JSON.stringify(ordenActiva));
         }
     }, [ordenActiva]);
+
+    // Guardar pedidos pendientes en localStorage
+    useEffect(() => {
+        localStorage.setItem("pedidosPendientes", JSON.stringify(pedidosPendientes));
+    }, [pedidosPendientes]);
 
     // Función para cargar el total final usando getFinalOrder
     const cargarTotalFinal = async (uuid) => {
@@ -168,7 +175,7 @@ export default function Pntoventa() {
         });
     };
 
-    // Función modificada para crear/actualizar órdenes
+    // Función MODIFICADA - Ya no envía a cocina, solo guarda localmente
     const terminarOrden = async () => {
         if (carrito.length === 0) {
             setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
@@ -179,133 +186,56 @@ export default function Pntoventa() {
         setMensajeError("");
 
         try {
-            // Preparar productos para la API
-            const productosParaOrden = carrito.map(item => ({
-                id: item.id_products, // Usar el ID original del producto
-                cantidad: item.cantidad
-            }));
-
-            // Crear la orden (con UUID si existe una orden activa)
-            const ordenUuid = ordenActiva ? ordenActiva.order_uuid : null;
-            const response = await createSimpleOrder(productosParaOrden, ordenUuid);
-
-            console.log('Orden creada/actualizada:', response);
-
-            // Guardar la información de la orden activa
-            setOrdenActiva({
-                order_uuid: response.order_uuid,
-                id_orders: response.id_orders,
-                total: response.total,
-                state: response.state,
-                order_status: response.order_status,
-                date_time: response.date_time
-            });
-
-            // Mover productos del carrito al historial
-            setHistorialPedidos((prevHistorial) => [
-                ...prevHistorial,
+            // Mover productos del carrito a pedidos pendientes (sin enviar a API)
+            setPedidosPendientes((prevPendientes) => [
+                ...prevPendientes,
                 ...carrito.map((item) => ({
-                    id_products: item.id_products, // Mantener el ID original
+                    id_products: item.id_products,
                     name: item.name,
                     cantidad: item.cantidad,
                     price: item.price,
                     comentario: item.comentario || "",
                     ingredientesExcluidos: item.ingredientesExcluidos || [],
-                    // Agregar información adicional de la respuesta
-                    order_id: response.id_orders,
-                    fecha_orden: response.date_time
+                    fechaAgregado: new Date().toISOString()
                 })),
             ]);
 
             // Limpiar el carrito
             setCarrito([]);
 
-            // Cargar el total final actualizado
-            await cargarTotalFinal(response.order_uuid);
-
-            setMensajeError("¡Orden enviada exitosamente!");
+            setMensajeError("¡Productos agregados al pedido! Presiona 'Terminar Orden' para proceder al pago.");
             
-            // Limpiar el mensaje después de 3 segundos
             setTimeout(() => {
                 setMensajeError("");
             }, 3000);
 
         } catch (error) {
-            console.error('Error al crear la orden:', error);
-            setMensajeError(`Error al enviar la orden: ${error.message}`);
+            console.error('Error al agregar productos:', error);
+            setMensajeError(`Error al agregar productos: ${error.message}`);
         } finally {
             setIsCreatingOrder(false);
         }
     };
 
-    // Función modificada para verificar el estado de la orden antes de finalizar
+    // Función MODIFICADA - Ahora valida pedidos pendientes en lugar del historial
     const finalizarTodasOrdenes = async () => {
-        if (historialPedidos.length === 0) {
+        if (pedidosPendientes.length === 0) {
             setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
             return;
         }
 
-        // Verificar si hay una orden activa para validar su estado
-        if (ordenActiva && ordenActiva.order_uuid) {
-            try {
-                // Hacer petición a getTicket para verificar el estado
-                const ticketData = await getTicket(ordenActiva.order_uuid);
-                
-                // Verificar si la orden está cancelada
-                if (ticketData.order_status === "Cancelado") {
-                    // Mostrar modal de orden cancelada
-                    setShowCancelledOrderModal(true);
-                    return;
-                }
-                
-                // Si la orden no está cancelada, continuar con el flujo normal
-                setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
-                setModalTotalOpen(true);
-                setMensajeError("");
-                
-            } catch (error) {
-                console.error('Error al verificar el estado de la orden:', error);
-                setMensajeError("Error al verificar el estado de la orden. Intenta nuevamente.");
-                return;
-            }
-        } else {
-            // Si no hay orden activa, proceder normalmente
-            setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
-            setModalTotalOpen(true);
-            setMensajeError("");
-        }
-    };
-
-    // Agregar estado para el modal de orden cancelada
-    const [showCancelledOrderModal, setShowCancelledOrderModal] = useState(false);
-
-    // Función para limpiar todo cuando la orden esté cancelada
-    const limpiarOrdenCancelada = () => {
-        // Limpiar estados
-        setHistorialPedidos([]);
-        setOrdenActiva(null);
-        setTotalFinal(0);
-        setCarrito([]);
+        // Calcular total de pedidos pendientes
+        const totalPendientes = pedidosPendientes.reduce((total, item) => total + (item.price * item.cantidad), 0);
         
-        // Limpiar localStorage
-        localStorage.removeItem("ordenActiva");
-        localStorage.removeItem("historialPedidos");
-        localStorage.removeItem("carrito");
-        
-        // Cerrar modal
-        setShowCancelledOrderModal(false);
-        
-        // Mensaje de confirmación
-        setMensajeError("Los datos de la orden cancelada han sido limpiados.");
-        setTimeout(() => {
-            setMensajeError("");
-        }, 3000);
+        setTotalPedidos(totalPendientes.toFixed(2));
+        setModalTotalOpen(true);
+        setMensajeError("");
     };
 
     // Función confirmarPago modificada para mostrar ticket
     const confirmarPago = async () => {
-        if (!ordenActiva || !ordenActiva.order_uuid) {
-            setMensajeError("No hay una orden activa para finalizar.");
+        if (pedidosPendientes.length === 0) {
+            setMensajeError("No hay pedidos para procesar.");
             return;
         }
 
@@ -314,26 +244,32 @@ export default function Pntoventa() {
         }
 
         setIsProcessingPayment(true);
-        setMensajeError(""); // Limpiar mensajes de error anteriores
+        setMensajeError("");
 
         try {
             console.log(`Procesando pago con ${metodoPago} por $${totalPedidos}`);
             
-            // Guardar el UUID antes de limpiar el estado
-            const currentOrderUuid = ordenActiva.order_uuid;
+            // 1. PRIMERO: Crear la orden en el sistema (enviar a cocina)
+            const productosParaOrden = pedidosPendientes.map(item => ({
+                id: item.id_products,
+                cantidad: item.cantidad
+            }));
+
+            const response = await createSimpleOrder(productosParaOrden, null);
+            console.log('Orden creada en cocina:', response);
+
+            // 2. SEGUNDO: Finalizar inmediatamente con el pago
+            const pagoResponse = await endOrderPuntoDeVenta(response.order_uuid, metodoPago);
             
-            const response = await endOrderPuntoDeVenta(currentOrderUuid, metodoPago);
-            
-            // Verificar que la respuesta sea exitosa
-            if (response && (response.success !== false)) {
-                console.log('Orden finalizada exitosamente:', response);
+            if (pagoResponse && (pagoResponse.success !== false)) {
+                console.log('Pago procesado exitosamente:', pagoResponse);
                 
-                // Limpiar todo después de que la API confirme el éxito
-                setHistorialPedidos([]);
+                // 3. TERCERO: Limpiar todo después del éxito
+                setPedidosPendientes([]);
                 setOrdenActiva(null);
                 setTotalFinal(0);
                 localStorage.removeItem("ordenActiva");
-                localStorage.removeItem("historialPedidos");
+                localStorage.removeItem("pedidosPendientes");
                 localStorage.removeItem("carrito");
                 
                 setModalTotalOpen(false);
@@ -344,18 +280,16 @@ export default function Pntoventa() {
                 // Verificar si debe mostrar el modal de ticket
                 const ticketsEnabled = localStorage.getItem('tickets');
                 if (ticketsEnabled === 'true') {
-                    setCompletedOrderUuid(currentOrderUuid);
+                    setCompletedOrderUuid(response.order_uuid);
                     setShowTicketModal(true);
                 }
                 
-                // Limpiar el mensaje después de 3 segundos
                 setTimeout(() => {
                     setMensajeError("");
                 }, 3000);
                 
             } else {
-                // ❌ La API respondió pero indicó un fallo
-                throw new Error(response?.message || 'La API indicó que el pago no se pudo procesar');
+                throw new Error(pagoResponse?.message || 'La API indicó que el pago no se pudo procesar');
             }
             
         } catch (error) {
@@ -369,7 +303,7 @@ export default function Pntoventa() {
             } else if (error.message.includes('token')) {
                 mensajeErrorUsuario += "Sesión expirada. Por favor, inicia sesión nuevamente.";
             } else if (error.message.includes('404')) {
-                mensajeErrorUsuario += "Orden no encontrada. Contacta con el administrador.";
+                mensajeErrorUsuario += "Error del servidor. Intenta nuevamente en unos momentos.";
             } else if (error.message.includes('500')) {
                 mensajeErrorUsuario += "Error del servidor. Intenta nuevamente en unos momentos.";
             } else {
@@ -381,6 +315,28 @@ export default function Pntoventa() {
         } finally {
             setIsProcessingPayment(false);
         }
+    };
+
+    // Función MODIFICADA para limpiar pedidos pendientes también
+    const limpiarOrdenCancelada = () => {
+        // Limpiar estados
+        setPedidosPendientes([]);
+        setOrdenActiva(null);
+        setTotalFinal(0);
+        setCarrito([]);
+        
+        // Limpiar localStorage
+        localStorage.removeItem("ordenActiva");
+        localStorage.removeItem("pedidosPendientes");
+        localStorage.removeItem("carrito");
+        
+        // Cerrar modal
+        setShowCancelledOrderModal(false);
+        
+        setMensajeError("Los datos han sido limpiados.");
+        setTimeout(() => {
+            setMensajeError("");
+        }, 3000);
     };
 
     return (
@@ -512,15 +468,6 @@ export default function Pntoventa() {
                     <div className="bg-white w-80 h-full shadow-lg p-4 overflow-y-auto">
                         <h2 className="text-xl font-bold mb-4">Tu Pedido</h2>
 
-                        {/* Información de la orden activa */}
-                        {ordenActiva && (
-                            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                <h3 className="text-sm font-semibold text-blue-800">Orden Activa</h3>
-                                <p className="text-xs text-blue-600">UUID: {ordenActiva.order_uuid.slice(0, 8)}...</p>
-                                <p className="text-xs text-blue-600">Estado: {ordenActiva.order_status}</p>
-                            </div>
-                        )}
-
                         {/* Carrito actual */}
                         {carrito.length > 0 ? (
                             <div className="max-h-48 overflow-y-auto mb-4">
@@ -617,19 +564,18 @@ export default function Pntoventa() {
                                 onClick={terminarOrden}
                                 disabled={isCreatingOrder}
                             >
-                                {isCreatingOrder ? 'Enviando...' : 
-                                 ordenActiva ? 'Agregar a la orden' : 'Añadir a la orden'}
+                                {isCreatingOrder ? 'Agregando...' : 'Agregar al pedido'}
                             </button>
                         </div>
 
-                        {/* Historial de pedidos */}
-                        {historialPedidos.length > 0 && (
+                        {/* Pedidos pendientes (reemplaza historial) */}
+                        {pedidosPendientes.length > 0 && (
                             <div className="mt-8">
-                                <h3 className="text-lg font-bold text-gray-500 mb-2">Historial de Pedidos</h3>
+                                <h3 className="text-lg font-bold text-gray-500 mb-2">Pedidos Pendientes</h3>
                                 <div className="max-h-48 overflow-y-auto">
                                     <ul className="space-y-2">
-                                        {historialPedidos.map((item, index) => (
-                                            <li key={index} className="p-2 rounded shadow bg-gray-50">
+                                        {pedidosPendientes.map((item, index) => (
+                                            <li key={index} className="p-2 rounded shadow bg-yellow-50 border border-yellow-200">
                                                 <p className="font-bold">{item.cantidad} x {item.name}</p>
                                                 {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
                                                     <p className="text-sm text-gray-500">
@@ -644,39 +590,35 @@ export default function Pntoventa() {
                                                 <p className="text-sm text-gray-500">
                                                     Precio: ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
                                                 </p>
+                                                <p className="text-xs text-yellow-600 font-medium">⏳ Pendiente de pago</p>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
-                                {historialPedidos.length > 3 && (
-                                    <p className="text-xs text-gray-400 text-center mt-2">
-                                        Mostrando {historialPedidos.length} productos - Desliza para ver más
-                                    </p>
-                                )}
                             </div>
                         )}
                         
-                        {/* Total final de todas las órdenes */}
-                        {totalFinal > 0 && (
+                        {/* Total de pedidos pendientes */}
+                        {pedidosPendientes.length > 0 && (
                             <p className="text-sm text-gray-500 pt-2 font-semibold">
-                                Total Final: ${totalFinal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                Total Pendiente: ${pedidosPendientes.reduce((total, item) => total + (item.price * item.cantidad), 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         )}
                        
-                        {/* Botón "Terminar Orden" */}
+                        {/* Botón "Terminar Orden" - ACTUALIZADO */}
                         <div className="mt-4">
                             <button
                                 className={`w-full py-2 rounded-lg mt-4 ${
-                                    historialPedidos.length > 0
+                                    pedidosPendientes.length > 0
                                         ? "bg-red-500 text-white hover:bg-red-600"
                                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
                                 }`}
                                 onClick={finalizarTodasOrdenes}
-                                disabled={historialPedidos.length === 0}
+                                disabled={pedidosPendientes.length === 0}
                             >
-                                Terminar Orden
+                                Proceder al Pago
                             </button>
-                            {mensajeError && historialPedidos.length === 0 && (
+                            {mensajeError && pedidosPendientes.length === 0 && (
                                 <p className="text-red-500 text-sm font-bold mt-2">{mensajeError}</p>
                             )}
                         </div>
