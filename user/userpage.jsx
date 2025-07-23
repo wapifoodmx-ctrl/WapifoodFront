@@ -62,6 +62,13 @@ const getFullAddress = (userInfo) => {
   return addressParts.join(" ");
 };
 
+// Función helper para verificar si se debe mostrar el menú digital
+const shouldShowDigitalMenu = (userInfo) => {
+  const hasRestaurantName = getCleanValue(userInfo?.nombre_restaurante);
+  const hasPhone = getCleanValue(userInfo?.telefono);
+  return hasRestaurantName && hasPhone;
+};
+
 // Componente principal
 export default function UserPage() {
   const [userInfo, setUserInfo] = useState(null);
@@ -139,7 +146,7 @@ export default function UserPage() {
       
       {/* Modal de éxito */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center shadow-2xl">
             <div className="mb-4">
               <FaCheckCircle className="text-green-500 text-6xl mx-auto" />
@@ -224,22 +231,24 @@ export default function UserPage() {
               </div>
             </div>
 
-            {/* Enlace al menú digital */}
-            <div className="px-2">
-              <div className="flex justify-center items-center gap-2 text-center">
-                <span className="text-gray-600 flex-shrink-0">|</span>
-                <div className="flex items-center justify-center min-w-0 flex-1 gap-2">
-                  <TbWorldShare className="text-xl text-green-600 flex-shrink-0" />
-                  <button 
-                    onClick={() => router.push(`/webmenu/${userInfo?.user_uuid}`)}
-                    className="text-sm text-blue-600 hover:text-blue-800 underline transition-colors"
-                  >
-                    Tu menú digital
-                  </button>
+            {/* Enlace al menú digital - Solo mostrar si tiene nombre del restaurante y teléfono */}
+            {shouldShowDigitalMenu(userInfo) && (
+              <div className="px-2">
+                <div className="flex justify-center items-center gap-2 text-center">
+                  <span className="text-gray-600 flex-shrink-0">|</span>
+                  <div className="flex items-center justify-center min-w-0 flex-1 gap-2">
+                    <TbWorldShare className="text-xl text-green-600 flex-shrink-0" />
+                    <button 
+                      onClick={() => router.push(`/webmenu/${userInfo?.user_uuid}`)}
+                      className="text-sm text-blue-600 hover:text-blue-800 underline transition-colors"
+                    >
+                      Tu menú digital
+                    </button>
+                  </div>
+                  <span className="text-gray-600 flex-shrink-0">|</span>
                 </div>
-                <span className="text-gray-600 flex-shrink-0">|</span>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Vista desktop - todo en una línea */}
@@ -260,16 +269,21 @@ export default function UserPage() {
               {getCleanValue(userInfo?.telefono) || "Sin teléfono"}
             </span>
             <span className="text-gray-600">|</span>
-            <TbWorldShare className="text-xl text-green-600" />
-            <a 
-              className="text-sm text-blue-600 hover:text-blue-800 underline transition-colors"
-              href={`http://localhost:3000/webmenu/${userInfo?.user_uuid || ''}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Tu menú digital
-            </a>
-            <span className="text-gray-600">|</span>
+            {/* Solo mostrar el menú digital si tiene nombre del restaurante y teléfono */}
+            {shouldShowDigitalMenu(userInfo) && (
+              <>
+                <TbWorldShare className="text-xl text-green-600" />
+                <a 
+                  className="text-sm text-blue-600 hover:text-blue-800 underline transition-colors"
+                  href={`http://localhost:3000/webmenu/${userInfo?.user_uuid || ''}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Tu menú digital
+                </a>
+                <span className="text-gray-600">|</span>
+              </>
+            )}
           </div>
         </div>
       </div>

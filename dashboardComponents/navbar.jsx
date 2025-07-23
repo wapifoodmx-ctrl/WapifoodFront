@@ -17,6 +17,7 @@ export default function Navbar() {
     const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
     const [subscriptionLoading, setSubscriptionLoading] = useState(true);
     const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
+    const [switchEnabled, setSwitchEnabled] = useState(false); // Estado para el switch
     const menuRef = useRef(null);
 
     const handleLogout = () => {
@@ -156,18 +157,45 @@ export default function Navbar() {
                     <h2 className="text-3xl hover:text-green-600 font-bold ml-2">WapiFood</h2>
                 </div>
 
-                <button
-                    className="z-50 cursor-pointer"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setIsOpen(!isOpen);
-                    }}
-                    aria-label="Toggle menu"
-                >
-                    <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-                    <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
-                    <div className={`w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
-                </button>
+                {/* Container para el switch y el menú hamburguesa */}
+                <div className="flex items-center gap-4">
+                    {/* Switch personalizado con texto */}
+                    <div 
+                        className={`
+                            relative w-40 h-8 rounded-full cursor-pointer transition-colors duration-300 flex items-center justify-center
+                            ${switchEnabled ? 'bg-green-600' : 'bg-gray-400'}
+                        `}
+                        onClick={() => setSwitchEnabled(!switchEnabled)}
+                    >
+                        {/* Texto dentro del switch */}
+                        <span className="text-white text-sm font-medium z-10">
+                            {switchEnabled ? 'Cocina On' : 'Cocina Off'}
+                        </span>
+                        
+                        {/* Círculo deslizante */}
+                        <div 
+                            className={`
+                                absolute w-7 h-7 bg-white rounded-full shadow-md 
+                                transition-transform duration-300 ease-in-out
+                                ${switchEnabled ? 'translate-x-14' : '-translate-x-14'}
+                            `}
+                        />
+                    </div>
+
+                    {/* Menú hamburguesa */}
+                    <button
+                        className="z-50 cursor-pointer"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsOpen(!isOpen);
+                        }}
+                        aria-label="Toggle menu"
+                    >
+                        <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+                        <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
+                        <div className={`w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                    </button>
+                </div>
 
                 <div
                     ref={menuRef}
