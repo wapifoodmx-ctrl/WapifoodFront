@@ -80,21 +80,40 @@ export default function Ventas() {
       return [];
     }
 
-    return datosAPI.map(semana => {
-      // Calcular total de ventas de la semana (solo órdenes finalizadas)
-      const totalSemana = semana.orders
-        .filter(order => order.order_status === 'Finalizado')
-        .reduce((total, order) => total + parseFloat(order.total || 0), 0);
+    // Agrupar por semana
+    const ventasPorSemana = {};
+    
+    datosAPI.forEach(venta => {
+      const fecha = new Date(venta.date);
+      const year = fecha.getFullYear();
+      const semana = getWeekNumber(fecha);
+      const claveSeamana = `${year}-W${semana.toString().padStart(2, '0')}`;
+      
+      if (!ventasPorSemana[claveSeamana]) {
+        ventasPorSemana[claveSeamana] = 0;
+      }
+      ventasPorSemana[claveSeamana] += parseFloat(venta.value || 0);
+    });
 
-      // Convertir formato de semana a fecha más legible
-      const weekNumber = semana.week.split('-W')[1];
-      const year = semana.week.split('-W')[0];
+    // Convertir a array y formatear
+    return Object.entries(ventasPorSemana).map(([semana, total]) => {
+      const weekNumber = semana.split('-W')[1];
+      const year = semana.split('-W')[0];
       
       return {
         date: `Semana ${weekNumber}, ${year}`,
-        value: totalSemana
+        value: total
       };
-    });
+    }).sort((a, b) => a.date.localeCompare(b.date));
+  };
+
+  // Función para obtener número de semana
+  const getWeekNumber = (date) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   };
 
   // Función para transformar datos de mes
@@ -103,24 +122,35 @@ export default function Ventas() {
       return [];
     }
 
-    return datosAPI.map(mes => {
-      // Calcular total de ventas del mes (solo órdenes finalizadas)
-      const totalMes = mes.orders
-        .filter(order => order.order_status === 'Finalizado')
-        .reduce((total, order) => total + parseFloat(order.total || 0), 0);
+    // Agrupar por mes
+    const ventasPorMes = {};
+    
+    datosAPI.forEach(venta => {
+      const fecha = new Date(venta.date);
+      const year = fecha.getFullYear();
+      const month = fecha.getMonth() + 1; // getMonth() devuelve 0-11
+      const claveMes = `${year}-${month.toString().padStart(2, '0')}`;
+      
+      if (!ventasPorMes[claveMes]) {
+        ventasPorMes[claveMes] = 0;
+      }
+      ventasPorMes[claveMes] += parseFloat(venta.value || 0);
+    });
 
-      // Convertir formato de mes a fecha más legible
-      const [year, month] = mes.month.split('-');
-      const monthNames = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-      ];
+    // Convertir a array y formatear
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    return Object.entries(ventasPorMes).map(([mes, total]) => {
+      const [year, month] = mes.split('-');
       
       return {
         date: `${monthNames[parseInt(month) - 1]} ${year}`,
-        value: totalMes
+        value: total
       };
-    });
+    }).sort((a, b) => a.date.localeCompare(b.date));
   };
 
   // Función para transformar datos de fechas personalizadas
@@ -129,10 +159,23 @@ export default function Ventas() {
       return [];
     }
 
-    return datosAPI.map(periodo => ({
-      date: periodo.period,
-      value: periodo.total_sales
-    }));
+    // Agrupar por día
+    const ventasPorDia = {};
+    
+    datosAPI.forEach(venta => {
+      const fecha = venta.date.split('T')[0]; // Obtener solo la fecha (YYYY-MM-DD)
+      
+      if (!ventasPorDia[fecha]) {
+        ventasPorDia[fecha] = 0;
+      }
+      ventasPorDia[fecha] += parseFloat(venta.value || 0);
+    });
+
+    // Convertir a array y formatear
+    return Object.entries(ventasPorDia).map(([fecha, total]) => ({
+      date: fecha,
+      value: total
+    })).sort((a, b) => a.date.localeCompare(b.date));
   };
 
   // Función para transformar datos de "Todo"
@@ -141,10 +184,23 @@ export default function Ventas() {
       return [];
     }
 
-    return datosAPI.map(item => ({
-      date: item.date.split('T')[0],
-      value: item.value
-    }));
+    // Agrupar por día
+    const ventasPorDia = {};
+    
+    datosAPI.forEach(venta => {
+      const fecha = venta.date.split('T')[0]; // Obtener solo la fecha (YYYY-MM-DD)
+      
+      if (!ventasPorDia[fecha]) {
+        ventasPorDia[fecha] = 0;
+      }
+      ventasPorDia[fecha] += parseFloat(venta.value || 0);
+    });
+
+    // Convertir a array y formatear
+    return Object.entries(ventasPorDia).map(([fecha, total]) => ({
+      date: fecha,
+      value: total
+    })).sort((a, b) => a.date.localeCompare(b.date));
   };
 
   // Cargar datos de ventas por semana

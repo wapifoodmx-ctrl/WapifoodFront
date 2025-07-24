@@ -258,13 +258,21 @@ export default function Pntoventa() {
             const response = await createSimpleOrder(productosParaOrden, null);
             console.log('Orden creada en cocina:', response);
 
-            // 2. SEGUNDO: Finalizar inmediatamente con el pago
-            const pagoResponse = await endOrderPuntoDeVenta(response.order_uuid, metodoPago);
+            // 2. SEGUNDO: Obtener el estado del switch de cocina desde localStorage
+            const cocinaEnabled = localStorage.getItem('cocinaSwitch');
+            const switchEnabled = cocinaEnabled ? JSON.parse(cocinaEnabled) : false;
+            
+            // 3. TERCERO: Determinar el estado según el switch
+            const orderStatus = switchEnabled ? 'PuntoDeVenta' : 'Finalizado';
+            console.log(`Estado de la orden será: ${orderStatus} (Switch cocina: ${switchEnabled ? 'ON' : 'OFF'})`);
+
+            // 4. CUARTO: Finalizar con el pago y estado apropiado
+            const pagoResponse = await endOrderPuntoDeVenta(response.order_uuid, metodoPago, orderStatus);
             
             if (pagoResponse && (pagoResponse.success !== false)) {
                 console.log('Pago procesado exitosamente:', pagoResponse);
                 
-                // 3. TERCERO: Limpiar todo después del éxito
+                // 5. QUINTO: Limpiar todo después del éxito
                 setPedidosPendientes([]);
                 setOrdenActiva(null);
                 setTotalFinal(0);
@@ -275,11 +283,16 @@ export default function Pntoventa() {
                 setModalTotalOpen(false);
                 setMetodoPago('efectivo');
                 
-                setMensajeError("¡Pago procesado exitosamente!");
+                // Mensaje de éxito personalizado según el estado
+                const mensajeExito = switchEnabled 
+                    ? "¡Pago procesado! La orden ha sido enviada al punto de venta." 
+                    : "¡Pago procesado y orden finalizada exitosamente!";
                 
-                // Verificar si debe mostrar el modal de ticket
+                setMensajeError(mensajeExito);
+                
+                // Verificar si debe mostrar el modal de ticket (solo si está finalizado)
                 const ticketsEnabled = localStorage.getItem('tickets');
-                if (ticketsEnabled === 'true') {
+                if (ticketsEnabled === 'true' && !switchEnabled) {
                     setCompletedOrderUuid(response.order_uuid);
                     setShowTicketModal(true);
                 }

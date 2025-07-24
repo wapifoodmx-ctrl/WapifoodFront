@@ -60,6 +60,14 @@ export default function Navbar() {
         }
     };
 
+    // Función para manejar el cambio del switch
+    const handleSwitchToggle = () => {
+        const newState = !switchEnabled;
+        setSwitchEnabled(newState);
+        // Guardar en localStorage
+        localStorage.setItem('cocinaSwitch', JSON.stringify(newState));
+    };
+
     const menu = {
         Dashboard: {
             title: "Dashboard",
@@ -120,6 +128,12 @@ export default function Navbar() {
         } else {
             checkSubscriptionStatus();
         }
+
+        // Recuperar el estado del switch desde localStorage
+        const savedSwitchState = localStorage.getItem('cocinaSwitch');
+        if (savedSwitchState !== null) {
+            setSwitchEnabled(JSON.parse(savedSwitchState));
+        }
     }, [router]);
 
     useEffect(() => {
@@ -149,6 +163,12 @@ export default function Navbar() {
         return "flex w-auto gap-2 cursor-pointer hover:text-green-600";
     };
 
+    // Función para manejar el click en cocina
+    const handleCocinaClick = () => {
+        // Usar la función normal de restricción por suscripción
+        handleRestrictedClick(cocina);
+    };
+
     return (
         <nav className="bg-[#f3f4f6] w-full fixed top-0 left-0 flex justify-between h-16 z-50 shadow-md overflow-x-hidden">
             <div className="flex w-full justify-between px-4">
@@ -165,7 +185,7 @@ export default function Navbar() {
                             relative w-40 h-8 rounded-full cursor-pointer transition-colors duration-300 flex items-center justify-center
                             ${switchEnabled ? 'bg-green-600' : 'bg-gray-400'}
                         `}
-                        onClick={() => setSwitchEnabled(!switchEnabled)}
+                        onClick={handleSwitchToggle}
                     >
                         {/* Texto dentro del switch */}
                         <span className="text-white text-sm font-medium z-10">
@@ -234,7 +254,7 @@ export default function Navbar() {
                                 ) : item === "Cocina" ? (
                                     <button
                                         className={getMenuItemClasses(item)}
-                                        onClick={() => handleRestrictedClick(cocina)}
+                                        onClick={handleCocinaClick}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                     </button>
