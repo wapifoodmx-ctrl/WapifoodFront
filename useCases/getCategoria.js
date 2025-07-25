@@ -1,5 +1,5 @@
 export async function getCategoria() {
-    const endpoint = 'https://comandapp-api.h-dev.xyz/categoria';
+    const endpoint = 'https://api.wapifood.com/categoria';
 
     try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');

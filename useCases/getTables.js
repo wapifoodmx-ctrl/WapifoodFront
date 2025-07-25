@@ -8,7 +8,7 @@ export const getTables = async () => {
 
         console.log('Haciendo petición a la API de mesas...');
         
-        const response = await fetch('https://comandapp-api.h-dev.xyz/tables/status', {
+        const response = await fetch('https://api.wapifood.com/tables/status', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

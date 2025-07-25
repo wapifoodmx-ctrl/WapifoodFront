@@ -42,7 +42,7 @@ export const updateTableStatus = async (tableId, status) => {
         
         console.log('Parámetros a enviar:', params.toString());
 
-        const response = await fetch('https://comandapp-api.h-dev.xyz/tables/status', {
+        const response = await fetch('https://api.wapifood.com/tables/status', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,

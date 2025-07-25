@@ -44,7 +44,7 @@ export async function postDataUser(userInfo, imageFile) {
         throw new Error("No se encontró un token de autenticación. Por favor, inicia sesión.");
     }
 
-    const url = "https://comandapp-api.h-dev.xyz/user/me/info";
+    const url = "https://api.wapifood.com/user/me/info";
 
     console.log("URL de la solicitud:", url);
     console.log("Datos enviados (formData):", Object.fromEntries(formData.entries())); // Log form data

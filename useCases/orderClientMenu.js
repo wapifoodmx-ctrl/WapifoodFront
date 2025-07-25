@@ -8,7 +8,7 @@
  * @returns {Promise<Object>} - Respuesta de la API
  */
 export async function createClientOrder(orderData) {
-    const endpoint = 'https://comandapp-api.h-dev.xyz/orders';
+    const endpoint = 'https://api.wapifood.com/orders';
     
     // Validaciones básicas
     if (!orderData.product_ids || !Array.isArray(orderData.product_ids) || orderData.product_ids.length === 0) {

@@ -1,5 +1,5 @@
 export async function patchUserInfo(userData) {
-    const endpoint = 'https://comandapp-api.h-dev.xyz/user/me/info';
+    const endpoint = 'https://api.wapifood.com/user/me/info';
 
     try {
         // Obtener el token del localStorage o sessionStorage

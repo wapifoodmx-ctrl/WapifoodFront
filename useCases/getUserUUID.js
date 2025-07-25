@@ -3,7 +3,7 @@ export async function getUserUUID(userUuid) {
         throw new Error('User UUID es requerido');
     }
 
-    const endpoint = `https://comandapp-api.h-dev.xyz/user/info/${userUuid}`;
+    const endpoint = `https://api.wapifood.com/user/info/${userUuid}`;
     
     // Debug: Ver qué UUID y endpoint estamos usando
     console.log('User UUID recibido:', userUuid);

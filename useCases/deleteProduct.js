@@ -1,5 +1,5 @@
 export async function deleteProduct(productId) {
-    const endpoint = `https://comandapp-api.h-dev.xyz/products/${productId}`;
+    const endpoint = `https://api.wapifood.com/products/${productId}`;
 
     try {
         // Obtener el token del localStorage o sessionStorage

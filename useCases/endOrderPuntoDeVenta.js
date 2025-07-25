@@ -13,7 +13,7 @@ export const endOrderPuntoDeVenta = async (orderUuid, metodoPago,status) => {
         }
 
         // Construir la URL con los parámetros de query
-        const endpoint = `https://comandapp-api.h-dev.xyz/orders/orders/${orderUuid}/cambio_estatus?order_status=${status}&metodo_pago=${metodoPago}`;
+        const endpoint = `https://api.wapifood.com/orders/orders/${orderUuid}/cambio_estatus?order_status=${status}&metodo_pago=${metodoPago}`;
 
         const response = await fetch(endpoint, {
             method: 'PUT',

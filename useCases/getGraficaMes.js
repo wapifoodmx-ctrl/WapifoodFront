@@ -11,7 +11,7 @@ export const getGraficaMes = async () => {
             throw new Error('Token de autenticación no encontrado');
         }
 
-        const response = await fetch('https://comandapp-api.h-dev.xyz/analytics/ventas_por_mes_reciente', {
+        const response = await fetch('https://api.wapifood.com/analytics/ventas_por_mes_reciente', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
