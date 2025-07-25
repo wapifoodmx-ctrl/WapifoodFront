@@ -275,7 +275,7 @@ export default function UserPage() {
                 <TbWorldShare className="text-xl text-green-600" />
                 <a 
                   className="text-sm text-blue-600 hover:text-blue-800 underline transition-colors"
-                  href={`http://localhost:3000/webmenu/${userInfo?.user_uuid || ''}`}
+                  href={`http://wapifood.com/webmenu/${userInfo?.user_uuid || ''}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

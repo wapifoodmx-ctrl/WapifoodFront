@@ -100,7 +100,7 @@ export default function PlanDeVentas() {
             promoPrice: "$1960.00 mxn al año",
             promoText: "Precio de apertura",
             buttonText: "Seleccionar",
-            prop: "premium",
+            prop: "basico + impresora",
         },
         {
             id: 5,
@@ -110,7 +110,7 @@ export default function PlanDeVentas() {
             promoPrice: "$2920.00 mxn al año",
             promoText: "Precio de apertura",
             buttonText: "Seleccionar",
-            prop: "max",
+            prop: "plan restaurante + impresora",
         },
         {
             id: 6,
@@ -120,7 +120,7 @@ export default function PlanDeVentas() {
             promoPrice: "$3880.00 mxn al mes",
             promoText: "Precio de apertura",
             buttonText: "Seleccionar",
-            prop: "plus",    
+            prop: "plan restaurante plus + impresora",    
         }
     ]);
 

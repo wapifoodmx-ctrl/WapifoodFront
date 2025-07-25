@@ -31,6 +31,7 @@ export default function VistaCocina() {
     const [finishedTables, setFinishedTables] = useState([]);
     
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+    const [countdown, setCountdown] = useState(10);
 
     const fetchTablesData = async () => {
         try {
@@ -49,6 +50,7 @@ export default function VistaCocina() {
             // Verificar errores de suscripción en las tablas
             if (tablesData.error && tablesData.status === 403) {
                 setShowSubscriptionModal(true);
+                setCountdown(10); // Resetear el contador
                 setLoading(false);
                 return;
             }
@@ -262,6 +264,26 @@ export default function VistaCocina() {
         return () => clearInterval(interval);
     }, []);
 
+    // Agregar este nuevo useEffect para el contador
+    useEffect(() => {
+        let countdownInterval;
+        
+        if (showSubscriptionModal && countdown > 0) {
+            countdownInterval = setInterval(() => {
+                setCountdown((prev) => prev - 1);
+            }, 1000);
+        } else if (showSubscriptionModal && countdown === 0) {
+            // Cuando el contador llega a 0, redirigir automáticamente
+            handleGoToPayments();
+        }
+
+        return () => {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+        };
+    }, [showSubscriptionModal, countdown]);
+
     const toggleDropdown = (id) => {
         setVisibleDropdown(visibleDropdown === id ? null : id);
     };
@@ -420,23 +442,27 @@ export default function VistaCocina() {
 
     return (
         <div className="w-full mt-16">
-            {/* Modal de suscripción */}
+            {/* Modal de suscripción con contador */}
             {showSubscriptionModal && (
                 <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-md mx-4">
                         <h2 className="text-xl font-bold mb-4 text-red-600">Suscripción Requerida</h2>
-                        <p className="text-gray-700 mb-6">
+                        <p className="text-gray-700 mb-4">
                             Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
                             Por favor, renueva tu suscripción para continuar.
                         </p>
+                        <div className="text-center mb-6">
+                            <p className="text-green-600 font-semibold text-lg">
+                                Redireccionando a pagos en {countdown} segundos...
+                            </p>
+                        </div>
                         <div className="flex gap-3">
                             <button
                                 onClick={handleGoToPayments}
                                 className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                             >
-                                Ir a Pagos
+                                Ir a Pagos Ahora
                             </button>
-                           
                         </div>
                     </div>
                 </div>
