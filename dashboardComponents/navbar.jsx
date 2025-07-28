@@ -9,6 +9,7 @@ import { FaUser } from "react-icons/fa";
 import { ImExit } from "react-icons/im";
 import { LuIdCard } from "react-icons/lu";
 import { FaKitchenSet } from "react-icons/fa6";
+import { GiGasStove } from "react-icons/gi"; // Nuevo ícono de estufa
 import { checkPayment } from '../useCases/checkPayment';
 
 export default function Navbar() {
@@ -178,28 +179,38 @@ export default function Navbar() {
                 </div>
 
                 {/* Container para el switch y el menú hamburguesa */}
-                <div className="flex items-center gap-4">
-                    {/* Switch personalizado con texto */}
+                <div className="flex items-center gap-2 sm:gap-4">
+                    {/* Switch personalizado con texto responsive */}
                     <div 
                         className={`
-                            relative w-40 h-8 rounded-full cursor-pointer transition-colors duration-300 flex items-center justify-center
+                            relative h-4 md:h-8 rounded-full cursor-pointer transition-colors duration-300 flex items-center justify-center
+                            w-12 md:w-40
                             ${switchEnabled ? 'bg-green-600' : 'bg-gray-400'}
                         `}
                         onClick={handleSwitchToggle}
                     >
-                        {/* Texto dentro del switch */}
-                        <span className="text-white text-sm font-medium z-10">
+                        {/* Texto dentro del switch - oculto en móviles y tablets */}
+                        <span className="hidden md:block text-white text-xs md:text-sm font-medium z-10">
                             {switchEnabled ? 'Cocina On' : 'Cocina Off'}
                         </span>
                         
-                        {/* Círculo deslizante */}
+                        {/* Círculo deslizante con ícono de estufa */}
                         <div 
                             className={`
-                                absolute w-7 h-7 bg-white rounded-full shadow-md 
+                                absolute w-3 h-3 md:w-7 md:h-7 bg-white rounded-full shadow-md 
                                 transition-transform duration-300 ease-in-out
-                                ${switchEnabled ? 'translate-x-14' : '-translate-x-14'}
+                                flex items-center justify-center
+                                ${switchEnabled ? 'translate-x-4 md:translate-x-14' : '-translate-x-4 md:-translate-x-14'}
                             `}
-                        />
+                        >
+                            <GiGasStove 
+                                className={`
+                                    w-2 h-2 md:w-4 md:h-4 
+                                    ${switchEnabled ? 'text-green-600' : 'text-gray-400'}
+                                    transition-colors duration-300
+                                `} 
+                            />
+                        </div>
                     </div>
 
                     {/* Menú hamburguesa */}
