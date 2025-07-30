@@ -74,214 +74,378 @@ export default function Ventas() {
     });
   };
 
-  // Función para transformar datos de semana
-  const procesarDatosSemana = (datosAPI) => {
-    if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
-      return [];
-    }
-
-    return datosAPI.map(semana => {
-      // Calcular total de ventas de la semana (solo órdenes finalizadas)
-      const totalSemana = semana.orders
-        .filter(order => order.order_status === 'Finalizado')
-        .reduce((total, order) => total + parseFloat(order.total || 0), 0);
-
-      // Convertir formato de semana a fecha más legible
-      const weekNumber = semana.week.split('-W')[1];
-      const year = semana.week.split('-W')[0];
-      
-      return {
-        date: `Semana ${weekNumber}, ${year}`,
-        value: totalSemana
-      };
-    });
-  };
-
-  // Función para transformar datos de mes
-  const procesarDatosMes = (datosAPI) => {
-    if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
-      return [];
-    }
-
-    return datosAPI.map(mes => {
-      // Calcular total de ventas del mes (solo órdenes finalizadas)
-      const totalMes = mes.orders
-        .filter(order => order.order_status === 'Finalizado')
-        .reduce((total, order) => total + parseFloat(order.total || 0), 0);
-
-      // Convertir formato de mes a fecha más legible
-      const [year, month] = mes.month.split('-');
-      const monthNames = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-      ];
-      
-      return {
-        date: `${monthNames[parseInt(month) - 1]} ${year}`,
-        value: totalMes
-      };
-    });
-  };
-
-  // Función para transformar datos de fechas personalizadas
-  const procesarDatosFechas = (datosAPI) => {
-    if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
-      return [];
-    }
-
-    return datosAPI.map(periodo => ({
-      date: periodo.period,
-      value: periodo.total_sales
-    }));
-  };
-
-  // Función para transformar datos de "Todo"
+  // FUNCIÓN UNIFICADA para transformar datos - agrupar por fecha y sumar valores
   const transformarDatosAPI = (datosAPI) => {
     if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
       return [];
     }
 
-    return datosAPI.map(item => ({
-      date: item.date.split('T')[0],
-      value: item.value
-    }));
+    // Crear un objeto para agrupar por fecha
+    const datosPorFecha = {};
+
+    datosAPI.forEach(item => {
+      // Extraer solo la fecha (YYYY-MM-DD)
+      const fecha = item.date.split('T')[0];
+      
+      // Si ya existe la fecha, sumar el valor; si no, crear nueva entrada
+      if (datosPorFecha[fecha]) {
+        datosPorFecha[fecha] += parseFloat(item.value || 0);
+      } else {
+        datosPorFecha[fecha] = parseFloat(item.value || 0);
+      }
+    });
+
+    // Convertir el objeto agrupado a array y ordenar por fecha
+    const resultado = Object.entries(datosPorFecha)
+      .map(([fecha, valor]) => ({
+        date: fecha,
+        value: valor
+      }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    console.log('Datos transformados y agrupados:', resultado);
+    return resultado;
   };
 
-  // Cargar datos de ventas por semana
+
+  // Funciones para cargar datos de cada sección
+  const cargarDatosSemana = async () => {
+    try {
+      setLoadingSemana(true);
+      setErrorSemana(null);
+
+      console.log('Cargando datos de semana...');
+      const resultado = await getGraficaSemana();
+      console.log('Resultado de getGraficaSemana:', resultado);
+
+      if (resultado.success) {
+        console.log('Datos originales de semana:', resultado.data);
+        const datosTransformados = transformarDatosAPI(resultado.data);
+        console.log('Datos transformados de semana:', datosTransformados);
+        setDatosSemana(datosTransformados);
+      } else {
+        console.log('Error al cargar datos de semana:', resultado.error);
+        setErrorSemana(resultado.error);
+        setDatosSemana([]);
+      }
+    } catch (error) {
+      console.error('Error inesperado al cargar datos de semana:', error);
+      setErrorSemana('Error inesperado al cargar los datos');
+      setDatosSemana([]);
+    } finally {
+      setLoadingSemana(false);
+    }
+  };
+
+  const cargarDatosMes = async () => {
+    try {
+      setLoadingMes(true);
+      setErrorMes(null);
+
+      console.log('Cargando datos de mes...');
+      const resultado = await getGraficaMes();
+      console.log('Resultado de getGraficaMes:', resultado);
+
+      if (resultado.success) {
+        console.log('Datos originales de mes:', resultado.data);
+        const datosTransformados = transformarDatosAPI(resultado.data);
+        console.log('Datos transformados de mes:', datosTransformados);
+        setDatosMes(datosTransformados);
+      } else {
+        console.log('Error al cargar datos de mes:', resultado.error);
+        setErrorMes(resultado.error);
+        setDatosMes([]);
+      }
+    } catch (error) {
+      console.error('Error inesperado al cargar datos de mes:', error);
+      setErrorMes('Error inesperado al cargar los datos');
+      setDatosMes([]);
+    } finally {
+      setLoadingMes(false);
+    }
+  };
+
+  const cargarDatosFechas = async () => {
+    if (!startDate || !endDate) return;
+
+    try {
+      setLoadingFechas(true);
+      setErrorFechas(null);
+
+      const fechaInicio = formatDateToAPI(startDate);
+      const fechaFin = formatDateToAPI(endDate);
+
+      console.log('Cargando datos de fechas...', { fechaInicio, fechaFin });
+      const resultado = await getGraficaFechas(fechaInicio, fechaFin);
+      console.log('Resultado de getGraficaFechas:', resultado);
+
+      if (resultado.success) {
+        console.log('Datos originales de fechas:', resultado.data);
+        const datosTransformados = transformarDatosAPI(resultado.data);
+        console.log('Datos transformados de fechas:', datosTransformados);
+        setDatosFechas(datosTransformados);
+      } else {
+        console.log('Error al cargar datos de fechas:', resultado.error);
+        setErrorFechas(resultado.error);
+        setDatosFechas([]);
+      }
+    } catch (error) {
+      console.error('Error inesperado al cargar datos de fechas:', error);
+      setErrorFechas('Error inesperado al cargar los datos');
+      setDatosFechas([]);
+    } finally {
+      setLoadingFechas(false);
+    }
+  };
+
+  const cargarDatosTodo = async () => {
+    try {
+      setLoadingTodo(true);
+      setErrorTodo(null);
+
+      console.log('Cargando datos de todo...');
+      const resultado = await getADataGrafico();
+      console.log('Resultado de getADataGrafico:', resultado);
+
+      if (resultado.success) {
+        console.log('Datos originales de todo:', resultado.data);
+        const datosTransformados = transformarDatosAPI(resultado.data);
+        console.log('Datos transformados de todo:', datosTransformados);
+        setDatosTodo(datosTransformados);
+      } else {
+        console.log('Error al cargar datos totales:', resultado.error);
+        setErrorTodo(resultado.error);
+        setDatosTodo([]);
+      }
+    } catch (error) {
+      console.error('Error inesperado al cargar datos totales:', error);
+      setErrorTodo('Error inesperado al cargar los datos');
+      setDatosTodo([]);
+    } finally {
+      setLoadingTodo(false);
+    }
+  };
+
+  // Solo cargar datos de semana al inicio (pestaña por defecto)
   React.useEffect(() => {
-    if (subTabValue === 'semana') {
-      const cargarDatosSemana = async () => {
-        try {
-          setLoadingSemana(true);
-          setErrorSemana(null);
-
-          const resultado = await getGraficaSemana();
-
-          if (resultado.success) {
-            const datosTransformados = procesarDatosSemana(resultado.data);
-            setDatosSemana(datosTransformados);
-            console.log('Datos de ventas por semana cargados:', datosTransformados);
-          } else {
-            console.log('Error al cargar datos de semana:', resultado.error);
-            setErrorSemana(resultado.error);
-            setDatosSemana([]);
-          }
-        } catch (error) {
-          console.error('Error inesperado al cargar datos de semana:', error);
-          setErrorSemana('Error inesperado al cargar los datos');
-          setDatosSemana([]);
-        } finally {
-          setLoadingSemana(false);
-        }
-      };
-
+    if (subTabValue === 'semana' && datosSemana.length === 0 && !loadingSemana) {
       cargarDatosSemana();
     }
   }, [subTabValue]);
 
-  // Cargar datos de ventas por mes
-  React.useEffect(() => {
-    if (subTabValue === 'mes') {
-      const cargarDatosMes = async () => {
-        try {
-          setLoadingMes(true);
-          setErrorMes(null);
-
-          const resultado = await getGraficaMes();
-
-          if (resultado.success) {
-            const datosTransformados = procesarDatosMes(resultado.data);
-            setDatosMes(datosTransformados);
-            console.log('Datos de ventas por mes cargados:', datosTransformados);
-          } else {
-            console.log('Error al cargar datos de mes:', resultado.error);
-            setErrorMes(resultado.error);
-            setDatosMes([]);
-          }
-        } catch (error) {
-          console.error('Error inesperado al cargar datos de mes:', error);
-          setErrorMes('Error inesperado al cargar los datos');
-          setDatosMes([]);
-        } finally {
-          setLoadingMes(false);
-        }
-      };
-
-      cargarDatosMes();
-    }
-  }, [subTabValue]);
-
-  // Cargar datos por fechas personalizadas
+  // Cargar datos cuando se seleccionen fechas
   React.useEffect(() => {
     if (subTabValue === 'Entre fechas' && startDate && endDate) {
-      const cargarDatosFechas = async () => {
-        try {
-          setLoadingFechas(true);
-          setErrorFechas(null);
-
-          const fechaInicio = formatDateToAPI(startDate);
-          const fechaFin = formatDateToAPI(endDate);
-
-          const resultado = await getGraficaFechas(fechaInicio, fechaFin);
-
-          if (resultado.success) {
-            const datosTransformados = procesarDatosFechas(resultado.data);
-            setDatosFechas(datosTransformados);
-            console.log('Datos de ventas por fechas cargados:', datosTransformados);
-          } else {
-            console.log('Error al cargar datos de fechas:', resultado.error);
-            setErrorFechas(resultado.error);
-            setDatosFechas([]);
-          }
-        } catch (error) {
-          console.error('Error inesperado al cargar datos de fechas:', error);
-          setErrorFechas('Error inesperado al cargar los datos');
-          setDatosFechas([]);
-        } finally {
-          setLoadingFechas(false);
-        }
-      };
-
       cargarDatosFechas();
     }
-  }, [subTabValue, startDate, endDate]);
-
-  // Cargar datos de "Todo"
-  React.useEffect(() => {
-    if (subTabValue === 'Todo') {
-      const cargarDatosTodo = async () => {
-        try {
-          setLoadingTodo(true);
-          setErrorTodo(null);
-
-          const resultado = await getADataGrafico();
-
-          if (resultado.success) {
-            const datosTransformados = transformarDatosAPI(resultado.data);
-            setDatosTodo(datosTransformados);
-            console.log('Datos de ventas totales cargados:', datosTransformados);
-          } else {
-            console.log('Error al cargar datos totales:', resultado.error);
-            setErrorTodo(resultado.error);
-            setDatosTodo([]);
-          }
-        } catch (error) {
-          console.error('Error inesperado al cargar datos totales:', error);
-          setErrorTodo('Error inesperado al cargar los datos');
-          setDatosTodo([]);
-        } finally {
-          setLoadingTodo(false);
-        }
-      };
-
-      cargarDatosTodo();
-    }
-  }, [subTabValue]);
+  }, [startDate, endDate]);
 
   // Función para aplicar el filtro de fechas
   const handleApplyDateFilter = async () => {
     setShowDatePickerModal(false);
-    // El useEffect ya se ejecutará cuando cambien startDate y endDate
+  };
+
+  // Componentes para cada sección
+  const SemanaTab = () => {
+    // Cargar datos al renderizar si no están cargados
+    React.useEffect(() => {
+      if (datosSemana.length === 0 && !loadingSemana && !errorSemana) {
+        cargarDatosSemana();
+      }
+    }, []);
+
+    return (
+      <div className="space-y-6">
+        {loadingSemana && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">Cargando datos de ventas semanales...</div>
+          </div>
+        )}
+
+        {errorSemana && !loadingSemana && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">
+              <p className="font-semibold">📊 No hay datos de ventas semanales</p>
+              <p className="text-sm mt-2">No se pudieron cargar los datos de ventas por semana.</p>
+              <p className="text-xs mt-1 text-gray-400">Error: {errorSemana}</p>
+            </div>
+          </div>
+        )}
+
+        {!loadingSemana && !errorSemana && datosSemana.length > 0 && (
+          <LineChartFull
+            data={datosSemana}
+            title="Ventas por Semana"
+          />
+        )}
+
+        {!loadingSemana && !errorSemana && datosSemana.length === 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">
+              <p className="font-semibold">📊 No hay ventas registradas por semana</p>
+              <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const MesTab = () => {
+    // Cargar datos al renderizar si no están cargados
+    React.useEffect(() => {
+      if (datosMes.length === 0 && !loadingMes && !errorMes) {
+        cargarDatosMes();
+      }
+    }, []);
+
+    return (
+      <div className="space-y-6">
+        {loadingMes && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">Cargando datos de ventas mensuales...</div>
+          </div>
+        )}
+
+        {errorMes && !loadingMes && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">
+              <p className="font-semibold">📊 No hay datos de ventas mensuales</p>
+              <p className="text-sm mt-2">No se pudieron cargar los datos de ventas por mes.</p>
+              <p className="text-xs mt-1 text-gray-400">Error: {errorMes}</p>
+            </div>
+          </div>
+        )}
+
+        {!loadingMes && !errorMes && datosMes.length > 0 && (
+          <LineChartFull
+            data={datosMes}
+            title="Ventas por Mes"
+          />
+        )}
+
+        {!loadingMes && !errorMes && datosMes.length === 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">
+              <p className="font-semibold">📊 No hay ventas registradas por mes</p>
+              <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const FechasTab = () => {
+    return (
+      <div className="space-y-6">
+        {startDate && endDate && (
+          <div className="bg-blue-50 rounded-lg p-4">
+            <p className="text-blue-800 font-semibold">
+              Rango seleccionado: {formatDate(startDate)} - {formatDate(endDate)}
+            </p>
+            <button
+              onClick={() => setShowDatePickerModal(true)}
+              className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
+            >
+              Cambiar fechas
+            </button>
+          </div>
+        )}
+
+        {loadingFechas && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">Cargando datos de ventas por fechas...</div>
+          </div>
+        )}
+
+        {errorFechas && !loadingFechas && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">
+              <p className="font-semibold">📊 No hay datos de ventas para las fechas seleccionadas</p>
+              <p className="text-sm mt-2">No se pudieron cargar los datos de ventas para el rango especificado.</p>
+              <p className="text-xs mt-1 text-gray-400">Error: {errorFechas}</p>
+            </div>
+          </div>
+        )}
+
+        {!loadingFechas && !errorFechas && datosFechas.length > 0 && (
+          <LineChartFull
+            data={datosFechas}
+            title="Ventas por Rango de Fechas"
+          />
+        )}
+
+        {(!startDate || !endDate) && !loadingFechas && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">
+              <p className="font-semibold">📅 Selecciona un rango de fechas</p>
+              <p className="text-sm mt-2">Haz clic en el botón de arriba para seleccionar las fechas que deseas consultar.</p>
+              <button
+                onClick={() => setShowDatePickerModal(true)}
+                className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Seleccionar fechas
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!loadingFechas && !errorFechas && startDate && endDate && datosFechas.length === 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">
+              <p className="font-semibold">📊 No hay ventas en el rango seleccionado</p>
+              <p className="text-sm mt-2">No se encontraron ventas para las fechas especificadas.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const TodoTab = () => {
+    // Cargar datos al renderizar si no están cargados
+    React.useEffect(() => {
+      if (datosTodo.length === 0 && !loadingTodo && !errorTodo) {
+        cargarDatosTodo();
+      }
+    }, []);
+
+    return (
+      <div className="space-y-6">
+        {loadingTodo && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">Cargando todos los datos de ventas...</div>
+          </div>
+        )}
+
+        {errorTodo && !loadingTodo && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">
+              <p className="font-semibold">📊 No hay datos de ventas totales</p>
+              <p className="text-sm mt-2">No se pudieron cargar todos los datos de ventas.</p>
+              <p className="text-xs mt-1 text-gray-400">Error: {errorTodo}</p>
+            </div>
+          </div>
+        )}
+
+        {!loadingTodo && !errorTodo && datosTodo.length > 0 && (
+          <LineChartFull
+            data={datosTodo}
+            title="Todas las Ventas"
+          />
+        )}
+
+        {!loadingTodo && !errorTodo && datosTodo.length === 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center text-gray-500">
+              <p className="font-semibold">📊 No hay ventas registradas</p>
+              <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -301,10 +465,8 @@ export default function Ventas() {
             </div>
           </TabPanel>
           <TabPanel value="2">
-            {/* MainStats debe ir aquí, fuera de las sub-pestañas */}
             <MainStats />
             
-            {/* Sub-pestañas para Ventas */}
             <Box sx={{ width: '100%', typography: 'body1', mt: 3 }}>
               <TabContext value={subTabValue}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
@@ -317,193 +479,19 @@ export default function Ventas() {
                 </Box>
                 
                 <TabPanel value="semana" sx={{ p: 0 }}>
-                  <div className="space-y-6">
-                    {/* Estado de carga para datos de semana */}
-                    {loadingSemana && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">Cargando datos de ventas semanales...</div>
-                      </div>
-                    )}
-
-                    {/* Error específico para datos de semana */}
-                    {errorSemana && !loadingSemana && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">
-                          <p className="font-semibold">📊 No hay datos de ventas semanales</p>
-                          <p className="text-sm mt-2">No se pudieron cargar los datos de ventas por semana.</p>
-                          <p className="text-xs mt-1 text-gray-400">Error: {errorSemana}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Gráfico de ventas por semana */}
-                    {!loadingSemana && !errorSemana && datosSemana.length > 0 && (
-                      <LineChartFull
-                        data={datosSemana}
-                        title="Ventas por Semana"
-                      />
-                    )}
-
-                    {/* Mensaje cuando no hay datos de semana */}
-                    {!loadingSemana && !errorSemana && datosSemana.length === 0 && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">
-                          <p className="font-semibold">📊 No hay ventas registradas por semana</p>
-                          <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <SemanaTab />
                 </TabPanel>
 
                 <TabPanel value="mes" sx={{ p: 0 }}>
-                  <div className="space-y-6">
-                    {/* Estado de carga para datos de mes */}
-                    {loadingMes && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">Cargando datos de ventas mensuales...</div>
-                      </div>
-                    )}
-
-                    {/* Error específico para datos de mes */}
-                    {errorMes && !loadingMes && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">
-                          <p className="font-semibold">📊 No hay datos de ventas mensuales</p>
-                          <p className="text-sm mt-2">No se pudieron cargar los datos de ventas por mes.</p>
-                          <p className="text-xs mt-1 text-gray-400">Error: {errorMes}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Gráfico de ventas por mes */}
-                    {!loadingMes && !errorMes && datosMes.length > 0 && (
-                      <LineChartFull
-                        data={datosMes}
-                        title="Ventas por Mes"
-                      />
-                    )}
-
-                    {/* Mensaje cuando no hay datos de mes */}
-                    {!loadingMes && !errorMes && datosMes.length === 0 && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">
-                          <p className="font-semibold">📊 No hay ventas registradas por mes</p>
-                          <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <MesTab />
                 </TabPanel>
 
                 <TabPanel value="Entre fechas" sx={{ p: 0 }}>
-                  <div className="space-y-6">
-                    {/* Mostrar información del rango seleccionado */}
-                    {startDate && endDate && (
-                      <div className="bg-blue-50 rounded-lg p-4">
-                        <p className="text-blue-800 font-semibold">
-                          Rango seleccionado: {formatDate(startDate)} - {formatDate(endDate)}
-                        </p>
-                        <button
-                          onClick={() => setShowDatePickerModal(true)}
-                          className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
-                        >
-                          Cambiar fechas
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Estado de carga para datos de fechas */}
-                    {loadingFechas && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">Cargando datos de ventas por fechas...</div>
-                      </div>
-                    )}
-
-                    {/* Error específico para datos de fechas */}
-                    {errorFechas && !loadingFechas && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">
-                          <p className="font-semibold">📊 No hay datos de ventas para las fechas seleccionadas</p>
-                          <p className="text-sm mt-2">No se pudieron cargar los datos de ventas para el rango especificado.</p>
-                          <p className="text-xs mt-1 text-gray-400">Error: {errorFechas}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Gráfico de ventas por fechas */}
-                    {!loadingFechas && !errorFechas && datosFechas.length > 0 && (
-                      <LineChartFull
-                        data={datosFechas}
-                        title="Ventas por Rango de Fechas"
-                      />
-                    )}
-
-                    {/* Mensaje cuando no hay fechas seleccionadas o no hay datos */}
-                    {(!startDate || !endDate) && !loadingFechas && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">
-                          <p className="font-semibold">📅 Selecciona un rango de fechas</p>
-                          <p className="text-sm mt-2">Haz clic en el botón de arriba para seleccionar las fechas que deseas consultar.</p>
-                          <button
-                            onClick={() => setShowDatePickerModal(true)}
-                            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                          >
-                            Seleccionar fechas
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {!loadingFechas && !errorFechas && startDate && endDate && datosFechas.length === 0 && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">
-                          <p className="font-semibold">📊 No hay ventas en el rango seleccionado</p>
-                          <p className="text-sm mt-2">No se encontraron ventas para las fechas especificadas.</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <FechasTab />
                 </TabPanel>
 
                 <TabPanel value="Todo" sx={{ p: 0 }}>
-                  <div className="space-y-6">
-                    {/* Estado de carga para datos totales */}
-                    {loadingTodo && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">Cargando todos los datos de ventas...</div>
-                      </div>
-                    )}
-
-                    {/* Error específico para datos totales */}
-                    {errorTodo && !loadingTodo && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">
-                          <p className="font-semibold">📊 No hay datos de ventas totales</p>
-                          <p className="text-sm mt-2">No se pudieron cargar todos los datos de ventas.</p>
-                          <p className="text-xs mt-1 text-gray-400">Error: {errorTodo}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Gráfico de todas las ventas */}
-                    {!loadingTodo && !errorTodo && datosTodo.length > 0 && (
-                      <LineChartFull
-                        data={datosTodo}
-                        title="Todas las Ventas"
-                      />
-                    )}
-
-                    {/* Mensaje cuando no hay datos totales */}
-                    {!loadingTodo && !errorTodo && datosTodo.length === 0 && (
-                      <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="text-center text-gray-500">
-                          <p className="font-semibold">📊 No hay ventas registradas</p>
-                          <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <TodoTab />
                 </TabPanel>
                 
               </TabContext>
@@ -522,7 +510,6 @@ export default function Ventas() {
             className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Botón de cerrar */}
             <button
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
               onClick={() => setShowDatePickerModal(false)}
@@ -530,12 +517,10 @@ export default function Ventas() {
               <IoClose />
             </button>
 
-            {/* Título */}
             <h2 className="text-xl font-bold mb-6 text-center">
               Seleccionar Rango de Fechas
             </h2>
 
-            {/* Selector de fechas */}
             <div className="mb-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -571,7 +556,6 @@ export default function Ventas() {
               </div>
             </div>
 
-            {/* Información del rango seleccionado */}
             {startDate && endDate && (
               <div className="mb-4 p-3 bg-green-50 rounded-lg">
                 <p className="text-sm text-green-700">
@@ -582,12 +566,11 @@ export default function Ventas() {
               </div>
             )}
 
-            {/* Botones */}
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => {
                   setShowDatePickerModal(false);
-                  setSubTabValue("semana"); // Cambiar a otra pestaña al cancelar
+                  setSubTabValue("semana");
                   setStartDate(null);
                   setEndDate(null);
                 }}
