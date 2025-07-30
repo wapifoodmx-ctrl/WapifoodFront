@@ -1,5 +1,5 @@
 export async function createUser(user) {
-    const endpoint = 'https://comandapp-api.h-dev.xyz/user'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
+    const endpoint = 'https://api.wapifood.com/user'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
 
     try {
         const response = await fetch(endpoint, {

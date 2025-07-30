@@ -21,7 +21,7 @@ export async function getGraficaFechas(fechaInicio, fechaFin) {
     }
 
     // Construir la URL con los parámetros de consulta
-    const url = new URL('https://comandapp-api.h-dev.xyz/analytics/ventas_por_año');
+    const url = new URL('https://api.wapifood.com/analytics/ventas_por_año');
     url.searchParams.append('fecha_inicio', fechaInicio);
     url.searchParams.append('fecha_fin', fechaFin);
 

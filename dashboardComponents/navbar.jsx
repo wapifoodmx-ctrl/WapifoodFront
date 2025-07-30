@@ -9,6 +9,7 @@ import { FaUser } from "react-icons/fa";
 import { ImExit } from "react-icons/im";
 import { LuIdCard } from "react-icons/lu";
 import { FaKitchenSet } from "react-icons/fa6";
+import { GiGasStove } from "react-icons/gi"; // Nuevo ícono de estufa
 import { checkPayment } from '../useCases/checkPayment';
 
 export default function Navbar() {
@@ -17,6 +18,7 @@ export default function Navbar() {
     const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
     const [subscriptionLoading, setSubscriptionLoading] = useState(true);
     const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
+    const [switchEnabled, setSwitchEnabled] = useState(false); // Estado para el switch
     const menuRef = useRef(null);
 
     const handleLogout = () => {
@@ -57,6 +59,14 @@ export default function Navbar() {
                 setShowSubscriptionPopup(false);
             }, 3000);
         }
+    };
+
+    // Función para manejar el cambio del switch
+    const handleSwitchToggle = () => {
+        const newState = !switchEnabled;
+        setSwitchEnabled(newState);
+        // Guardar en localStorage
+        localStorage.setItem('cocinaSwitch', JSON.stringify(newState));
     };
 
     const menu = {
@@ -119,6 +129,12 @@ export default function Navbar() {
         } else {
             checkSubscriptionStatus();
         }
+
+        // Recuperar el estado del switch desde localStorage
+        const savedSwitchState = localStorage.getItem('cocinaSwitch');
+        if (savedSwitchState !== null) {
+            setSwitchEnabled(JSON.parse(savedSwitchState));
+        }
     }, [router]);
 
     useEffect(() => {
@@ -148,6 +164,12 @@ export default function Navbar() {
         return "flex w-auto gap-2 cursor-pointer hover:text-green-600";
     };
 
+    // Función para manejar el click en cocina
+    const handleCocinaClick = () => {
+        // Usar la función normal de restricción por suscripción
+        handleRestrictedClick(cocina);
+    };
+
     return (
         <nav className="bg-[#f3f4f6] w-full fixed top-0 left-0 flex justify-between h-16 z-50 shadow-md overflow-x-hidden">
             <div className="flex w-full justify-between px-4">
@@ -156,18 +178,55 @@ export default function Navbar() {
                     <h2 className="text-3xl hover:text-green-600 font-bold ml-2">WapiFood</h2>
                 </div>
 
-                <button
-                    className="z-50 cursor-pointer"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setIsOpen(!isOpen);
-                    }}
-                    aria-label="Toggle menu"
-                >
-                    <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-                    <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
-                    <div className={`w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
-                </button>
+                {/* Container para el switch y el menú hamburguesa */}
+                <div className="flex items-center gap-2 sm:gap-4">
+                    {/* Switch personalizado con texto responsive */}
+                    <div 
+                        className={`
+                            relative h-4 md:h-8 rounded-full cursor-pointer transition-colors duration-300 flex items-center justify-center
+                            w-12 md:w-40
+                            ${switchEnabled ? 'bg-green-600' : 'bg-gray-400'}
+                        `}
+                        onClick={handleSwitchToggle}
+                    >
+                        {/* Texto dentro del switch - oculto en móviles y tablets */}
+                        <span className="hidden md:block text-white text-xs md:text-sm font-medium z-10">
+                            {switchEnabled ? 'Cocina On' : 'Cocina Off'}
+                        </span>
+                        
+                        {/* Círculo deslizante con ícono de estufa */}
+                        <div 
+                            className={`
+                                absolute w-3 h-3 md:w-7 md:h-7 bg-white rounded-full shadow-md 
+                                transition-transform duration-300 ease-in-out
+                                flex items-center justify-center
+                                ${switchEnabled ? 'translate-x-4 md:translate-x-14' : '-translate-x-4 md:-translate-x-14'}
+                            `}
+                        >
+                            <GiGasStove 
+                                className={`
+                                    w-2 h-2 md:w-4 md:h-4 
+                                    ${switchEnabled ? 'text-green-600' : 'text-gray-400'}
+                                    transition-colors duration-300
+                                `} 
+                            />
+                        </div>
+                    </div>
+
+                    {/* Menú hamburguesa */}
+                    <button
+                        className="z-50 cursor-pointer"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsOpen(!isOpen);
+                        }}
+                        aria-label="Toggle menu"
+                    >
+                        <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+                        <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
+                        <div className={`w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                    </button>
+                </div>
 
                 <div
                     ref={menuRef}
@@ -206,7 +265,7 @@ export default function Navbar() {
                                 ) : item === "Cocina" ? (
                                     <button
                                         className={getMenuItemClasses(item)}
-                                        onClick={() => handleRestrictedClick(cocina)}
+                                        onClick={handleCocinaClick}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                     </button>

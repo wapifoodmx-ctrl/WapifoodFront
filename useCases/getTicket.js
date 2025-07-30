@@ -13,7 +13,7 @@ export const getTicket = async (orderUuid) => {
         }
 
         // Construir la URL del endpoint
-        const endpoint = `https://comandapp-api.h-dev.xyz/orders/${orderUuid}`;
+        const endpoint = `https://api.wapifood.com/orders/${orderUuid}`;
 
         const response = await fetch(endpoint, {
             method: 'GET',

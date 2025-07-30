@@ -6,7 +6,7 @@ export const getLastOrderByTable = async (tableNumber) => {
             throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch(`https://comandapp-api.h-dev.xyz/orders/orders/last-order-by-table?table=${tableNumber}`, {
+        const response = await fetch(`https://api.wapifood.com/orders/orders/last-order-by-table?table=${tableNumber}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

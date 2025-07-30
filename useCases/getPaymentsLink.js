@@ -1,5 +1,5 @@
 export default async function getPaymentsLink(propsData) { 
-    const endpoint = 'https://comandapp-api.h-dev.xyz/payments/create-checkout-session';
+    const endpoint = 'https://api.wapifood.com/payments/create-checkout-session';
 
     try {
         // Obtener el token del localStorage

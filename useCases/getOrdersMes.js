@@ -7,7 +7,7 @@ async function getOrdersMes() {
       throw new Error('No se encontró el token de autenticación');
     }
 
-    const response = await fetch('https://comandapp-api.h-dev.xyz/orders/orders/ultimo-mes', {
+    const response = await fetch('https://api.wapifood.com/orders/orders/ultimo-mes', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

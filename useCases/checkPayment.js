@@ -8,7 +8,7 @@ export async function checkPayment() {
         }
 
         // Realizar la petición GET
-        const response = await fetch('https://comandapp-api.h-dev.xyz/payments/check-payment', {
+        const response = await fetch('https://api.wapifood.com/payments/check-payment', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

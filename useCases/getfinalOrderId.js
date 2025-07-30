@@ -1,5 +1,5 @@
 export async function getFinalOrder(UUID) {
-    const endpoint = `https://comandapp-api.h-dev.xyz/orders/final/${UUID}`;
+    const endpoint = `https://api.wapifood.com/orders/final/${UUID}`;
 
     try {
         // Obtener el token del localStorage o sessionStorage

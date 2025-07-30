@@ -19,7 +19,7 @@ async function updateProductStatus(orderUuid, idOrdersDetails, orderDetailStatus
     throw new Error('Token de autenticación no encontrado');
   }
 
-  const url = `https://comandapp-api.h-dev.xyz/orders/orders/${orderUuid}/cambio_details_status`;
+  const url = `https://api.wapifood.com/orders/orders/${orderUuid}/cambio_details_status`;
 
   // Convertir a string si es array (separado por comas)
   const idsString = Array.isArray(idOrdersDetails) 

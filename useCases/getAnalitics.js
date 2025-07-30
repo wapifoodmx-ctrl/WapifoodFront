@@ -1,5 +1,5 @@
 export async function getAnalitics() {
-    const endpoint = 'https://comandapp-api.h-dev.xyz/analytics/dashboard';
+    const endpoint = 'https://api.wapifood.com/analytics/dashboard';
 
     try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');

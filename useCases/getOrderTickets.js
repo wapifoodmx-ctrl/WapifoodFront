@@ -8,7 +8,7 @@ async function getOrderTickets() {
     }
 
     // Realizar la petición GET
-    const response = await fetch('https://comandapp-api.h-dev.xyz/orders/orders/allorders', {
+    const response = await fetch('https://api.wapifood.com/orders/orders/allorders', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

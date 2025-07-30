@@ -11,7 +11,7 @@ async function getOrdersDia() {
       throw new Error('No se encontró token de autenticación');
     }
 
-    const response = await fetch('https://comandapp-api.h-dev.xyz/orders/orders/ordenes-ultimas-24-hrs', {
+    const response = await fetch('https://api.wapifood.com/orders/orders/ordenes-ultimas-24-hrs', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

@@ -41,7 +41,7 @@ export async function createProduct(productData, imageFile) {
 
     // Construir la URL con el parámetro de consulta "product"
     const queryParam = `?product=${encodeURIComponent(JSON.stringify(productData))}`;
-    const url = `https://comandapp-api.h-dev.xyz/products/${queryParam}`;
+    const url = `https://api.wapifood.com/products/${queryParam}`;
 
     console.log("URL de la solicitud:", url);
     console.log("Datos enviados (formData):", Object.fromEntries(formData.entries())); // Log form data
