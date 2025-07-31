@@ -142,14 +142,9 @@ export default function PlanDeVentas() {
     return (
         <section>
             {/* Tipos de Planes - Ahora arriba */}
-            <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-6 py-6">
+            <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-6 ">
                 <div className="space-y-6 md:space-y-8 py-16 md:py-20 lg:py-30">
-                    <div className="text-center md:text-left">
-                        <h2 className="text-2xl md:text-4xl font-bold mb-4 pt-8 md:pt-14 md:pl-8">Tipos de Planes</h2>
-                        <p className="text-base md:text-lg text-gray-600 md:pl-8">
-                            Selecciona el plan que más te convenga
-                        </p>
-                    </div>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                         {planesAdicionales.map((plan) => (
                             <div key={plan.id} className="bg-white shadow-lg rounded-lg p-4 md:p-6 flex flex-col h-full">

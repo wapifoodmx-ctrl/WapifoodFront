@@ -9,7 +9,7 @@ import { FaUser } from "react-icons/fa";
 import { ImExit } from "react-icons/im";
 import { LuIdCard } from "react-icons/lu";
 import { FaKitchenSet } from "react-icons/fa6";
-import { GiGasStove } from "react-icons/gi"; // Nuevo ícono de estufa
+// import { GiGasStove } from "react-icons/gi"; // Ya no necesitamos este ícono
 import { checkPayment } from '../useCases/checkPayment';
 
 export default function Navbar() {
@@ -170,6 +170,9 @@ export default function Navbar() {
         handleRestrictedClick(cocina);
     };
 
+    // Verificar si estamos en la página del punto de venta
+    const isPointOfSalePage = router.pathname === '/puntodeventa';
+
     return (
         <nav className="bg-[#f3f4f6] w-full fixed top-0 left-0 flex justify-between h-16 z-50 shadow-md overflow-x-hidden">
             <div className="flex w-full justify-between px-4">
@@ -178,40 +181,60 @@ export default function Navbar() {
                     <h2 className="text-3xl hover:text-green-600 font-bold ml-2">WapiFood</h2>
                 </div>
 
-                {/* Container para el switch y el menú hamburguesa */}
+                {/* Container para el botón de power y el menú hamburguesa */}
                 <div className="flex items-center gap-2 sm:gap-4">
-                    {/* Switch personalizado con texto responsive */}
-                    <div 
-                        className={`
-                            relative h-4 md:h-8 rounded-full cursor-pointer transition-colors duration-300 flex items-center justify-center
-                            w-12 md:w-40
-                            ${switchEnabled ? 'bg-green-600' : 'bg-gray-400'}
-                        `}
-                        onClick={handleSwitchToggle}
-                    >
-                        {/* Texto dentro del switch - oculto en móviles y tablets */}
-                        <span className="hidden md:block text-white text-xs md:text-sm font-medium z-10">
-                            {switchEnabled ? 'Cocina On' : 'Cocina Off'}
-                        </span>
-                        
-                        {/* Círculo deslizante con ícono de estufa */}
-                        <div 
+                    {/* Botón de power para cocina - SOLO mostrar en punto de venta - MÁS GRANDE */}
+                    {isPointOfSalePage && (
+                        <button
+                            onClick={handleSwitchToggle}
                             className={`
-                                absolute w-3 h-3 md:w-7 md:h-7 bg-white rounded-full shadow-md 
-                                transition-transform duration-300 ease-in-out
-                                flex items-center justify-center
-                                ${switchEnabled ? 'translate-x-4 md:translate-x-14' : '-translate-x-4 md:-translate-x-14'}
+                                relative flex items-center justify-center gap-2 
+                                px-3 py-2 md:px-6 md:py-3
+                                rounded-full transition-all duration-300 ease-in-out
+                                hover:scale-105 active:scale-95 shadow-lg
+                                min-w-[60px] md:min-w-[100px]
+                                ${switchEnabled 
+                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                    : 'bg-gray-400 hover:bg-gray-500 text-white'
+                                }
                             `}
+                            title={switchEnabled ? 'Cocina Encendida - Click para apagar' : 'Cocina Apagada - Click para encender'}
                         >
-                            <GiGasStove 
+                            {/* Ícono de cocina - MÁS GRANDE */}
+                            <FaKitchenSet 
                                 className={`
-                                    w-2 h-2 md:w-4 md:h-4 
-                                    ${switchEnabled ? 'text-green-600' : 'text-gray-400'}
-                                    transition-colors duration-300
+                                    w-5 h-5 md:w-7 md:h-7 
+                                    transition-all duration-300
+                                    ${switchEnabled 
+                                        ? 'text-white drop-shadow-sm' 
+                                        : 'text-gray-200'
+                                    }
                                 `} 
                             />
-                        </div>
-                    </div>
+                            
+                            {/* Texto - visible solo en pantallas medianas y grandes */}
+                            <span className="hidden md:block text-sm md:text-base font-medium">
+                                {switchEnabled ? 'ON' : 'OFF'}
+                            </span>
+
+                            {/* Indicador de estado - punto más grande en la esquina para móviles */}
+                            <div 
+                                className={`
+                                    absolute -top-1 -right-1 w-3 h-3 md:hidden
+                                    rounded-full transition-all duration-300
+                                    ${switchEnabled 
+                                        ? 'bg-yellow-400 shadow-lg' 
+                                        : 'bg-red-500'
+                                    }
+                                `}
+                            />
+
+                            {/* Efecto de "glow" cuando está encendido */}
+                            {switchEnabled && (
+                                <div className="absolute inset-0 rounded-full bg-green-400 opacity-20 animate-pulse" />
+                            )}
+                        </button>
+                    )}
 
                     {/* Menú hamburguesa */}
                     <button

@@ -1,46 +1,43 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import kime from "@/pages/assets/img/kime.jpeg";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiEye } from "react-icons/fi";
 import { BsTrash3 } from "react-icons/bs";
+import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 import { Formik, Form, Field } from "formik";
 import { updateProduct } from "../useCases/updateProduct";
-import { deleteProduct } from "../useCases/deleteProduct"; // Importar la función de eliminar
-import ModalMessage from "../components/ModalMessage"; // Importar la modal de mensajes
+import { deleteProduct } from "../useCases/deleteProduct";
+import ModalMessage from "../components/ModalMessage";
 
 export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh, availabilityFilter }) {
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para controlar la modal de edición
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // Estado para modal de eliminar
-    const [selectedProduct, setSelectedProduct] = useState(null); // Producto seleccionado para editar o eliminar
-    const [loading, setLoading] = useState(true); // Estado de carga
-    const [modalMessage, setModalMessage] = useState(null); // Estado para el mensaje de la modal
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [modalMessage, setModalMessage] = useState(null);
 
     useEffect(() => {
-        // Simular un tiempo de carga para mostrar el loader
         const timeout = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timeout);
     }, []);
 
-    // Función para truncar el texto
     const truncateText = (text, maxLength) => {
         return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
     };
 
-    // Función para cerrar todas las modales
     const closeModals = () => {
-        setIsEditModalOpen(false); // Cierra la modal de edición
-        setIsDeleteModalOpen(false); // Cierra la modal de eliminar
-        setSelectedProduct(null); // Limpia el producto seleccionado
+        setIsEditModalOpen(false);
+        setIsDeleteModalOpen(false);
+        setSelectedProduct(null);
     };
 
-    // Función para actualizar el producto
     const handleUpdateProduct = async (values, imageFile) => {
         try {
-            await updateProduct(values.id_products, values, imageFile); // Llamar a la función para actualizar el producto
+            await updateProduct(values.id_products, values, imageFile);
             setModalMessage("Producto actualizado con éxito.");
             closeModals();
             if (onRefresh) {
-                onRefresh(); // Llamar a onRefresh si está definido
+                onRefresh();
             }
         } catch (err) {
             console.error("Error al actualizar el producto:", err.message);
@@ -48,16 +45,15 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         }
     };
 
-    // Función para eliminar el producto
     const handleDeleteProduct = async () => {
         try {
-            await deleteProduct(selectedProduct.id_products); // Llamar a la función de eliminación
+            await deleteProduct(selectedProduct.id_products);
             console.log(`Producto eliminado con ID: ${selectedProduct.id_products}`);
             
             setModalMessage("Producto eliminado con éxito.");
             closeModals();
             if (onRefresh) {
-                onRefresh(); // Refrescar la lista de productos
+                onRefresh();
             }
         } catch (err) {
             console.error("Error al eliminar el producto:", err.message);
@@ -65,22 +61,29 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         }
     };
 
-    // Filtrar los productos basados en el término de búsqueda, categoría seleccionada y disponibilidad
     const filteredProducts = products.filter((product) => {
-        const matchesSearchTerm = product.name.toLowerCase().includes(searchTerm.toLowerCase()); // Filtro por búsqueda
-        const matchesCategory = selectedCategory === "" || product.category_id === parseInt(selectedCategory); // Filtro por categoría
+        const matchesSearchTerm = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = selectedCategory === "" || product.category_id === parseInt(selectedCategory);
         const matchesAvailability =
-            availabilityFilter === "todos" || // Mostrar todos si el filtro es "todos"
-            (availabilityFilter === "disponibles" && product.status === "activo") || // Mostrar solo activos
-            (availabilityFilter === "no-disponibles" && product.status === "inactivo"); // Mostrar solo inactivos
+            availabilityFilter === "todos" ||
+            (availabilityFilter === "disponibles" && product.status === "activo") ||
+            (availabilityFilter === "no-disponibles" && product.status === "inactivo");
 
-        return matchesSearchTerm && matchesCategory && matchesAvailability; // Combinar todos los filtros
+        return matchesSearchTerm && matchesCategory && matchesAvailability;
     });
 
     if (loading) {
         return (
             <div className="flex justify-center items-center w-full h-64">
-                <p className="text-gray-500 text-xl font-bold">Cargando productos...</p>
+                {/* Spinner de carga elegante con colores verdes */}
+                <div className="text-center">
+                    <div className="relative">
+                        <div className="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
+                        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-emerald-400 rounded-full animate-spin mx-auto"></div>
+                    </div>
+                    <p className="text-green-600 text-xl font-semibold">Cargando productos...</p>
+                    <p className="text-green-500 text-sm mt-1">Preparando tu inventario</p>
+                </div>
             </div>
         );
     }
@@ -88,279 +91,379 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     if (filteredProducts.length === 0) {
         return (
             <div className="flex justify-center items-center w-full h-64">
-                <p className="text-gray-500 text-xl font-bold">
-                    Lo siento, no se encontró ningún producto relacionado
-                </p>
+                <div className="text-center bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 shadow-lg border border-green-100">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FiEye className="text-white text-2xl" />
+                    </div>
+                    <p className="text-green-800 text-xl font-bold mb-2">
+                        No se encontraron productos
+                    </p>
+                    <p className="text-green-600 text-sm">
+                        Intenta ajustar los filtros de búsqueda
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-wrap gap-6 justify-center w-full ">
-            {/* Mostrar la modal si hay un mensaje */}
+        <div className="flex flex-wrap gap-8 justify-center w-full">
+            {/* Modal de mensaje */}
             {modalMessage && (
                 <ModalMessage
                     message={modalMessage}
-                    onClose={() => setModalMessage(null)} // Cerrar la modal
+                    onClose={() => setModalMessage(null)}
                 />
             )}
 
             {filteredProducts.map((product) => (
                 <section
                     key={product.id_products}
-                    className="relative rounded-t-2xl shadow flex justify-center items-center flex-col w-full md:w-4/10 lg:w-3/10"
+                    className="relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex flex-col w-full md:w-4/10 lg:w-3/10 border border-gray-100 overflow-hidden group"
                 >
-                    <div className="relative w-full h-48">
-                        {/* Imagen del producto */}
+                    {/* Contenedor de imagen con overlay en hover */}
+                    <div className="relative w-full h-48 overflow-hidden">
                         <Image
-                            src={product.image_url?.[0]} // Usa la imagen del producto o una predeterminada
+                            src={product.image_url?.[0] || kime}
                             alt={product.name}
-                            className="rounded-t-2xl w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             width={300}
                             height={200}
                         />
-                        {/* Marca de agua si el producto está inactivo */}
+                        
+                        {/* Overlay de estado */}
                         {product.status === "inactivo" && (
-                            <div className="absolute inset-0 rounded-t-2xl flex justify-center items-center backdrop-brightness-30">
-                                <p className="text-white text-2xl font-bold transform rotate-[-20deg] opacity-80">
-                                    No visible en el menu
-                                </p>
+                            <div className="absolute inset-0 bg-black bg-opacity-60 flex justify-center items-center backdrop-blur-sm">
+                                <div className="text-center">
+                                    <IoCloseCircle className="text-red-400 text-4xl mx-auto mb-2" />
+                                    <p className="text-white text-lg font-bold transform rotate-[-10deg]">
+                                        No visible en el menú
+                                    </p>
+                                </div>
                             </div>
                         )}
+
+                        {/* Badge de estado activo */}
+                        {product.status === "activo" && (
+                            <div className="absolute top-3 left-3 flex items-center gap-1 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                                <IoCheckmarkCircle className="text-sm" />
+                                Disponible
+                            </div>
+                        )}
+
+                        {/* Gradiente en la parte inferior */}
+                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/50 to-transparent"></div>
                     </div>
 
-                    <div className="flex w-full p-4 justify-between items-center">
-                        {/* Truncar el nombre del producto dinámicamente */}
-                        <h3 className="font-bold text-2xl">
-                            <span className=" xl:hidden hidden md:block">
-                                {truncateText(product.name, 12)} {/* Móvil y tablet */}
-                            </span>
-                            <span className="xl:block md:hidden ">
-                                {truncateText(product.name, 18)} {/* Computadora */}
-                            </span>
-                        </h3>
-                        <p className="text-2xl text-green-500 font-bold">$ {parseFloat(product.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
+                    {/* Contenido de la tarjeta */}
+                    <div className="flex-1 p-6 space-y-4">
+                        {/* Header con nombre y precio */}
+                        <div className="flex justify-between items-start">
+                            <h3 className="font-bold text-gray-800 leading-tight">
+                                <span className="xl:hidden hidden md:block text-lg">
+                                    {truncateText(product.name, 12)}
+                                </span>
+                                <span className="xl:block md:hidden text-xl">
+                                    {truncateText(product.name, 18)}
+                                </span>
+                            </h3>
+                            <div className="text-right">
+                                <p className="text-2xl font-bold text-green-600">
+                                    ${parseFloat(product.price).toLocaleString("en-US", { 
+                                        minimumFractionDigits: 2, 
+                                        maximumFractionDigits: 2 
+                                    })}
+                                </p>
+                            </div>
+                        </div>
 
-                    <div className="w-full px-4">
-                        <p className="text-gray-500">{truncateText(product.description, 55)}</p>
-                    </div>
-                    <div className="w-full p-4 flex justify-between items-center">
-                        <p className="bg-green-300 rounded-2xl px-6 py-1 text-xl">{product.category_name}</p>
-                        <div className="flex gap-3 items-center">
-                           
-                             {/* Botón de editar */}
-                             <button
-                                className="flex items-center"
-                                onClick={() => {
-                                    setSelectedProduct(product); // Establece el producto seleccionado
-                                    setIsEditModalOpen(true); // Abre la modal de edición
-                                }}
-                            >
-                                <FiEdit size={28} className="cursor-pointer " />
-                            </button>
+                        {/* Descripción */}
+                        <p className="text-gray-600 text-sm leading-relaxed min-h-[2.5rem]">
+                            {truncateText(product.description, 85)}
+                        </p>
+
+                        {/* Footer con categoría y acciones */}
+                        <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
+                                {product.category_name}
+                            </span>
+                            
+                            {/* Botones de acción */}
+                            <div className="flex gap-2">
+                                <button
+                                    className="p-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
+                                    onClick={() => {
+                                        setSelectedProduct(product);
+                                        setIsEditModalOpen(true);
+                                    }}
+                                    title="Editar producto"
+                                >
+                                    <FiEdit size={16} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
             ))}
 
-            {/* Modal de Eliminar Producto */}
+            {/* Modal de Eliminar Producto con diseño mejorado */}
             {isDeleteModalOpen && selectedProduct && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
-                    onClick={closeModals} // Cierra la modal al hacer clic fuera
+                    className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-10"
+                    onClick={closeModals}
                 >
                     <div
-                        className="bg-white p-6 rounded-lg shadow-lg w-96"
-                        onClick={(e) => e.stopPropagation()} // Evita cerrar la modal al hacer clic dentro
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100"
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <p className="text-gray-600 mb-6 text-center">
-                            ¿Seguro que quieres eliminar el producto <span className="font-bold">"{selectedProduct.name}"</span>?
-                        </p>
-                        <div className="flex gap-4 justify-center">
-                            <button
-                                className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
-                                onClick={handleDeleteProduct}
-                            >
-                                Sí
-                            </button>
-                            <button
-                                className="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
-                                onClick={closeModals}
-                            >
-                                No
-                            </button>
+                        {/* Header del modal */}
+                        <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-t-2xl">
+                            <div className="text-center">
+                                <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <BsTrash3 className="text-white text-2xl" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white">Eliminar Producto</h3>
+                            </div>
+                        </div>
+                        
+                        {/* Contenido */}
+                        <div className="p-6">
+                            <p className="text-gray-600 text-center mb-6 leading-relaxed">
+                                ¿Estás seguro de que quieres eliminar el producto 
+                                <span className="font-bold text-gray-800 block mt-1">"{selectedProduct.name}"</span>
+                                Esta acción no se puede deshacer.
+                            </p>
+                            
+                            {/* Botones */}
+                            <div className="flex gap-3">
+                                <button
+                                    className="flex-1 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+                                    onClick={handleDeleteProduct}
+                                >
+                                    Sí, eliminar
+                                </button>
+                                <button
+                                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95"
+                                    onClick={closeModals}
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Modal de Editar Producto */}
+            {/* Modal de Editar Producto con diseño mejorado y más compacto */}
             {isEditModalOpen && selectedProduct && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
-                    onClick={closeModals} // Cierra la modal al hacer clic fuera
+                    className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4"
+                    onClick={closeModals}
                 >
                     <div
-                        className="bg-white p-6 rounded-lg shadow-lg w-4/5"
-                        onClick={(e) => e.stopPropagation()} // Evita cerrar la modal al hacer clic dentro
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto border border-green-100"
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <h2 className="text-xl font-bold mb-4">Editar Producto</h2>
-                        <Formik
-                            initialValues={{
-                                id_products: selectedProduct.id_products,
-                                name: selectedProduct.name,
-                                description: selectedProduct.description,
-                                price: selectedProduct.price,
-                                category_id: selectedProduct.category_id,
-                                image: null, // Imagen inicial vacía
-                                status: selectedProduct.status, // Inicializar con el estado actual
-                            }}
-                            onSubmit={(values, { setSubmitting }) => {
-                                handleUpdateProduct(values, values.image); // Actualiza el producto
-                                setSubmitting(false); // Finaliza el estado de envío
-                            }}
-                        >
-                            {({ setFieldValue, values }) => {
-                                // Validaciones
-                                const isDescriptionTooLong = values.description && values.description.length > 500;
-                                const isCategoryNotSelected = !values.category_id || values.category_id === "";
-                                const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
+                        {/* Header del modal más compacto */}
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-t-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                    <FiEdit className="text-white text-lg" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white">Editar Producto</h2>
+                                    <p className="text-green-100 text-xs">Actualiza la información del producto</p>
+                                </div>
+                            </div>
+                        </div>
 
-                                return (
-                                    <Form className="space-y-4">
-                                        {/* Nombre del producto */}
-                                        <div>
-                                            <label className="font-bold text-gray-600 pb-2">Nombre del producto</label>
-                                            <Field
-                                                name="name"
-                                                type="text"
-                                                className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
-                                                placeholder="Nombre del producto"
-                                            />
-                                        </div>
+                        {/* Contenido del formulario más compacto */}
+                        <div className="p-4">
+                            <Formik
+                                initialValues={{
+                                    id_products: selectedProduct.id_products,
+                                    name: selectedProduct.name,
+                                    description: selectedProduct.description,
+                                    price: selectedProduct.price,
+                                    category_id: selectedProduct.category_id,
+                                    image: null,
+                                    status: selectedProduct.status,
+                                }}
+                                onSubmit={(values, { setSubmitting }) => {
+                                    handleUpdateProduct(values, values.image);
+                                    setSubmitting(false);
+                                }}
+                            >
+                                {({ setFieldValue, values }) => {
+                                    const isDescriptionTooLong = values.description && values.description.length > 500;
+                                    const isCategoryNotSelected = !values.category_id || values.category_id === "";
+                                    const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
 
-                                        {/* Descripción */}
-                                        <div>
-                                            <label className="font-bold text-gray-600 py-2">Descripción</label>
-                                            <Field
-                                                name="description"
-                                                as="textarea"
-                                                className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
-                                                placeholder="Escribe una descripción..."
-                                            />
-                                            {/* Validación de descripción */}
-                                            {isDescriptionTooLong && (
-                                                <p className="text-red-500 text-xs mt-1">
-                                                    La descripción no puede exceder los 500 caracteres. Actualmente: {values.description.length}/500
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Precio */}
-                                        <div>
-                                            <label className="font-bold text-gray-600">Precio</label>
-                                            <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 w-45">
+                                    return (
+                                        <Form className="space-y-4">
+                                            {/* Nombre del producto */}
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                    Nombre del producto
+                                                </label>
                                                 <Field
-                                                    name="price"
-                                                    type="number"
-                                                    className="ml-2 w-full outline-none"
-                                                    placeholder="Precio"
+                                                    name="name"
+                                                    type="text"
+                                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                                                    placeholder="Nombre del producto"
                                                 />
                                             </div>
-                                        </div>
 
-                                        {/* Categoría */}
-                                        <div>
-                                            <label className="font-bold text-gray-600 pb-2">Categoría</label>
-                                            <Field
-                                                name="category_id"
-                                                as="select"
-                                                className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
-                                            >
-                                                <option value="" disabled>
-                                                    Seleccionar Categoría
-                                                </option>
-                                                {(categories || []).map((category) => (
-                                                    <option key={category.id_categoria} value={category.id_categoria}>
-                                                        {category.nombre_categoria}
-                                                    </option>
-                                                ))}
-                                            </Field>
-                                            {/* Validación de categoría */}
-                                            {isCategoryNotSelected && (
-                                                <p className="text-red-500 text-xs mt-1">
-                                                    Debe seleccionar una categoría para el producto.
-                                                </p>
-                                            )}
-                                        </div>
+                                            {/* Descripción */}
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                    Descripción
+                                                </label>
+                                                <Field
+                                                    name="description"
+                                                    as="textarea"
+                                                    rows="3"
+                                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none"
+                                                    placeholder="Describe tu producto..."
+                                                />
+                                                <div className="flex justify-between items-center mt-1">
+                                                    <div>
+                                                        {isDescriptionTooLong && (
+                                                            <p className="text-red-500 text-xs flex items-center gap-1">
+                                                                <IoCloseCircle />
+                                                                Máximo 500 caracteres
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <span className={`text-xs ${
+                                                        values.description?.length > 500 ? 'text-red-500' : 'text-gray-400'
+                                                    }`}>
+                                                        {values.description?.length || 0}/500
+                                                    </span>
+                                                </div>
+                                            </div>
 
-                                        {/* Imagen */}
-                                        <div>
-                                            <label className="font-bold text-gray-600 pb-2 pt-4">
-                                                Imagen del Producto
-                                            </label>
-                                            <p className="text-sm text-gray-500 pb-2">
-                                                Formatos permitidos: .jpg, .jpeg, .png, .gif
-                                            </p>
-                                            <input
-                                                type="file"
-                                                accept="image/jpeg,image/png,image/gif,image/jpg"
-                                                onChange={(event) => {
-                                                    const file = event.target.files[0];
-                                                    const allowedFormats = ["image/jpeg", "image/png", "image/gif", "image/jpg"];
+                                            {/* Precio y Categoría en fila */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                        Precio
+                                                    </label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-600 font-bold">$</span>
+                                                        <Field
+                                                            name="price"
+                                                            type="number"
+                                                            step="0.01"
+                                                            className="w-full pl-7 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                                                            placeholder="0.00"
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                                    if (file && !allowedFormats.includes(file.type)) {
-                                                        setModalMessage("Formato de archivo no válido. Solo se permiten .jpg, .jpeg, .png o .gif.");
-                                                        event.target.value = ""; // Limpiar el input
-                                                        return;
-                                                    }
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                        Categoría
+                                                    </label>
+                                                    <Field
+                                                        name="category_id"
+                                                        as="select"
+                                                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                                                    >
+                                                        <option value="" disabled>
+                                                            Seleccionar
+                                                        </option>
+                                                        {(categories || []).map((category) => (
+                                                            <option key={category.id_categoria} value={category.id_categoria}>
+                                                                {category.nombre_categoria}
+                                                            </option>
+                                                        ))}
+                                                    </Field>
+                                                    {isCategoryNotSelected && (
+                                                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                                            <IoCloseCircle />
+                                                            Selecciona una categoría
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
 
-                                                    setFieldValue("image", file); // Establecer el archivo si es válido
-                                                }}
-                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                            />
-                                        </div>
+                                            {/* Imagen */}
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                    Imagen del producto
+                                                </label>
+                                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-400 transition-colors">
+                                                    <div className="mb-2">
+                                                        <svg className="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                                                        </svg>
+                                                    </div>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/jpeg,image/png,image/gif,image/jpg"
+                                                        onChange={(event) => {
+                                                            const file = event.target.files[0];
+                                                            const allowedFormats = ["image/jpeg", "image/png", "image/gif", "image/jpg"];
 
-                                        {/* Estado */}
-                                        <div>
-                                            <label className="font-bold text-gray-600 pb-2">Estado del Producto</label>
-                                            <Field
-                                                name="status"
-                                                as="select"
-                                                className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
-                                                onChange={(e) => setFieldValue("status", e.target.value)} // Actualizar el valor de status
-                                            >
-                                                <option value="activo">Activo</option>
-                                                <option value="inactivo">Inactivo</option>
-                                            </Field>
-                                        </div>
+                                                            if (file && !allowedFormats.includes(file.type)) {
+                                                                setModalMessage("Formato no válido. Solo JPG, PNG, GIF.");
+                                                                event.target.value = "";
+                                                                return;
+                                                            }
 
-                                        {/* Botones */}
-                                        <div className="flex gap-4">
-                                            <button
-                                                type="submit"
-                                                disabled={isFormInvalid} // Deshabilitar el botón si hay errores
-                                                className={`mt-4 px-4 py-2 text-white rounded ${
-                                                    isFormInvalid 
-                                                        ? 'bg-gray-400 cursor-not-allowed' 
-                                                        : 'bg-green-500 hover:bg-green-600 cursor-pointer'
-                                                }`}
-                                            >
-                                                Guardar Cambios
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
-                                                onClick={closeModals}
-                                            >
-                                                Cancelar
-                                            </button>
-                                        </div>
-                                    </Form>
-                                );
-                            }}
-                        </Formik>
+                                                            setFieldValue("image", file);
+                                                        }}
+                                                        className="block w-full text-xs text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 file:cursor-pointer cursor-pointer"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        JPG, PNG, GIF
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Estado */}
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                    Estado
+                                                </label>
+                                                <Field
+                                                    name="status"
+                                                    as="select"
+                                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                                                    onChange={(e) => setFieldValue("status", e.target.value)}
+                                                >
+                                                    <option value="activo">✅ Activo</option>
+                                                    <option value="inactivo">❌ Inactivo</option>
+                                                </Field>
+                                            </div>
+
+                                            {/* Botones */}
+                                            <div className="flex gap-3 pt-2">
+                                                <button
+                                                    type="submit"
+                                                    disabled={isFormInvalid}
+                                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                                                        isFormInvalid 
+                                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl'
+                                                    }`}
+                                                >
+                                                    Guardar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95"
+                                                    onClick={closeModals}
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        </Form>
+                                    );
+                                }}
+                            </Formik>
+                        </div>
                     </div>
                 </div>
             )}

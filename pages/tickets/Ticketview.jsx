@@ -750,11 +750,11 @@ export default function Ticketview() {
             {/* Modal principal del ticket */}
             {isModalOpen && selectedTicket && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000] p-2"
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000] p-4"
                     onClick={() => setIsModalOpen(false)}
                 >
                     <div
-                        className="bg-white rounded-lg w-full max-w-sm h-full max-h-[95vh] overflow-hidden relative shadow-2xl flex flex-col"
+                        className="bg-white rounded-lg w-full max-w-sm h-[70vh] overflow-hidden relative shadow-2xl flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Botón de cerrar (X) */}
@@ -773,7 +773,7 @@ export default function Ticketview() {
                         </div>
 
                         {/* Contenido del ticket - scrollable */}
-                        <div className="flex-1 overflow-y-auto p-3">
+                        <div className="flex-1 overflow-y-auto p-3 min-h-0">
                             <div className="border-2 border-dashed border-gray-300 p-3 bg-gray-50">
                                 {/* Información del restaurante */}
                                 <div className="text-center mb-3 pb-2 border-b border-gray-300">
@@ -810,15 +810,17 @@ export default function Ticketview() {
                                     </div>
                                 </div>
 
-                                {/* Productos */}
+                                {/* Productos - Con scroll independiente */}
                                 <div className="mb-3">
                                     <h4 className="font-bold text-xs mb-2 pb-1 border-b border-gray-300">
-                                        PRODUCTOS
+                                        PRODUCTOS ({selectedTicket.productos?.length || 0})
                                     </h4>
-                                    <div className="space-y-2">
+                                    
+                                    {/* Contenedor de productos con altura fija y scroll */}
+                                    <div className="max-h-32 overflow-y-auto space-y-2 border border-gray-200 rounded p-2 bg-white">
                                         {selectedTicket.productos?.map((product, index) => (
-                                            <div key={index} className="bg-white p-2 rounded border">
-                                                <div className="flex justify-between items-start mb-1">
+                                            <div key={index} className="bg-gray-50 p-2 rounded border">
+                                                <div className="flex justify-between items-start">
                                                     <div className="flex-1 min-w-0 pr-2">
                                                         <div className={`text-xs font-medium leading-tight ${
                                                             product.status === "cancelado" ? "text-red-500 line-through" : ""
@@ -838,6 +840,15 @@ export default function Ticketview() {
                                             </div>
                                         ))}
                                     </div>
+                                    
+                                    {/* Indicador de scroll si hay muchos productos */}
+                                    {selectedTicket.productos?.length > 3 && (
+                                        <div className="text-center mt-1">
+                                            <span className="text-xs text-gray-500">
+                                                ↕ Desliza para ver todos los productos
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Total */}
@@ -858,7 +869,7 @@ export default function Ticketview() {
 
                                 {/* Código QR */}
                                 <div className="text-center py-2 border-t border-gray-300">
-                                    <p className="text-xs text-gray-600 mb-2">Código QR del ticket</p>
+                                    <p className="text-xs text-gray-600 mb-2">Código QR para impresión</p>
                                     <div className="flex justify-center mb-2">
                                         <QRCodeCanvas
                                             value={selectedTicket.order_uuid || selectedTicket.id}
@@ -868,7 +879,7 @@ export default function Ticketview() {
                                         />
                                     </div>
                                     <p className="text-xs text-gray-500 leading-tight">
-                                        Escanea para imprimir desde la app móvil
+                                        Escanea con tu dispositivo móvil para imprimir
                                     </p>
                                 </div>
 
@@ -888,7 +899,7 @@ export default function Ticketview() {
                         {/* Botón de cerrar - fijo en la parte inferior */}
                         <div className="p-3 border-t bg-white flex-shrink-0">
                             <button
-                                className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded transition-colors text-sm font-medium"
+                                className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-3 rounded transition-colors text-sm font-medium"
                                 onClick={() => setIsModalOpen(false)}
                             >
                                 Cerrar

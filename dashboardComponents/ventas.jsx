@@ -4,7 +4,8 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { IoClose } from "react-icons/io5";
+import { IoClose, IoCalendarOutline, IoTrendingUpOutline, IoStatsChartOutline } from "react-icons/io5";
+import { FaChartLine, FaCalendarAlt, FaClock, FaGlobe } from "react-icons/fa";
 import Populares from './populares';
 import IdPedidos from './idpedidos';
 import MainStats from './mainStats';
@@ -51,11 +52,7 @@ export default function Ventas() {
 
   const handleSubTabChange = (event, newValue) => {
     setSubTabValue(newValue);
-    
-    // Si se selecciona "Entre fechas", abrir el modal
-    if (newValue === "Entre fechas") {
-      setShowDatePickerModal(true);
-    }
+    // Ya no abrimos modal, solo cambiamos la pestaña
   };
 
   // Función para formatear fecha a YYYY-MM-DD
@@ -245,7 +242,70 @@ export default function Ventas() {
     setShowDatePickerModal(false);
   };
 
-  // Componentes para cada sección
+  // Componente de Loading mejorado
+  const LoadingCard = ({ message, icon: Icon }) => (
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-8">
+      <div className="flex flex-col items-center text-center">
+        <div className="relative mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center animate-pulse">
+            <Icon className="text-white text-2xl" />
+          </div>
+          <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-white animate-bounce"></div>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-500 border-t-transparent"></div>
+            <span className="text-gray-600 font-medium">{message}</span>
+          </div>
+          <div className="w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Componente de Error mejorado
+  const ErrorCard = ({ title, message, error, onRetry }) => (
+    <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl shadow-lg border border-red-100 p-8">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <IoStatsChartOutline className="text-white text-2xl" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
+        <p className="text-gray-600 mb-4">{message}</p>
+        {error && (
+          <div className="bg-red-100 border border-red-200 rounded-lg p-3 mb-4">
+            <p className="text-red-700 text-sm font-mono">{error}</p>
+          </div>
+        )}
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+          >
+            Reintentar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  // Componente de Empty State mejorado
+  const EmptyStateCard = ({ title, message, icon: Icon, action }) => (
+    <div className="bg-gradient-to-br from-gray-50 to-green-50 rounded-2xl shadow-lg border border-gray-200 p-8">
+      <div className="text-center">
+        <div className="w-20 h-20 bg-gradient-to-br from-gray-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Icon className="text-white text-3xl" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-800 mb-3">{title}</h3>
+        <p className="text-gray-600 mb-6 max-w-md mx-auto">{message}</p>
+        {action && action}
+      </div>
+    </div>
+  );
+
+  // Componentes para cada sección MEJORADOS
   const SemanaTab = () => {
     // Cargar datos al renderizar si no están cargados
     React.useEffect(() => {
@@ -257,35 +317,44 @@ export default function Ventas() {
     return (
       <div className="space-y-6">
         {loadingSemana && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">Cargando datos de ventas semanales...</div>
-          </div>
-        )}
-
-        {errorSemana && !loadingSemana && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <p className="font-semibold">📊 No hay datos de ventas semanales</p>
-              <p className="text-sm mt-2">No se pudieron cargar los datos de ventas por semana.</p>
-              <p className="text-xs mt-1 text-gray-400">Error: {errorSemana}</p>
-            </div>
-          </div>
-        )}
-
-        {!loadingSemana && !errorSemana && datosSemana.length > 0 && (
-          <LineChartFull
-            data={datosSemana}
-            title="Ventas por Semana"
+          <LoadingCard 
+            message="Cargando datos de ventas semanales..." 
+            icon={FaClock}
           />
         )}
 
-        {!loadingSemana && !errorSemana && datosSemana.length === 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <p className="font-semibold">📊 No hay ventas registradas por semana</p>
-              <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
+        {errorSemana && !loadingSemana && (
+          <ErrorCard
+            title="Error al cargar datos semanales"
+            message="No se pudieron cargar los datos de ventas por semana."
+            error={errorSemana}
+            onRetry={cargarDatosSemana}
+          />
+        )}
+
+        {!loadingSemana && !errorSemana && datosSemana.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+              <div className="flex items-center gap-3 text-white">
+                <FaChartLine className="text-2xl" />
+                <h3 className="text-xl font-bold">Ventas Semanales</h3>
+              </div>
+            </div>
+            <div className="p-6">
+              <LineChartFull
+                data={datosSemana}
+                title="Ventas por Semana"
+              />
             </div>
           </div>
+        )}
+
+        {!loadingSemana && !errorSemana && datosSemana.length === 0 && (
+          <EmptyStateCard
+            title="Sin ventas semanales"
+            message="Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente."
+            icon={FaChartLine}
+          />
         )}
       </div>
     );
@@ -302,35 +371,44 @@ export default function Ventas() {
     return (
       <div className="space-y-6">
         {loadingMes && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">Cargando datos de ventas mensuales...</div>
-          </div>
-        )}
-
-        {errorMes && !loadingMes && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <p className="font-semibold">📊 No hay datos de ventas mensuales</p>
-              <p className="text-sm mt-2">No se pudieron cargar los datos de ventas por mes.</p>
-              <p className="text-xs mt-1 text-gray-400">Error: {errorMes}</p>
-            </div>
-          </div>
-        )}
-
-        {!loadingMes && !errorMes && datosMes.length > 0 && (
-          <LineChartFull
-            data={datosMes}
-            title="Ventas por Mes"
+          <LoadingCard 
+            message="Cargando datos de ventas mensuales..." 
+            icon={FaCalendarAlt}
           />
         )}
 
-        {!loadingMes && !errorMes && datosMes.length === 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <p className="font-semibold">📊 No hay ventas registradas por mes</p>
-              <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
+        {errorMes && !loadingMes && (
+          <ErrorCard
+            title="Error al cargar datos mensuales"
+            message="No se pudieron cargar los datos de ventas por mes."
+            error={errorMes}
+            onRetry={cargarDatosMes}
+          />
+        )}
+
+        {!loadingMes && !errorMes && datosMes.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+              <div className="flex items-center gap-3 text-white">
+                <FaCalendarAlt className="text-2xl" />
+                <h3 className="text-xl font-bold">Ventas Mensuales</h3>
+              </div>
+            </div>
+            <div className="p-6">
+              <LineChartFull
+                data={datosMes}
+                title="Ventas por Mes"
+              />
             </div>
           </div>
+        )}
+
+        {!loadingMes && !errorMes && datosMes.length === 0 && (
+          <EmptyStateCard
+            title="Sin ventas mensuales"
+            message="Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente."
+            icon={FaCalendarAlt}
+          />
         )}
       </div>
     );
@@ -339,65 +417,166 @@ export default function Ventas() {
   const FechasTab = () => {
     return (
       <div className="space-y-6">
-        {startDate && endDate && (
-          <div className="bg-blue-50 rounded-lg p-4">
-            <p className="text-blue-800 font-semibold">
-              Rango seleccionado: {formatDate(startDate)} - {formatDate(endDate)}
-            </p>
-            <button
-              onClick={() => setShowDatePickerModal(true)}
-              className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
-            >
-              Cambiar fechas
-            </button>
-          </div>
-        )}
-
-        {loadingFechas && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">Cargando datos de ventas por fechas...</div>
-          </div>
-        )}
-
-        {errorFechas && !loadingFechas && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <p className="font-semibold">📊 No hay datos de ventas para las fechas seleccionadas</p>
-              <p className="text-sm mt-2">No se pudieron cargar los datos de ventas para el rango especificado.</p>
-              <p className="text-xs mt-1 text-gray-400">Error: {errorFechas}</p>
+        {/* Selector de fechas integrado */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+            <div className="flex items-center gap-3 text-white">
+              <IoCalendarOutline className="text-2xl" />
+              <h3 className="text-xl font-bold">Selecciona el Rango de Fechas</h3>
             </div>
           </div>
-        )}
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="block text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center">
+                    <IoCalendarOutline className="text-white text-sm" />
+                  </div>
+                  Fecha de inicio
+                </label>
+                <div className="border-2 border-gray-200 rounded-xl p-4 hover:border-green-500 transition-colors focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-200">
+                  <DatePicker
+                    selected={startDate}
+                    onChange={(date) => setStartDate(date)}
+                    selectsStart
+                    startDate={startDate}
+                    endDate={endDate}
+                    placeholderText="Selecciona fecha de inicio"
+                    className="w-full text-lg font-medium text-gray-800 bg-transparent border-none outline-none"
+                    dateFormat="dd/MM/yyyy"
+                    showYearDropdown
+                    showMonthDropdown
+                    dropdownMode="select"
+                    locale="es"
+                    popperClassName="custom-datepicker-popper"
+                    popperPlacement="bottom-start"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <label className="block text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <IoCalendarOutline className="text-white text-sm" />
+                  </div>
+                  Fecha de fin
+                </label>
+                <div className="border-2 border-gray-200 rounded-xl p-4 hover:border-emerald-500 transition-colors focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200">
+                  <DatePicker
+                    selected={endDate}
+                    onChange={(date) => setEndDate(date)}
+                    selectsEnd
+                    startDate={startDate}
+                    endDate={endDate}
+                    minDate={startDate}
+                    placeholderText="Selecciona fecha de fin"
+                    className="w-full text-lg font-medium text-gray-800 bg-transparent border-none outline-none"
+                    dateFormat="dd/MM/yyyy"
+                    showYearDropdown
+                    showMonthDropdown
+                    dropdownMode="select"
+                    locale="es"
+                    popperClassName="custom-datepicker-popper"
+                    popperPlacement="bottom-start"
+                  />
+                </div>
+              </div>
+            </div>
 
-        {!loadingFechas && !errorFechas && datosFechas.length > 0 && (
-          <LineChartFull
-            data={datosFechas}
-            title="Ventas por Rango de Fechas"
+            {/* Información del rango seleccionado */}
+            {startDate && endDate && (
+              <div className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <IoCalendarOutline className="text-white text-lg" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-green-800 font-bold text-lg mb-2">✅ Rango seleccionado correctamente</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-green-700">
+                      <div className="bg-white/60 rounded-lg p-3">
+                        <p className="font-semibold text-sm text-green-600 mb-1">Fecha de inicio:</p>
+                        <p className="text-base font-bold">{formatDate(startDate)}</p>
+                      </div>
+                      <div className="bg-white/60 rounded-lg p-3">
+                        <p className="font-semibold text-sm text-green-600 mb-1">Fecha de fin:</p>
+                        <p className="text-base font-bold">{formatDate(endDate)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-sm text-green-600">
+                      <p>📊 Días incluidos: {Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1} días</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Estados de carga y gráfica */}
+        {loadingFechas && (
+          <LoadingCard 
+            message="Cargando datos de ventas por fechas..." 
+            icon={IoCalendarOutline}
           />
         )}
 
-        {(!startDate || !endDate) && !loadingFechas && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <p className="font-semibold">📅 Selecciona un rango de fechas</p>
-              <p className="text-sm mt-2">Haz clic en el botón de arriba para seleccionar las fechas que deseas consultar.</p>
-              <button
-                onClick={() => setShowDatePickerModal(true)}
-                className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Seleccionar fechas
-              </button>
+        {errorFechas && !loadingFechas && (
+          <ErrorCard
+            title="Error al cargar datos por fechas"
+            message="No se pudieron cargar los datos de ventas para el rango especificado."
+            error={errorFechas}
+            onRetry={() => cargarDatosFechas()}
+          />
+        )}
+
+        {!loadingFechas && !errorFechas && datosFechas.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+              <div className="flex items-center justify-between text-white">
+                <div className="flex items-center gap-3">
+                  <IoCalendarOutline className="text-2xl" />
+                  <h3 className="text-xl font-bold">Ventas por Rango de Fechas</h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setStartDate(null);
+                    setEndDate(null);
+                    setDatosFechas([]);
+                  }}
+                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-white/30 flex items-center gap-2"
+                >
+                  <IoCalendarOutline className="text-lg" />
+                  Seleccionar otras fechas
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <LineChartFull
+                data={datosFechas}
+                title="Ventas por Rango de Fechas"
+              />
             </div>
           </div>
         )}
 
         {!loadingFechas && !errorFechas && startDate && endDate && datosFechas.length === 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <p className="font-semibold">📊 No hay ventas en el rango seleccionado</p>
-              <p className="text-sm mt-2">No se encontraron ventas para las fechas especificadas.</p>
-            </div>
-          </div>
+          <EmptyStateCard
+            title="Sin ventas en el rango seleccionado"
+            message="No se encontraron ventas para las fechas especificadas. Prueba con un rango diferente."
+            icon={IoCalendarOutline}
+            action={
+              <button
+                onClick={() => {
+                  setStartDate(null);
+                  setEndDate(null);
+                }}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 flex items-center gap-2 mx-auto"
+              >
+                <IoCalendarOutline className="text-lg" />
+                Seleccionar otras fechas
+              </button>
+            }
+          />
         )}
       </div>
     );
@@ -414,181 +593,320 @@ export default function Ventas() {
     return (
       <div className="space-y-6">
         {loadingTodo && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">Cargando todos los datos de ventas...</div>
-          </div>
-        )}
-
-        {errorTodo && !loadingTodo && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <p className="font-semibold">📊 No hay datos de ventas totales</p>
-              <p className="text-sm mt-2">No se pudieron cargar todos los datos de ventas.</p>
-              <p className="text-xs mt-1 text-gray-400">Error: {errorTodo}</p>
-            </div>
-          </div>
-        )}
-
-        {!loadingTodo && !errorTodo && datosTodo.length > 0 && (
-          <LineChartFull
-            data={datosTodo}
-            title="Todas las Ventas"
+          <LoadingCard 
+            message="Cargando todos los datos de ventas..." 
+            icon={FaGlobe}
           />
         )}
 
-        {!loadingTodo && !errorTodo && datosTodo.length === 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <p className="font-semibold">📊 No hay ventas registradas</p>
-              <p className="text-sm mt-2">Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente.</p>
+        {errorTodo && !loadingTodo && (
+          <ErrorCard
+            title="Error al cargar datos totales"
+            message="No se pudieron cargar todos los datos de ventas."
+            error={errorTodo}
+            onRetry={cargarDatosTodo}
+          />
+        )}
+
+        {!loadingTodo && !errorTodo && datosTodo.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-gray-500 to-gray-700 p-6">
+              <div className="flex items-center gap-3 text-white">
+                <FaGlobe className="text-2xl" />
+                <h3 className="text-xl font-bold">Todas las Ventas</h3>
+              </div>
+            </div>
+            <div className="p-6">
+              <LineChartFull
+                data={datosTodo}
+                title="Todas las Ventas"
+              />
             </div>
           </div>
+        )}
+
+        {!loadingTodo && !errorTodo && datosTodo.length === 0 && (
+          <EmptyStateCard
+            title="Sin ventas registradas"
+            message="Conforme comiences a tener ventas, esta vista se irá actualizando automáticamente."
+            icon={FaGlobe}
+          />
         )}
       </div>
     );
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       <Box sx={{ width: '100%', typography: 'body1' }}>
         <TabContext value={value}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <TabList onChange={handleChange} aria-label="lab API tabs example">
-              <Tab label="Populares" value="1" />
-              <Tab label="Ventas" value="2" />
+          <Box sx={{ 
+            borderBottom: 1, 
+            borderColor: 'divider',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            borderRadius: '12px 12px 0 0',
+            overflow: 'hidden'
+          }}>
+            <TabList 
+              onChange={handleChange} 
+              aria-label="lab API tabs example"
+              sx={{
+                '& .MuiTab-root': {
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  minHeight: '64px',
+                  '&.Mui-selected': {
+                    color: '#fbbf24',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  }
+                },
+                '& .MuiTabs-indicator': {
+                  backgroundColor: '#fbbf24',
+                  height: '4px',
+                  borderRadius: '2px'
+                }
+              }}
+            >
+
+              <Tab 
+                label={
+                  <div className="flex items-center gap-2">
+                    <IoTrendingUpOutline className="text-xl" />
+                    <span>Populares</span>
+                  </div>
+                } 
+                value="1" 
+              />
+              <Tab 
+                label={
+                  <div className="flex items-center gap-2">
+                    <IoStatsChartOutline className="text-xl" />
+                    <span>Ventas</span>
+                  </div>
+                } 
+                value="2" 
+              />
             </TabList>
           </Box>
-          <TabPanel value="1">
-            <Populares />
-            <div className='mt-4'> 
-              <BarChartBreakdown />
+          
+          <TabPanel value="1" sx={{ padding: '24px' }}>
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+                  <div className="flex items-center gap-3 text-white">
+                    <IoTrendingUpOutline className="text-2xl" />
+                    <h3 className="text-xl font-bold">Productos Populares</h3>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <Populares />
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-gray-500 to-gray-700 p-6">
+                  <div className="flex items-center gap-3 text-white">
+                    <IoStatsChartOutline className="text-2xl" />
+                    <h3 className="text-xl font-bold">Análisis de Ventas</h3>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <BarChartBreakdown />
+                </div>
+              </div>
             </div>
           </TabPanel>
-          <TabPanel value="2">
-            <MainStats />
-            
-            <Box sx={{ width: '100%', typography: 'body1', mt: 3 }}>
-              <TabContext value={subTabValue}>
-                <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-                  <TabList onChange={handleSubTabChange} aria-label="ventas tabs">
-                    <Tab label="Semana" value="semana" />
-                    <Tab label="Mes" value="mes" />
-                    <Tab label="Entre fechas" value="Entre fechas" />
-                    <Tab label="Todo" value="Todo" />
-                  </TabList>
-                </Box>
-                
-                <TabPanel value="semana" sx={{ p: 0 }}>
-                  <SemanaTab />
-                </TabPanel>
+          
+          <TabPanel value="2" sx={{ padding: '24px' }}>
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+                  <div className="flex items-center gap-3 text-white">
+                    <IoStatsChartOutline className="text-2xl" />
+                    <h3 className="text-xl font-bold">Estadísticas Principales</h3>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <MainStats />
+                </div>
+              </div>
 
-                <TabPanel value="mes" sx={{ p: 0 }}>
-                  <MesTab />
-                </TabPanel>
+              <Box sx={{ width: '100%', typography: 'body1' }}>
+                <TabContext value={subTabValue}>
+                  <Box sx={{ 
+                    borderBottom: 1, 
+                    borderColor: 'divider', 
+                    mb: 3,
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    borderRadius: '12px',
+                    overflow: 'hidden'
+                  }}>
+                    <TabList 
+                      onChange={handleSubTabChange} 
+                      aria-label="ventas tabs"
+                      variant="scrollable"
+                      scrollButtons="auto"
+                      sx={{
+                        '& .MuiTab-root': {
+                          color: 'white',
+                          fontWeight: '600',
+                          fontSize: '0.95rem',
+                          minHeight: '56px',
+                          '&.Mui-selected': {
+                            color: '#fbbf24',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                          }
+                        },
+                        '& .MuiTabs-indicator': {
+                          backgroundColor: '#fbbf24',
+                          height: '3px',
+                          borderRadius: '2px'
+                        },
+                        '& .MuiTabs-scrollButtons': {
+                          color: 'white',
+                          '&.Mui-disabled': {
+                            opacity: 0.3
+                          }
+                        }
+                      }}
+                    >
+                      <Tab 
+                        label={
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <FaClock className="text-lg" />
+                            <span>Semana</span>
+                          </div>
+                        } 
+                        value="semana" 
+                      />
+                      <Tab 
+                        label={
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <FaCalendarAlt className="text-lg" />
+                            <span>Mes</span>
+                          </div>
+                        } 
+                        value="mes" 
+                      />
+                      <Tab 
+                        label={
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <IoCalendarOutline className="text-lg" />
+                            <span>Entre fechas</span>
+                          </div>
+                        } 
+                        value="Entre fechas" 
+                      />
+                      <Tab 
+                        label={
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <FaGlobe className="text-lg" />
+                            <span>Todo</span>
+                          </div>
+                        } 
+                        value="Todo" 
+                      />
+                    </TabList>
+                  </Box>
+                  
+                  <TabPanel value="semana" sx={{ p: 0 }}>
+                    <SemanaTab />
+                  </TabPanel>
 
-                <TabPanel value="Entre fechas" sx={{ p: 0 }}>
-                  <FechasTab />
-                </TabPanel>
+                  <TabPanel value="mes" sx={{ p: 0 }}>
+                    <MesTab />
+                  </TabPanel>
 
-                <TabPanel value="Todo" sx={{ p: 0 }}>
-                  <TodoTab />
-                </TabPanel>
-                
-              </TabContext>
-            </Box>
+                  <TabPanel value="Entre fechas" sx={{ p: 0 }}>
+                    <FechasTab />
+                  </TabPanel>
+
+                  <TabPanel value="Todo" sx={{ p: 0 }}>
+                    <TodoTab />
+                  </TabPanel>
+                  
+                </TabContext>
+              </Box>
+            </div>
           </TabPanel>
         </TabContext>
       </Box>
 
-      {/* Modal para selector de fechas */}
-      {showDatePickerModal && (
-        <div
-          className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000]"
-          onClick={() => setShowDatePickerModal(false)}
-        >
-          <div
-            className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
-              onClick={() => setShowDatePickerModal(false)}
-            >
-              <IoClose />
-            </button>
+      {/* Estilos CSS simplificados para DatePicker SIN MODAL */}
+      <style jsx global>{`
+        /* Z-INDEX ALTO PARA DATEPICKER */
+        .custom-datepicker-popper {
+          z-index: 9999 !important;
+        }
 
-            <h2 className="text-xl font-bold mb-6 text-center">
-              Seleccionar Rango de Fechas
-            </h2>
+        .react-datepicker-popper {
+          z-index: 9999 !important;
+        }
 
-            <div className="mb-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha de inicio
-                </label>
-                <DatePicker
-                  selected={startDate}
-                  onChange={(date) => setStartDate(date)}
-                  selectsStart
-                  startDate={startDate}
-                  endDate={endDate}
-                  placeholderText="Selecciona fecha de inicio"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  dateFormat="dd/MM/yyyy"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha de fin
-                </label>
-                <DatePicker
-                  selected={endDate}
-                  onChange={(date) => setEndDate(date)}
-                  selectsEnd
-                  startDate={startDate}
-                  endDate={endDate}
-                  minDate={startDate}
-                  placeholderText="Selecciona fecha de fin"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  dateFormat="dd/MM/yyyy"
-                />
-              </div>
-            </div>
+        .react-datepicker {
+          border: 2px solid #e5e7eb;
+          border-radius: 12px;
+          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15) !important;
+          font-family: inherit;
+          z-index: 9999 !important;
+        }
 
-            {startDate && endDate && (
-              <div className="mb-4 p-3 bg-green-50 rounded-lg">
-                <p className="text-sm text-green-700">
-                  <strong>Rango seleccionado:</strong><br />
-                  Desde: {formatDate(startDate)}<br />
-                  Hasta: {formatDate(endDate)}
-                </p>
-              </div>
-            )}
+        .react-datepicker__header {
+          background: linear-gradient(135deg, #10b981, #059669) !important;
+          border-bottom: none;
+          border-radius: 10px 10px 0 0;
+          color: white;
+        }
 
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => {
-                  setShowDatePickerModal(false);
-                  setSubTabValue("semana");
-                  setStartDate(null);
-                  setEndDate(null);
-                }}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleApplyDateFilter}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                disabled={!startDate || !endDate}
-              >
-                Aplicar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        .react-datepicker__current-month {
+          color: white !important;
+          font-weight: bold;
+          font-size: 16px;
+        }
+
+        .react-datepicker__day-name {
+          color: white !important;
+          font-weight: 600;
+        }
+
+        .react-datepicker__day {
+          border-radius: 8px;
+          margin: 2px;
+          transition: all 0.2s ease;
+        }
+
+        .react-datepicker__day:hover {
+          background-color: #10b981 !important;
+          color: white !important;
+          transform: scale(1.05);
+        }
+
+        .react-datepicker__day--selected {
+          background-color: #059669 !important;
+          color: white !important;
+          font-weight: bold;
+        }
+
+        .react-datepicker__day--in-range {
+          background-color: #d1fae5 !important;
+          color: #065f46 !important;
+        }
+
+        .react-datepicker__navigation {
+          top: 15px;
+        }
+
+        .react-datepicker__navigation-icon::before {
+          border-color: white !important;
+        }
+
+        .react-datepicker__year-dropdown,
+        .react-datepicker__month-dropdown {
+          z-index: 9999 !important;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        }
+      `}</style>
     </div>
   );
 }

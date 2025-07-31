@@ -48,7 +48,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
     });
 
     return (
-        <section className="lg:flex my-4 lg:gap-4 lg:justify-between lg:items-center">
+        <div className="bg-gradient-to-r from-white via-green-50 to-emerald-50 p-6 rounded-2xl shadow-lg border border-green-100 mb-8">
             {/* Mostrar la modal si hay un mensaje */}
             {modalMessage && (
                 <ModalMessage
@@ -57,355 +57,504 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                 />
             )}
 
-            {/* Barra de búsqueda */}
-            <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 lg:mb-0 lg:w-6/12 justify-center items-center">
-                <HiOutlineMagnifyingGlass className="text-xl" />
-                <input
-                    type="text"
-                    placeholder="Buscar..."
-                    value={searchTerm} // Vincular el estado al input
-                    onChange={handleSearchChange} // Manejar el cambio
-                    className="ml-2 w-full outline-none"
-                />
-            </div>
-
-            <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
-                {/* Dropdowns */}
-                <div className="flex gap-4">
-                    {/* Dropdown Categorías */}
-                    <div className="relative">
-                        <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                            <BsTag className="text-2xl" />
-                            <select
-                                id="categorias"
-                                className="w-full outline-none bg-transparent"
-                                onChange={(e) => onCategoryChange(e.target.value)} // Manejar cambio de categoría
+            <div className="flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between">
+                {/* Barra de búsqueda mejorada */}
+                <div className="relative lg:w-6/12">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <HiOutlineMagnifyingGlass className="h-5 w-5 text-green-600" />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Buscar productos..."
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        className="w-full pl-12 pr-4 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white/80 backdrop-blur-sm transition-all duration-200 hover:border-green-300"
+                    />
+                    {searchTerm && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <button
+                                onClick={() => {
+                                    setSearchTerm("");
+                                    onSearch("");
+                                }}
+                                className="text-gray-400 hover:text-green-600 transition-colors"
                             >
-                                <option value="">Todas</option>
-                                {categories.map((category) => (
-                                    <option key={category.id_categoria} value={category.id_categoria}>
-                                        {category.nombre_categoria}
-                                    </option>
-                                ))}
-                            </select>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-4 lg:w-6/12">
+                    {/* Dropdowns con diseño mejorado */}
+                    <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                        {/* Dropdown Categorías */}
+                        <div className="relative flex-1">
+                            <div className="flex items-center gap-3 px-4 py-3 border-2 border-green-200 rounded-xl shadow-sm bg-white/80 backdrop-blur-sm hover:border-green-300 transition-all duration-200 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500">
+                                <BsTag className="text-green-600 text-lg flex-shrink-0" />
+                                <select
+                                    id="categorias"
+                                    className="w-full outline-none bg-transparent text-gray-700 font-medium cursor-pointer"
+                                    onChange={(e) => onCategoryChange(e.target.value)}
+                                >
+                                    <option value="">Todas las categorías</option>
+                                    {categories.map((category) => (
+                                        <option key={category.id_categoria} value={category.id_categoria}>
+                                            {category.nombre_categoria}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Dropdown Disponibilidad */}
+                        <div className="relative flex-1">
+                            <div className="flex items-center gap-3 px-4 py-3 border-2 border-green-200 rounded-xl shadow-sm bg-white/80 backdrop-blur-sm hover:border-green-300 transition-all duration-200 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500">
+                                <FiFilter className="text-green-600 text-lg flex-shrink-0" />
+                                <select
+                                    id="disponibilidad"
+                                    className="w-full outline-none bg-transparent text-gray-700 font-medium cursor-pointer"
+                                    onChange={(e) => onAvailabilityChange(e.target.value)}
+                                >
+                                    <option value="todos">Todos los productos</option>
+                                    <option value="disponibles">Disponibles</option>
+                                    <option value="no-disponibles">No disponibles</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Dropdown Disponibilidad */}
-                    <div className="relative">
-                        <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                            <FiFilter className="text-2xl" />
-                            <select
-                                id="disponibilidad"
-                                className="w-full outline-none bg-transparent"
-                                onChange={(e) => onAvailabilityChange(e.target.value)} // Corregir para usar onAvailabilityChange
-                            >
-                                <option value="todos">Todos los Disponibles</option>
-                                <option value="disponibles">Disponibles</option>
-                                <option value="no-disponibles">No Disponibles</option>
-                            </select>
-                        </div>
+                    {/* Botones con diseño mejorado */}
+                    <div className="flex gap-3">
+                        <button
+                            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+                            onClick={() => setIsProductoModalOpen(true)}
+                        >
+                            <FaPlus className="text-lg" />
+                            <span className="hidden sm:inline">Producto</span>
+                        </button>
+                        <button
+                            className="flex items-center gap-3 px-6 py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+                            onClick={() => setIsCategoriaModalOpen(true)}
+                        >
+                            <BsTag className="text-lg" />
+                            <span className="hidden sm:inline">Categoría</span>
+                        </button>
                     </div>
-                </div>
-
-                {/* Botones */}
-                <div className="flex gap-4">
-                    <button
-                        className="p-2 text-sm bg-green-500 text-white rounded-2xl cursor-pointer w-full flex justify-center items-center"
-                        onClick={() => setIsProductoModalOpen(true)}
-                    >
-                        <span className="flex justify-center items-center gap-4">
-                            <FaPlus size={20} /> Productos
-                        </span>
-                    </button>
-                    <button
-                        className="p-2 border rounded-2xl cursor-pointer ml-2 w-full flex justify-center items-center"
-                        onClick={() => setIsCategoriaModalOpen(true)}
-                    >
-                        <span className="flex justify-center items-center gap-2">
-                            <BsTag size={20} /> Categorías
-                        </span>
-                    </button>
                 </div>
             </div>
 
-            {/* Modal de Productos */}
+            {/* Modal de Productos con diseño mejorado y más compacto */}
             {isProductoModalOpen && (
                 <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4"
                     onClick={closeModals}
                 >
                     <div
-                        className="bg-white p-6 rounded-lg shadow-lg w-4/5"
-                        onClick={(e) => e.stopPropagation()} // Evita cerrar la modal al hacer clic dentro
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto border border-green-100"
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <h2 className="text-xl font-bold mb-4">Agregar Nuevo Producto</h2>
-                        <Formik
-                            initialValues={{
-                                nombre: "",
-                                descripcion: "",
-                                precio: "",
-                                categoria: "",
-                                imagen: null,
-                            }}
-                            validationSchema={validationSchemaProducto} // Añadir validación
-                            onSubmit={async (values, { setSubmitting }) => {
-                                try {
-                                    const productData = {
-                                        name: capitalizeFirstLetter(values.nombre), // Capitalizar aquí
-                                        description: capitalizeFirstLetter(values.descripcion), // Capitalizar aquí también
-                                        price: values.precio,
-                                        category_id: values.categoria,
-                                    };
+                        {/* Header del modal más compacto */}
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-t-2xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                                        <FaPlus className="text-white text-lg" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-white">Agregar Producto</h2>
+                                        <p className="text-green-100 text-xs">Crea un nuevo producto para tu menú</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={closeModals}
+                                    className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
 
-                                    if (!values.imagen) {
-                                        setModalMessage("Por favor, selecciona una imagen válida.");
+                        {/* Contenido del modal más compacto */}
+                        <div className="p-4">
+                            <Formik
+                                initialValues={{
+                                    nombre: "",
+                                    descripcion: "",
+                                    precio: "",
+                                    categoria: "",
+                                    imagen: null,
+                                }}
+                                validationSchema={validationSchemaProducto}
+                                onSubmit={async (values, { setSubmitting }) => {
+                                    try {
+                                        const productData = {
+                                            name: capitalizeFirstLetter(values.nombre),
+                                            description: capitalizeFirstLetter(values.descripcion),
+                                            price: values.precio,
+                                            category_id: values.categoria,
+                                        };
+
+                                        if (!values.imagen) {
+                                            setModalMessage("Por favor, selecciona una imagen válida.");
+                                            setSubmitting(false);
+                                            return;
+                                        }
+
+                                        await createProduct(productData, values.imagen);
+                                        setModalMessage("Producto creado exitosamente");
+                                        closeModals();
+                                        await onRefresh();
+                                    } catch (error) {
+                                        console.error("Error al crear el producto:", error.message);
+                                        setModalMessage(error.message || "Error al crear el producto. Verifica los datos enviados.");
+                                    } finally {
                                         setSubmitting(false);
-                                        return;
                                     }
+                                }}
+                            >
+                                {({ setFieldValue, errors, touched, values }) => {
+                                    const isDescriptionTooLong = values.descripcion && values.descripcion.length > 500;
+                                    const isCategoryNotSelected = !values.categoria || values.categoria === "";
+                                    const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
 
-                                    await createProduct(productData, values.imagen); // Llamar a la función para crear el producto
-                                    setModalMessage("Producto creado exitosamente");
-                                    closeModals();
-                                    await onRefresh(); // Actualizar los datos globales
-                                } catch (error) {
-                                    console.error("Error al crear el producto:", error.message);
-                                    setModalMessage(error.message || "Error al crear el producto. Verifica los datos enviados.");
-                                } finally {
-                                    setSubmitting(false);
-                                }
-                            }}
-                        >
-                            {({ setFieldValue, errors, touched, values }) => {
-                                // Validaciones adicionales
-                                const isDescriptionTooLong = values.descripcion && values.descripcion.length > 500;
-                                const isCategoryNotSelected = !values.categoria || values.categoria === "";
-                                const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
+                                    return (
+                                        <Form className="space-y-4">
+                                            {/* Nombre del producto */}
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                    Nombre del producto
+                                                </label>
+                                                <Field
+                                                    name="nombre"
+                                                    type="text"
+                                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                                                    placeholder="Ej: Pizza Margherita"
+                                                    onChange={(e) => {
+                                                        const capitalizedValue = capitalizeFirstLetter(e.target.value);
+                                                        setFieldValue("nombre", capitalizedValue);
+                                                    }}
+                                                    value={values.nombre}
+                                                />
+                                                {errors.nombre && touched.nombre && (
+                                                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                        </svg>
+                                                        {errors.nombre}
+                                                    </p>
+                                                )}
+                                            </div>
 
-                                return (
-                                    <Form className="space-y-4">
-                                        {/* Nombre del producto */}
+                                            {/* Descripción */}
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                    Descripción
+                                                </label>
+                                                <Field
+                                                    name="descripcion"
+                                                    as="textarea"
+                                                    rows="3"
+                                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none"
+                                                    placeholder="Describe tu producto..."
+                                                    onChange={(e) => {
+                                                        const capitalizedValue = capitalizeFirstLetter(e.target.value);
+                                                        setFieldValue("descripcion", capitalizedValue);
+                                                    }}
+                                                    value={values.descripcion}
+                                                />
+                                                <div className="flex justify-between items-center mt-1">
+                                                    <div>
+                                                        {errors.descripcion && touched.descripcion && (
+                                                            <p className="text-red-500 text-xs flex items-center gap-1">
+                                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                                </svg>
+                                                                {errors.descripcion}
+                                                            </p>
+                                                        )}
+                                                        {isDescriptionTooLong && (
+                                                            <p className="text-red-500 text-xs flex items-center gap-1">
+                                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                                </svg>
+                                                                Máximo 500 caracteres
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <span className={`text-xs ${
+                                                        values.descripcion?.length > 500 ? 'text-red-500' : 'text-gray-400'
+                                                    }`}>
+                                                        {values.descripcion?.length || 0}/500
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Precio y Categoría en fila */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {/* Precio */}
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                        Precio
+                                                    </label>
+                                                    <div className="relative">
+                                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                            <MdOutlineAttachMoney className="text-green-600 text-lg" />
+                                                        </div>
+                                                        <Field
+                                                            name="precio"
+                                                            type="number"
+                                                            step="0.01"
+                                                            className="w-full pl-8 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                                                            placeholder="0.00"
+                                                        />
+                                                    </div>
+                                                    {errors.precio && touched.precio && (
+                                                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                            </svg>
+                                                            {errors.precio}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                {/* Categoría */}
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                        Categoría
+                                                    </label>
+                                                    <div className="relative">
+                                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                            <BsTag className="text-green-600 text-sm" />
+                                                        </div>
+                                                        <Field
+                                                            name="categoria"
+                                                            as="select"
+                                                            className="w-full pl-8 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 cursor-pointer appearance-none bg-white"
+                                                        >
+                                                            <option value="" disabled>
+                                                                Seleccionar
+                                                            </option>
+                                                            {categories.map((category) => (
+                                                                <option key={category.id_categoria} value={category.id_categoria}>
+                                                                    {category.nombre_categoria}
+                                                                </option>
+                                                            ))}
+                                                        </Field>
+                                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                    {(errors.categoria && touched.categoria) || isCategoryNotSelected ? (
+                                                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                            </svg>
+                                                            {errors.categoria || "Selecciona una categoría"}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+
+                                            {/* Imagen */}
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                    Imagen del producto
+                                                </label>
+                                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-400 transition-colors">
+                                                    <div className="mb-2">
+                                                        <svg className="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                                                        </svg>
+                                                    </div>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(event) => setFieldValue("imagen", event.target.files[0])}
+                                                        className="block w-full text-xs text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        PNG, JPG, JPEG hasta 10MB
+                                                    </p>
+                                                </div>
+                                                {errors.imagen && touched.imagen && (
+                                                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                        </svg>
+                                                        {errors.imagen}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Botones */}
+                                            <div className="flex gap-3 pt-2">
+                                                <button
+                                                    type="submit"
+                                                    disabled={isFormInvalid}
+                                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                                                        isFormInvalid 
+                                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                                                    }`}
+                                                >
+                                                    Guardar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95"
+                                                    onClick={closeModals}
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        </Form>
+                                    );
+                                }}
+                            </Formik>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Categorías con diseño mejorado */}
+            {isCategoriaModalOpen && (
+                <div
+                    className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4"
+                    onClick={closeModals}
+                >
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-green-100"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header del modal */}
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-2xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                                        <BsTag className="text-white text-lg" />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-white">Nueva Categoría</h2>
+                                </div>
+                                <button
+                                    onClick={closeModals}
+                                    className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Contenido del modal */}
+                        <div className="p-6">
+                            <Formik
+                                initialValues={{
+                                    nombre_categoria: "",
+                                    descripcion_categoria: "",
+                                }}
+                                validationSchema={validationSchemaCategoria}
+                                onSubmit={async (values, { setSubmitting }) => {
+                                    try {
+                                        const categoriaData = {
+                                            nombre_categoria: capitalizeFirstLetter(values.nombre_categoria),
+                                            descripcion_categoria: values.descripcion_categoria,
+                                        };
+                                        await postCategoria(categoriaData);
+                                        setModalMessage("Categoría creada exitosamente");
+                                        closeModals();
+                                        onRefresh();
+                                    } catch (error) {
+                                        console.error("Error al crear la categoría:", error.message);
+                                        setModalMessage(error.message || "Error al crear la categoría. Por favor, inténtalo de nuevo.");
+                                    } finally {
+                                        setSubmitting(false);
+                                    }
+                                }}
+                            >
+                                {({ errors, touched, setFieldValue, values }) => (
+                                    <Form className="space-y-6">
+                                        {/* Nombre de la categoría */}
                                         <div>
-                                            <label className="font-bold text-gray-600 pb-2">Nombre del producto</label>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Nombre de la categoría
+                                            </label>
                                             <Field
-                                                name="nombre"
+                                                name="nombre_categoria"
                                                 type="text"
-                                                className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
-                                                placeholder="Nombre del producto"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                                                placeholder="Ej: Pizzas, Bebidas, Postres..."
                                                 onChange={(e) => {
                                                     const capitalizedValue = capitalizeFirstLetter(e.target.value);
-                                                    setFieldValue("nombre", capitalizedValue);
+                                                    setFieldValue("nombre_categoria", capitalizedValue);
                                                 }}
-                                                value={values.nombre}
+                                                value={values.nombre_categoria}
                                             />
-                                            {errors.nombre && touched.nombre && (
-                                                <div className="text-red-500 text-sm">{errors.nombre}</div>
+                                            {errors.nombre_categoria && touched.nombre_categoria && (
+                                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                    </svg>
+                                                    {errors.nombre_categoria}
+                                                </p>
                                             )}
                                         </div>
 
                                         {/* Descripción */}
                                         <div>
-                                            <label className="font-bold text-gray-600 py-2">Descripción</label>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Descripción
+                                            </label>
                                             <Field
-                                                name="descripcion"
+                                                name="descripcion_categoria"
                                                 as="textarea"
-                                                className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
-                                                placeholder="Escribe una descripción..."
-                                                onChange={(e) => {
-                                                    const capitalizedValue = capitalizeFirstLetter(e.target.value);
-                                                    setFieldValue("descripcion", capitalizedValue);
-                                                }}
-                                                value={values.descripcion}
+                                                rows="4"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none"
+                                                placeholder="Describe esta categoría..."
                                             />
-                                            {errors.descripcion && touched.descripcion && (
-                                                <div className="text-red-500 text-sm">{errors.descripcion}</div>
-                                            )}
-                                            {/* Validación adicional para longitud */}
-                                            {isDescriptionTooLong && (
-                                                <p className="text-red-500 text-xs mt-1">
-                                                    La descripción no puede exceder los 500 caracteres. Actualmente: {values.descripcion.length}/500
+                                            
+
+                                            {errors.descripcion_categoria && touched.descripcion_categoria && (
+                                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                    </svg>
+                                                    {errors.descripcion_categoria}
                                                 </p>
-                                            )}
-                                        </div>
-
-                                        {/* Precio */}
-                                        <div>
-                                            <label className="font-bold text-gray-600">Precio</label>
-                                            <div className="flex py-1 px-3 rounded-xl border-gray-500 border-2 mb-4 w-45">
-                                                <MdOutlineAttachMoney className="text-2xl" />
-                                                <Field
-                                                    name="precio"
-                                                    type="number"
-                                                    className="ml-2 w-full outline-none"
-                                                    placeholder="Precio"
-                                                />
-                                            </div>
-                                            {errors.precio && touched.precio && (
-                                                <div className="text-red-500 text-sm">{errors.precio}</div>
-                                            )}
-                                        </div>
-
-                                        {/* Categoría */}
-                                        <div>
-                                            <label className="font-bold text-gray-600 pb-2">Categoría</label>
-                                            <Field
-                                                name="categoria"
-                                                as="select"
-                                                className="px-3 py-2 border-2 border-gray-500 rounded-md outline-none cursor-pointer w-full"
-                                            >
-                                                <option value="" disabled>
-                                                    Seleccionar Categoría
-                                                </option>
-                                                {categories.map((category) => (
-                                                    <option key={category.id_categoria} value={category.id_categoria}>
-                                                        {category.nombre_categoria}
-                                                    </option>
-                                                ))}
-                                            </Field>
-                                            {errors.categoria && touched.categoria && (
-                                                <div className="text-red-500 text-sm">{errors.categoria}</div>
-                                            )}
-                                            {/* Validación adicional para categoría */}
-                                            {isCategoryNotSelected && (
-                                                <p className="text-red-500 text-xs mt-1">
-                                                    Debe seleccionar una categoría para el producto.
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Imagen */}
-                                        <div>
-                                            <label className="font-bold text-gray-600 pb-2 pt-4">Imagen del Producto</label>
-                                            <p className="text-sm text-gray-500 pb-2">
-                                                Formatos permitidos: .jpg, .jpeg, .png, .gif
-                                            </p>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(event) => setFieldValue("imagen", event.target.files[0])}
-                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                            />
-                                            {errors.imagen && touched.imagen && (
-                                                <div className="text-red-500 text-sm">{errors.imagen}</div>
                                             )}
                                         </div>
 
                                         {/* Botones */}
-                                        <div className="flex gap-4">
+                                        <div className="flex gap-3 pt-2">
                                             <button
                                                 type="submit"
-                                                disabled={isFormInvalid} // Deshabilitar el botón si hay errores
-                                                className={`mt-4 px-4 py-2 text-white rounded ${
-                                                    isFormInvalid 
-                                                        ? 'bg-gray-400 cursor-not-allowed' 
-                                                        : 'bg-green-500 hover:bg-green-600 cursor-pointer'
-                                                }`}
+                                                className="flex-1 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                                             >
-                                                Guardar Producto
+                                                Crear
                                             </button>
                                             <button
                                                 type="button"
-                                                className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
+                                                className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95"
                                                 onClick={closeModals}
                                             >
                                                 Cancelar
                                             </button>
                                         </div>
                                     </Form>
-                                );
-                            }}
-                        </Formik>
+                                )}
+                            </Formik>
+                        </div>
                     </div>
                 </div>
             )}
-
-            {/* Modal de Categorías */}
-            {isCategoriaModalOpen && (
-                <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
-                    onClick={closeModals}
-                >
-                    <div
-                        className="bg-white p-6 rounded-lg shadow-lg w-4/5"
-                        onClick={(e) => e.stopPropagation()} // Evita cerrar la modal al hacer clic dentro
-                    >
-                        <h2 className="text-xl font-bold mb-4">Nueva Categoría</h2>
-                        <Formik
-                            initialValues={{
-                                nombre_categoria: "",
-                                descripcion_categoria: "",
-                            }}
-                            validationSchema={validationSchemaCategoria}
-                            onSubmit={async (values, { setSubmitting }) => {
-                                try {
-                                    const categoriaData = {
-                                        nombre_categoria: capitalizeFirstLetter(values.nombre_categoria), // Capitalizar aquí
-                                        descripcion_categoria: values.descripcion_categoria,
-                                    };
-                                    await postCategoria(categoriaData);
-                                    setModalMessage("Categoría creada exitosamente");
-                                    closeModals();
-                                    onRefresh(); // Llamar a la función onRefresh para actualizar los datos globales
-                                } catch (error) {
-                                    console.error("Error al crear la categoría:", error.message);
-                                    setModalMessage(error.message || "Error al crear la categoría. Por favor, inténtalo de nuevo.");
-                                } finally {
-                                    setSubmitting(false);
-                                }
-                            }}
-                        >
-                            {({ errors, touched, setFieldValue, values }) => (
-                                <Form className="space-y-4">
-                                    <div>
-                                        <label className="font-bold text-gray-600 pb-2">Nombre de la categoría</label>
-                                        <Field
-                                            name="nombre_categoria"
-                                            type="text"
-                                            className="ml-2 w-full outline-none cursor-text border-gray-500 border-2 rounded-xl px-3 py-2"
-                                            placeholder="Nombre de la categoría"
-                                            onChange={(e) => {
-                                                const capitalizedValue = capitalizeFirstLetter(e.target.value);
-                                                setFieldValue("nombre_categoria", capitalizedValue);
-                                            }}
-                                            value={values.nombre_categoria}
-                                        />
-                                        {errors.nombre_categoria && touched.nombre_categoria && (
-                                            <div className="text-red-500 text-sm">{errors.nombre_categoria}</div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="font-bold text-gray-600 py-2">Descripción</label>
-                                        <Field
-                                            name="descripcion_categoria"
-                                            as="textarea"
-                                            className="gap-4 w-full h-40 rounded-xl border-gray-500 border-2 outline-none px-3 py-2"
-                                            placeholder="Escribe una descripción..."
-                                        />
-                                        {errors.descripcion_categoria && touched.descripcion_categoria && (
-                                            <div className="text-red-500 text-sm">{errors.descripcion_categoria}</div>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <button
-                                            type="submit"
-                                            className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 cursor-pointer"
-                                        >
-                                            Guardar Categoría
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 cursor-pointer"
-                                            onClick={closeModals}
-                                        >
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </Form>
-                            )}
-                        </Formik>
-                    </div>
-                </div>
-            )}
-        </section>
+        </div>
     );
 }

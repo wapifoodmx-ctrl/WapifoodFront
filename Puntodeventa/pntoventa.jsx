@@ -352,6 +352,36 @@ export default function Pntoventa() {
         }, 3000);
     };
 
+    // Filtrar productos según búsqueda, categoría y disponibilidad
+    useEffect(() => {
+        let productosFiltrados = productos;
+
+        // Filtro por búsqueda
+        if (busqueda.trim() !== "") {
+            productosFiltrados = productosFiltrados.filter((producto) =>
+                producto.name.toLowerCase().includes(busqueda.toLowerCase()) ||
+                producto.description.toLowerCase().includes(busqueda.toLowerCase())
+            );
+        }
+
+        // Filtro por categoría
+        if (categoriaSeleccionada && categoriaSeleccionada !== "Categorías" && categoriaSeleccionada !== "Todas las categorías") {
+            productosFiltrados = productosFiltrados.filter(
+                (producto) => producto.category_name === categoriaSeleccionada
+            );
+        }
+
+        // Filtro por disponibilidad
+        if (disponibilidadSeleccionada === "Disponibles") {
+            productosFiltrados = productosFiltrados.filter((producto) => producto.status === "activo");
+        } else if (disponibilidadSeleccionada === "No disponibles") {
+            productosFiltrados = productosFiltrados.filter((producto) => producto.status !== "activo");
+        }
+        // Si es "Todas", no se aplica filtro de disponibilidad
+
+        setProductosFiltrados(productosFiltrados);
+    }, [productos, busqueda, categoriaSeleccionada, disponibilidadSeleccionada]);
+
     return (
         <section className="mt-16">
             <Navbar />
@@ -422,7 +452,7 @@ export default function Pntoventa() {
                         />
                     </div>
 
-                    {/* Dropdown de categorías */}
+                    {/* Dropdown de categorías - CORREGIDO */}
                     <div className="flex items-center border p-2 rounded-md w-full md:w-1/4">
                         <BsTag className="text-gray-500 mr-2 text-xl font-bold flex self-center" />
                         <select
@@ -430,7 +460,7 @@ export default function Pntoventa() {
                             value={categoriaSeleccionada}
                             onChange={(e) => setCategoriaSeleccionada(e.target.value)}
                         >
-                            <option value="Todos los platillos">Todas las categorías</option>
+                            <option value="Todas las categorías">Todas las categorías</option>
                             {[...new Set(productos.map((producto) => producto.category_name))].map((categoria) => (
                                 <option key={categoria} value={categoria}>
                                     {categoria}
