@@ -136,7 +136,7 @@ export default function Home() {
             <FormContainer />
           </div>
           {/* Efectos de fondo dinámicos */}
-          <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-green-200 to-emerald-300 rounded-full opacity-20 animate-spin-slow"></div>
             <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-emerald-200 to-teal-300 rounded-full opacity-20 animate-spin-slow reverse"></div>
           </div>
