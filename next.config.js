@@ -1,11 +1,18 @@
 module.exports = {
     images: {
-        domains: [
-            '192.168.1.69',
-            'comandapp-api.h-dev.xyz',
-            'wapifood.com',
-            'api.wapifood.com',
-            '189.147.63.88' // <-- Agrega este dominio
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: '192.168.1.69',
+            },
+            {
+                protocol: 'https',
+                hostname: 'wapifood.com',
+            },
+            {
+                protocol: 'https',
+                hostname: 'api.wapifood.com',
+            }
         ],
     },
 };
