@@ -792,7 +792,7 @@ export default function MenuCliente() {
 
             {/* Header */}
             <header className="relative z-10">
-                <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg rounded-b-2xl">
+                <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
                         <div className="flex items-center">
                             <GoChecklist size={36} className="text-yellow-300 drop-shadow-lg" />

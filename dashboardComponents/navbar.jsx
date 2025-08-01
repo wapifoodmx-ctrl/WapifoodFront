@@ -252,94 +252,96 @@ export default function Navbar() {
                     fixed top-16 right-0 h-full w-72 bg-gradient-to-br from-green-50 via-white to-emerald-50 z-40
                     transition-transform duration-300 ease-in-out
                     ${isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}
-                    overflow-hidden border-l-4 border-green-200 rounded-l-3xl
+                    overflow-y-auto overflow-x-hidden border-l-4 border-green-200 rounded-l-3xl
                 `}
                 >
-                    <ul className="flex flex-col mt-4 p-4 text-xl">
-                        <p className="text-green-700 font-bold mb-2">Menú principal</p>
-                        {Object.keys(menu).map((item, index) => (
-                            <li key={index} className="cursor-pointer my-4">
-                                {item === "Dashboard" ? (
-                                    <button
-                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
-                                        onClick={dasboard}
-                                    >
-                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
-                                    </button>
-                                ) : item === "Register" ? (
-                                    <button
-                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
-                                        onClick={productos}
-                                    >
-                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
-                                    </button>
-                                ) : item === "Tickets" ? (
-                                    <button
-                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
-                                        onClick={() => handleRestrictedClick(tickets)}
-                                    >
-                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
-                                    </button>
-                                ) : item === "Cocina" ? (
-                                    <button
-                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
-                                        onClick={handleCocinaClick}
-                                    >
-                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
-                                    </button>
-                                ) : item === "PuntoDeVenta" ? (
-                                    <button
-                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
-                                        onClick={() => handleRestrictedClick(puntoDeVenta)}
-                                    >
-                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
-                                    </button>
-                                ) : item === "Ventas" ? (
-                                    <button
-                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
-                                        onClick={payments}
-                                    >
-                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
-                                    </button>
-                                ) : (
-                                    <a
-                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
-                                        href={menu[item].href}
-                                    >
-                                        <span className="self-center">{menu[item].icon}</span> {menu[item].title}
-                                    </a>
-                                )}
-                            </li>
-                        ))}
+                    <div className="min-h-full">
+                        <ul className="flex flex-col mt-4 p-4 text-xl pb-8">
+                            <p className="text-green-700 font-bold mb-2">Menú principal</p>
+                            {Object.keys(menu).map((item, index) => (
+                                <li key={index} className="cursor-pointer my-4">
+                                    {item === "Dashboard" ? (
+                                        <button
+                                            className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                            onClick={dasboard}
+                                        >
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : item === "Register" ? (
+                                        <button
+                                            className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                            onClick={productos}
+                                        >
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : item === "Tickets" ? (
+                                        <button
+                                            className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                            onClick={() => handleRestrictedClick(tickets)}
+                                        >
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : item === "Cocina" ? (
+                                        <button
+                                            className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                            onClick={handleCocinaClick}
+                                        >
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : item === "PuntoDeVenta" ? (
+                                        <button
+                                            className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                            onClick={() => handleRestrictedClick(puntoDeVenta)}
+                                        >
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : item === "Ventas" ? (
+                                        <button
+                                            className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                            onClick={payments}
+                                        >
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </button>
+                                    ) : (
+                                        <a
+                                            className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                            href={menu[item].href}
+                                        >
+                                            <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                        </a>
+                                    )}
+                                </li>
+                            ))}
 
-                        <p className="text-green-700 font-bold mt-6">Configuración</p>
-                        {Object.keys(config).map((item, index) => (
-                            <li key={index} className="cursor-pointer my-4">
-                                {item === "Profile" ? (
-                                    <button
-                                        className="flex w-auto gap-2 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:text-green-600 hover:scale-105 transition-all duration-200"
-                                        onClick={MiPerfil}
-                                    >
-                                        <span className="self-center">{config[item].icon}</span> {config[item].title}
-                                    </button>
-                                ) : item === "Logout" ? (
-                                    <button
-                                        className="flex w-auto gap-2 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:text-green-600 hover:scale-105 transition-all duration-200"
-                                        onClick={config[item].function}
-                                    >
-                                        <span className="self-center">{config[item].icon}</span> {config[item].title}
-                                    </button>
-                                ) : (
-                                    <a
-                                        className="flex w-auto gap-2 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:text-green-600 hover:scale-105 transition-all duration-200"
-                                        href={config[item].href}
-                                    >
-                                        <span className="self-center">{config[item].icon}</span> {config[item].title}
-                                    </a>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
+                            <p className="text-green-700 font-bold mt-6">Configuración</p>
+                            {Object.keys(config).map((item, index) => (
+                                <li key={index} className="cursor-pointer my-4">
+                                    {item === "Profile" ? (
+                                        <button
+                                            className="flex w-auto gap-2 cursor-pointer from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:text-green-600 hover:scale-105 transition-all duration-200"
+                                            onClick={MiPerfil}
+                                        >
+                                            <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                        </button>
+                                    ) : item === "Logout" ? (
+                                        <button
+                                            className="flex w-auto gap-2 cursor-pointer from-green-100 to-emerald-100 rounded-xl px-4 py-2  hover:text-green-600 hover:scale-105 transition-all duration-200"
+                                            onClick={config[item].function}
+                                        >
+                                            <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                        </button>
+                                    ) : (
+                                        <a
+                                            className="flex w-auto gap-2 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:text-green-600 hover:scale-105 transition-all duration-200"
+                                            href={config[item].href}
+                                        >
+                                            <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                        </a>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
             </div>
 
