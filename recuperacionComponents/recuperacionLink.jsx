@@ -1,10 +1,14 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/router";
+import { useState } from "react";
 import Header from "@/components/Header";
+import { resetPass } from "../useCases/recuperarContraseña";
 
 export default function RecuperacionLink() {
     const router = useRouter();
+    const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
 
     const initialValues = {
         email: "",
@@ -16,14 +20,31 @@ export default function RecuperacionLink() {
             .required("Correo electrónico es requerido"),
     });
 
-    const onSubmit = (values, { setSubmitting }) => {
-        console.log(JSON.stringify(values));
-        // Simular delay de envío
-        setTimeout(() => {
-            alert("Se ha enviado un enlace de recuperación a tu correo electrónico");
+    const onSubmit = async (values, { setSubmitting }) => {
+        try {
+            // Limpiar mensajes previos
+            setSuccessMessage("");
+            setErrorMessage("");
+
+            console.log('Enviando datos:', JSON.stringify({ email: values.email }));
+
+            const result = await resetPass(values.email);
+
+            if (result.success) {
+                setSuccessMessage("Se ha enviado un enlace de recuperación a tu correo electrónico");
+                // Opcional: redirigir después de un tiempo
+                setTimeout(() => {
+                    router.push("/login");
+                }, 3000);
+            } else {
+                setErrorMessage(result.error || "Error al enviar el enlace de recuperación");
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            setErrorMessage("Error de conexión. Inténtalo de nuevo.");
+        } finally {
             setSubmitting(false);
-            router.push("/login");
-        }, 2000);
+        }
     };
 
     const goToLogin = () => {
@@ -65,6 +86,29 @@ export default function RecuperacionLink() {
                     <p className="text-center text-gray-600 text-sm mt-2 mb-6">
                         Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
                     </p>
+
+                    {/* Mensajes de éxito y error */}
+                    {successMessage && (
+                        <div className="mb-4 p-3 bg-green-100 border border-green-300 rounded-lg">
+                            <div className="flex items-start">
+                                <svg className="w-5 h-5 text-green-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <p className="text-green-700 text-sm">{successMessage}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {errorMessage && (
+                        <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded-lg">
+                            <div className="flex items-start">
+                                <svg className="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p className="text-red-700 text-sm">{errorMessage}</p>
+                            </div>
+                        </div>
+                    )}
                     
                     <Formik
                         initialValues={initialValues}

@@ -1,13 +1,13 @@
-export async function resetPass() {
+export async function resetPass(email) {
     const endpoint = 'https://api.wapifood.com/user/password-reset/request';
 
     try {
-       
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ email }) // Enviar el email en el body
         });
 
         if (!response.ok) {
@@ -22,17 +22,23 @@ export async function resetPass() {
             // Mostrar el error completo en consola para depuración
             console.error('Error en la respuesta:', response.status, response.statusText, errorData);
 
-            // Lanzar un error con un mensaje genérico o el mensaje de la API si está disponible
+            // Lanzar un error con un mensaje más específico
             throw new Error(
-                errorData.message || `Error al obtener las categorías. Código de estado: ${response.status}`
+                errorData.message || `Error al enviar enlace de recuperación. Código de estado: ${response.status}`
             );
         }
 
         // Parsear la respuesta exitosa como JSON
         const data = await response.json();
-        return data;
+        return {
+            success: true,
+            data: data
+        };
     } catch (error) {
-        console.error('Error al obtener las categorías:', error.message);
-        throw error;
+        console.error('Error al enviar enlace de recuperación:', error.message);
+        return {
+            success: false,
+            error: error.message
+        };
     }
 }
