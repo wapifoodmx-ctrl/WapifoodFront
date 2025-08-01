@@ -282,7 +282,7 @@ export default function MenuWebDinamico() {
                 </div>
                 {busqueda && (
                     <p className="mt-2 text-sm text-green-700">
-                        {productosFiltrados.length} resultado(s) encontrado(s) para "{busqueda}"
+                        {productosFiltrados.length} resultado(s) encontrado(s) para {busqueda}
                     </p>
                 )}
             </div>
