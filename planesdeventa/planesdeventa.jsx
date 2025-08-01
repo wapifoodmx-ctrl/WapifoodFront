@@ -5,6 +5,7 @@ import { LuNotebookPen } from "react-icons/lu";
 import { GiModernCity } from "react-icons/gi";
 import { HiSparkles } from "react-icons/hi";
 import Image from "next/image";
+import Ticket from "@/pages/assets/images/Ticket.png";
 import Cocina from "@/pages/assets/images/Cocina.png";
 import Menu1 from "@/pages/assets/images/Menu1.png";
 import Pntoventa from "@/pages/assets/images/Pntoventa.png";
@@ -58,7 +59,7 @@ export default function PlanDeVentas() {
                 "Busqueda con código QR",
                 "Impresora térmica incluida",
             ],
-            image: Pntoventa,
+            image: Ticket,
         },
     ];
 

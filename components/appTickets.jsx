@@ -1,4 +1,4 @@
-import Menu1 from "@/pages/assets/images/Menu1.png";
+import Ticket from "@/pages/assets/images/Ticket.png";
 import Image from "next/image";
 
 export default function AppTickets() {
@@ -27,13 +27,13 @@ export default function AppTickets() {
                 <div className="flex flex-col items-center justify-center">
                     {/* Versión para pantallas grandes */}
                     <Image 
-                        src={Menu1} 
+                        src={Ticket} 
                         className="hidden md:block h-[900px] w-[600px] shadow-2xl rounded-2xl border-4 border-green-200 md:h-[50%] md:w-[50%] lg:w-[100%] md:min-w-[400px] lg:min-w-[600px] transition-all duration-300 hover:scale-105"
                         alt="Imagen para pantallas grandes"
                     />
                     {/* Versión para pantallas pequeñas */}
                     <Image 
-                        src={Menu1}
+                        src={Ticket}
                         className="block md:hidden h-[350px] w-[90vw] max-w-[375px] shadow-2xl rounded-2xl border-4 border-emerald-200 transition-all duration-300 hover:scale-105"
                         alt="Imagen para pantallas pequeñas"
                     />
