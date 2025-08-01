@@ -33,36 +33,29 @@ const data = [
 
 export default function Características() {
     return (
-
-        // "Sección de las características principales de la aplicación";
-        < section className="py-10 flex justify-center items-center flex-col px-8" id="caracteristicas" >
-
+        // Sección de las características principales de la aplicación
+        <section className="py-10 flex justify-center items-center flex-col px-8 bg-gradient-to-br from-green-100 via-emerald-50 to-teal-50" id="caracteristicas">
             <div className="w-full">
-                <h2 className="text-4xl text-center font-bold text-black w-full">Características Principales</h2>
-
-                <div className="flex justify-center items-center my-8 flex-col gap-12 md:flex-row md:gap-4 md:px-10 md:flex-wrap  ">
-                    {
-                        data.map((item, index) => (
-                            <section key={index} className="bg-[#95edba] p-4 rounded-lg w-full shadow-lg flex 
-                            justify-center items-center flex-col  
-                            gap-4 md:w-5/12 md:min-h-[350px] 
-                            md:max-h-[400px] 
-                            lg:w-5/24 
-                            lg:max-h-[500px] lg:min-h-[400px]  ">
-
-                                <div className="w-fit p-4 rounded-full self-start bg-[#3fe283]">
-                                    {item.icon}
-                                </div>
-                                <h3 className="text-2xl font-bold text-black self-start">{item.title}</h3>
-                                <p className="text-black text-md">{item.interm}</p>
-                            </section>
-                        ))
-                    }
-
+                <h2 className="text-4xl text-center font-extrabold  w-full mb-8 drop-shadow-lg bg-gradient-to-r text-green-800  to-teal-200 bg-clip-text ">
+                    Características Principales
+                </h2>
+                <div className="flex justify-center items-center my-8 flex-col gap-12 md:flex-row md:gap-6 md:px-10 md:flex-wrap">
+                    {data.map((item, index) => (
+                        <section
+                            key={index}
+                            className="bg-gradient-to-br from-green-200 via-emerald-100 to-teal-100 p-6 rounded-3xl w-full shadow-2xl flex justify-center items-center flex-col gap-4 md:w-5/12 md:min-h-[350px] md:max-h-[400px] lg:w-5/24 lg:max-h-[500px] lg:min-h-[400px] border-2 border-green-200 hover:scale-105 transition-all duration-300"
+                        >
+                            <div className="w-fit p-4 rounded-full self-start bg-gradient-to-br from-green-400 via-emerald-300 to-teal-200 shadow-lg">
+                                {item.icon}
+                            </div>
+                            <h3 className="text-2xl font-bold text-green-800 self-start drop-shadow">
+                                {item.title}
+                            </h3>
+                            <p className="text-green-700 text-md">{item.interm}</p>
+                        </section>
+                    ))}
                 </div>
             </div>
-
-        </section >
-
+        </section>
     )
 }

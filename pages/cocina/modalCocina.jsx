@@ -35,36 +35,39 @@ export default function ModalCocina({
                     onClick={() => setIsTableDetailModalOpen(false)}
                 >
                     <div
-                        className="bg-white rounded-lg p-6 modal max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        className="bg-white rounded-2xl p-8 modal max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-green-100 relative"
+                        style={{
+                            background: "linear-gradient(135deg, #e6f9f0 0%, #f7fff7 100%)",
+                            boxShadow: "0 8px 32px 0 rgba(34,197,94,0.15), 0 1.5px 8px 0 rgba(16,185,129,0.10)"
+                        }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex justify-between items-center mb-4">
-                            <div className="flex items-center">
-                                <MdTableBar className="text-2xl mr-2" />
-                                <h2 className="text-2xl font-bold">Mesa {selectedTable.tableNumber}</h2>
-                                {/* Solo mostrar el tipo de comanda, no el estado de backend */}
-                                <span className={`ml-2 px-2 py-1 text-xs rounded ${
-                                    selectedTable.type === 'finished' 
-                                        ? "bg-gray-100 text-gray-800" 
-                                        : selectedTable.type === 'cancelled'
-                                        ? "bg-red-100 text-red-800"
-                                        : selectedTable.type === 'completed'
-                                        ? "bg-green-100 text-green-800"
-                                        : "bg-blue-100 text-blue-800"
-                                }`}>
-                                    {selectedTable.type === 'finished' ? 'Finalizado' : 
-                                     selectedTable.type === 'cancelled' ? 'Cancelado' :
-                                     selectedTable.type === 'completed' ? 'Preparado' : 'Pendiente'}
-                                </span>
-                            </div>
+                        <div className="absolute top-4 right-4">
                             <button
                                 onClick={() => setIsTableDetailModalOpen(false)}
-                                className="text-gray-500 hover:text-gray-700 text-2xl"
+                                className="text-gray-500 hover:text-green-600 text-2xl bg-white rounded-full shadow-md p-2 transition-all"
+                                aria-label="Cerrar"
                             >
                                 ×
                             </button>
                         </div>
-                        
+                        <div className="flex items-center mb-6 gap-3">
+                            <MdTableBar className="text-3xl text-green-600" />
+                            <h2 className="text-2xl font-bold text-gray-800">Mesa {selectedTable.tableNumber}</h2>
+                            <span className={`ml-2 px-2 py-1 text-xs rounded font-semibold
+                                ${selectedTable.type === 'finished' 
+                                    ? "bg-gray-100 text-gray-800" 
+                                    : selectedTable.type === 'cancelled'
+                                    ? "bg-red-100 text-red-800"
+                                    : selectedTable.type === 'completed'
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-blue-100 text-blue-800"
+                                }`}>
+                                {selectedTable.type === 'finished' ? 'Finalizado' : 
+                                    selectedTable.type === 'cancelled' ? 'Cancelado' :
+                                    selectedTable.type === 'completed' ? 'Preparado' : 'Pendiente'}
+                            </span>
+                        </div>
                         <div className="flex justify-between mb-4 text-sm text-gray-500">
                             <div className="flex items-center">
                                 <LuCalendarDays className="mr-1" />
@@ -72,7 +75,7 @@ export default function ModalCocina({
                             </div>
                             <div className="flex items-center">
                                 <BsClock className="mr-1" />
-                                <span>{new Date(selectedTable.timestamp).toLocaleTimeString()}</span>
+                                <span>{new Date(selectedTable.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                         </div>
 
@@ -88,7 +91,7 @@ export default function ModalCocina({
                                         {selectedTable.products.map((product) => (
                                             <div
                                                 key={product.id}
-                                                className="bg-gray-50 rounded-lg p-3 flex justify-between items-center"
+                                                className="bg-gray-50 rounded-lg p-4 flex justify-between items-center"
                                             >
                                                 <div className="flex-1">
                                                     <p className={`font-semibold ${
@@ -124,34 +127,20 @@ export default function ModalCocina({
                                                     <span className="bg-white px-2 py-1 rounded border text-sm font-semibold">
                                                         X{product.quantity}
                                                     </span>
-                                                    {/* Solo mostrar dropdown para comandas pendientes y productos no cancelados */}
+                                                    {/* Solo mostrar botón para comandas pendientes y productos no cancelados */}
                                                     {(selectedTable.type === 'pending' || selectedTable.type === undefined) && 
-                                                     product.status !== 'Cancelado' && 
-                                                     product.status !== 'Preparado' && (
-                                                        <div className="relative" ref={dropdownRef}>
-                                                            <button
-                                                                className="p-1 hover:bg-gray-200 rounded"
-                                                                onClick={() => toggleDropdown(product.id)}
-                                                            >
-                                                                <BsThreeDotsVertical className="text-gray-500" />
-                                                            </button>
-                                                            {visibleDropdown === product.id && (
-                                                                <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-10">
-                                                                    <button
-                                                                        ref={buttonRef}
-                                                                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center"
-                                                                        onClick={() => {
-                                                                            setSelectedProduct(product);
-                                                                            setIsModalOpen(true);
-                                                                            toggleDropdown(null); // Cerrar dropdown
-                                                                        }}
-                                                                    >
-                                                                        <FaTrashAlt className="mr-2" />
-                                                                        Cancelar producto
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                        product.status !== 'Cancelado' && 
+                                                        product.status !== 'Preparado' && (
+                                                        <button
+                                                            className="p-2 bg-gradient-to-r from-red-100 to-orange-100 rounded-full shadow hover:scale-110 transition-all"
+                                                            onClick={() => {
+                                                                setSelectedProduct(product);
+                                                                setIsModalOpen(true);
+                                                            }}
+                                                            title="Cancelar producto"
+                                                        >
+                                                            <BsThreeDotsVertical className="text-red-500 text-xl" />
+                                                        </button>
                                                     )}
                                                 </div>
                                             </div>
@@ -165,13 +154,13 @@ export default function ModalCocina({
                                 ) && (
                                     <div className="flex justify-between space-x-4">
                                         <button
-                                            className="bg-green-600 text-white text-lg font-bold cursor-pointer rounded-md py-3 px-6 flex-1"
+                                            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-bold cursor-pointer rounded-md py-3 px-6 flex-1 shadow-lg hover:scale-105 transition-all"
                                             onClick={() => setActiveModal("realizado")}
                                         >
                                             Realizado
                                         </button>
                                         <button
-                                            className="bg-red-600 text-white text-lg font-bold cursor-pointer rounded-md py-3 px-6 flex-1"
+                                            className="bg-gradient-to-r from-red-500 to-orange-600 text-white text-lg font-bold cursor-pointer rounded-md py-3 px-6 flex-1 shadow-lg hover:scale-105 transition-all"
                                             onClick={() => setActiveModal("cancelar")}
                                         >
                                             Cancelar Orden
@@ -217,10 +206,14 @@ export default function ModalCocina({
                     onClick={() => setActiveModal(null)}
                 >
                     <div
-                        className="bg-white rounded-lg p-6 modal"
+                        className="bg-white rounded-2xl p-8 modal shadow-2xl border border-green-100 max-w-md w-full relative"
+                        style={{
+                            background: "linear-gradient(135deg, #e6f9f0 0%, #f7fff7 100%)",
+                            boxShadow: "0 8px 32px 0 rgba(34,197,94,0.15), 0 1.5px 8px 0 rgba(16,185,129,0.10)"
+                        }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <p className="text-lg font-bold mb-4">
+                        <p className="text-lg font-bold mb-4 text-gray-800">
                             {selectedTable?.tableNumber === 1 
                                 ? "¿Finalizar y entregar la orden completa?" 
                                 : "¿Marcar productos como preparados?"
@@ -234,13 +227,13 @@ export default function ModalCocina({
                         </p>
                         <div className="flex justify-end space-x-4">
                             <button
-                                className="bg-gray-300 px-4 py-2 rounded-md"
+                                className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md font-semibold transition-all"
                                 onClick={() => setActiveModal(null)}
                             >
                                 Cancelar
                             </button>
                             <button
-                                className="bg-green-500 text-white px-4 py-2 rounded-md"
+                                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-md font-bold shadow-lg hover:scale-105 transition-all"
                                 onClick={handleCompleteOrder}
                             >
                                 {selectedTable?.tableNumber === 1 ? "Finalizar Orden" : "Marcar Preparado"}
@@ -249,30 +242,32 @@ export default function ModalCocina({
                     </div>
                 </div>
             )}
-
-            {/* Modal de confirmación "Cancelar" */}
             {activeModal === "cancelar" && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
                     onClick={() => setActiveModal(null)}
                 >
                     <div
-                        className="bg-white rounded-lg p-6 modal"
+                        className="bg-white rounded-2xl p-8 modal shadow-2xl border border-red-100 max-w-md w-full relative"
+                        style={{
+                            background: "linear-gradient(135deg, #fff5f5 0%, #fff7f7 100%)",
+                            boxShadow: "0 8px 32px 0 rgba(239,68,68,0.10), 0 1.5px 8px 0 rgba(251,191,36,0.10)"
+                        }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <p className="text-lg font-bold mb-4">¿Estás seguro de cancelar toda la orden?</p>
+                        <p className="text-lg font-bold mb-4 text-red-700">¿Estás seguro de cancelar toda la orden?</p>
                         <p className="text-sm text-gray-600 mb-6">
                             Se cancelarán todos los productos de la Mesa {selectedTable?.tableNumber} y la orden completa.
                         </p>
                         <div className="flex justify-end space-x-4">
                             <button
-                                className="bg-gray-300 px-4 py-2 rounded-md"
+                                className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md font-semibold transition-all"
                                 onClick={() => setActiveModal(null)}
                             >
                                 No
                             </button>
                             <button
-                                className="bg-red-500 text-white px-4 py-2 rounded-md"
+                                className="bg-gradient-to-r from-red-500 to-orange-600 text-white px-4 py-2 rounded-md font-bold shadow-lg hover:scale-105 transition-all"
                                 onClick={handleCancelOrder}
                             >
                                 Sí, cancelar orden
@@ -281,32 +276,45 @@ export default function ModalCocina({
                     </div>
                 </div>
             )}
-
-            {/* Modal de cancelación de producto */}
             {isModalOpen && selectedProduct && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
                     onClick={() => setIsModalOpen(false)}
                 >
                     <div
-                        className="bg-white rounded-lg p-6 modal"
+                        className="bg-white rounded-2xl p-10 modal shadow-2xl border-2 border-red-200 max-w-lg w-full relative flex flex-col items-center"
+                        style={{
+                            background: "linear-gradient(135deg, #fff5f5 0%, #fff7f7 100%)",
+                            boxShadow: "0 8px 32px 0 rgba(239,68,68,0.10), 0 1.5px 8px 0 rgba(251,191,36,0.10)"
+                        }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <p className="text-lg font-bold mb-4">
-                            ¿Seguro que desea cancelar el producto "{selectedProduct.name}"?
+                        <button
+                            onClick={() => setIsModalOpen(false)}
+                            className="absolute top-4 right-4 text-gray-500 hover:text-red-600 text-2xl bg-white rounded-full shadow-md p-2 transition-all"
+                            aria-label="Cerrar"
+                        >
+                            ×
+                        </button>
+                        <FaTrashAlt className="text-5xl text-red-400 mb-4" />
+                        <p className="text-2xl font-bold mb-4 text-red-700 text-center">
+                            ¿Seguro que deseas cancelar el producto?
                         </p>
-                        <div className="flex justify-end space-x-4">
+                        <p className="text-lg text-gray-700 mb-6 text-center">
+                            <span className="font-semibold text-red-600">"{selectedProduct.name}"</span>
+                        </p>
+                        <div className="flex justify-center space-x-6 mt-2 w-full">
                             <button
-                                className="bg-gray-300 px-4 py-2 rounded-md"
+                                className="bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-md font-semibold transition-all text-lg"
                                 onClick={() => setIsModalOpen(false)}
                             >
                                 No
                             </button>
                             <button
-                                className="bg-red-500 text-white px-4 py-2 rounded-md"
+                                className="bg-gradient-to-r from-red-500 to-orange-600 text-white px-6 py-3 rounded-md font-bold shadow-lg hover:scale-105 transition-all text-lg"
                                 onClick={() => handleCancelProduct(selectedProduct.id)}
                             >
-                                Sí
+                                Sí, cancelar
                             </button>
                         </div>
                     </div>

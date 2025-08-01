@@ -18,52 +18,48 @@ export default function Main() {
     }
 
     return (
-        <main className="bg-[#3fe283] h-auto ">
-            <section className="py-10 flex justify-center items-center flex-col px-4  md:flex-row  md:items-center md:gap-4 md:px-10" id='main'>
-
-                <div className="w-full md:w-1/2" >
-                    <h2 className="text-4xl text-center font-bold text-black">Gestiona tus pedidos de forma fácil y eficiente!</h2>
-
-                    <p className="text-center text-black text-lg mt-4">WapiFood es la plataforma que simplifica la gestión de pedidos para tu restaurante o negocio de comida.</p>
-
-                    <div className="flex justify-center items-center my-8 flex-col gap-6">
-
+        <main className="bg-gradient-to-br from-green-200 via-emerald-100 to-teal-100 min-h-screen flex items-center justify-center">
+            <section className="flex flex-col md:flex-row items-center justify-center w-full px-4 md:gap-10 md:px-16 py-10 md:py-0 min-h-[80vh]" id='main'>
+                <div className="w-full md:w-2/3 flex flex-col justify-center items-center">
+                    <h2 className="text-4xl md:text-5xl text-center font-extrabold text-green-800 drop-shadow-lg mb-4 max-w-xl leading-tight">
+                        Gestiona tus pedidos de forma fácil y eficiente!
+                    </h2>
+                    <p className="text-center text-green-700 text-lg md:text-xl mt-2 mb-4 font-medium max-w-lg">
+                        WapiFood es la plataforma que simplifica la gestión de pedidos para tu restaurante o negocio de comida.
+                    </p>
+                    <div className="flex flex-col gap-6 w-full max-w-md my-6">
                         <button 
-                            className="rounded-lg bg-white text-black border-black  p-2 w-full cursor-pointer text-2xl"
+                            className="rounded-xl bg-gradient-to-r from-green-400 to-emerald-400 text-white font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:from-green-500 hover:to-emerald-500 transition-all duration-200 border-2 border-green-300"
                             onClick={handleStartClick}
                         >
                             Comenzar ahora
                         </button>
-
                         <button 
-                            className="rounded-lg bg-[#3fe283] text-black p-2 w-full border-white border-3 cursor-pointer text-2xl"
+                            className="rounded-xl bg-gradient-to-r from-white to-green-100 text-green-800 font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:bg-green-200 transition-all duration-200 border-2 border-emerald-200"
                             onClick={handleHowItWorksClick}
                         >
                             Iniciar Sesión
                         </button>
                         <button 
-                            className="rounded-lg bg-white text-black border-black  p-2 w-full cursor-pointer text-2xl"
+                            className="rounded-xl bg-gradient-to-r from-green-100 to-white text-emerald-700 font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:bg-emerald-100 transition-all duration-200 border-2 border-green-200"
                             onClick={handleClientMenuClick}
                         >
-                            Menu del Cliente
+                            Menú del Cliente
                         </button>
-
                     </div>
-
                 </div>
-
-                <Image 
-                    src={Menu} 
-                    className="hidden md:block h-[400px] w-[500px] shadow-xl rounded-lg md:h-[50%] md:w-[50%] md:min-w-[400px]" 
-                    alt="Imagen para pantallas grandes"
-                />
-
-                <Image 
-                    src={Menuuwu}
-                    className="block md:hidden h-[500px] w-[375px] shadow-xl rounded-lg" 
-                    alt="Imagen para pantallas pequeñas"
-                />
-
+                <div className="flex flex-col items-center justify-center">
+                    <Image 
+                        src={Menu} 
+                        className="hidden md:block h-[900px] w-[600px] shadow-2xl rounded-2xl border-4 border-green-200 md:h-[50%] md:w-[50%] lg:w-[100%] md:min-w-[400px] lg:min-w-[600px] transition-all duration-300 hover:scale-105"
+                        alt="Imagen para pantallas grandes"
+                    />
+                    <Image 
+                        src={Menuuwu}
+                        className="block md:hidden h-[350px] w-[90vw] max-w-[375px] shadow-2xl rounded-2xl border-4 border-emerald-200 transition-all duration-300 hover:scale-105"
+                        alt="Imagen para pantallas pequeñas"
+                    />
+                </div>
             </section>
         </main>
     )

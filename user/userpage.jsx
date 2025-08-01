@@ -139,7 +139,7 @@ export default function UserPage() {
       let processedFile = file;
       if (file.size > 2 * 1024 * 1024) { // Si es mayor a 2MB, comprimir
         processedFile = await compressImage(file);
-      }
+0      }
 
       // Crear preview
       const reader = new FileReader();
@@ -285,8 +285,8 @@ export default function UserPage() {
               {/* Información de contacto en cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {/* Email */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center">
-                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 text-center">
+                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <CiMail className="text-white text-xl" />
                   </div>
                   <p className="text-xs text-gray-600 mb-1">Email</p>
@@ -296,8 +296,8 @@ export default function UserPage() {
                 </div>
 
                 {/* Teléfono */}
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center">
-                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl p-4 text-center">
+                  <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <FaPhoneAlt className="text-white text-lg" />
                   </div>
                   <p className="text-xs text-gray-600 mb-1">Teléfono</p>
@@ -307,8 +307,8 @@ export default function UserPage() {
                 </div>
 
                 {/* Dirección */}
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center">
-                  <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <div className="bg-gradient-to-br from-green-50 to-teal-50 rounded-xl p-4 text-center">
+                  <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <FaMapMarkerAlt className="text-white text-lg" />
                   </div>
                   <p className="text-xs text-gray-600 mb-1">Ubicación</p>
@@ -318,15 +318,15 @@ export default function UserPage() {
                 </div>
 
                 {/* Menú Digital */}
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 text-center">
-                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl p-4 text-center">
+                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <TbWorldShare className="text-white text-xl" />
                   </div>
                   <p className="text-xs text-gray-600 mb-1">Menú Digital</p>
                   {shouldShowDigitalMenu(userInfo) ? (
                     <button 
                       onClick={() => router.push(`/webmenu/${userInfo?.user_uuid}`)}
-                      className="text-sm font-semibold text-orange-600 hover:text-orange-800 transition-colors"
+                      className="text-sm font-semibold text-green-600 hover:text-emerald-700 transition-colors"
                     >
                       Ver menú
                     </button>

@@ -288,28 +288,40 @@ export default function VistaCocina() {
         setVisibleDropdown(visibleDropdown === id ? null : id);
     };
 
-    const handleCancelProduct = async (productId) => {
-        try {
-            const product = selectedTable.products.find(p => p.id === productId);
-            if (!product) {
-                console.error('Producto no encontrado');
-                return;
-            }
-
-            const orderUuid = selectedTable.orderUuid;
-
-            await updateProductStatus(orderUuid, product.id, 'Cancelado');
-
-            await fetchTablesData();
-
-            setIsModalOpen(false);
-            setVisibleDropdown(null);
-            console.log('Producto cancelado exitosamente');
-        } catch (error) {
-            console.error('Error al cancelar el producto:', error);
-            alert('Error al cancelar el producto: ' + error.message);
+   const handleCancelProduct = async (productId) => {
+    try {
+        const product = selectedTable.products.find(p => p.id === productId);
+        if (!product) {
+            console.error('Producto no encontrado');
+            return;
         }
-    };
+
+        const orderUuid = selectedTable.orderUuid;
+
+        await updateProductStatus(orderUuid, product.id, 'Cancelado');
+
+        // Actualiza la lista de productos localmente
+        const updatedProducts = selectedTable.products.filter(p => p.id !== productId);
+        const updatedTable = { ...selectedTable, products: updatedProducts };
+
+        setSelectedTable(updatedTable);
+
+        // Si ya no hay productos, cierra ambas modales
+        if (updatedProducts.length === 0) {
+            setIsModalOpen(false);
+            setIsTableDetailModalOpen(false);
+        } else {
+            setIsModalOpen(false);
+        }
+
+        setVisibleDropdown(null);
+        await fetchTablesData();
+        console.log('Producto cancelado exitosamente');
+    } catch (error) {
+        console.error('Error al cancelar el producto:', error);
+        alert('Error al cancelar el producto: ' + error.message);
+    }
+};
 
     const handleCompleteOrder = async () => {
         try {
@@ -441,137 +453,224 @@ export default function VistaCocina() {
     };
 
     return (
-        <div className="w-full mt-16">
-            {/* Modal de suscripción con contador */}
-            {showSubscriptionModal && (
-                <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-                        <h2 className="text-xl font-bold mb-4 text-red-600">Suscripción Requerida</h2>
-                        <p className="text-gray-700 mb-4">
-                            Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
-                            Por favor, renueva tu suscripción para continuar.
-                        </p>
-                        <div className="text-center mb-6">
-                            <p className="text-green-600 font-semibold text-lg">
-                                Redireccionando a pagos en {countdown} segundos...
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 relative">
+            {/* Fondo decorativo */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-16 left-8 w-32 h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>
+                <div className="absolute top-40 right-24 w-40 h-40 bg-emerald-100 rounded-full opacity-25 blur-xl animate-pulse delay-1000"></div>
+                <div className="absolute bottom-32 left-1/4 w-24 h-24 bg-teal-100 rounded-full opacity-20 blur-lg animate-pulse delay-500"></div>
+                <div className="absolute bottom-20 right-10 w-36 h-36 bg-green-200 rounded-full opacity-15 blur-2xl animate-pulse delay-1500"></div>
+            </div>
+            <div className="relative z-10 w-full mt-16">
+                {/* Modal de suscripción con contador */}
+                {showSubscriptionModal && (
+                    <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+                            <h2 className="text-xl font-bold mb-4 text-red-600">Suscripción Requerida</h2>
+                            <p className="text-gray-700 mb-4">
+                                Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
+                                Por favor, renueva tu suscripción para continuar.
                             </p>
-                        </div>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={handleGoToPayments}
-                                className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                            >
-                                Ir a Pagos Ahora
-                            </button>
+                            <div className="text-center mb-6">
+                                <p className="text-green-600 font-semibold text-lg">
+                                    Redireccionando a pagos en {countdown} segundos...
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleGoToPayments}
+                                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                >
+                                    Ir a Pagos Ahora
+                                </button>
+                            </div>
                         </div>
                     </div>
+                )}
+
+                {/* Componente de modales */}
+                <ModalCocina
+                    isTableDetailModalOpen={isTableDetailModalOpen}
+                    setIsTableDetailModalOpen={setIsTableDetailModalOpen}
+                    selectedTable={selectedTable}
+                    visibleDropdown={visibleDropdown}
+                    toggleDropdown={toggleDropdown}
+                    setSelectedProduct={setSelectedProduct}
+                    setIsModalOpen={setIsModalOpen}
+                    setActiveModal={setActiveModal}
+                    activeModal={activeModal}
+                    handleCompleteOrder={handleCompleteOrder}
+                    handleCancelOrder={handleCancelOrder}
+                    isModalOpen={isModalOpen}
+                    selectedProduct={selectedProduct}
+                    handleCancelProduct={handleCancelProduct}
+                />
+
+                <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b bg-white/80 rounded-t-2xl">
+                    <button
+                        className={`px-4 py-2 cursor-pointer ${view === "all" ? "border-b-2 border-green-600 font-bold" : ""
+                            }`}
+                        onClick={() => setView("all")}
+                    >
+                        Comandas Recibidas
+                    </button>
+                    <button
+                        className={`px-4 py-2 cursor-pointer ${view === "completed" ? "border-b-2 border-green-600 font-bold" : ""
+                            }`}
+                        onClick={() => setView("completed")}
+                    >
+                        Comandas Completadas
+                    </button>
+                    <button
+                        className={`px-4 py-2 cursor-pointer ${view === "finished" ? "border-b-2 border-green-600 font-bold" : ""
+                            }`}
+                        onClick={() => setView("finished")}
+                    >
+                        Comandas Finalizadas
+                    </button>
+                    <button
+                        className={`px-4 py-2 cursor-pointer ${view === "cancelled" ? "border-b-2 border-green-600 font-bold" : ""
+                            }`}
+                        onClick={() => setView("cancelled")}
+                    >
+                        Comandas Canceladas
+                    </button>
                 </div>
-            )}
 
-            {/* Componente de modales */}
-            <ModalCocina
-                isTableDetailModalOpen={isTableDetailModalOpen}
-                setIsTableDetailModalOpen={setIsTableDetailModalOpen}
-                selectedTable={selectedTable}
-                visibleDropdown={visibleDropdown}
-                toggleDropdown={toggleDropdown}
-                setSelectedProduct={setSelectedProduct}
-                setIsModalOpen={setIsModalOpen}
-                setActiveModal={setActiveModal}
-                activeModal={activeModal}
-                handleCompleteOrder={handleCompleteOrder}
-                handleCancelOrder={handleCancelOrder}
-                isModalOpen={isModalOpen}
-                selectedProduct={selectedProduct}
-                handleCancelProduct={handleCancelProduct}
-            />
+                <div className="py-5 px-5">
+                    {view === "all" && (
+                        <div>
+                            <div className="flex justify-between items-center mb-4">
+                                <p className="text-lg font-bold">Comandas Recibidas:</p>
+                                {loading && <p className="text-sm text-gray-500">Cargando...</p>}
+                                {error && <p className="text-sm text-red-500">Error: {error}</p>}
+                            </div>
 
-            <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b">
-                <button
-                    className={`px-4 py-2 cursor-pointer ${view === "all" ? "border-b-2 border-green-600 font-bold" : ""
-                        }`}
-                    onClick={() => setView("all")}
-                >
-                    Comandas Recibidas
-                </button>
-                <button
-                    className={`px-4 py-2 cursor-pointer ${view === "completed" ? "border-b-2 border-green-600 font-bold" : ""
-                        }`}
-                    onClick={() => setView("completed")}
-                >
-                    Comandas Completadas
-                </button>
-                <button
-                    className={`px-4 py-2 cursor-pointer ${view === "finished" ? "border-b-2 border-green-600 font-bold" : ""
-                        }`}
-                    onClick={() => setView("finished")}
-                >
-                    Comandas Finalizadas
-                </button>
-                <button
-                    className={`px-4 py-2 cursor-pointer ${view === "cancelled" ? "border-b-2 border-green-600 font-bold" : ""
-                        }`}
-                    onClick={() => setView("cancelled")}
-                >
-                    Comandas Canceladas
-                </button>
-            </div>
-
-            <div className="py-5 px-5">
-                {view === "all" && (
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <p className="text-lg font-bold">Comandas Recibidas:</p>
-                            {loading && <p className="text-sm text-gray-500">Cargando...</p>}
-                            {error && <p className="text-sm text-red-500">Error: {error}</p>}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                            {allActiveTables.length === 0 && !loading && (
-                                <p className="text-gray-500 text-center col-span-full">No hay órdenes pendientes en este momento</p>
-                            )}
-                            {allActiveTables.map((table) => (
-                                <div
-                                    key={`table-${table.tableNumber}`}
-                                    className={`cursor-pointer transition-opacity hover:opacity-80 ${table.isEmpty ? 'opacity-30' : ''}`}
-                                    onClick={() => openTableDetail(table)}
-                                >
-                                    <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-40 flex flex-col">
-                                        <div className="p-3 flex-grow flex flex-col">
-                                            <div className="flex items-center mb-2">
-                                                <MdTableBar className="text-lg mr-2" />
-                                                <p className="font-bold text-base">Mesa {table.tableNumber}</p>
-                                                <GoDotFill className="text-blue-800 mx-1 text-sm" />
-                                                {!table.isEmpty && (
-                                                    <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
-                                                        Pendiente
-                                                    </span>
-                                                )}
-                                                {table.isEmpty && (
-                                                    <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 rounded">
-                                                        Sin ocupar
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="flex justify-between text-xs text-gray-500 mb-2">
-                                                <div className="flex items-center">
-                                                    <LuCalendarDays className="mr-1" />
-                                                    <span>{new Date(table.timestamp).toLocaleDateString()}</span>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                {allActiveTables.length === 0 && !loading && (
+                                    <p className="text-gray-500 text-center col-span-full">No hay órdenes pendientes en este momento</p>
+                                )}
+                                {allActiveTables.map((table) => (
+                                    <div
+                                        key={`table-${table.tableNumber}`}
+                                        className={`cursor-pointer transition-transform hover:scale-105 ${table.isEmpty ? 'opacity-30' : ''}`}
+                                        onClick={() => openTableDetail(table)}
+                                    >
+                                        <div className={`border-l-8 rounded-2xl shadow-xl bg-white h-44 flex flex-col transition-all duration-300
+                                            ${table.type === 'pending' || table.isEmpty ? 'border-green-400' : ''}
+                                            ${table.type === 'completed' ? 'border-emerald-400' : ''}
+                                            ${table.type === 'finished' ? 'border-gray-400' : ''}
+                                            ${table.type === 'cancelled' ? 'border-red-400' : ''}
+                                        `}>
+                                            <div className="p-4 flex-grow flex flex-col">
+                                                <div className="flex items-center mb-2 gap-2">
+                                                    <MdTableBar className="text-xl text-green-600" />
+                                                    <p className="font-bold text-base">Mesa {table.tableNumber}</p>
+                                                    <GoDotFill className={`text-sm ${table.type === 'pending' ? 'text-blue-800' : ''} ${table.type === 'completed' ? 'text-green-600' : ''} ${table.type === 'finished' ? 'text-gray-600' : ''} ${table.type === 'cancelled' ? 'text-red-600' : ''}`} />
+                                                    {!table.isEmpty && (
+                                                        <span className={`px-2 py-0.5 text-xs rounded font-semibold
+                                                            ${table.type === 'pending' ? 'bg-blue-100 text-blue-800' : ''}
+                                                            ${table.type === 'completed' ? 'bg-green-100 text-green-800' : ''}
+                                                            ${table.type === 'finished' ? 'bg-gray-100 text-gray-800' : ''}
+                                                            ${table.type === 'cancelled' ? 'bg-red-100 text-red-800' : ''}
+                                                        `}>
+                                                            {table.type === 'pending' ? 'Pendiente' : ''}
+                                                            {table.type === 'completed' ? 'Preparado' : ''}
+                                                            {table.type === 'finished' ? 'Finalizado' : ''}
+                                                            {table.type === 'cancelled' ? 'Cancelado' : ''}
+                                                        </span>
+                                                    )}
+                                                    {table.isEmpty && (
+                                                        <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-800 rounded font-semibold">
+                                                            Sin ocupar
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <div className="flex items-center">
-                                                    <BsClock className="mr-1" />
-                                                    <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex-grow">
-                                                {table.isEmpty ? (
-                                                    <div className="text-center py-2">
-                                                        <p className="text-gray-400 font-semibold text-sm">Mesa sin ocupar</p>
+                                                <div className="flex justify-between text-xs text-gray-500 mb-2">
+                                                    <div className="flex items-center">
+                                                        <LuCalendarDays className="mr-1" />
+                                                        <span>{new Date(table.timestamp).toLocaleDateString()}</span>
                                                     </div>
-                                                ) : (
-                                                    <div>
+                                                    <div className="flex items-center">
+                                                        <BsClock className="mr-1" />
+                                                        <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-grow">
+                                                    {table.isEmpty ? (
+                                                        <div className="text-center py-2">
+                                                            <p className="text-gray-400 font-semibold text-sm">Mesa sin ocupar</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div>
+                                                            <p className="text-xs text-gray-500 font-semibold mb-1">
+                                                                Productos ({table.products.length})
+                                                            </p>
+                                                            {table.products.length > 0 && (
+                                                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded p-2 mb-1 shadow-sm">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <p className={`font-semibold text-xs truncate pr-1 ${table.products[0].status === 'Cancelado' ? 'line-through text-red-500' : ''}`}>
+                                                                            {table.products[0].name}
+                                                                        </p>
+                                                                        <span className="bg-white px-2 py-0.5 rounded text-xs font-semibold border border-green-100">
+                                                                            X{table.products[0].quantity}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {table.products.length > 1 && (
+                                                                <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
+                                                                    <IoMdInformationCircleOutline className="mr-1" />
+                                                                    <span className="text-center">Click para ver más</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {view === "completed" && (
+                        <div>
+                            <p className="text-lg font-bold mb-4">Comandas Completadas:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                {completedTables.length === 0 ? (
+                                    <p className="text-gray-500 text-center col-span-full">No hay comandas completadas</p>
+                                ) : (
+                                    completedTables.map((table) => (
+                                        <div
+                                            key={`${table.tableNumber}-${table.orderId}-completed`}
+                                            className="cursor-pointer"
+                                            onClick={() => openTableDetail(table)}
+                                        >
+                                            <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-40 flex flex-col">
+                                                <div className="p-3 flex-grow flex flex-col">
+                                                    <div className="flex items-center mb-2">
+                                                        <MdTableBar className="text-lg mr-2" />
+                                                        <p className="font-bold text-base">Mesa {table.tableNumber}</p>
+                                                        <GoDotFill className="text-green-600 mx-1 text-sm" />
+                                                        <span className="px-1.5 py-0.5 text-xs bg-green-100 text-green-800 rounded">
+                                                            Preparado
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="flex justify-between text-xs text-gray-500 mb-2">
+                                                        <div className="flex items-center">
+                                                            <LuCalendarDays className="mr-1" />
+                                                            <span>{new Date(table.timestamp).toLocaleDateString()}</span>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                            <BsClock className="mr-1" />
+                                                            <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex-grow">
                                                         <p className="text-xs text-gray-500 font-semibold mb-1">
                                                             Productos ({table.products.length})
                                                         </p>
@@ -594,218 +693,157 @@ export default function VistaCocina() {
                                                             </div>
                                                         )}
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
+                                    ))
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {view === "completed" && (
-                    <div>
-                        <p className="text-lg font-bold mb-4">Comandas Completadas:</p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                            {completedTables.length === 0 ? (
-                                <p className="text-gray-500 text-center col-span-full">No hay comandas completadas</p>
-                            ) : (
-                                completedTables.map((table) => (
-                                    <div
-                                        key={`${table.tableNumber}-${table.orderId}-completed`}
-                                        className="cursor-pointer"
-                                        onClick={() => openTableDetail(table)}
-                                    >
-                                        <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-40 flex flex-col">
-                                            <div className="p-3 flex-grow flex flex-col">
-                                                <div className="flex items-center mb-2">
-                                                    <MdTableBar className="text-lg mr-2" />
-                                                    <p className="font-bold text-base">Mesa {table.tableNumber}</p>
-                                                    <GoDotFill className="text-green-600 mx-1 text-sm" />
-                                                    <span className="px-1.5 py-0.5 text-xs bg-green-100 text-green-800 rounded">
-                                                        Preparado
-                                                    </span>
-                                                </div>
-
-                                                <div className="flex justify-between text-xs text-gray-500 mb-2">
-                                                    <div className="flex items-center">
-                                                        <LuCalendarDays className="mr-1" />
-                                                        <span>{new Date(table.timestamp).toLocaleDateString()}</span>
+                    {view === "finished" && (
+                        <div>
+                            <p className="text-lg font-bold mb-4">Comandas Finalizadas:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                {finishedTables.length === 0 ? (
+                                    <p className="text-gray-500 text-center col-span-full">No hay comandas finalizadas</p>
+                                ) : (
+                                    finishedTables.map((table) => (
+                                        <div
+                                            key={`${table.tableNumber}-${table.orderId}-finished`}
+                                            className="cursor-pointer"
+                                            onClick={() => openTableDetail(table)}
+                                        >
+                                            <div className="border-l-gray-600 border-l-5 bg-white shadow-md rounded-lg h-40 flex flex-col">
+                                                <div className="p-3 flex-grow flex flex-col">
+                                                    <div className="flex items-center mb-2">
+                                                        <MdTableBar className="text-lg mr-2" />
+                                                        <p className="font-bold text-base">Mesa {table.tableNumber}</p>
+                                                        <GoDotFill className="text-gray-600 mx-1 text-sm" />
+                                                        <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 rounded">
+                                                            Finalizado
+                                                        </span>
                                                     </div>
-                                                    <div className="flex items-center">
-                                                        <BsClock className="mr-1" />
-                                                        <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                    </div>
-                                                </div>
 
-                                                <div className="flex-grow">
-                                                    <p className="text-xs text-gray-500 font-semibold mb-1">
-                                                        Productos ({table.products.length})
-                                                    </p>
-                                                    {table.products.length > 0 && (
-                                                        <div className="bg-gray-50 rounded p-2 mb-1">
-                                                            <div className="flex justify-between items-center">
-                                                                <p className="font-semibold text-xs truncate pr-1">
+                                                    <div className="flex justify-between text-xs text-gray-500 mb-2">
+                                                        <div className="flex items-center">
+                                                            <LuCalendarDays className="mr-1" />
+                                                            <span>{new Date(table.timestamp).toLocaleDateString()}</span>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                            <BsClock className="mr-1" />
+                                                            <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex-grow">
+                                                        <p className="text-xs text-gray-500 font-semibold mb-1">
+                                                            Productos ({table.products.length})
+                                                        </p>
+                                                        {table.products.length > 0 && (
+                                                            <div className="bg-gray-50 rounded p-2 mb-1">
+                                                                <div className="flex justify-between items-center">
+                                                                    <p className={`font-semibold text-xs truncate pr-1 ${table.products[0].status === 'Cancelado' ? 'line-through text-red-500' : ''
+                                                                        }`}>
                                                                     {table.products[0].name}
-                                                                </p>
-                                                                <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
-                                                                    X{table.products[0].quantity}
-                                                                </span>
+                                                                    </p>
+                                                                    <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
+                                                                        X{table.products[0].quantity}
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                    {table.products.length > 1 && (
-                                                        <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
-                                                            <IoMdInformationCircleOutline className="mr-1" />
-                                                            <span className="text-center">Click para ver más</span>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                        {table.products.length > 1 && (
+                                                            <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
+                                                                <IoMdInformationCircleOutline className="mr-1" />
+                                                                <span className="text-center">Click para ver más</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
-                            )}
+                                    ))
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {view === "finished" && (
-                    <div>
-                        <p className="text-lg font-bold mb-4">Comandas Finalizadas:</p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                            {finishedTables.length === 0 ? (
-                                <p className="text-gray-500 text-center col-span-full">No hay comandas finalizadas</p>
-                            ) : (
-                                finishedTables.map((table) => (
-                                    <div
-                                        key={`${table.tableNumber}-${table.orderId}-finished`}
-                                        className="cursor-pointer"
-                                        onClick={() => openTableDetail(table)}
-                                    >
-                                        <div className="border-l-gray-600 border-l-5 bg-white shadow-md rounded-lg h-40 flex flex-col">
-                                            <div className="p-3 flex-grow flex flex-col">
-                                                <div className="flex items-center mb-2">
-                                                    <MdTableBar className="text-lg mr-2" />
-                                                    <p className="font-bold text-base">Mesa {table.tableNumber}</p>
-                                                    <GoDotFill className="text-gray-600 mx-1 text-sm" />
-                                                    <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 rounded">
-                                                        Finalizado
-                                                    </span>
-                                                </div>
-
-                                                <div className="flex justify-between text-xs text-gray-500 mb-2">
-                                                    <div className="flex items-center">
-                                                        <LuCalendarDays className="mr-1" />
-                                                        <span>{new Date(table.timestamp).toLocaleDateString()}</span>
+                    {view === "cancelled" && (
+                        <div>
+                            <p className="text-lg font-bold mb-4">Comandas Canceladas:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                {cancelledTables.length === 0 ? (
+                                    <p className="text-gray-500 text-center col-span-full">No hay comandas canceladas</p>
+                                ) : (
+                                    cancelledTables.map((table) => (
+                                        <div
+                                            key={`${table.tableNumber}-${table.orderId}-cancelled`}
+                                            className="cursor-pointer"
+                                            onClick={() => openTableDetail(table)}
+                                        >
+                                            <div className="border-l-red-600 border-l-5 bg-white shadow-md rounded-lg h-40 flex flex-col">
+                                                <div className="p-3 flex-grow flex flex-col">
+                                                    <div className="flex items-center mb-2">
+                                                        <MdTableBar className="text-lg mr-2" />
+                                                        <p className="font-bold text-base">Mesa {table.tableNumber}</p>
+                                                        <GoDotFill className="text-red-600 mx-1 text-sm" />
+                                                        <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-800 rounded">
+                                                            Cancelado
+                                                        </span>
                                                     </div>
-                                                    <div className="flex items-center">
-                                                        <BsClock className="mr-1" />
-                                                        <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                    </div>
-                                                </div>
 
-                                                <div className="flex-grow">
-                                                    <p className="text-xs text-gray-500 font-semibold mb-1">
-                                                        Productos ({table.products.length})
-                                                    </p>
-                                                    {table.products.length > 0 && (
-                                                        <div className="bg-gray-50 rounded p-2 mb-1">
-                                                            <div className="flex justify-between items-center">
-                                                                <p className={`font-semibold text-xs truncate pr-1 ${table.products[0].status === 'Cancelado' ? 'line-through text-red-500' : ''
-                                                                    }`}>
-                                                                    {table.products[0].name}
-                                                                </p>
-                                                                <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
-                                                                    X{table.products[0].quantity}
-                                                                </span>
+                                                    <div className="flex justify-between text-xs text-gray-500 mb-2">
+                                                        <div className="flex items-center">
+                                                            <LuCalendarDays className="mr-1" />
+                                                            <span>{new Date(table.timestamp).toLocaleDateString()}</span>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                            <BsClock className="mr-1" />
+                                                            <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex-grow">
+                                                        <p className="text-xs text-gray-500 font-semibold mb-1">
+                                                            Productos ({table.products.length})
+                                                        </p>
+                                                        {table.products.length > 0 && (
+                                                            <div className="bg-gray-50 rounded p-2 mb-1">
+                                                                <div className="flex justify-between items-center">
+                                                                    <p className="font-semibold text-xs truncate pr-1 line-through text-red-500">
+                                                                        {table.products[0].name}
+                                                                    </p>
+                                                                    <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
+                                                                        X{table.products[0].quantity}
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                    {table.products.length > 1 && (
-                                                        <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
-                                                            <IoMdInformationCircleOutline className="mr-1" />
-                                                            <span className="text-center">Click para ver más</span>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                        {table.products.length > 1 && (
+                                                            <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
+                                                                <IoMdInformationCircleOutline className="mr-1" />
+                                                                <span className="text-center">Click para ver más</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
-                            )}
+                                    ))
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
-
-                {view === "cancelled" && (
-                    <div>
-                        <p className="text-lg font-bold mb-4">Comandas Canceladas:</p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                            {cancelledTables.length === 0 ? (
-                                <p className="text-gray-500 text-center col-span-full">No hay comandas canceladas</p>
-                            ) : (
-                                cancelledTables.map((table) => (
-                                    <div
-                                        key={`${table.tableNumber}-${table.orderId}-cancelled`}
-                                        className="cursor-pointer"
-                                        onClick={() => openTableDetail(table)}
-                                    >
-                                        <div className="border-l-red-600 border-l-5 bg-white shadow-md rounded-lg h-40 flex flex-col">
-                                            <div className="p-3 flex-grow flex flex-col">
-                                                <div className="flex items-center mb-2">
-                                                    <MdTableBar className="text-lg mr-2" />
-                                                    <p className="font-bold text-base">Mesa {table.tableNumber}</p>
-                                                    <GoDotFill className="text-red-600 mx-1 text-sm" />
-                                                    <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-800 rounded">
-                                                        Cancelado
-                                                    </span>
-                                                </div>
-
-                                                <div className="flex justify-between text-xs text-gray-500 mb-2">
-                                                    <div className="flex items-center">
-                                                        <LuCalendarDays className="mr-1" />
-                                                        <span>{new Date(table.timestamp).toLocaleDateString()}</span>
-                                                    </div>
-                                                    <div className="flex items-center">
-                                                        <BsClock className="mr-1" />
-                                                        <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex-grow">
-                                                    <p className="text-xs text-gray-500 font-semibold mb-1">
-                                                        Productos ({table.products.length})
-                                                    </p>
-                                                    {table.products.length > 0 && (
-                                                        <div className="bg-gray-50 rounded p-2 mb-1">
-                                                            <div className="flex justify-between items-center">
-                                                                <p className="font-semibold text-xs truncate pr-1 line-through text-red-500">
-                                                                    {table.products[0].name}
-                                                                </p>
-                                                                <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
-                                                                    X{table.products[0].quantity}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {table.products.length > 1 && (
-                                                        <div className="flex items-center justify-center text-xs text-blue-600 font-semibold">
-                                                            <IoMdInformationCircleOutline className="mr-1" />
-                                                            <span className="text-center">Click para ver más</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
+            {/* Estilos extra para animaciones */}
+            <style jsx>{`
+                .delay-500 { animation-delay: 500ms; }
+                .delay-1000 { animation-delay: 1000ms; }
+                .delay-1500 { animation-delay: 1500ms; }
+            `}</style>
         </div>
     );
 }

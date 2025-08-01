@@ -174,11 +174,11 @@ export default function Navbar() {
     const isPointOfSalePage = router.pathname === '/puntodeventa';
 
     return (
-        <nav className="bg-[#f3f4f6] w-full fixed top-0 left-0 flex justify-between h-16 z-50 shadow-md overflow-x-hidden">
+        <nav className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 w-full fixed top-0 left-0 flex justify-between h-16 z-50 shadow-xl overflow-x-hidden border-b border-green-200">
             <div className="flex w-full justify-between px-4">
                 <div className="flex items-center cursor-pointer">
-                    <GoChecklist size={36} className="text-green-600" />
-                    <h2 className="text-3xl hover:text-green-600 font-bold ml-2">WapiFood</h2>
+                    <GoChecklist size={36} className="text-white drop-shadow-lg" />
+                    <h2 className="text-3xl font-bold ml-2 bg-gradient-to-r from-yellow-300 via-green-100 to-white bg-clip-text text-transparent hover:text-green-200 transition-colors duration-200">WapiFood</h2>
                 </div>
 
                 {/* Container para el botón de power y el menú hamburguesa */}
@@ -191,124 +191,119 @@ export default function Navbar() {
                                 relative flex items-center justify-center gap-2 
                                 px-3 py-2 md:px-6 md:py-3
                                 rounded-full transition-all duration-300 ease-in-out
-                                hover:scale-105 active:scale-95 shadow-lg
+                                hover:scale-105 active:scale-95 shadow-xl
                                 min-w-[60px] md:min-w-[100px]
+                                border-2 border-white
                                 ${switchEnabled 
-                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                                    : 'bg-gray-400 hover:bg-gray-500 text-white'
+                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white' 
+                                    : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                 }
                             `}
                             title={switchEnabled ? 'Cocina Encendida - Click para apagar' : 'Cocina Apagada - Click para encender'}
                         >
-                            {/* Ícono de cocina - MÁS GRANDE */}
                             <FaKitchenSet 
                                 className={`
                                     w-5 h-5 md:w-7 md:h-7 
                                     transition-all duration-300
                                     ${switchEnabled 
-                                        ? 'text-white drop-shadow-sm' 
+                                        ? 'text-yellow-300 drop-shadow-lg' 
                                         : 'text-gray-200'
                                     }
                                 `} 
                             />
-                            
-                            {/* Texto - visible solo en pantallas medianas y grandes */}
-                            <span className="hidden md:block text-sm md:text-base font-medium">
+                            <span className="hidden md:block text-base font-semibold">
                                 {switchEnabled ? 'ON' : 'OFF'}
                             </span>
-
-                            {/* Indicador de estado - punto más grande en la esquina para móviles */}
                             <div 
                                 className={`
                                     absolute -top-1 -right-1 w-3 h-3 md:hidden
                                     rounded-full transition-all duration-300
+                                    border-2 border-white
                                     ${switchEnabled 
                                         ? 'bg-yellow-400 shadow-lg' 
                                         : 'bg-red-500'
                                     }
                                 `}
                             />
-
-                            {/* Efecto de "glow" cuando está encendido */}
                             {switchEnabled && (
-                                <div className="absolute inset-0 rounded-full bg-green-400 opacity-20 animate-pulse" />
+                                <div className="absolute inset-0 rounded-full bg-green-400 opacity-30 animate-pulse" />
                             )}
                         </button>
                     )}
 
                     {/* Menú hamburguesa */}
                     <button
-                        className="z-50 cursor-pointer"
+                        className="z-50 cursor-pointer bg-white/20 rounded-full p-2 shadow-lg border border-green-200 hover:bg-white/40 transition-all duration-200"
                         onClick={(e) => {
                             e.stopPropagation();
                             setIsOpen(!isOpen);
                         }}
                         aria-label="Toggle menu"
                     >
-                        <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-                        <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
-                        <div className={`w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                        <div className={`w-6 h-0.5 bg-white mb-1.5 rounded transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+                        <div className={`w-6 h-0.5 bg-white mb-1.5 rounded transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
+                        <div className={`w-6 h-0.5 bg-white rounded transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
                     </button>
                 </div>
 
                 <div
                     ref={menuRef}
                     className={`
-                    fixed top-16 right-0 h-full bg-gray-100 z-40
+                    fixed top-16 right-0 h-full w-72 bg-gradient-to-br from-green-50 via-white to-emerald-50 z-40
                     transition-transform duration-300 ease-in-out
-                    ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-                    overflow-hidden
+                    ${isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}
+                    overflow-hidden border-l-4 border-green-200 rounded-l-3xl
                 `}
                 >
                     <ul className="flex flex-col mt-4 p-4 text-xl">
-                        <p className="text-gray-500 font-bold">Menú principal</p>
+                        <p className="text-green-700 font-bold mb-2">Menú principal</p>
                         {Object.keys(menu).map((item, index) => (
                             <li key={index} className="cursor-pointer my-4">
                                 {item === "Dashboard" ? (
                                     <button
-                                        className={getMenuItemClasses(item)}
+                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
                                         onClick={dasboard}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                     </button>
                                 ) : item === "Register" ? (
                                     <button
-                                        className={getMenuItemClasses(item)}
+                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
                                         onClick={productos}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                     </button>
                                 ) : item === "Tickets" ? (
                                     <button
-                                        className={getMenuItemClasses(item)}
+                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
                                         onClick={() => handleRestrictedClick(tickets)}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                     </button>
                                 ) : item === "Cocina" ? (
                                     <button
-                                        className={getMenuItemClasses(item)}
+                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
                                         onClick={handleCocinaClick}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                     </button>
                                 ) : item === "PuntoDeVenta" ? (
                                     <button
-                                        className={getMenuItemClasses(item)}
+                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
                                         onClick={() => handleRestrictedClick(puntoDeVenta)}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                     </button>
                                 ) : item === "Ventas" ? (
                                     <button
-                                        className={getMenuItemClasses(item)}
+                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
                                         onClick={payments}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                     </button>
                                 ) : (
                                     <a
-                                        className={getMenuItemClasses(item)}
+                                        className={getMenuItemClasses(item) + " bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:scale-105 transition-all duration-200"}
                                         href={menu[item].href}
                                     >
                                         <span className="self-center">{menu[item].icon}</span> {menu[item].title}
@@ -317,26 +312,26 @@ export default function Navbar() {
                             </li>
                         ))}
 
-                        <p className="text-gray-500 font-bold">Configuración</p>
+                        <p className="text-green-700 font-bold mt-6">Configuración</p>
                         {Object.keys(config).map((item, index) => (
-                            <li key={index} className="cursor-pointer hover:text-green-600 my-4">
+                            <li key={index} className="cursor-pointer my-4">
                                 {item === "Profile" ? (
                                     <button
-                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        className="flex w-auto gap-2 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:text-green-600 hover:scale-105 transition-all duration-200"
                                         onClick={MiPerfil}
                                     >
                                         <span className="self-center">{config[item].icon}</span> {config[item].title}
                                     </button>
                                 ) : item === "Logout" ? (
                                     <button
-                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        className="flex w-auto gap-2 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:text-green-600 hover:scale-105 transition-all duration-200"
                                         onClick={config[item].function}
                                     >
                                         <span className="self-center">{config[item].icon}</span> {config[item].title}
                                     </button>
                                 ) : (
                                     <a
-                                        className="flex w-auto gap-2 cursor-pointer hover:text-green-600"
+                                        className="flex w-auto gap-2 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:text-green-600 hover:scale-105 transition-all duration-200"
                                         href={config[item].href}
                                     >
                                         <span className="self-center">{config[item].icon}</span> {config[item].title}
@@ -350,14 +345,14 @@ export default function Navbar() {
 
             {/* Popup de suscripción requerida */}
             {showSubscriptionPopup && (
-                <div className="fixed top-20 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+                <div className="fixed top-20 right-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl z-50 animate-fade-in border-2 border-white">
                     <div className="flex items-center">
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-semibold">
                             Algunas funciones requieren suscripción activa
                         </span>
                         <button
                             onClick={() => setShowSubscriptionPopup(false)}
-                            className="ml-3 text-white hover:text-gray-200"
+                            className="ml-3 text-white hover:text-yellow-300 font-bold"
                         >
                             ✕
                         </button>

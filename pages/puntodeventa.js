@@ -46,10 +46,6 @@ export default function PuntoDeVenta() {
                   <div className="text-xs text-gray-500">Pagos</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">📊</div>
-                  <div className="text-xs text-gray-500">Reportes</div>
-                </div>
-                <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">🎯</div>
                   <div className="text-xs text-gray-500">Productos</div>
                 </div>

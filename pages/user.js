@@ -38,19 +38,17 @@ export default function User() {
                             {/* Indicadores rápidos */}
                             <div className="flex items-center gap-6">
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-blue-600">👤</div>
+                                    <div className="text-2xl font-bold text-green-600">👤</div>
                                     <div className="text-xs text-gray-500">Perfil</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-green-600">⚙️</div>
+                                    <div className="text-2xl font-bold text-emerald-600">⚙️</div>
                                     <div className="text-xs text-gray-500">Configuración</div>
                                 </div>
-                                
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-orange-600">📊</div>
+                                    <div className="text-2xl font-bold text-green-500">📊</div>
                                     <div className="text-xs text-gray-500">Actividad</div>
                                 </div>
-                                
                             </div>
                         </div>
                     </div>

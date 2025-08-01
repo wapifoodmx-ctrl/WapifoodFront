@@ -22,6 +22,7 @@ import { endOrder } from "@/useCases/endOrder";
 import getCodigoConfirmacion from "@/useCases/getCodogoConfirmacion";
 import TicketModal from "@/components/TicketModal";
 import { getTicket } from "@/useCases/getTicket";
+import { HiMagnifyingGlass } from "react-icons/hi2";
 
 const categoriaOrden = {
     "Entradas": 0,
@@ -50,6 +51,8 @@ export default function MenuCliente() {
     const [modalTotalOpen, setModalTotalOpen] = useState(false);
     const [totalPedidos, setTotalPedidos] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [busqueda, setBusqueda] = useState(""); // <-- Agrega esto
+
     
     // Estados para la modal de login
     const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -657,6 +660,20 @@ export default function MenuCliente() {
             return;
         }
 
+        // Validar código de confirmación con la API
+        try {
+            const codigoAPI = await getCodigoConfirmacion();
+            const codigoEsperado = codigoAPI.codigo_confirmacion;
+
+            if (codigoConfirmacion !== codigoEsperado.toString()) {
+                setMensajeError('Código de confirmación incorrecto. Intenta nuevamente.');
+                return;
+            }
+        } catch (error) {
+            setMensajeError('Error al obtener el código de confirmación. Intenta nuevamente.');
+            return;
+        }
+
         setIsProcessingPayment(true);
         setMensajeError("");
 
@@ -667,7 +684,6 @@ export default function MenuCliente() {
             if (response && (response.success !== false)) {
                 if (numeroMesa) {
                     try {
-                        // CAMBIO: Cambiar a 'NoDisponible' en lugar de 'Libre'
                         await updateTableStatus(parseInt(numeroMesa), 'NoDisponible');
                     } catch (error) {
                         console.error('Error al cambiar mesa a NoDisponible:', error);
@@ -727,16 +743,261 @@ export default function MenuCliente() {
 
     const categorias = ["Todos los platillos", ...new Set(productos.map(p => p.categoria))];
 
+    // MODIFICACIÓN VISUAL: Remodelación con referencia a Punto de Venta
+    // Cambios principales:
+    // - Uso de gradientes verdes y sombras suaves
+    // - Bordes redondeados y transiciones
+    // - Mejor contraste y jerarquía visual
+    // - Botones y modales con estilos similares a pntoventa
+
     if (loading && isAuthenticated) {
         return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="text-lg">Cargando productos...</div>
+            <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
+                <div className="text-lg text-green-700 font-bold">Cargando productos...</div>
             </div>
         );
     }
 
     return (
-        <section>
+        <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 relative">
+            {/* Fondo decorativo */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-20 left-10 w-32 h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>
+                <div className="absolute top-40 right-20 w-40 h-40 bg-emerald-100 rounded-full opacity-25 blur-xl animate-pulse delay-1000"></div>
+                <div className="absolute bottom-32 left-1/4 w-24 h-24 bg-teal-100 rounded-full opacity-20 blur-lg animate-pulse delay-500"></div>
+                <div className="absolute bottom-20 right-10 w-36 h-36 bg-green-200 rounded-full opacity-15 blur-2xl animate-pulse delay-1500"></div>
+            </div>
+
+            {/* Header */}
+            <header className="relative z-10">
+                <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg rounded-b-2xl">
+                    <div className="flex items-center max-w-7xl mx-auto justify-between">
+                        <div className="flex items-center">
+                            <GoChecklist size={36} className="text-yellow-300 drop-shadow-lg" />
+                            <h1 className="text-3xl font-bold ml-2 text-white">WapiFood</h1>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {numeroMesa ? (
+                                <div 
+                                    className="flex items-center gap-2 bg-gradient-to-r from-green-100 to-emerald-100 px-3 py-1 rounded-lg cursor-pointer hover:bg-green-200 transition-colors border border-green-300 shadow"
+                                    onClick={handleClickMesa}
+                                    title="Click para cambiar de mesa"
+                                >
+                                    <MdTableRestaurant className="text-green-600" size={20} />
+                                    <span className="text-sm font-medium text-green-800">
+                                        Mesa {numeroMesa}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="text-xs text-green-100">Sin mesa</div>
+                            )}
+                            <button
+                                className="z-20 cursor-pointer py-3 hamburger-button"
+                                onClick={() => setIsOpen(!isOpen)}
+                                aria-label="Toggle menu"
+                            >
+                                <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+                                <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
+                                <div className={`w-6 h-0.5 bg-white transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </header>
+
+            {/* Menú desplegable remodelado */}
+            <div
+                className={`
+                    fixed top-0 left-0 h-full w-64 bg-gradient-to-br from-green-100 to-emerald-100 shadow-2xl border-r border-green-200
+                    transition-transform duration-300 ease-in-out menu-container z-20
+                    ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+                `}
+            >
+                <ul className="flex flex-col mt-16 p-4 text-xl">
+                    <p className="text-green-700 font-bold mb-2">Menú principal</p>
+                    {categorias.map((categoria, index) => (
+                        <li
+                            key={index}
+                            className="flex hover:bg-green-200 p-2 rounded-xl cursor-pointer gap-2 transition-all duration-200"
+                            onClick={() => {
+                                setCategoriaSeleccionada(categoria);
+                                setIsOpen(false);
+                            }}
+                        >
+                            {categoria === "Todos los platillos" && <IoHomeOutline className="self-center text-green-600" />}
+                            <span className="font-semibold text-green-800">{categoria}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
+            {/* Barra de búsqueda remodelada */}
+            <div className="max-w-4xl mx-auto px-4 py-6 z-10 relative">
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Buscar productos..."
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        className="w-full px-4 py-3 pl-12 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white/80 backdrop-blur-sm shadow-lg transition-all duration-200 hover:border-green-300 text-green-800"
+                    />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                        <HiMagnifyingGlass className="h-5 w-5 text-green-600" />
+                    </div>
+                    {busqueda && (
+                        <button
+                            onClick={() => setBusqueda("")}
+                            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-green-400 hover:text-green-600"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
+                {busqueda && (
+                    <p className="mt-2 text-sm text-green-700">
+                        {productosFiltrados.length} resultado(s) encontrado(s) para "{busqueda}"
+                    </p>
+                )}
+            </div>
+
+            {/* Botón flotante del carrito remodelado */}
+            <button
+                className="fixed bottom-10 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
+                onClick={() => setCarritoModalOpen(true)}
+            >
+                <FaShoppingCart className="text-xl" />
+                {carrito.length > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-white animate-bounce">
+                        {carrito.length}
+                    </span>
+                )}
+            </button>
+
+            {/* Grid de productos remodelado */}
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12 relative z-10">
+                {productosFiltrados.length > 0 ? (
+                    productosFiltrados
+                        .sort((a, b) => {
+                            const ordenA = categoriaOrden[a.categoria] ?? Number.MAX_SAFE_INTEGER;
+                            const ordenB = categoriaOrden[b.categoria] ?? Number.MAX_SAFE_INTEGER;
+                            return ordenA - ordenB;
+                        })
+                        .map((producto) => (
+                            <div
+                                key={producto.id}
+                                className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-green-100 overflow-hidden group"
+                            >
+                                {/* Imagen del producto */}
+                                <div className="relative h-48 overflow-hidden">
+                                    <Image
+                                        src={producto.imagen}
+                                        alt={`Imagen de ${producto.nombre}`}
+                                        className="rounded-t-2xl w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        width={300}
+                                        height={200}
+                                    />
+                                    {/* Badge de estado */}
+                                    {producto.status === "activo" ? (
+                                        <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow">
+                                            Disponible
+                                        </div>
+                                    ) : (
+                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                            <div className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow">
+                                                No Disponible
+                                            </div>
+                                        </div>
+                                    )}
+                                    {/* Precio flotante */}
+                                    <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg">
+                                        <span className="text-lg font-bold text-green-600">
+                                            ${producto.precio.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                </div>
+                                {/* Contenido del producto */}
+                                <div className="p-5">
+                                    <div className="mb-3 flex justify-between items-center">
+                                        <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-1">{producto.nombre}</h3>
+                                        <span className="inline-block bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-xs font-medium px-3 py-1 rounded-full border border-green-200">
+                                            {producto.categoria}
+                                        </span>
+                                    </div>
+                                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[3rem]">
+                                        {producto.descripcion.length > 80
+                                            ? `${producto.descripcion.slice(0, 80)}...`
+                                            : producto.descripcion}
+                                    </p>
+                                    {/* Controles de cantidad y acción */}
+                                    <div className="flex items-center justify-between mt-4">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                className="w-8 h-8 bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 rounded-lg flex items-center justify-center font-bold transition-colors border border-green-200"
+                                                onClick={() => {
+                                                    setProductosFiltrados((prevProductos) =>
+                                                        prevProductos.map((item) =>
+                                                            item.id === producto.id
+                                                                ? { ...item, cantidad: Math.max((item.cantidad || 1) - 1, 1) }
+                                                                : item
+                                                        )
+                                                    );
+                                                }}
+                                            >
+                                                -
+                                            </button>
+                                            <span className="text-lg font-bold text-gray-800 min-w-[2rem] text-center">
+                                                {producto.cantidad || 1}
+                                            </span>
+                                            <button
+                                                className="w-8 h-8 bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 rounded-lg flex items-center justify-center font-bold transition-colors border border-green-200"
+                                                onClick={() => {
+                                                    setProductosFiltrados((prevProductos) =>
+                                                        prevProductos.map((item) =>
+                                                            item.id === producto.id
+                                                                ? { ...item, cantidad: (item.cantidad || 1) + 1 }
+                                                                : item
+                                                        )
+                                                    );
+                                                }}
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                        <button
+                                            className={`bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg text-sm cursor-pointer font-semibold shadow-lg transition-all duration-200 ${
+                                                producto.status !== "activo" ? "opacity-50 cursor-not-allowed" : ""
+                                            }`}
+                                            onClick={() => agregarAlCarrito(producto)}
+                                            disabled={producto.status !== "activo"}
+                                        >
+                                            Agregar
+                                        </button>
+                                    </div>
+                                    <div className="mt-4">
+                                        <button
+                                            className="flex gap-4 items-center justify-center bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm cursor-pointer w-full font-semibold shadow"
+                                            onClick={() => openModal(producto)}
+                                            disabled={producto.status !== "activo"}
+                                        >
+                                            <FaRegEye className="h-[20px] w-[20px]" />Ver detalles
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                ) : (
+                    <div className="col-span-full text-center py-16">
+                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FaShoppingCart className="text-gray-400 text-4xl" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">No se encontraron productos</h3>
+                        <p className="text-gray-600">Intenta ajustar los filtros de búsqueda</p>
+                    </div>
+                )}
+            </section>
+
             {/* Modal de orden cancelada */}
             {showCancelledOrderModal && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[10000]">
@@ -913,62 +1174,22 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Header */}
-            <header>
-                <nav className="w-full bg-gray-100 text-gray-800 p-4">
-                    <div className="flex items-center max-w-7xl mx-auto justify-between">
-                        <div className="flex items-center">
-                            <GoChecklist size={36} className="text-green-600" />
-                            <h1 className="text-3xl font-bold ml-2">WapiFood</h1>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            {numeroMesa ? (
-                                <div 
-                                    className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-lg cursor-pointer hover:bg-green-200 transition-colors"
-                                    onClick={handleClickMesa}
-                                    title="Click para cambiar de mesa"
-                                >
-                                    <MdTableRestaurant className="text-green-600" size={20} />
-                                    <span className="text-sm font-medium text-green-800">
-                                        Mesa {numeroMesa}
-                                    </span>
-                                </div>
-                            ) : (
-                                <div className="text-xs text-gray-500">Sin mesa</div>
-                            )}
-
-                            <button
-                                className="z-20 cursor-pointer py-3 hamburger-button"
-                                onClick={() => setIsOpen(!isOpen)}
-                                aria-label="Toggle menu"
-                            >
-                                <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-                                <div className={`w-6 h-0.5 bg-gray-800 mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
-                                <div className={`w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
-                            </button>
-                        </div>
-                    </div>
-                </nav>
-            </header>
-
             {/* Modal de advertencia de orden activa */}
             {modalOrdenActivaOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1003]">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
-                        <div className='text-red-500 text-4xl flex justify-center mb-4'>
-                            <div className='bg-red-500 text-white p-2 rounded-lg'>
-                                <MdTableRestaurant size={32} />
+                    <div className="bg-white p-8 rounded-2xl shadow-2xl border-2 border-green-200 w-full max-w-md mx-4">
+                        <div className='flex justify-center mb-4'>
+                            <div className='bg-gradient-to-r from-green-400 to-emerald-400 text-white p-3 rounded-full shadow-lg'>
+                                <MdTableRestaurant size={36} />
                             </div>
                         </div>
-                        <h2 className="text-2xl text-center font-bold text-black mb-2">
+                        <h2 className="text-2xl text-center font-bold text-green-700 mb-2">
                             No se puede cambiar de mesa
                         </h2>
                         <p className='text-center text-gray-600 mb-6'>
-                            No se puede cambiar la mesa porque tienes una orden activa. 
+                            No se puede cambiar la mesa porque tienes una orden activa.<br />
                             Por favor, termina la orden para poder cambiar de mesa.
                         </p>
-                        
                         {ordenActiva && (
                             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                 <p className="text-sm text-yellow-800 text-center">
@@ -979,16 +1200,15 @@ export default function MenuCliente() {
                                 </p>
                             </div>
                         )}
-                        
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 mt-2">
                             <button
-                                className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-red-600 transition-colors"
+                                className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
                                 onClick={() => setModalOrdenActivaOpen(false)}
                             >
                                 Entendido
                             </button>
                             <button
-                                className="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                className="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold"
                                 onClick={() => {
                                     setModalOrdenActivaOpen(false);
                                     terminarOrden();
@@ -1099,45 +1319,6 @@ export default function MenuCliente() {
                     </div>
                 </div>
             )}
-
-            {/* Menú desplegable */}
-            <div
-                className={`
-                    fixed top-0 left-0 h-full w-64 bg-gray-100 shadow-lg 
-                    transition-transform duration-300 ease-in-out menu-container
-                    ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-                `}
-            >
-                <ul className="flex flex-col mt-16 p-4 text-xl">
-                    <p className="text-gray-500 font-bold">Menú principal</p>
-                    {categorias.map((categoria, index) => (
-                        <li
-                            key={index}
-                            className="flex hover:bg-gray-200 p-2 rounded cursor-pointer gap-2"
-                            onClick={() => {
-                                setCategoriaSeleccionada(categoria);
-                                setIsOpen(false);
-                            }}
-                        >
-                            {categoria === "Todos los platillos" && <IoHomeOutline className="self-center" />}
-                            {categoria}
-                        </li>
-                    ))}
-                </ul>
-            </div>
-
-            {/* Botón flotante del carrito */}
-            <button
-                className="fixed bottom-10 right-4 bg-green-500 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-green-600"
-                onClick={() => setCarritoModalOpen(true)}
-            >
-                <FaShoppingCart className="text-xl" />
-                {carrito.length > 0 && (
-                    <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                        {carrito.length}
-                    </span>
-                )}
-            </button>
 
             {/* Modal del carrito */}
             {carritoModalOpen && (
@@ -1328,11 +1509,19 @@ export default function MenuCliente() {
                         }
                     }}
                 >
-                    <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
-                        <h2 className="text-xl font-bold mb-4 text-center">Total de la Orden</h2>
-                        <div className="flex justify-between gap-2">
+                    <div className="bg-white rounded-2xl shadow-2xl border-2 border-green-200 w-full max-w-md mx-4 p-8 relative">
+                        <div className="flex justify-center mb-4">
+                            <div className="bg-gradient-to-r from-green-400 to-emerald-400 text-white p-3 rounded-full shadow-lg">
+                                <FaShoppingCart className="text-3xl" />
+                            </div>
+                        </div>
+                        <h2 className="text-2xl text-center font-bold text-green-700 mb-2">Total de la Orden</h2>
+                        <p className="text-center text-gray-600 mb-4">
+                            Revisa el total y confirma el pago con el código de seguridad.
+                        </p>
+                        <div className="flex justify-between gap-2 mb-4">
                             <button 
-                                className={`flex items-center justify-center border-1 w-5/12 h-10 rounded-md transition-colors ${
+                                className={`flex items-center justify-center border w-5/12 h-10 rounded-md transition-colors ${
                                     metodoPago === 'efectivo' 
                                         ? 'bg-green-400 text-white border-green-400' 
                                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -1344,7 +1533,7 @@ export default function MenuCliente() {
                                 Efectivo
                             </button>
                             <button 
-                                className={`flex items-center justify-center border-1 w-5/12 h-10 rounded-md transition-colors ${
+                                className={`flex items-center justify-center border w-5/12 h-10 rounded-md transition-colors ${
                                     metodoPago === 'tarjeta' 
                                         ? 'bg-green-400 text-white border-green-400' 
                                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -1356,16 +1545,15 @@ export default function MenuCliente() {
                                 Tarjeta
                             </button>
                         </div>
-                        <p className="text-lg text-center mb-4 pt-4">
-                            El total de tus pedidos es: 
-                            <span className="font-bold">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 flex flex-col items-center">
+                            <span className="text-lg text-green-700 font-bold">Total a pagar</span>
+                            <span className="text-3xl font-extrabold text-green-600 mt-2">
                                 ${parseFloat(totalPedidos).toFixed(2)}
                             </span>
-                        </p>
-                        <p className="text-center text-gray-600 mb-4">
-                            Método de pago: <span className="font-semibold capitalize">{metodoPago}</span>
-                        </p>
-                        
+                            <span className="text-sm text-gray-600 mt-2">
+                                Método de pago: <span className="font-semibold capitalize">{metodoPago}</span>
+                            </span>
+                        </div>
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
                                 Código de confirmación
@@ -1385,7 +1573,6 @@ export default function MenuCliente() {
                                 disabled={isProcessingPayment}
                             />
                         </div>
-
                         {mensajeError && (
                             <div className={`text-sm font-bold text-center mb-4 p-3 rounded-lg ${
                                 mensajeError.includes('exitosamente') 
@@ -1395,9 +1582,8 @@ export default function MenuCliente() {
                                 {mensajeError}
                             </div>
                         )}
-
                         <button
-                            className={`w-full py-2 rounded-lg transition-colors ${
+                            className={`w-full py-2 rounded-lg transition-colors font-bold text-lg ${
                                 isProcessingPayment 
                                     ? 'bg-gray-400 cursor-not-allowed' 
                                     : 'bg-green-500 hover:bg-green-600'
@@ -1407,7 +1593,6 @@ export default function MenuCliente() {
                         >
                             {isProcessingPayment ? 'Procesando...' : 'Confirmar Pago'}
                         </button>
-
                         {mensajeError && !mensajeError.includes('exitosamente') && (
                             <button
                                 className="w-full py-2 rounded-lg mt-2 bg-gray-500 hover:bg-gray-600 text-white"
@@ -1421,7 +1606,7 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal de producto */}
+            {/* Modal del producto */}
             {modalOpen && productoSeleccionado && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-50"
@@ -1505,106 +1690,7 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Card Section */}
-            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12">
-                {productosFiltrados
-                    .sort((a, b) => {
-                        const ordenA = categoriaOrden[a.categoria] ?? Number.MAX_SAFE_INTEGER;
-                        const ordenB = categoriaOrden[b.categoria] ?? Number.MAX_SAFE_INTEGER;
-                        return ordenA - ordenB;
-                    })
-                    .map((producto) => (
-                        <div
-                            key={producto.id}
-                            className="rounded-lg shadow-lg flex flex-col bg-white"
-                        >
-                            <div className="w-full h-48">
-                                <Image
-                                    src={producto.imagen}
-                                    alt={`Imagen de ${producto.nombre}`}
-                                    className="rounded-t-lg w-full h-full object-cover"
-                                    width={300}
-                                    height={200}
-                                />
-                            </div>
-
-                            <div className="p-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-bold text-xl">{producto.nombre}</h3>
-                                    <p className="text-xl text-green-500 font-bold">
-                                        ${producto.precio.toFixed(2)}
-                                    </p>
-                                </div>
-                                <p className="text-gray-500 mb-4 line-clamp-2 min-h-[3rem]">
-                                    {producto.descripcion.length > 80
-                                        ? `${producto.descripcion.slice(0, 80)}...`
-                                        : producto.descripcion}
-                                </p>
-                                <div className="flex justify-between items-center">
-                                    <p className="bg-green-300 text-green-800 rounded-full px-4 py-1 text-sm">
-                                        {producto.categoria}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center justify-between mt-4">
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            className="bg-gray-300 text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-400 flex items-center justify-center cursor-pointer"
-                                            onClick={() => {
-                                                setProductosFiltrados((prevProductos) =>
-                                                    prevProductos.map((item) =>
-                                                        item.id === producto.id
-                                                            ? {
-                                                                ...item,
-                                                                cantidad: Math.max((item.cantidad || 1) - 1, 1),
-                                                            }
-                                                            : item
-                                                    )
-                                                );
-                                            }}
-                                        >
-                                            -
-                                        </button>
-                                        <span className="text-lg font-bold">{producto.cantidad || 1}</span>
-                                        <button
-                                            className="bg-gray-300 text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-400 flex items-center justify-center cursor-pointer"
-                                            onClick={() => {
-                                                setProductosFiltrados((prevProductos) =>
-                                                    prevProductos.map((item) =>
-                                                        item.id === producto.id
-                                                            ? {
-                                                                ...item,
-                                                                cantidad: (item.cantidad || 1) + 1,
-                                                            }
-                                                            : item
-                                                    )
-                                                );
-                                            }}
-                                        >
-                                            +
-                                        </button>
-                                    </div>
-                                    <button
-                                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm cursor-pointer"
-                                        onClick={() => agregarAlCarrito(producto)}
-                                    >
-                                        Agregar
-                                    </button>
-                                </div>
-
-                                <div className="mt-4">
-                                    <button
-                                        className=" flex gap-4 items-center justify-center bg-green-500 text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full"
-                                        onClick={() => openModal(producto)}
-                                    >
-                                        <FaRegEye className="h-[20px] w-[20px]" />Personalizar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-            </section>
-
+            {/* TicketModal */}
             <TicketModal
                 isOpen={showTicketModal}
                 onClose={() => {
@@ -1613,6 +1699,13 @@ export default function MenuCliente() {
                 }}
                 orderUuid={completedOrderUuid}
             />
+
+            {/* Estilos extra para animaciones */}
+            <style jsx>{`
+                .delay-500 { animation-delay: 500ms; }
+                .delay-1000 { animation-delay: 1000ms; }
+                .delay-1500 { animation-delay: 1500ms; }
+            `}</style>
         </section>
     );
 }
