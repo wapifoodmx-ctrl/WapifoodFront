@@ -383,6 +383,28 @@ export default function MenuCliente() {
         );
     }, [categoriaSeleccionada, productos]);
 
+    // Modificar el useEffect para incluir la búsqueda
+
+    useEffect(() => {
+        // Primero filtramos por categoría
+        const filtradosPorCategoria = categoriaSeleccionada === "Todos los platillos"
+            ? productos
+            : productos.filter(producto => producto.categoria === categoriaSeleccionada);
+        
+        // Luego filtramos por término de búsqueda si existe
+        if (busqueda.trim() !== "") {
+            const terminoBusqueda = busqueda.toLowerCase().trim();
+            const resultadosFiltrados = filtradosPorCategoria.filter(producto => 
+                (producto.nombre || producto.name || "").toLowerCase().includes(terminoBusqueda) || 
+                (producto.descripcion || producto.description || "").toLowerCase().includes(terminoBusqueda) ||
+                (producto.categoria || "").toLowerCase().includes(terminoBusqueda)
+            );
+            setProductosFiltrados(resultadosFiltrados);
+        } else {
+            setProductosFiltrados(filtradosPorCategoria);
+        }
+    }, [categoriaSeleccionada, productos, busqueda]);
+
     // Función para manejar el login
     const handleLogin = async (values, { setSubmitting }) => {
         setServerError('');
@@ -951,7 +973,7 @@ export default function MenuCliente() {
                                                 {producto.cantidad || 1}
                                             </span>
                                             <button
-                                                className="w-8 h-8 bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 rounded-lg flex items-center justify-center font-bold transition-colors border border-green-200"
+                                                className="w-8 h-8 bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 rounded-lg flex items-center justify-center font-bold transition-colores border border-green-200"
                                                 onClick={() => {
                                                     setProductosFiltrados((prevProductos) =>
                                                         prevProductos.map((item) =>
@@ -1274,7 +1296,7 @@ export default function MenuCliente() {
                                     
                                     <div className="flex gap-3">
                                         <button
-                                            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colores"
                                             onClick={() => {
                                                 setModalCambioMesaOpen(false);
                                                 setCodigoCambioMesa('');
@@ -1340,7 +1362,7 @@ export default function MenuCliente() {
                                 </h2>
                                 <button
                                     onClick={() => setCarritoModalOpen(false)}
-                                    className="text-white hover:text-gray-200 transition-colors"
+                                    className="text-white hover:text-gray-200 transition-colores"
                                 >
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
