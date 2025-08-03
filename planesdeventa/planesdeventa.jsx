@@ -7,7 +7,7 @@ import { HiSparkles } from "react-icons/hi";
 import Image from "next/image";
 import Ticket from "@/pages/assets/images/Ticket.png";
 import Cocina from "@/pages/assets/images/Cocina.png";
-import Menu1 from "@/pages/assets/images/Menu1.png";
+import Menu2 from "@/pages/assets/images/Menu2.png";
 import Pntoventa from "@/pages/assets/images/Pntoventa.png";
 import Tickets1 from "@/pages/assets/images/Tickets1.png";
 import Creditos from "@/components/Creditos";
@@ -37,7 +37,7 @@ export default function PlanDeVentas() {
                 "Recibe ordenes desde la app directo a tu cocina",
                 "Opción de ¡más vendidos!",
             ],
-            image: Menu1,
+            image: Menu2,
         },
         {
             id: 3,
