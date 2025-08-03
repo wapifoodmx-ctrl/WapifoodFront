@@ -51,48 +51,36 @@ export default function MenuCliente() {
     const [modalTotalOpen, setModalTotalOpen] = useState(false);
     const [totalPedidos, setTotalPedidos] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [busqueda, setBusqueda] = useState(""); // <-- Agrega esto
-
-    
-    // Estados para la modal de login
+    const [busqueda, setBusqueda] = useState(""); 
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-    // Estados nuevos para las funcionalidades de pntoventa
     const [ordenActiva, setOrdenActiva] = useState(null);
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
     const [totalFinal, setTotalFinal] = useState(0);
     const [metodoPago, setMetodoPago] = useState('efectivo');
     const [codigoConfirmacion, setCodigoConfirmacion] = useState('');
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
-    // Estados para mesas
     const [numeroMesa, setNumeroMesa] = useState('');
     const [mesas, setMesas] = useState([]);
     const [modalMesaOpen, setModalMesaOpen] = useState(false);
     const [loadingMesas, setLoadingMesas] = useState(false);
-
-    // Nuevos estados para cambio de mesa
     const [modalCambioMesaOpen, setModalCambioMesaOpen] = useState(false);
     const [codigoCambioMesa, setCodigoCambioMesa] = useState('');
     const [errorCodigoMesa, setErrorCodigoMesa] = useState('');
     const [procesandoCambioMesa, setProcesandoCambioMesa] = useState(false);
-
-    // Estados para el TicketModal
     const [showTicketModal, setShowTicketModal] = useState(false);
     const [completedOrderUuid, setCompletedOrderUuid] = useState(null);
-
-    // Estado para el modal de advertencia de orden activa
     const [modalOrdenActivaOpen, setModalOrdenActivaOpen] = useState(false);
+    const [showCancelledOrderModal, setShowCancelledOrderModal] = useState(false);
+    const [subscriptionError, setSubscriptionError] = useState(false);
+    const [redirectCountdown, setRedirectCountdown] = useState(10);
 
-    // Mock para establecer permisos de ticket automáticamente
     useEffect(() => {
         localStorage.setItem('tickets', 'true');
     }, []);
 
-    // Función para seleccionar mesa
     const seleccionarMesa = async (numeroMesaSeleccionada) => {
         if (numeroMesaSeleccionada && numeroMesaSeleccionada !== '') {
             const mesaString = String(numeroMesaSeleccionada).trim();
@@ -113,9 +101,7 @@ export default function MenuCliente() {
         }
     };
 
-    // Función modificada para manejar el click en el número de mesa
     const handleClickMesa = () => {
-        // Verificar si hay una orden activa
         if (ordenActiva && ordenActiva.order_uuid) {
             setModalOrdenActivaOpen(true);
             return;
@@ -126,10 +112,8 @@ export default function MenuCliente() {
         setErrorCodigoMesa('');
     };
 
-    // Nueva función para cambiar de mesa
     const confirmarCambioMesa = async () => {
         try {
-            // Obtener el código de confirmación de la API
             const codigoAPI = await getCodigoConfirmacion();
             const codigoEsperado = codigoAPI.codigo_confirmacion;
             
@@ -159,10 +143,8 @@ export default function MenuCliente() {
         }
     };
 
-    // Nueva función para cerrar sesión
     const cerrarSesion = async () => {
         try {
-            // Obtener el código de confirmación de la API
             const codigoAPI = await getCodigoConfirmacion();
             const codigoEsperado = codigoAPI.codigo_confirmacion;
             
@@ -174,22 +156,18 @@ export default function MenuCliente() {
             setProcesandoCambioMesa(true);
             setErrorCodigoMesa('');
 
-            // Cambiar mesa a "Libre" si existe
             if (numeroMesa) {
                 await updateTableStatus(parseInt(numeroMesa), 'Libre');
             }
 
-            // Limpiar localStorage
             localStorage.removeItem('token');
             localStorage.removeItem('numeroMesa');
             localStorage.removeItem("carrito1");
             localStorage.removeItem("historialPedidos1");
             localStorage.removeItem("ordenActiva1");
 
-            // Limpiar sessionStorage también por si acaso
             sessionStorage.removeItem('token');
 
-            // Resetear estados
             setNumeroMesa('');
             setCarrito([]);
             setHistorialPedidos([]);
@@ -198,7 +176,6 @@ export default function MenuCliente() {
             setModalCambioMesaOpen(false);
             setIsAuthenticated(false);
             
-            // Mostrar modal de login
             setLoginModalOpen(true);
 
         } catch (error) {
@@ -209,9 +186,8 @@ export default function MenuCliente() {
         }
     };
 
-    // Verificar token al cargar el componente
     useEffect(() => {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         const mesaGuardada = localStorage.getItem('numeroMesa');
         
         if (!token) {
@@ -225,19 +201,29 @@ export default function MenuCliente() {
         }
     }, []);
 
-    // Verificar si necesita mostrar modal de mesa después de autenticarse
     useEffect(() => {
         if (isAuthenticated && !numeroMesa) {
             cargarMesas();
         }
     }, [isAuthenticated, numeroMesa]);
 
-    // Función para cargar las mesas disponibles
     const cargarMesas = async () => {
         try {
             setLoadingMesas(true);
+            setSubscriptionError(false);
+            setRedirectCountdown(10);
             
             const mesasData = await getTables();
+            
+            if (mesasData.error && mesasData.status === 403) {
+                console.log('Error 403 detectado - Suscripción requerida');
+                setSubscriptionError(true);
+                setMesas([]);
+                setModalMesaOpen(true);
+                setMensajeError('');
+                return;
+            }
+            
             let mesasArray = [];
             
             if (mesasData && mesasData.table_status && typeof mesasData.table_status === 'object') {
@@ -270,6 +256,15 @@ export default function MenuCliente() {
             
         } catch (error) {
             console.error('Error al cargar las mesas:', error);
+            
+            if (error.message && (error.message.includes('403') || error.message.includes('Favor de renovar'))) {
+                setSubscriptionError(true);
+                setMesas([]);
+                setModalMesaOpen(true);
+                setMensajeError('');
+                return;
+            }
+            
             setMensajeError(`Error al cargar las mesas: ${error.message}`);
             
             const mesasDefault = Array.from({ length: 25 }, (_, index) => ({
@@ -285,7 +280,27 @@ export default function MenuCliente() {
         }
     };
 
-    // Recuperar datos del localStorage al cargar la página
+    useEffect(() => {
+        let interval;
+        if (subscriptionError && redirectCountdown > 0) {
+            interval = setInterval(() => {
+                setRedirectCountdown(prev => prev - 1);
+            }, 1000);
+        } else if (subscriptionError && redirectCountdown === 0) {
+            router.push('/payments');
+        }
+        
+        return () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+        };
+    }, [subscriptionError, redirectCountdown, router]);
+
+    const redirectToPayments = () => {
+        router.push('/payments');
+    };
+
     useEffect(() => {
         const carritoGuardado = localStorage.getItem("carrito1");
         const historialGuardado = localStorage.getItem("historialPedidos1");
@@ -306,7 +321,6 @@ export default function MenuCliente() {
         }
     }, []);
 
-    // Guardar datos en localStorage cuando cambien
     useEffect(() => {
         localStorage.setItem("carrito1", JSON.stringify(carrito));
     }, [carrito]);
@@ -321,7 +335,6 @@ export default function MenuCliente() {
         }
     }, [ordenActiva]);
 
-    // Función para cargar el total final usando getFinalOrder
     const cargarTotalFinal = async (uuid) => {
         try {
             const response = await getFinalOrder(uuid);
@@ -333,7 +346,6 @@ export default function MenuCliente() {
         }
     };
 
-    // Cargar productos solo después de autenticarse
     useEffect(() => {
         if (!isAuthenticated) return;
 
@@ -383,15 +395,11 @@ export default function MenuCliente() {
         );
     }, [categoriaSeleccionada, productos]);
 
-    // Modificar el useEffect para incluir la búsqueda
-
     useEffect(() => {
-        // Primero filtramos por categoría
         const filtradosPorCategoria = categoriaSeleccionada === "Todos los platillos"
             ? productos
             : productos.filter(producto => producto.categoria === categoriaSeleccionada);
         
-        // Luego filtramos por término de búsqueda si existe
         if (busqueda.trim() !== "") {
             const terminoBusqueda = busqueda.toLowerCase().trim();
             const resultadosFiltrados = filtradosPorCategoria.filter(producto => 
@@ -405,7 +413,6 @@ export default function MenuCliente() {
         }
     }, [categoriaSeleccionada, productos, busqueda]);
 
-    // Función para manejar el login
     const handleLogin = async (values, { setSubmitting }) => {
         setServerError('');
         setIsLoading(true);
@@ -511,7 +518,6 @@ export default function MenuCliente() {
         }, 0).toFixed(2);
     };
 
-    // Función modificada para crear/actualizar órdenes
     const realizarPedido = async () => {
         if (carrito.length === 0) {
             setMensajeError("No puedes seguir porque no hay artículos en tu carrito");
@@ -588,27 +594,21 @@ export default function MenuCliente() {
         }
     };
 
-    // Función para finalizar todas las órdenes y abrir modal
     const terminarOrden = async () => {
         if (historialPedidos.length === 0) {
             setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
             return;
         }
 
-        // Verificar si hay una orden activa para validar su estado
         if (ordenActiva && ordenActiva.order_uuid) {
             try {
-                // Hacer petición a getTicket para verificar el estado
                 const ticketData = await getTicket(ordenActiva.order_uuid);
                 
-                // Verificar si la orden está cancelada
                 if (ticketData.order_status === "Cancelado") {
-                    // Mostrar modal de orden cancelada
                     setShowCancelledOrderModal(true);
                     return;
                 }
                 
-                // Si la orden no está cancelada, continuar con el flujo normal
                 setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
                 setModalTotalOpen(true);
                 setMensajeError("");
@@ -619,20 +619,14 @@ export default function MenuCliente() {
                 return;
             }
         } else {
-            // Si no hay orden activa, proceder normalmente
             setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
             setModalTotalOpen(true);
             setMensajeError("");
         }
     };
 
-    // Agregar estado para el modal de orden cancelada
-    const [showCancelledOrderModal, setShowCancelledOrderModal] = useState(false);
-
-    // Función para limpiar todo cuando la orden esté cancelada
     const limpiarOrdenCancelada = async () => {
         try {
-            // Cambiar mesa a "NoDisponible" si existe
             if (numeroMesa) {
                 try {
                     await updateTableStatus(parseInt(numeroMesa), 'NoDisponible');
@@ -642,21 +636,17 @@ export default function MenuCliente() {
                 }
             }
             
-            // Limpiar estados
             setHistorialPedidos([]);
             setOrdenActiva(null);
             setTotalFinal(0);
             setCarrito([]);
             
-            // Limpiar localStorage específico del menú cliente
             localStorage.removeItem("ordenActiva1");
             localStorage.removeItem("historialPedidos1");
             localStorage.removeItem("carrito1");
             
-            // Cerrar modal
             setShowCancelledOrderModal(false);
             
-            // Mensaje de confirmación
             setMensajeError("Los datos de la orden cancelada han sido limpiados.");
             setTimeout(() => {
                 setMensajeError("");
@@ -671,7 +661,6 @@ export default function MenuCliente() {
         }
     };
 
-    // Nueva función confirmarPago con TicketModal - MODIFICADA para mantener mesa
     const confirmarPago = async () => {
         if (!ordenActiva || !ordenActiva.order_uuid) {
             setMensajeError("No hay una orden activa para finalizar.");
@@ -682,7 +671,6 @@ export default function MenuCliente() {
             return;
         }
 
-        // Validar código de confirmación con la API
         try {
             const codigoAPI = await getCodigoConfirmacion();
             const codigoEsperado = codigoAPI.codigo_confirmacion;
@@ -765,13 +753,6 @@ export default function MenuCliente() {
 
     const categorias = ["Todos los platillos", ...new Set(productos.map(p => p.categoria))];
 
-    // MODIFICACIÓN VISUAL: Remodelación con referencia a Punto de Venta
-    // Cambios principales:
-    // - Uso de gradientes verdes y sombras suaves
-    // - Bordes redondeados y transiciones
-    // - Mejor contraste y jerarquía visual
-    // - Botones y modales con estilos similares a pntoventa
-
     if (loading && isAuthenticated) {
         return (
             <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
@@ -782,7 +763,6 @@ export default function MenuCliente() {
 
     return (
         <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 relative">
-            {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-20 left-10 w-32 h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>
                 <div className="absolute top-40 right-20 w-40 h-40 bg-emerald-100 rounded-full opacity-25 blur-xl animate-pulse delay-1000"></div>
@@ -790,7 +770,6 @@ export default function MenuCliente() {
                 <div className="absolute bottom-20 right-10 w-36 h-36 bg-green-200 rounded-full opacity-15 blur-2xl animate-pulse delay-1500"></div>
             </div>
 
-            {/* Header */}
             <header className="relative z-10">
                 <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
@@ -827,7 +806,6 @@ export default function MenuCliente() {
                 </nav>
             </header>
 
-            {/* Menú desplegable remodelado */}
             <div
                 className={`
                     fixed top-0 left-0 h-full w-64 bg-gradient-to-br from-green-100 to-emerald-100 shadow-2xl border-r border-green-200
@@ -853,7 +831,6 @@ export default function MenuCliente() {
                 </ul>
             </div>
 
-            {/* Barra de búsqueda remodelada */}
             <div className="max-w-4xl mx-auto px-4 py-6 z-10 relative">
                 <div className="relative">
                     <input
@@ -884,7 +861,6 @@ export default function MenuCliente() {
                 )}
             </div>
 
-            {/* Botón flotante del carrito remodelado */}
             <button
                 className="fixed bottom-10 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
                 onClick={() => setCarritoModalOpen(true)}
@@ -897,7 +873,6 @@ export default function MenuCliente() {
                 )}
             </button>
 
-            {/* Grid de productos mejorado */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12 relative z-10">
                 {productosFiltrados.length > 0 ? (
                     productosFiltrados
@@ -911,7 +886,6 @@ export default function MenuCliente() {
                                 key={producto.id}
                                 className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-gray-100 overflow-hidden group"
                             >
-                                {/* Imagen del producto */}
                                 <div className="relative h-48 overflow-hidden">
                                     <Image
                                         src={producto.imagen}
@@ -920,7 +894,6 @@ export default function MenuCliente() {
                                         width={300}
                                         height={200}
                                     />
-                                    {/* Badge de estado */}
                                     {producto.status === "activo" ? (
                                         <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow">
                                             Disponible
@@ -932,14 +905,12 @@ export default function MenuCliente() {
                                             </div>
                                         </div>
                                     )}
-                                    {/* Precio flotante */}
                                     <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg">
                                         <span className="text-lg font-bold text-green-600">
                                             ${producto.precio.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </span>
                                     </div>
                                 </div>
-                                {/* Contenido del producto */}
                                 <div className="p-5">
                                     <div className="mb-3 flex justify-between items-center">
                                         <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-1">{producto.nombre}</h3>
@@ -952,7 +923,6 @@ export default function MenuCliente() {
                                             ? `${producto.descripcion.slice(0, 80)}...`
                                             : producto.descripcion}
                                     </p>
-                                    {/* Controles de cantidad y acción */}
                                     <div className="flex items-center justify-between mt-4">
                                         <div className="flex items-center gap-2">
                                             <button
@@ -1020,37 +990,6 @@ export default function MenuCliente() {
                 )}
             </section>
 
-            {/* Modal de orden cancelada */}
-            {showCancelledOrderModal && (
-                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[10000]">
-                    <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
-                        <div className="text-center">
-                            <div className="mb-4">
-                                <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <h2 className="text-xl font-bold mb-4 text-red-600">Orden Cancelada</h2>
-                            <p className="text-gray-700 mb-6">
-                                La orden ha sido cancelada desde cocina. No es posible procesar el pago.
-                                Se limpiarán todos los datos relacionados con esta orden.
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={limpiarOrdenCancelada}
-                                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                                >
-                                    Entendido
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de selección de mesa */}
             {modalMesaOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1001]">
                     <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -1059,6 +998,55 @@ export default function MenuCliente() {
                                 <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin"></div>
                                 <p className="ml-4 text-gray-600">Cargando mesas...</p>
                             </div>
+                        ) : subscriptionError ? (
+                            <>
+                                <div className='text-green-500 text-4xl flex justify-center mb-4'>
+                                    <div className='bg-green-500 text-white p-3 rounded-lg shadow-lg'>
+                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h2 className="text-2xl text-center font-bold text-green-600 mb-2">Suscripción Requerida</h2>
+                                <p className='text-center text-gray-600 mb-6'>
+                                    Favor de actualizar o realizar su pago
+                                </p>
+                                
+                                <div className="flex flex-col items-center gap-4 mb-6">
+                                    <div className="relative w-20 h-20">
+                                        <div className="w-20 h-20 rounded-full border-4 border-green-200"></div>
+                                        <div 
+                                            className="absolute inset-0 w-20 h-20 rounded-full border-4 border-green-500 border-t-transparent transition-transform duration-1000"
+                                            style={{
+                                                transform: `rotate(${(10 - redirectCountdown) * 36}deg)`,
+                                                transition: 'transform 1s linear'
+                                            }}
+                                        ></div>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className="text-2xl font-bold text-green-600">{redirectCountdown}</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-500 text-center">
+                                        Redirigiendo automáticamente en {redirectCountdown} segundos...
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        className="w-full py-3 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold shadow-lg"
+                                        onClick={redirectToPayments}
+                                    >
+                                        💳 Ir a Pagos Ahora
+                                    </button>
+                                </div>
+                                
+                                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <p className="text-xs text-green-700 text-center">
+                                        Su suscripción ha expirado o no es válida. 
+                                        Para continuar usando el sistema, debe renovar o adquirir una suscripción activa.
+                                    </p>
+                                </div>
+                            </>
                         ) : (
                             <>
                                 <div className='text-[#3fe283] text-4xl flex justify-center mb-4'>
@@ -1079,7 +1067,7 @@ export default function MenuCliente() {
                                 
                                 {mesas.length === 0 ? (
                                     <div className="text-center">
-                                        <p className="text-red-600 mb-4">No hay mesas disponibles en este momento</p>
+                                        <p className="text-green-600 mb-4">No hay mesas disponibles en este momento</p>
                                         <button
                                             className="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                                             onClick={() => setModalMesaOpen(false)}
@@ -1124,7 +1112,35 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal de Login */}
+            {showCancelledOrderModal && (
+                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[10000]">
+                    <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
+                        <div className="text-center">
+                            <div className="mb-4">
+                                <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h2 className="text-xl font-bold mb-4 text-green-600">Orden Cancelada</h2>
+                            <p className="text-gray-700 mb-6">
+                                La orden ha sido cancelada desde cocina. No es posible procesar el pago.
+                                Se limpiarán todos los datos relacionados con esta orden.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={limpiarOrdenCancelada}
+                                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                >
+                                    Entendido
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {loginModalOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1000]">
                     <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -1196,7 +1212,6 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal de advertencia de orden activa */}
             {modalOrdenActivaOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1003]">
                     <div className="bg-white p-8 rounded-2xl shadow-2xl border-2 border-green-200 w-full max-w-md mx-4">
@@ -1230,7 +1245,7 @@ export default function MenuCliente() {
                                 Entendido
                             </button>
                             <button
-                                className="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold"
+                                className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
                                 onClick={() => {
                                     setModalOrdenActivaOpen(false);
                                     terminarOrden();
@@ -1243,7 +1258,6 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal de cambio de mesa */}
             {modalCambioMesaOpen && (
                 <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1002]">
                     <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -1318,7 +1332,6 @@ export default function MenuCliente() {
                                         </button>
                                     </div>
                                     
-                                    {/* Nuevo botón de Cerrar Sesión */}
                                     <button
                                         className={`w-full py-2 px-4 rounded-lg transition-colores ${
                                             codigoCambioMesa.length === 4
@@ -1342,7 +1355,6 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal del carrito mejorada - con overflow corregido */}
             {carritoModalOpen && (
                 <div
                     className="fixed inset-0 backdrop-blur-sm bg-black/50 z-[9998] flex justify-end"
@@ -1353,7 +1365,6 @@ export default function MenuCliente() {
                     }}
                 >
                     <div className="bg-white w-96 h-screen flex flex-col shadow-2xl border-l border-gray-200">
-                        {/* Header del carrito - fijo en la parte superior */}
                         <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-2xl font-bold flex items-center gap-3">
@@ -1371,9 +1382,7 @@ export default function MenuCliente() {
                             </div>
                         </div>
 
-                        {/* Contenido desplazable */}
                         <div className="flex-1 overflow-y-auto p-6">
-                            {/* Orden activa */}
                             {ordenActiva && (
                                 <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                                     <h3 className="font-semibold text-blue-800 mb-2">Orden Activa</h3>
@@ -1383,7 +1392,6 @@ export default function MenuCliente() {
                                 </div>
                             )}
 
-                            {/* Carrito actual */}
                             {carrito.length > 0 ? (
                                 <div className="mb-6">
                                     <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -1393,7 +1401,6 @@ export default function MenuCliente() {
                                     <div className="max-h-48 overflow-y-auto space-y-3">
                                         {carrito.map((item) => (
                                             <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100 shadow-sm">
-                                                {/* contenido del item */}
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div className="flex-1">
                                                         <p className="font-bold text-green-800">{item.nombre || item.name}</p>
@@ -1466,7 +1473,6 @@ export default function MenuCliente() {
                                 </div>
                             )}
 
-                            {/* Total del carrito */}
                             {carrito.length > 0 && (
                                 <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-4 mb-6 border border-green-200">
                                     <div className="flex justify-between items-center">
@@ -1478,7 +1484,6 @@ export default function MenuCliente() {
                                 </div>
                             )}
 
-                            {/* Historial de pedidos */}
                             {historialPedidos.length > 0 && (
                                 <div className="mt-8">
                                     <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -1508,7 +1513,6 @@ export default function MenuCliente() {
                                 </div>
                             )}
 
-                            {/* Total final */}
                             {totalFinal > 0 && (
                                 <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-4 mt-4 border border-yellow-200">
                                     <div className="flex justify-between items-center">
@@ -1521,20 +1525,17 @@ export default function MenuCliente() {
                             )}
                         </div>
 
-                        {/* Área de botones - fija en la parte inferior */}
                         <div className="p-6 bg-white border-t border-gray-200">
-                            {/* Mensajes de estado */}
                             {mensajeError && (
                                 <div className={`p-4 rounded-xl mb-4 text-sm font-medium ${
                                     mensajeError.includes('exitosamente') 
                                         ? 'bg-green-100 text-green-800 border border-green-200' 
-                                        : 'bg-red-100 text-red-800 border border-red-200'
+                                        : 'bg-green-100 text-green-800 border border-green-200'
                                 }`}>
                                     {mensajeError}
                                 </div>
                             )}
 
-                            {/* Botón realizar pedido */}
                             <button
                                 className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${
                                     isCreatingOrder 
@@ -1554,7 +1555,6 @@ export default function MenuCliente() {
                                 ) : ordenActiva ? 'Agregar a la orden' : 'Realizar Pedido'}
                             </button>
 
-                            {/* Botón terminar orden */}
                             {historialPedidos.length > 0 && (
                                 <button
                                     className="w-full py-3 rounded-xl font-medium transition-all duration-200 mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg transform hover:scale-105"
@@ -1568,7 +1568,6 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal del total de pedidos mejorada */}
             {modalTotalOpen && (
                 <div
                     className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[9999]"
@@ -1580,7 +1579,6 @@ export default function MenuCliente() {
                     }}
                 >
                     <div className="bg-white rounded-2xl p-8 w-11/12 md:w-96 shadow-2xl border border-green-100 max-h-[90vh] overflow-y-auto">
-                        {/* Header */}
                         <div className="text-center mb-6">
                             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1590,7 +1588,6 @@ export default function MenuCliente() {
                             <h2 className="text-2xl font-bold text-gray-800">Confirmar Pago</h2>
                         </div>
 
-                        {/* Métodos de pago */}
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-gray-700 mb-4">Seleccionar método de pago:</h3>
                             <div className="grid grid-cols-2 gap-3">
@@ -1621,7 +1618,6 @@ export default function MenuCliente() {
                             </div>
                         </div>
 
-                        {/* Total */}
                         <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-6 mb-6 border border-green-200">
                             <div className="text-center">
                                 <p className="text-lg text-green-800 mb-1">
@@ -1636,7 +1632,6 @@ export default function MenuCliente() {
                             </div>
                         </div>
 
-                        {/* Código de confirmación */}
                         <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
                                 Código de confirmación
@@ -1657,12 +1652,11 @@ export default function MenuCliente() {
                             />
                         </div>
 
-                        {/* Mensajes de estado */}
                         {mensajeError && (
                             <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${
                                 mensajeError.includes('exitosamente') 
                                     ? 'bg-green-100 text-green-800 border border-green-200' 
-                                    : 'bg-red-100 text-red-800 border border-red-200'
+                                    : 'bg-green-100 text-green-800 border border-green-200'
                             }`}>
                                 <div className="flex items-center gap-2">
                                     {mensajeError.includes('exitosamente') ? (
@@ -1670,7 +1664,7 @@ export default function MenuCliente() {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                                         </svg>
                                     ) : (
-                                        <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
                                     )}
@@ -1679,7 +1673,6 @@ export default function MenuCliente() {
                             </div>
                         )}
 
-                        {/* Botones de acción */}
                         <div className="space-y-3">
                             <button
                                 className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${
@@ -1700,7 +1693,6 @@ export default function MenuCliente() {
                                 ) : '💳 Confirmar Pago'}
                             </button>
 
-                            {/* Botón de cancelar/cerrar */}
                             {mensajeError && !mensajeError.includes('exitosamente') && (
                                 <button
                                     className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
@@ -1715,7 +1707,6 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* Modal del producto mejorada */}
             {modalOpen && productoSeleccionado && (
                 <div
                     className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-50"
@@ -1726,7 +1717,6 @@ export default function MenuCliente() {
                     }}
                 >
                     <div className="bg-white rounded-2xl w-11/12 md:w-96 shadow-2xl border border-green-100 max-h-[90vh] overflow-y-auto">
-                        {/* Header del modal */}
                         <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-2xl">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-xl font-bold text-white">{productoSeleccionado.nombre || productoSeleccionado.name}</h2>
@@ -1742,7 +1732,6 @@ export default function MenuCliente() {
                         </div>
 
                         <div className="p-6">
-                            {/* Imagen del producto */}
                             <div className="mb-6">
                                 <Image
                                     src={productoSeleccionado.imagen}
@@ -1753,13 +1742,11 @@ export default function MenuCliente() {
                                 />
                             </div>
 
-                            {/* Descripción */}
                             <div className="mb-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Descripción</h3>
                                 <p className="text-gray-600 leading-relaxed">{productoSeleccionado.descripcion}</p>
                             </div>
 
-                            {/* Personalización */}
                             {productoSeleccionado.ingredientes && productoSeleccionado.ingredientes.length > 0 && (
                                 <div className="mb-6">
                                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Personalizar</h3>
@@ -1774,7 +1761,6 @@ export default function MenuCliente() {
                                 </div>
                             )}
 
-                            {/* Precio */}
                             <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-4 mb-6 border border-green-200">
                                 <div className="text-center">
                                     <p className="text-lg text-green-700 mb-1">Precio:</p>
@@ -1784,7 +1770,6 @@ export default function MenuCliente() {
                                 </div>
                             </div>
 
-                            {/* Cantidad */}
                             <div className="flex items-center justify-center mb-6">
                                 <button
                                     className="w-10 h-10 bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 rounded-lg flex items-center justify-center font-bold text-xl transition-colores border border-green-200"
@@ -1811,7 +1796,6 @@ export default function MenuCliente() {
                                 </button>
                             </div>
 
-                            {/* Botón agregar */}
                             <button
                                 className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
                                 onClick={() => {
@@ -1825,7 +1809,6 @@ export default function MenuCliente() {
                 </div>
             )}
 
-            {/* TicketModal */}
             <TicketModal
                 isOpen={showTicketModal}
                 onClose={() => {
@@ -1835,11 +1818,19 @@ export default function MenuCliente() {
                 orderUuid={completedOrderUuid}
             />
 
-            {/* Estilos extra para animaciones */}
             <style jsx>{`
                 .delay-500 { animation-delay: 500ms; }
                 .delay-1000 { animation-delay: 1000ms; }
                 .delay-1500 { animation-delay: 1500ms; }
+                
+                @keyframes countdown-rotate {
+                    from {
+                        transform: rotate(0deg);
+                    }
+                    to {
+                        transform: rotate(360deg);
+                    }
+                }
             `}</style>
         </section>
     );
