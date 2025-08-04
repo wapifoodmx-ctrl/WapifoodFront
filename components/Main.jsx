@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/router'
 import Menu from '@/pages/assets/img/menu.png'
 import Menuuwu from '@/pages/assets/img/Menuuwu.png'
+import Menu2 from '@/pages/assets/images/Menu2.png'
 
 export default function Main() {
     const router = useRouter();
@@ -50,7 +51,7 @@ export default function Main() {
                 </div>
                 <div className="flex flex-col items-center justify-center">
                     <Image 
-                        src={Menu} 
+                        src={Menu2} 
                         className="hidden md:block h-[900px] w-[600px] shadow-2xl rounded-2xl border-4 border-green-200 md:h-[50%] md:w-[50%] lg:w-[100%] md:min-w-[400px] lg:min-w-[600px] transition-all duration-300 hover:scale-105"
                         alt="Imagen para pantallas grandes"
                     />
