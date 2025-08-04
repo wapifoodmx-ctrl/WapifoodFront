@@ -215,8 +215,26 @@ export default function MenuCliente() {
             
             const mesasData = await getTables();
             
+            // Guardar la respuesta para poder verificarla después
+            localStorage.setItem('lastMesasResponse', JSON.stringify(mesasData));
+            
             if (mesasData.error && mesasData.status === 403) {
                 console.log('Error 403 detectado - Suscripción requerida');
+                setSubscriptionError(true);
+                setMesas([]);
+                setModalMesaOpen(true);
+                setMensajeError('');
+                return;
+            }
+            
+            // Verificar si la respuesta es exactamente la que indica falta de función
+            if (mesasData && 
+                mesasData.max_mesas === 1 && 
+                mesasData.table_status && 
+                Object.keys(mesasData.table_status).length === 1 &&
+                mesasData.table_status["1"] === "Libre") {
+                
+                console.log('Detectado paquete básico sin función de mesas');
                 setSubscriptionError(true);
                 setMesas([]);
                 setModalMesaOpen(true);
@@ -287,7 +305,16 @@ export default function MenuCliente() {
                 setRedirectCountdown(prev => prev - 1);
             }, 1000);
         } else if (subscriptionError && redirectCountdown === 0) {
-            router.push('/payments');
+            // Verificar si debe redirigir a user o payments
+            const mesasData = JSON.parse(localStorage.getItem('lastMesasResponse') || '{}');
+            if (mesasData.max_mesas === 1 && 
+                mesasData.table_status && 
+                Object.keys(mesasData.table_status).length === 1 &&
+                mesasData.table_status["1"] === "Libre") {
+                router.push('/user');
+            } else {
+                router.push('/payments');
+            }
         }
         
         return () => {
@@ -1007,9 +1034,32 @@ export default function MenuCliente() {
                                         </svg>
                                     </div>
                                 </div>
-                                <h2 className="text-2xl text-center font-bold text-green-600 mb-2">Suscripción Requerida</h2>
+                                <h2 className="text-2xl text-center font-bold text-green-600 mb-2">
+                                    {/* Verificar qué mensaje mostrar basado en la respuesta de la API */}
+                                    {(() => {
+                                        const mesasData = JSON.parse(localStorage.getItem('lastMesasResponse') || '{}');
+                                        if (mesasData.max_mesas === 1 && 
+                                            mesasData.table_status && 
+                                            Object.keys(mesasData.table_status).length === 1 &&
+                                            mesasData.table_status["1"] === "Libre") {
+                                            return "Función No Disponible";
+                                        } else {
+                                            return "Suscripción Requerida";
+                                        }
+                                    })()}
+                                </h2>
                                 <p className='text-center text-gray-600 mb-6'>
-                                    Favor de actualizar o realizar su pago
+                                    {(() => {
+                                        const mesasData = JSON.parse(localStorage.getItem('lastMesasResponse') || '{}');
+                                        if (mesasData.max_mesas === 1 && 
+                                            mesasData.table_status && 
+                                            Object.keys(mesasData.table_status).length === 1 &&
+                                            mesasData.table_status["1"] === "Libre") {
+                                            return "Su paquete contratado no cuenta con esta función";
+                                        } else {
+                                            return "Favor de actualizar o realizar su pago";
+                                        }
+                                    })()}
                                 </p>
                                 
                                 <div className="flex flex-col items-center gap-4 mb-6">
@@ -1033,17 +1083,46 @@ export default function MenuCliente() {
 
                                 <div className="flex flex-col gap-3">
                                     <button
-                                        className="w-full py-3 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold shadow-lg"
-                                        onClick={redirectToPayments}
+                                        className="w-full py-3 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colores font-semibold shadow-lg"
+                                        onClick={() => {
+                                            const mesasData = JSON.parse(localStorage.getItem('lastMesasResponse') || '{}');
+                                            if (mesasData.max_mesas === 1 && 
+                                                mesasData.table_status && 
+                                                Object.keys(mesasData.table_status).length === 1 &&
+                                                mesasData.table_status["1"] === "Libre") {
+                                                router.push('/user');
+                                            } else {
+                                                router.push('/payments');
+                                            }
+                                        }}
                                     >
-                                        💳 Ir a Pagos Ahora
+                                        {(() => {
+                                            const mesasData = JSON.parse(localStorage.getItem('lastMesasResponse') || '{}');
+                                            if (mesasData.max_mesas === 1 && 
+                                                mesasData.table_status && 
+                                                Object.keys(mesasData.table_status).length === 1 &&
+                                                mesasData.table_status["1"] === "Libre") {
+                                                return "👤 Ir a Perfil de Usuario";
+                                            } else {
+                                                return "💳 Ir a Pagos Ahora";
+                                            }
+                                        })()}
                                     </button>
                                 </div>
                                 
                                 <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                                     <p className="text-xs text-green-700 text-center">
-                                        Su suscripción ha expirado o no es válida. 
-                                        Para continuar usando el sistema, debe renovar o adquirir una suscripción activa.
+                                        {(() => {
+                                            const mesasData = JSON.parse(localStorage.getItem('lastMesasResponse') || '{}');
+                                            if (mesasData.max_mesas === 1 && 
+                                                mesasData.table_status && 
+                                                Object.keys(mesasData.table_status).length === 1 &&
+                                                mesasData.table_status["1"] === "Libre") {
+                                                return "Su paquete actual no incluye la gestión de múltiples mesas. Para acceder a esta funcionalidad, actualice su plan desde su perfil de usuario.";
+                                            } else {
+                                                return "Su suscripción ha expirado o no es válida. Para continuar usando el sistema, debe renovar o adquirir una suscripción activa.";
+                                            }
+                                        })()}
                                     </p>
                                 </div>
                             </>
@@ -1069,7 +1148,7 @@ export default function MenuCliente() {
                                     <div className="text-center">
                                         <p className="text-green-600 mb-4">No hay mesas disponibles en este momento</p>
                                         <button
-                                            className="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                            className="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colores"
                                             onClick={() => setModalMesaOpen(false)}
                                         >
                                             Cerrar
@@ -1239,13 +1318,13 @@ export default function MenuCliente() {
                         )}
                         <div className="flex gap-3 mt-2">
                             <button
-                                className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                                className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colores font-semibold"
                                 onClick={() => setModalOrdenActivaOpen(false)}
                             >
                                 Entendido
                             </button>
                             <button
-                                className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                                className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colores font-semibold"
                                 onClick={() => {
                                     setModalOrdenActivaOpen(false);
                                     terminarOrden();
@@ -1656,6 +1735,7 @@ export default function MenuCliente() {
                             <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${
                                 mensajeError.includes('exitosamente') 
                                     ? 'bg-green-100 text-green-800 border border-green-200' 
+ 
                                     : 'bg-green-100 text-green-800 border border-green-200'
                             }`}>
                                 <div className="flex items-center gap-2">
@@ -1695,7 +1775,7 @@ export default function MenuCliente() {
 
                             {mensajeError && !mensajeError.includes('exitosamente') && (
                                 <button
-                                    className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
+                                    className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colores"
                                     onClick={() => setModalTotalOpen(false)}
                                     disabled={isProcessingPayment}
                                 >
