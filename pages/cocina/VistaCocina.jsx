@@ -29,9 +29,14 @@ export default function VistaCocina() {
     const [completedTables, setCompletedTables] = useState([]);
     const [cancelledTables, setCancelledTables] = useState([]);
     const [finishedTables, setFinishedTables] = useState([]);
-    
+
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
     const [countdown, setCountdown] = useState(10);
+
+    // Nuevos estados para la funcionalidad de mesas
+    const [unavailableTables, setUnavailableTables] = useState([]);
+    const [showReleaseModal, setShowReleaseModal] = useState(false);
+    const [selectedTableToRelease, setSelectedTableToRelease] = useState(null);
 
     const fetchTablesData = async () => {
         try {
@@ -213,6 +218,9 @@ export default function VistaCocina() {
                     type: 'unavailable'
                 }));
 
+            // Nuevo: Guardar mesas no disponibles en su propio estado
+            setUnavailableTables(unavailableTables);
+
             const allTables = [...Object.values(tableGroups), ...unavailableTables];
 
             // Ordenar por timestamp descendente (más reciente primero) y luego por número de mesa
@@ -221,14 +229,14 @@ export default function VistaCocina() {
                 if (a.isEmpty !== b.isEmpty) {
                     return a.isEmpty - b.isEmpty;
                 }
-                
+
                 // Para mesas con órdenes, ordenar por timestamp descendente (más reciente primero)
                 if (!a.isEmpty && !b.isEmpty) {
                     const dateA = new Date(a.timestamp);
                     const dateB = new Date(b.timestamp);
                     return dateB.getTime() - dateA.getTime(); // Descendente
                 }
-                
+
                 // Para mesas vacías, ordenar por número de mesa
                 return a.tableNumber - b.tableNumber;
             });
@@ -267,7 +275,7 @@ export default function VistaCocina() {
     // Agregar este nuevo useEffect para el contador
     useEffect(() => {
         let countdownInterval;
-        
+
         if (showSubscriptionModal && countdown > 0) {
             countdownInterval = setInterval(() => {
                 setCountdown((prev) => prev - 1);
@@ -288,40 +296,40 @@ export default function VistaCocina() {
         setVisibleDropdown(visibleDropdown === id ? null : id);
     };
 
-   const handleCancelProduct = async (productId) => {
-    try {
-        const product = selectedTable.products.find(p => p.id === productId);
-        if (!product) {
-            console.error('Producto no encontrado');
-            return;
+    const handleCancelProduct = async (productId) => {
+        try {
+            const product = selectedTable.products.find(p => p.id === productId);
+            if (!product) {
+                console.error('Producto no encontrado');
+                return;
+            }
+
+            const orderUuid = selectedTable.orderUuid;
+
+            await updateProductStatus(orderUuid, product.id, 'Cancelado');
+
+            // Actualiza la lista de productos localmente
+            const updatedProducts = selectedTable.products.filter(p => p.id !== productId);
+            const updatedTable = { ...selectedTable, products: updatedProducts };
+
+            setSelectedTable(updatedTable);
+
+            // Si ya no hay productos, cierra ambas modales
+            if (updatedProducts.length === 0) {
+                setIsModalOpen(false);
+                setIsTableDetailModalOpen(false);
+            } else {
+                setIsModalOpen(false);
+            }
+
+            setVisibleDropdown(null);
+            await fetchTablesData();
+            console.log('Producto cancelado exitosamente');
+        } catch (error) {
+            console.error('Error al cancelar el producto:', error);
+            alert('Error al cancelar el producto: ' + error.message);
         }
-
-        const orderUuid = selectedTable.orderUuid;
-
-        await updateProductStatus(orderUuid, product.id, 'Cancelado');
-
-        // Actualiza la lista de productos localmente
-        const updatedProducts = selectedTable.products.filter(p => p.id !== productId);
-        const updatedTable = { ...selectedTable, products: updatedProducts };
-
-        setSelectedTable(updatedTable);
-
-        // Si ya no hay productos, cierra ambas modales
-        if (updatedProducts.length === 0) {
-            setIsModalOpen(false);
-            setIsTableDetailModalOpen(false);
-        } else {
-            setIsModalOpen(false);
-        }
-
-        setVisibleDropdown(null);
-        await fetchTablesData();
-        console.log('Producto cancelado exitosamente');
-    } catch (error) {
-        console.error('Error al cancelar el producto:', error);
-        alert('Error al cancelar el producto: ' + error.message);
-    }
-};
+    };
 
     const handleCompleteOrder = async () => {
         try {
@@ -331,7 +339,7 @@ export default function VistaCocina() {
             }
 
             const activeProducts = selectedTable.products.filter(p => p.status !== 'Cancelado');
-            
+
             if (activeProducts.length === 0) {
                 alert('No hay productos activos para completar');
                 return;
@@ -341,9 +349,9 @@ export default function VistaCocina() {
 
             if (selectedTable.tableNumber === 1) {
                 console.log('Mesa 1 detectada - usando endPuntoDeVenta');
-                
+
                 const metodoPago = selectedTable.metodoPago || 'efectivo';
-                
+
                 console.log('Finalizando orden con endPuntoDeVenta:', {
                     orderUuid,
                     metodoPago,
@@ -369,7 +377,7 @@ export default function VistaCocina() {
                 console.log('Orden finalizada exitosamente con endPuntoDeVenta');
             } else {
                 console.log('Mesa normal - usando updateProductStatus');
-                
+
                 const productIds = activeProducts.map(product => product.id);
 
                 await updateProductStatus(orderUuid, productIds, 'Preparado');
@@ -395,7 +403,7 @@ export default function VistaCocina() {
 
             setActiveModal(null);
             setIsTableDetailModalOpen(false);
-            
+
         } catch (error) {
             console.error('Error al completar la orden:', error);
             alert('Error al completar la orden: ' + error.message);
@@ -440,6 +448,33 @@ export default function VistaCocina() {
         }
     };
 
+    // Nuevas funciones para liberar mesas
+    const handleReleaseTable = (tableNumber) => {
+        setSelectedTableToRelease(tableNumber);
+        setShowReleaseModal(true);
+    };
+
+    const confirmReleaseTable = async () => {
+        try {
+            // Aquí puedes agregar la lógica para liberar la mesa llamando a una API
+            console.log(`Liberando mesa ${selectedTableToRelease}`);
+
+            // Por ahora solo actualizamos los datos
+            await fetchTablesData();
+
+            setShowReleaseModal(false);
+            setSelectedTableToRelease(null);
+        } catch (error) {
+            console.error('Error al liberar la mesa:', error);
+            alert('Error al liberar la mesa');
+        }
+    };
+
+    const cancelReleaseTable = () => {
+        setShowReleaseModal(false);
+        setSelectedTableToRelease(null);
+    };
+
     const openTableDetail = (table) => {
         setSelectedTable(table);
         setIsTableDetailModalOpen(true);
@@ -468,7 +503,7 @@ export default function VistaCocina() {
                         <div className="bg-white rounded-lg p-6 max-w-md mx-4">
                             <h2 className="text-xl font-bold mb-4 text-red-600">Suscripción Requerida</h2>
                             <p className="text-gray-700 mb-4">
-                                Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
+                                Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad.
                                 Por favor, renueva tu suscripción para continuar.
                             </p>
                             <div className="text-center mb-6">
@@ -482,6 +517,32 @@ export default function VistaCocina() {
                                     className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                                 >
                                     Ir a Pagos Ahora
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal para liberar mesa */}
+                {showReleaseModal && (
+                    <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+                            <h2 className="text-xl font-bold mb-4 text-gray-800">Liberar Mesa</h2>
+                            <p className="text-gray-700 mb-6">
+                                ¿Seguro qué quieres liberar la mesa {selectedTableToRelease}?
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={confirmReleaseTable}
+                                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                >
+                                    Sí
+                                </button>
+                                <button
+                                    onClick={cancelReleaseTable}
+                                    className="flex-1 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                                >
+                                    No
                                 </button>
                             </div>
                         </div>
@@ -534,6 +595,13 @@ export default function VistaCocina() {
                         onClick={() => setView("cancelled")}
                     >
                         Comandas Canceladas
+                    </button>
+                    <button
+                        className={`px-4 py-2 cursor-pointer ${view === "tables" ? "border-b-2 border-green-600 font-bold" : ""
+                            }`}
+                        onClick={() => setView("tables")}
+                    >
+                        Mesas
                     </button>
                 </div>
 
@@ -631,6 +699,38 @@ export default function VistaCocina() {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Nueva vista de Mesas */}
+                    {view === "tables" && (
+                        <div>
+                            <p className="text-lg font-bold mb-4">Mesas No Disponibles:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                {unavailableTables.length === 0 ? (
+                                    <p className="text-gray-500 text-center col-span-full">No hay mesas no disponibles</p>
+                                ) : (
+                                    unavailableTables.map((table) => (
+                                        <div
+                                            key={`unavailable-table-${table.tableNumber}`}
+                                            className="bg-white border-l-green-500 border-l-5 shadow-md rounded-lg p-4 flex flex-col justify-between"
+                                        >
+                                            <div className="flex items-center mb-4">
+                                                <MdTableBar className="text-xl text-green-500 mr-2" />
+                                                <p className="font-bold text-lg">Mesa {table.tableNumber}</p>
+                                                <GoDotFill className="text-green-500 mx-1 text-sm" />
+                                                
+                                            </div>
+                                            <button
+                                                onClick={() => handleReleaseTable(table.tableNumber)}
+                                                className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
+                                            >
+                                                Liberar
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}
@@ -746,7 +846,7 @@ export default function VistaCocina() {
                                                                 <div className="flex justify-between items-center">
                                                                     <p className={`font-semibold text-xs truncate pr-1 ${table.products[0].status === 'Cancelado' ? 'line-through text-red-500' : ''
                                                                         }`}>
-                                                                    {table.products[0].name}
+                                                                        {table.products[0].name}
                                                                     </p>
                                                                     <span className="bg-white px-1.5 py-0.5 rounded text-xs font-semibold">
                                                                         X{table.products[0].quantity}
