@@ -76,10 +76,221 @@ export default function MenuCliente() {
     const [showCancelledOrderModal, setShowCancelledOrderModal] = useState(false);
     const [subscriptionError, setSubscriptionError] = useState(false);
     const [redirectCountdown, setRedirectCountdown] = useState(10);
+    const [modalProductosCanceladosOpen, setModalProductosCanceladosOpen] = useState(false);
+    const [productosCancelados, setProductosCancelados] = useState([]);
 
     useEffect(() => {
         localStorage.setItem('tickets', 'true');
     }, []);
+
+    // Función actualizada para monitorear tanto el estado de la mesa como la orden cada 45 segundos
+    const monitorearEstadoMesaYOrden = async () => {
+        if (!numeroMesa) return;
+
+        try {
+            // 1. Verificar estado de la mesa
+            const mesasData = await getTables();
+            
+            // Verificar si hay errores de suscripción
+            if (mesasData.error && mesasData.status === 403) {
+                return;
+            }
+            
+            // Verificar si es respuesta de paquete básico
+            if (mesasData && 
+                mesasData.max_mesas === 1 && 
+                mesasData.table_status && 
+                Object.keys(mesasData.table_status).length === 1 &&
+                mesasData.table_status["1"] === "Libre") {
+                return;
+            }
+            
+            // Verificar el estado actual de la mesa seleccionada
+            if (mesasData && mesasData.table_status && typeof mesasData.table_status === 'object') {
+                const estadoMesaActual = mesasData.table_status[numeroMesa];
+                
+                // Si la mesa cambió a "Libre", significa que fue liberada desde otra vista
+                if (estadoMesaActual === 'Libre') {
+                    console.log(`Mesa ${numeroMesa} fue liberada desde otra vista. Limpiando datos locales...`);
+                    
+                    // Limpiar localStorage
+                    localStorage.removeItem('numeroMesa');
+                    localStorage.removeItem("carrito1");
+                    localStorage.removeItem("historialPedidos1");
+                    localStorage.removeItem("ordenActiva1");
+                    localStorage.removeItem("productosCanceladosSnapshot1"); // Limpiar snapshot también
+                    
+                    // Limpiar estados
+                    setNumeroMesa('');
+                    setCarrito([]);
+                    setHistorialPedidos([]);
+                    setOrdenActiva(null);
+                    setTotalFinal(0);
+                    
+                    // Mostrar mensaje informativo
+                    setMensajeError("La mesa fue liberada desde otro dispositivo. Por favor, selecciona una nueva mesa.");
+                    
+                    // Abrir modal para seleccionar nueva mesa
+                    setTimeout(() => {
+                        cargarMesas();
+                        setMensajeError("");
+                    }, 2000);
+                    
+                    return; // Salir de la función si la mesa fue liberada
+                }
+            }
+
+            // 2. Verificar estado de la orden (solo si existe UUID) - SIN CANCELAR NUNCA
+            if (ordenActiva && ordenActiva.order_uuid) {
+                try {
+                    const ticketData = await getTicket(ordenActiva.order_uuid);
+                    
+                    if (ticketData) {
+                        // *** SOLO ACTUALIZAR HISTORIAL - NUNCA CANCELAR ***
+                        if (ticketData.products && Array.isArray(ticketData.products)) {
+                            let hayProductosPreparados = false;
+                            let hayProductosPendientes = false;
+                            let hayProductosCancelados = false;
+                            
+                            // Crear historial con TODOS los productos, incluyendo cancelados
+                            const historialActualizado = ticketData.products.map(producto => {
+                                // Contar estados para mensajes informativos
+                                if (producto.order_detail_status === "Preparado") {
+                                    hayProductosPreparados = true;
+                                } else if (producto.order_detail_status === "Pendiente") {
+                                    hayProductosPendientes = true;
+                                } else if (producto.order_detail_status === "Cancelado") {
+                                    hayProductosCancelados = true;
+                                }
+
+                                return {
+                                    id_products: producto.id_orders_details,
+                                    nombre: producto.product_name,
+                                    name: producto.product_name,
+                                    cantidad: parseInt(producto.quantity),
+                                    precio: parseFloat(producto.unit_price),
+                                    price: parseFloat(producto.unit_price),
+                                    comentario: "",
+                                    ingredientesExcluidos: [],
+                                    order_id: ticketData.id_orders,
+                                    fecha_orden: ticketData.date_time,
+                                    estado: producto.order_detail_status // Estado actual del producto
+                                };
+                            });
+
+                            // *** LÓGICA DE MATCH PARA EVITAR MODALS REPETIDOS ***
+                            const productosAhoraCancelados = historialActualizado.filter(item => item.estado === 'Cancelado');
+                            
+                            // Obtener snapshot de productos cancelados previamente mostrados
+                            const snapshotKey = `productosCanceladosSnapshot1`;
+                            const snapshotGuardado = localStorage.getItem(snapshotKey);
+                            let productosCanceladosAnteriores = [];
+                            
+                            if (snapshotGuardado) {
+                                try {
+                                    productosCanceladosAnteriores = JSON.parse(snapshotGuardado);
+                                } catch (error) {
+                                    console.error('Error al parsear snapshot de productos cancelados:', error);
+                                    productosCanceladosAnteriores = [];
+                                }
+                            }
+                            
+                            // Crear lista de IDs de productos ya mostrados como cancelados
+                            const idsProductosCanceladosAnteriores = productosCanceladosAnteriores.map(p => p.id_products);
+                            
+                            // Filtrar solo los productos que son NUEVOS cancelados (no están en el snapshot)
+                            const nuevosProductosCancelados = productosAhoraCancelados.filter(
+                                producto => !idsProductosCanceladosAnteriores.includes(producto.id_products)
+                            );
+                            
+                            // Solo mostrar modal si HAY productos REALMENTE NUEVOS cancelados
+                            if (nuevosProductosCancelados.length > 0) {
+                                console.log('Nuevos productos cancelados detectados:', nuevosProductosCancelados.length);
+                                setProductosCancelados(nuevosProductosCancelados);
+                                setModalProductosCanceladosOpen(true);
+                                
+                                // Actualizar snapshot con TODOS los productos cancelados (anteriores + nuevos)
+                                localStorage.setItem(snapshotKey, JSON.stringify(productosAhoraCancelados));
+                            } else {
+                                console.log('No hay nuevos productos cancelados. Match encontrado.');
+                            }
+
+                            // Solo actualizar si hay cambios
+                            const historialAnterior = JSON.stringify(historialPedidos);
+                            const historialNuevo = JSON.stringify(historialActualizado);
+                            
+                            if (historialAnterior !== historialNuevo) {
+                                setHistorialPedidos(historialActualizado);
+                                
+                                // Actualizar el total final basándose en el total de la API
+                                const nuevoTotal = parseFloat(ticketData.total || 0);
+                                setTotalFinal(nuevoTotal);
+
+                                // Mostrar mensajes informativos solo cuando hay cambios (sin mencionar cancelación)
+                                if (hayProductosPreparados && !hayProductosCancelados) {
+                                    setMensajeError("¡Productos preparados y listos para recoger!");
+                                } else if (hayProductosPreparados) {
+                                    setMensajeError("Algunos productos están listos para recoger.");
+                                } else if (hayProductosPendientes) {
+                                    setMensajeError("Tu orden está siendo preparada en cocina.");
+                                }
+                                
+                                setTimeout(() => {
+                                    setMensajeError("");
+                                }, 5000);
+                            }
+                        }
+
+                        // Actualizar la orden activa con los datos más recientes
+                        const ordenActualizada = {
+                            ...ordenActiva,
+                            order_status: ticketData.order_status,
+                            state: ticketData.state,
+                            total: ticketData.total
+                        };
+                        
+                        setOrdenActiva(ordenActualizada);
+                        
+                        // Log para debugging
+                        console.log('Estado actual de la orden:', {
+                            order_status: ticketData.order_status,
+                            productos_total: ticketData.products?.length || 0,
+                            total: ticketData.total
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error al verificar estado de la orden:', error);
+                    // No mostrar errores al usuario para evitar interrupciones
+                }
+            }
+        } catch (error) {
+            console.error('Error al monitorear estado de mesa y orden:', error);
+            // No mostrar errores al usuario para evitar interrupciones
+        }
+    };
+
+    // useEffect para inicializar el monitoreo cuando hay una mesa seleccionada
+    useEffect(() => {
+        let intervalId;
+        
+        if (numeroMesa && isAuthenticated) {
+            // Ejecutar inmediatamente la primera vez
+            monitorearEstadoMesaYOrden();
+            
+            // Configurar intervalo de 45 segundos
+            intervalId = setInterval(monitorearEstadoMesaYOrden, 45000);
+            
+            console.log(`Iniciando monitoreo de mesa ${numeroMesa} y orden cada 45 segundos`);
+        }
+        
+        // Limpiar intervalo cuando se desmonta o cambia la mesa
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+                console.log('Deteniendo monitoreo de mesa y orden');
+            }
+        };
+    }, [numeroMesa, isAuthenticated, ordenActiva?.order_uuid]);
 
     const seleccionarMesa = async (numeroMesaSeleccionada) => {
         if (numeroMesaSeleccionada && numeroMesaSeleccionada !== '') {
@@ -652,6 +863,7 @@ export default function MenuCliente() {
         }
     };
 
+    // Limpiar snapshot cuando se termina/cancela orden
     const limpiarOrdenCancelada = async () => {
         try {
             if (numeroMesa) {
@@ -671,6 +883,7 @@ export default function MenuCliente() {
             localStorage.removeItem("ordenActiva1");
             localStorage.removeItem("historialPedidos1");
             localStorage.removeItem("carrito1");
+            localStorage.removeItem("productosCanceladosSnapshot1"); // Limpiar snapshot
             
             setShowCancelledOrderModal(false);
             
@@ -688,6 +901,7 @@ export default function MenuCliente() {
         }
     };
 
+    // También limpiar snapshot cuando se confirma el pago
     const confirmarPago = async () => {
         if (!ordenActiva || !ordenActiva.order_uuid) {
             setMensajeError("No hay una orden activa para finalizar.");
@@ -733,6 +947,7 @@ export default function MenuCliente() {
                 localStorage.removeItem("ordenActiva1");
                 localStorage.removeItem("historialPedidos1");
                 localStorage.removeItem("carrito1");
+                localStorage.removeItem("productosCanceladosSnapshot1"); // Limpiar snapshot
                 
                 setModalTotalOpen(false);
                 setMetodoPago('efectivo');
@@ -1277,7 +1492,7 @@ export default function MenuCliente() {
                                             
                                             <button
                                                 type="submit"
-                                                className="bg-[#3fe283] text-white p-2 rounded-lg hover:bg-green-600 transition-colors"
+                                                className="bg-[#3fe283] text-white p-2 rounded-lg hover:bg-green-600 transition-colores"
                                                 disabled={isSubmitting}
                                             >
                                                 Iniciar Sesión
@@ -1571,19 +1786,52 @@ export default function MenuCliente() {
                                     </h3>
                                     <div className="max-h-48 overflow-y-auto space-y-3">
                                         {historialPedidos.map((item, index) => (
-                                            <div key={index} className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200 shadow-sm">
-                                                <p className="font-bold text-yellow-800">{item.cantidad} x {item.nombre || item.name}</p>
+                                            <div key={index} className={`rounded-xl p-4 border shadow-sm ${
+                                                item.estado === 'Preparado' ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' :
+                                                item.estado === 'Cancelado' ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200' :
+                                                'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'
+                                            }`}>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <p className={`font-bold ${
+                                                        item.estado === 'Preparado' ? 'text-green-800' :
+                                                        item.estado === 'Cancelado' ? 'text-red-800' :
+                                                        'text-yellow-800'
+                                                    }`}>
+                                                        {item.cantidad} x {item.nombre || item.name}
+                                                    </p>
+                                                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                                                        item.estado === 'Preparado' ? 'bg-green-500 text-white' :
+                                                        item.estado === 'Cancelado' ? 'bg-red-500 text-white' :
+                                                        'bg-yellow-500 text-white'
+                                                    }`}>
+                                                        {item.estado === 'Preparado' ? '✅ Listo' :
+                                                         item.estado === 'Cancelado' ? '❌ Cancelado' :
+                                                         '⏱️ Pendiente'}
+                                                    </span>
+                                                </div>
                                                 {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
-                                                    <p className="text-xs text-yellow-700">
+                                                    <p className={`text-xs ${
+                                                        item.estado === 'Preparado' ? 'text-green-700' :
+                                                        item.estado === 'Cancelado' ? 'text-red-700' :
+                                                        'text-yellow-700'
+                                                    }`}>
                                                         Sin: {item.ingredientesExcluidos.join(", ")}
                                                     </p>
                                                 )}
                                                 {item.comentario && (
-                                                    <p className="text-xs text-yellow-700">
+                                                    <p className={`text-xs ${
+                                                        item.estado === 'Preparado' ? 'text-green-700' :
+                                                        item.estado === 'Cancelado' ? 'text-red-700' :
+                                                        'text-yellow-700'
+                                                    }`}>
                                                         Nota: {item.comentario}
                                                     </p>
                                                 )}
-                                                <p className="text-sm text-yellow-600">
+                                                <p className={`text-sm ${
+                                                    item.estado === 'Preparado' ? 'text-green-600' :
+                                                    item.estado === 'Cancelado' ? 'text-red-600 line-through' :
+                                                    'text-yellow-600'
+                                                }`}>
                                                     ${parseFloat(item.precio || item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
                                                 </p>
                                             </div>
@@ -1699,7 +1947,7 @@ export default function MenuCliente() {
 
                         <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-6 mb-6 border border-green-200">
                             <div className="text-center">
-                                <p className="text-lg text-green-800 mb-1">
+                                <p className="text-lg text-green-700 mb-1">
                                     Total a pagar:
                                 </p>
                                 <p className="text-3xl font-bold text-green-600">
@@ -1735,7 +1983,6 @@ export default function MenuCliente() {
                             <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${
                                 mensajeError.includes('exitosamente') 
                                     ? 'bg-green-100 text-green-800 border border-green-200' 
- 
                                     : 'bg-green-100 text-green-800 border border-green-200'
                             }`}>
                                 <div className="flex items-center gap-2">
@@ -1897,6 +2144,103 @@ export default function MenuCliente() {
                 }}
                 orderUuid={completedOrderUuid}
             />
+
+            {modalProductosCanceladosOpen && (
+                <div className="fixed inset-0 backdrop-blur-sm bg-black/70 flex justify-center items-center z-[10001]">
+                    <div className="bg-white rounded-2xl p-8 w-11/12 md:w-2/3 lg:w-1/2 max-w-2xl shadow-2xl border border-red-200 max-h-[90vh] overflow-y-auto">
+                        <div className="text-center mb-6">
+                            <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                            <h2 className="text-3xl font-bold mb-2 text-red-600">¡Atención!</h2>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Productos No Disponibles</h3>
+                            <p className="text-gray-600 mb-6">
+                                Lamentamos informarte que los siguientes productos no pudieron ser preparados y han sido excluidos de tu orden:
+                            </p>
+                        </div>
+
+                        <div className="space-y-4 mb-8">
+                            {productosCancelados.map((producto, index) => (
+                                <div key={index} className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6 border-2 border-red-200 shadow-lg">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </div>
+                                                <h4 className="text-lg font-bold text-red-800">
+                                                    {producto.cantidad} x {producto.nombre}
+                                                </h4>
+                                            </div>
+                                            {producto.ingredientesExcluidos && producto.ingredientesExcluidos.length > 0 && (
+                                                <p className="text-sm text-red-700 mb-1">
+                                                    Sin: {producto.ingredientesExcluidos.join(", ")}
+                                                </p>
+                                            )}
+                                            {producto.comentario && (
+                                                <p className="text-sm text-red-700 mb-1">
+                                                    Nota: {producto.comentario}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-lg font-bold text-red-600 line-through">
+                                                ${parseFloat(producto.precio * producto.cantidad).toFixed(2)}
+                                            </p>
+                                            <p className="text-xs text-red-500">No disponible</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 mb-6">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <h4 className="text-lg font-semibold text-blue-800">¿Qué puedes hacer?</h4>
+                            </div>
+                            <ul className="text-blue-700 space-y-2">
+                                <li className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    Tu orden sigue activa y puedes agregar más productos
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    El total se ha actualizado automáticamente
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    Los productos restantes se están preparando normalmente
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div className="text-center">
+                            <button
+                                onClick={() => {
+                                    setModalProductosCanceladosOpen(false);
+                                    setProductosCancelados([]);
+                                }}
+                                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
+                            >
+                                ✓ Entendido, continuar
+                            </button>
+                        </div>
+
+                        <div className="mt-6 text-center text-sm text-gray-500">
+                            Disculpa las molestias. Nuestro equipo trabaja para ofrecerte la mejor experiencia.
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style jsx>{`
                 .delay-500 { animation-delay: 500ms; }
