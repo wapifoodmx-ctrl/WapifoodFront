@@ -325,7 +325,7 @@ export default function UserPage() {
                   <p className="text-xs text-gray-600 mb-1">Menú Digital</p>
                   {shouldShowDigitalMenu(userInfo) ? (
                     <button 
-                      onClick={() => router.push(`/webmenu/${userInfo?.user_uuid}`)}
+                      onClick={() => window.open(`/webmenu/${userInfo?.user_uuid}`, '_blank')}
                       className="text-sm font-semibold text-green-600 hover:text-emerald-700 transition-colors"
                     >
                       Ver menú

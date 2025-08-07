@@ -1,3 +1,4 @@
+import Head from "next/head";
 import Navbar from "@/dashboardComponents/navbar";
 import MenuComponentes from "@/menuComponents/menucomponentes";
 import Cards from "@/menuComponents/Cards";
@@ -182,6 +183,11 @@ export default function Menu() {
 
   // Vista principal mejorada
   return (
+    <>
+    <Head>
+                <title>Productos - WapiFood</title>
+                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+            </Head>
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       <Navbar />
       
@@ -285,17 +291,17 @@ export default function Menu() {
           from {
             opacity: 0;
             transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
+            }
+            to {
+              opacity: 1;
             transform: translateY(0);
-          }
-        }
+            }
+            }
 
-        .animate-fade-in-up {
+            .animate-fade-in-up {
           animation: fade-in-up 0.6s ease-out;
         }
-
+        
         .delay-200 {
           animation-delay: 200ms;
         }
@@ -310,16 +316,17 @@ export default function Menu() {
 
         .delay-1000 {
           animation-delay: 1000ms;
-        }
+          }
 
-        .delay-1500 {
+          .delay-1500 {
           animation-delay: 1500ms;
-        }
+          }
 
         .delay-150 {
           animation-delay: 150ms;
-        }
+          }
       `}</style>
     </div>
+          </>
   );
 }

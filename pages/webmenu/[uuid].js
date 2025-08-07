@@ -1,3 +1,4 @@
+import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { getwebMenu } from '@/useCases/getwebmenu';
@@ -134,6 +135,13 @@ export default function MenuWebDinamico() {
     }
 
     return (
+        <>
+        <Head>
+    <title>Menú - {restauranteInfo?.nombre_restaurante && esValorValido(restauranteInfo.nombre_restaurante) 
+        ? restauranteInfo.nombre_restaurante 
+        : "WapiFood"}</title>
+    <meta name="description" content="Menú digital del restaurante - Descubre nuestros deliciosos platillos" />
+</Head>
         <section className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 relative">
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
@@ -425,5 +433,6 @@ export default function MenuWebDinamico() {
                 }
             `}</style>
         </section>
+        </>
     );
 }

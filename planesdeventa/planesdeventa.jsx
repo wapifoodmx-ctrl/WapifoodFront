@@ -9,6 +9,8 @@ import Ticket from "@/pages/assets/images/Ticket.png";
 import Cocina from "@/pages/assets/images/Cocina.png";
 import Menu2 from "@/pages/assets/images/Menu2.png";
 import Pntoventa from "@/pages/assets/images/Pntoventa.png";
+import Pago from "@/pages/assets/images/Pago.png";
+import Ticket2 from "@/pages/assets/images/Tickets2.png";
 import Tickets1 from "@/pages/assets/images/Tickets1.png";
 import Creditos from "@/components/Creditos";
 import getPaymentsLink, { getAllPaymentLinks } from "@/useCases/getPaymentsLink";
@@ -26,7 +28,7 @@ export default function PlanDeVentas() {
                 "Se registran ventas y rendimiento hasta anualmente",
                 "Grafica tu rendimiento para mejor comprencion",
             ],
-            image: Cocina,
+            image: Ticket2,
         },
         {
             id: 2,
@@ -48,7 +50,7 @@ export default function PlanDeVentas() {
                 "Actualízate con la vanguardia tecnológica",
                 "Acepta cualquier forma de pago",
             ],
-            image: Tickets1,
+            image: Pago,
         },
         {
             id: 4,

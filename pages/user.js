@@ -1,7 +1,13 @@
+import Head from 'next/head';
 import UserPage from "@/user/userpage";
 
 export default function User() {
     return (
+        <>
+        <Head>
+                <title>Usuario - WapiFood</title>
+                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+            </Head>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -123,5 +129,6 @@ export default function User() {
                 }
             `}</style>
         </div>
+        </>
     );
 }

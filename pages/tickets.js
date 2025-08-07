@@ -1,8 +1,14 @@
+import Head from 'next/head';
 import Navbar from "@/dashboardComponents/navbar";
 import Ticketview from "./tickets/Ticketview";
 
 export default function Tickets() {
     return (
+        <>
+        <Head>
+                <title>Tickets - WapiFood</title>
+                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+            </Head>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Navbar fijo */}
             <Navbar />
@@ -134,5 +140,6 @@ export default function Tickets() {
                 }
             `}</style>
         </div>
+        </>
     );
 }

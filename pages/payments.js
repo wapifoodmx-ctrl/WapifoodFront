@@ -1,8 +1,15 @@
+import Head from "next/head";
 import Navbar from "@/dashboardComponents/navbar";
 import PlanDeVentas from "@/planesdeventa/planesdeventa";
 
 export default function Payments() {
     return (
+        <>
+        <Head>
+                <title>Payments
+                     - WapiFood</title>
+                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+            </Head>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Navbar fijo */}
             <Navbar />
@@ -114,5 +121,6 @@ export default function Payments() {
                 }
             `}</style>
         </div>
+        </>
     );
 }

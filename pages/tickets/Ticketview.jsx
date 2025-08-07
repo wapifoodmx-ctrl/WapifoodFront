@@ -785,9 +785,9 @@ export default function Ticketview() {
                                 {/* Información de la orden */}
                                 <div className="mb-3 space-y-1 text-xs">
                                     <div className="flex justify-between">
-                                        <span className="font-medium">Orden:</span>
+                                        <span className="font-medium">Ticket:</span>
                                         <span className="font-mono text-xs">
-                                            #{selectedTicket.order_uuid?.slice(-8)}
+                                            #{selectedTicket.ticket_number}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">

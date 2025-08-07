@@ -1,8 +1,14 @@
+import Head from 'next/head';
 import Navbar from "@/dashboardComponents/navbar";
 import { HiCheckCircle } from "react-icons/hi2";
 
 export default function Success() {
     return (
+        <>
+        <Head>
+                <title>Pago Exitoso - WapiFood</title>
+                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+            </Head>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 relative">
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -65,5 +71,6 @@ export default function Success() {
                 }
             `}</style>
         </div>
+        </>
     );
 }

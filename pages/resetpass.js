@@ -1,3 +1,4 @@
+import Head from "next/head";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/router";
@@ -84,6 +85,10 @@ export default function ResetPass() {
   if (!isValidToken) {
     return (
       <>
+      <Head>
+                <title>Reset de contraseña - WapiFood</title>
+                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+            </Head>
         <Header />
         <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50">
           <div className="relative bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-red-100 backdrop-blur-sm z-10">
