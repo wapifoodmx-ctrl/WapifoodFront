@@ -126,7 +126,8 @@ export default function Ticketview() {
                         order_uuid: order.order_uuid,
                         restaurant_name: order.restaurant_name,
                         order_status: order.order_status,
-                        metodo_pago: order.metodo_pago
+                        metodo_pago: order.metodo_pago,
+                        ticket_number: order.ticket_number // *** AGREGAR ESTA LÍNEA ***
                     }));
                     
                     // Ordenar por fecha descendente (más recientes primero)
@@ -787,7 +788,7 @@ export default function Ticketview() {
                                     <div className="flex justify-between">
                                         <span className="font-medium">Ticket:</span>
                                         <span className="font-mono text-xs">
-                                            #{selectedTicket.ticket_number}
+                                            #{selectedTicket.ticket_number || selectedTicket.id?.slice(0, 8) || 'N/A'}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">

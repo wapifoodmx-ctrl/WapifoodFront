@@ -22,9 +22,26 @@ export default function Navbar() {
     const menuRef = useRef(null);
 
     const handleLogout = () => {
-        router.push("/login");
+        // Limpiar elementos específicos del localStorage
         localStorage.removeItem('token');
+        localStorage.removeItem('numeroMesa');
+        localStorage.removeItem('carrito1');
+        localStorage.removeItem('historialPedidos1');
+        localStorage.removeItem('ordenActiva1');
+        localStorage.removeItem('productosCanceladosSnapshot1');
+        localStorage.removeItem('cocinaSwitch');
+        localStorage.removeItem('tickets');
+        localStorage.removeItem('lastMesasResponse');
+        localStorage.removeItem('carrito');
+        localStorage.removeItem('historialPedidos');
+        localStorage.removeItem('pedidosPendientes');
+        
+
+        // Limpiar elementos específicos del sessionStorage
         sessionStorage.removeItem('token');
+        
+        // Redirigir al login
+        router.push("/login");
     };
 
     const dasboard = () => router.push('/dashboard');

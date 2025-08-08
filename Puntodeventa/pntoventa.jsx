@@ -236,9 +236,9 @@ export default function Pntoventa() {
                 
                 setMensajeError(mensajeExito);
                 
-                // Mostrar ticket si está habilitado y orden finalizada
+                // *** MOSTRAR TICKET SIEMPRE SI ESTÁ HABILITADO ***
                 const ticketsEnabled = localStorage.getItem('tickets');
-                if (ticketsEnabled === 'true' && !switchEnabled) {
+                if (ticketsEnabled === 'true') {
                     setCompletedOrderUuid(response.order_uuid);
                     setShowTicketModal(true);
                 }
