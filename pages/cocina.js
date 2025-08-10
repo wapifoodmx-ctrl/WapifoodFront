@@ -43,7 +43,7 @@ export default function Cocina() {
                                             </svg>
                                         </div>
                                         <div>
-                                            <h1 className="text-3xl font-bold text-gray-800">Vista de Cocina</h1>
+                                            <h1 className="text-3xl font-bold text-gray-800">Cocina</h1>
                                             <p className="text-gray-600 mt-1">Gestiona todas las órdenes en tiempo real</p>
                                         </div>
                                     </div>
