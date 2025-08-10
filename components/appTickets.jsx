@@ -10,7 +10,7 @@ export default function AppTickets() {
                         Wapiticket para potenciar tu negocio
                     </h2>
                     <p className="text-center text-green-700 text-lg md:text-xl mt-2 mb-4 font-medium max-w-lg">
-                        Descarga nuestra app en Play Store, contrata un paquete con impresora e imprime los tickets de tus clientes. También puedes enviarlos por correo para ser más amigable con el ambiente.
+                        Descarga nuestra app en Play Store, contrata un paquete con impresora e imprime los tickets de tus clientes.
                     </p>
                     <div className="flex flex-col gap-6 w-full max-w-md my-6">
                         <a
