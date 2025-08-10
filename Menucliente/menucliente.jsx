@@ -1027,7 +1027,6 @@ export default function MenuCliente() {
                 <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
                         <div className="flex items-center">
-                            <GoChecklist size={36} className="text-yellow-300 drop-shadow-lg" />
                             <h1 className="text-3xl font-bold ml-2 text-white">WapiFood</h1>
                         </div>
                         <div className="flex items-center gap-4">

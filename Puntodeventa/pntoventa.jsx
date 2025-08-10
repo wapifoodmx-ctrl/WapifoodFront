@@ -451,7 +451,7 @@ export default function Pntoventa() {
                 {/* Botón flotante del carrito mejorado */}
                 <button
                     className="fixed bottom-8 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
-                    onClick={() => setCarritoModalOpen(true)}
+                    onClick={() => setCarritoModalOpen(!carritoModalOpen)} // Cambiar aquí para que sea toggle
                 >
                     <FaShoppingCart className="text-xl" />
                     {carrito.length > 0 && (
@@ -472,19 +472,21 @@ export default function Pntoventa() {
                         }}
                     >
                         <div className="bg-white w-96 h-full shadow-2xl overflow-y-auto border-l border-gray-200">
-                            {/* Header del carrito */}
+                            {/* Header del carrito con botón de cerrar mejorado */}
                             <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
                                 <div className="flex items-center justify-between">
                                     <h2 className="text-2xl font-bold flex items-center gap-3">
                                         <FaShoppingCart className="text-xl" />
                                         Tu Pedido
                                     </h2>
+                                    {/* Botón de cerrar mejorado */}
                                     <button
                                         onClick={() => setCarritoModalOpen(false)}
-                                        className="text-white hover:text-gray-200 transition-colors"
+                                        className="text-white hover:text-gray-200 transition-all duration-200 p-2 hover:bg-white/20 rounded-lg transform hover:scale-110"
+                                        title="Cerrar carrito"
                                     >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
                                 </div>

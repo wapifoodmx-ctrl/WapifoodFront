@@ -194,7 +194,6 @@ export default function Navbar() {
         <nav className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 w-full fixed top-0 left-0 flex justify-between h-16 z-50 shadow-xl overflow-x-hidden border-b border-green-200">
             <div className="flex w-full justify-between px-4">
                 <div className="flex items-center cursor-pointer">
-                    <GoChecklist size={36} className="text-white drop-shadow-lg" />
                     <h2 className="text-3xl font-bold ml-2 bg-gradient-to-r from-yellow-300 via-green-100 to-white bg-clip-text text-transparent hover:text-green-200 transition-colors duration-200">WapiFood</h2>
                 </div>
 
