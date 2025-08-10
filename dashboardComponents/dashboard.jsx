@@ -45,18 +45,6 @@ export default function Dashboard2() {
                                     </div>
                                 </div>
                                 
-                                {/* Indicadores rápidos */}
-                                <div className="flex items-center gap-4">
-                                   
-                                    <div className="text-sm text-gray-500">
-                                        {new Date().toLocaleDateString('es-ES', { 
-                                            weekday: 'long', 
-                                            year: 'numeric', 
-                                            month: 'long', 
-                                            day: 'numeric' 
-                                        })}
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>

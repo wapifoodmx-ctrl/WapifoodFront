@@ -69,7 +69,6 @@ export default function Populares() {
                                         {item.name}
                                         {index === 0 && (
                                             <>
-                                                <FaMoneyBillTrendUp className="text-green-500" size={24} />
                                                 <span className="text-gray-500 text-sm hidden md:block">
                                                     {"Tu producto más vendido"}
                                                 </span>
