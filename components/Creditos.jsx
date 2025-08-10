@@ -32,10 +32,6 @@ export default function Creditos() {
                 title: "Políticas de privacidad",
                 href: "#",
             },
-            cookies: {
-                title: "Cookies",
-                href: "#",
-            }
         }
     };
 

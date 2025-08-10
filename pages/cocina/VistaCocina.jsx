@@ -10,6 +10,7 @@ import getOrdersDia from "../../useCases/getOrdersDia.js";
 import { updateProductStatus } from "../../useCases/updateProductStatus.js";
 import { cancelOrder } from "../../useCases/cancelOrder.js";
 import { endPuntoDeVenta } from "../../useCases/endPuntoDeVenta.js";
+import { updateTableStatus } from "../../useCases/tablesStatus.js"; // Agregar esta importación
 import ModalCocina from "./modalCocina.jsx";
 
 export default function VistaCocina() {
@@ -37,6 +38,7 @@ export default function VistaCocina() {
     const [unavailableTables, setUnavailableTables] = useState([]);
     const [showReleaseModal, setShowReleaseModal] = useState(false);
     const [selectedTableToRelease, setSelectedTableToRelease] = useState(null);
+    const [tablesData, setTablesData] = useState(null); // Agregar este estado
 
     const fetchTablesData = async () => {
         try {
@@ -64,6 +66,9 @@ export default function VistaCocina() {
 
             console.log("Orders data:", ordersData);
             console.log("Tables data:", tablesData);
+
+            // Guardar los datos de las tablas en el estado
+            setTablesData(tablesData);
 
             const tableGroups = {};
 
@@ -456,23 +461,34 @@ export default function VistaCocina() {
 
     const confirmReleaseTable = async () => {
         try {
-            // Aquí puedes agregar la lógica para liberar la mesa llamando a una API
             console.log(`Liberando mesa ${selectedTableToRelease}`);
-
-            // Por ahora solo actualizamos los datos
+            
+            // Cambiar el estado de la mesa de "NoDisponible" a "Libre"
+            await updateTableStatus(selectedTableToRelease, 'Libre');
+            
+            console.log(`Mesa ${selectedTableToRelease} liberada exitosamente`);
+            
+            // Actualizar los datos para reflejar el cambio
             await fetchTablesData();
 
             setShowReleaseModal(false);
             setSelectedTableToRelease(null);
         } catch (error) {
             console.error('Error al liberar la mesa:', error);
-            alert('Error al liberar la mesa');
+            alert('Error al liberar la mesa: ' + error.message);
         }
     };
 
     const cancelReleaseTable = () => {
         setShowReleaseModal(false);
         setSelectedTableToRelease(null);
+    };
+
+    // Función para cerrar modal al hacer clic fuera
+    const handleModalBackdropClick = (e) => {
+        if (e.target === e.currentTarget) {
+            cancelReleaseTable();
+        }
     };
 
     const openTableDetail = (table) => {
@@ -525,7 +541,10 @@ export default function VistaCocina() {
 
                 {/* Modal para liberar mesa */}
                 {showReleaseModal && (
-                    <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+                    <div 
+                        className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50"
+                        onClick={handleModalBackdropClick}
+                    >
                         <div className="bg-white rounded-lg p-6 max-w-md mx-4">
                             <h2 className="text-xl font-bold mb-4 text-gray-800">Liberar Mesa</h2>
                             <p className="text-gray-700 mb-6">
@@ -534,13 +553,13 @@ export default function VistaCocina() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={confirmReleaseTable}
-                                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
                                 >
                                     Sí
                                 </button>
                                 <button
                                     onClick={cancelReleaseTable}
-                                    className="flex-1 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                                    className="flex-1 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
                                 >
                                     No
                                 </button>
@@ -706,31 +725,53 @@ export default function VistaCocina() {
                     {/* Nueva vista de Mesas */}
                     {view === "tables" && (
                         <div>
-                            <p className="text-lg font-bold mb-4">Mesas No Disponibles:</p>
+                            <p className="text-lg font-bold mb-4">Mesas para Liberar:</p>
                             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                                {unavailableTables.length === 0 ? (
-                                    <p className="text-gray-500 text-center col-span-full">No hay mesas no disponibles</p>
-                                ) : (
-                                    unavailableTables.map((table) => (
+                                {(() => {
+                                    // Obtener todas las mesas no disponibles y ocupadas
+                                    const allTableStatuses = Object.entries(tablesData?.table_status || {});
+                                    const filteredTables = allTableStatuses
+                                        .filter(([tableNumber, status]) => status === "NoDisponible" || status === "Ocupado")
+                                        .map(([tableNumber, status]) => ({
+                                            tableNumber: parseInt(tableNumber),
+                                            status: status,
+                                            products: [],
+                                            timestamp: new Date().toISOString(),
+                                            isEmpty: true,
+                                            type: status === "NoDisponible" ? 'unavailable' : 'occupied'
+                                        }));
+
+                                    if (filteredTables.length === 0) {
+                                        return (
+                                            <p className="text-gray-500 text-center col-span-full">No hay mesas no disponibles u ocupadas</p>
+                                        );
+                                    }
+
+                                    return filteredTables.map((table) => (
                                         <div
-                                            key={`unavailable-table-${table.tableNumber}`}
-                                            className="bg-white border-l-green-500 border-l-5 shadow-md rounded-lg p-4 flex flex-col justify-between"
+                                            key={`table-${table.tableNumber}-${table.type}`}
+                                            className={`bg-white border-l-green-500 border-l-5 shadow-md rounded-lg p-4 flex flex-col justify-between ${
+                                                table.type === 'occupied' ? 'opacity-50 cursor-not-allowed' : ''
+                                            }`}
                                         >
                                             <div className="flex items-center mb-4">
                                                 <MdTableBar className="text-xl text-green-500 mr-2" />
                                                 <p className="font-bold text-lg">Mesa {table.tableNumber}</p>
-                                                <GoDotFill className="text-green-500 mx-1 text-sm" />
-                                                
                                             </div>
                                             <button
-                                                onClick={() => handleReleaseTable(table.tableNumber)}
-                                                className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
+                                                onClick={() => table.type === 'unavailable' ? handleReleaseTable(table.tableNumber) : null}
+                                                className={`w-full px-4 py-2 rounded transition-colors ${
+                                                    table.type === 'unavailable'
+                                                        ? 'bg-green-600 text-white hover:bg-green-700'
+                                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                }`}
+                                                disabled={table.type === 'occupied'}
                                             >
-                                                Liberar
+                                                {table.type === 'unavailable' ? 'Liberar' : 'Ocupado'}
                                             </button>
                                         </div>
-                                    ))
-                                )}
+                                    ));
+                                })()}
                             </div>
                         </div>
                     )}

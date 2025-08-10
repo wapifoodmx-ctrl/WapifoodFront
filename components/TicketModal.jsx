@@ -86,8 +86,8 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                             <div className="mb-4">
                                 
                                 <div className="flex justify-between text-sm">
-                                    <span>ID:</span>
-                                    <span className="font-mono text-xs">{ticketData.order_uuid?.slice(0, 8)}...</span>
+                                    <span>Ticket</span>
+                                    <span className="font-mono text-sm">#{ticketData.ticket_number}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span>Fecha:</span>

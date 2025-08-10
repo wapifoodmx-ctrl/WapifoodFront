@@ -139,7 +139,7 @@ export default function ModalCocina({
                                                             }}
                                                             title="Cancelar producto"
                                                         >
-                                                            <BsThreeDotsVertical className="text-red-500 text-xl" />
+                                                            <FaTrashAlt className="text-red-500 text-xl" />
                                                         </button>
                                                     )}
                                                 </div>

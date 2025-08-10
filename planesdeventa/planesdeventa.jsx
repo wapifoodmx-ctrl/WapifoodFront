@@ -272,7 +272,7 @@ export default function PlanDeVentas() {
                                 >
                                     {/* Imagen */}
                                     <div className="flex-shrink-0 relative overflow-hidden md:w-1/2">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-emerald-500/20 z-10"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-br z-10"></div>
                                         <Image
                                             src={plan.image}
                                             alt={`Imagen del plan ${plan.title}`}
