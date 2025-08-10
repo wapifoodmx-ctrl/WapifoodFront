@@ -28,6 +28,8 @@ export default function Ticketview() {
     const [endDate, setEndDate] = useState(null);
     // Estados para el filtro de fechas desplegables
     const [expandedDates, setExpandedDates] = useState(new Set());
+    // Estado para el switch de filtro de órdenes (true = exitosas, false = canceladas)
+    const [showSuccessfulOrders, setShowSuccessfulOrders] = useState(true);
 
     // Función para formatear fecha a YYYY-MM-DD
     const formatDateToAPI = (date) => {
@@ -320,9 +322,19 @@ export default function Ticketview() {
             case "hoy":
             case "semana":
             case "mes":
+                // Los datos ya vienen filtrados de la API - solo mostrar finalizados
+                return tickets.filter(ticket => ticket.statusOrden === 'Finalizado');
             case "Seleccionar Fecha":
-                // Los datos ya vienen filtrados de la API
-                return tickets;
+                // Filtrar según el estado del switch
+                if (showSuccessfulOrders) {
+                    // Mostrar órdenes exitosas (PuntoDeVenta y Finalizado)
+                    return tickets.filter(ticket => 
+                        ticket.statusOrden === 'Finalizado' || ticket.statusOrden === 'PuntoDeVenta'
+                    );
+                } else {
+                    // Mostrar órdenes canceladas
+                    return tickets.filter(ticket => ticket.statusOrden === 'Cancelado');
+                }
             default:
                 return tickets;
         }
@@ -348,10 +360,7 @@ export default function Ticketview() {
     };
 
     // Obtener tickets filtrados
-    const filteredTickets = filterTicketsByDate(
-        ticketsData.filter(ticket => ticket.statusOrden === 'Finalizado'),
-        activeTab
-    );
+    const filteredTickets = filterTicketsByDate(ticketsData, activeTab);
 
     // Verificar si la pestaña actual necesita agrupación por fecha
     const shouldGroupByDate = ["semana", "mes", "Seleccionar Fecha"].includes(activeTab);
@@ -676,6 +685,47 @@ export default function Ticketview() {
                             Seleccionar Rango de Fechas
                         </h2>
 
+                        {/* Switch para filtrar por estado de órdenes */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                    <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                                        Filtro de Estado de Órdenes
+                                    </h3>
+                                    <p className="text-xs text-gray-600">
+                                        {showSuccessfulOrders 
+                                            ? "Mostrando órdenes exitosas (Finalizadas y PuntoDeVenta)"
+                                            : "Mostrando órdenes canceladas"
+                                        }
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className={`text-sm font-medium transition-colors ${
+                                        !showSuccessfulOrders ? 'text-red-600' : 'text-gray-400'
+                                    }`}>
+                                        Canceladas
+                                    </span>
+                                    <button
+                                        onClick={() => setShowSuccessfulOrders(!showSuccessfulOrders)}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                                            showSuccessfulOrders ? 'bg-green-600' : 'bg-red-500'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                showSuccessfulOrders ? 'translate-x-6' : 'translate-x-1'
+                                            }`}
+                                        />
+                                    </button>
+                                    <span className={`text-sm font-medium transition-colors ${
+                                        showSuccessfulOrders ? 'text-green-600' : 'text-gray-400'
+                                    }`}>
+                                        Exitosas
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Selector de fechas */}
                         <div className="mb-6 space-y-4">
                             <div>
@@ -718,7 +768,8 @@ export default function Ticketview() {
                                 <p className="text-sm text-green-700">
                                     <strong>Rango seleccionado:</strong><br />
                                     Desde: {formatDate(startDate)}<br />
-                                    Hasta: {formatDate(endDate)}
+                                    Hasta: {formatDate(endDate)}<br />
+                                    <strong>Estado:</strong> {showSuccessfulOrders ? 'Órdenes Exitosas' : 'Órdenes Canceladas'}
                                 </p>
                             </div>
                         )}
@@ -731,6 +782,7 @@ export default function Ticketview() {
                                     setActiveTab("hoy"); // Cambiar a otra pestaña al cancelar
                                     setStartDate(null);
                                     setEndDate(null);
+                                    setShowSuccessfulOrders(true); // Resetear el switch
                                 }}
                                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                             >
