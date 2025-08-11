@@ -14,8 +14,8 @@ import Profile from "@/pages/assets/images/Profile.jpg";
 import { useRouter } from 'next/router';
 import Navbar from "@/dashboardComponents/navbar";
 
-// Validaciones con Yup mejoradas
-const personalInfoSchema = Yup.object().shape({
+// Esquema base sin profileImage
+const baseSchema = Yup.object().shape({
   telephone: Yup.string()
     .matches(/^\d{10}$/, 'El teléfono debe tener exactamente 10 números')
     .required("Teléfono es requerido"),
@@ -26,16 +26,37 @@ const personalInfoSchema = Yup.object().shape({
       if (!value) return true;
       return /^[1-9]{4}$/.test(value);
     }),
-  profileImage: Yup.mixed()
-    .test('fileSize', 'La imagen es demasiado grande (máximo 5MB)', function(value) {
-      if (!value) return true;
-      return value.size <= 5 * 1024 * 1024; // 5MB
-    })
-    .test('fileType', 'Solo se permiten imágenes (JPG, PNG, WEBP)', function(value) {
-      if (!value) return true;
-      return ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(value.type);
-    }),
 });
+
+// Crear un esquema dinámico que incluya la validación condicional de imagen
+const createValidationSchema = (hasExistingImage) => {
+  return baseSchema.shape({
+    profileImage: hasExistingImage 
+      ? // Si ya tiene imagen, no es obligatoria
+        Yup.mixed()
+          .nullable() // Permite valores null/undefined
+          .notRequired() // Explicitly not required
+          .test('fileSize', 'La imagen es demasiado grande (máximo 25MB)', function(value) {
+            if (!value) return true;
+            return value.size <= 25 * 1024 * 1024; // 25MB
+          })
+          .test('fileType', 'Solo se permiten imágenes (JPG, PNG, WEBP)', function(value) {
+            if (!value) return true;
+            return ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(value.type);
+          })
+      : // Si no tiene imagen, es obligatoria
+        Yup.mixed()
+          .required('La imagen de perfil es obligatoria')
+          .test('fileSize', 'La imagen es demasiado grande (máximo 25MB)', function(value) {
+            if (!value) return true;
+            return value.size <= 25 * 1024 * 1024; // 25MB
+          })
+          .test('fileType', 'Solo se permiten imágenes (JPG, PNG, WEBP)', function(value) {
+            if (!value) return true;
+            return ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(value.type);
+          })
+  });
+};
 
 // Función para comprimir imagen
 const compressImage = (file, maxWidth = 800, quality = 0.8) => {
@@ -139,7 +160,7 @@ export default function UserPage() {
       let processedFile = file;
       if (file.size > 2 * 1024 * 1024) { // Si es mayor a 2MB, comprimir
         processedFile = await compressImage(file);
-0      }
+      }
 
       // Crear preview
       const reader = new FileReader();
@@ -166,10 +187,16 @@ export default function UserPage() {
         alcaldia: values.delegation,
         nombre_restaurante: values.restaurantName,
         whatsapp: values.whatsapp,
-        image: values.profileImage,
         horario: values.horario,
         codigo_confirmacion: values.confirmationCode ? parseInt(values.confirmationCode) : null,
       };
+
+      // Solo agregar imagen si realmente hay una
+      if (values.profileImage && values.profileImage instanceof File) {
+        updateData.image = values.profileImage;
+      }
+
+      console.log('Enviando datos:', updateData); // Para debug
 
       const updatedUser = await patchUserInfo(updateData);
       setUserInfo(updatedUser);
@@ -212,6 +239,16 @@ export default function UserPage() {
       </div>
     );
   }
+
+  // Verificar si el usuario ya tiene una imagen (versión más robusta)
+  const hasExistingImage = Boolean(
+    userInfo?.image_user?.url && 
+    userInfo.image_user.url.trim() !== "" && 
+    userInfo.image_user.url !== "null" && 
+    userInfo.image_user.url !== "undefined"
+  );
+
+  console.log('hasExistingImage:', hasExistingImage, 'Image URL:', userInfo?.image_user?.url); // Para debug
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
@@ -382,7 +419,7 @@ export default function UserPage() {
                   confirmationCode: getCleanNumber(userInfo?.codigo_confirmacion),
                   profileImage: null,
                 }}
-                validationSchema={personalInfoSchema}
+                validationSchema={createValidationSchema(hasExistingImage)} // Usar el esquema dinámico
                 onSubmit={handleSubmit}
                 enableReinitialize={true}
               >
@@ -532,36 +569,47 @@ export default function UserPage() {
                         <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="confirmationCode">
                           Código de confirmación
                         </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <HiOutlineCode className="text-purple-500 text-lg" />
-                          </div>
-                          <Field 
-                            type="text" 
-                            id="confirmationCode" 
-                            name="confirmationCode" 
-                            placeholder="Ej: 1234"
-                            maxLength="4"
-                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" 
-                            onInput={(e) => {
-                              e.target.value = e.target.value.replace(/[^1-9]/g, '');
-                              if (e.target.value.length > 4) {
-                                e.target.value = e.target.value.slice(0, 4);
-                              }
-                            }}
-                          />
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <HiOutlineCode className="text-purple-500 text-lg" />
                         </div>
+                        <Field 
+                          type="text" 
+                          id="confirmationCode" 
+                          name="confirmationCode" 
+                          placeholder="Ej: 1234"
+                          maxLength="4"
+                          className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" 
+                          onInput={(e) => {
+                            e.target.value = e.target.value.replace(/[^1-9]/g, '');
+                            if (e.target.value.length > 4) {
+                              e.target.value = e.target.value.slice(0, 4);
+                            }
+                          }}
+                        />
                         <ErrorMessage name="confirmationCode" component="div" className="text-red-500 text-sm mt-1" />
                         <p className="text-gray-500 text-xs mt-1">4 números del 1 al 9 (opcional)</p>
                       </div>
                       
-                      {/* Imagen de perfil MEJORADA */}
+                      {/* Imagen de perfil MEJORADA con indicador de obligatoriedad */}
                       <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="profileImage">
-                          Imagen de perfil
+                          Imagen de perfil 
+                          {!hasExistingImage && <span className="text-red-500">*</span>}
                         </label>
                         
-                        {/* Preview de imagen */}
+                        {/* Mostrar imagen actual si existe */}
+                        {hasExistingImage && !imagePreview && (
+                          <div className="mb-4 text-center">
+                            <img 
+                              src={userInfo.image_user.url} 
+                              alt="Imagen actual" 
+                              className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-gray-200"
+                            />
+                            <p className="text-sm text-gray-500 mt-2">Imagen actual</p>
+                          </div>
+                        )}
+                        
+                        {/* Preview de nueva imagen */}
                         {imagePreview && (
                           <div className="mb-4 text-center">
                             <img 
@@ -593,7 +641,10 @@ export default function UserPage() {
                         <ErrorMessage name="profileImage" component="div" className="text-red-500 text-sm mt-1" />
                         <p className="text-gray-500 text-xs mt-1">
                           Formatos soportados: JPG, PNG, WEBP. Tamaño máximo: 5MB. 
-                          La imagen se optimizará automáticamente.
+                          {hasExistingImage 
+                            ? "La imagen se optimizará automáticamente. (Opcional - ya tienes una imagen)"
+                            : "La imagen se optimizará automáticamente. (Obligatorio)"
+                          }
                         </p>
                       </div>
                     </div>
