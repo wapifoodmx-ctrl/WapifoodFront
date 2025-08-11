@@ -32,6 +32,8 @@ export default function Pntoventa() {
     const [metodoPago, setMetodoPago] = useState('efectivo');
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+    // Estado para el contador
+    const [countdown, setCountdown] = useState(10);
     
     // Estados para el TicketModal
     const [showTicketModal, setShowTicketModal] = useState(false);
@@ -97,6 +99,7 @@ export default function Pntoventa() {
     // Función para ir a la página de pagos
     const handleGoToPayments = () => {
         setShowSubscriptionModal(false);
+        setCountdown(10); // Resetear contador
         router.push('/payments');
     };
 
@@ -317,6 +320,33 @@ export default function Pntoventa() {
         setProductosFiltrados(productosFiltrados);
     }, [productos, busqueda, categoriaSeleccionada, disponibilidadSeleccionada]);
 
+    // Efecto para el contador de la modal de suscripción
+    useEffect(() => {
+        let interval = null;
+        
+        if (showSubscriptionModal && countdown > 0) {
+            interval = setInterval(() => {
+                setCountdown(prev => prev - 1);
+            }, 1000);
+        } else if (showSubscriptionModal && countdown === 0) {
+            // Cuando llegue a 0, redirigir automáticamente
+            handleGoToPayments();
+        }
+
+        return () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+        };
+    }, [showSubscriptionModal, countdown]);
+
+    // Función para resetear el contador cuando se abre la modal
+    useEffect(() => {
+        if (showSubscriptionModal) {
+            setCountdown(10);
+        }
+    }, [showSubscriptionModal]);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             <Navbar />
@@ -330,7 +360,6 @@ export default function Pntoventa() {
             </div>
 
             <section className="relative z-10 pt-4 pb-8">
-               
                 {/* Modal de orden cancelada */}
                 {showCancelledOrderModal && (
                     <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10000]">
@@ -359,10 +388,45 @@ export default function Pntoventa() {
                     </div>
                 )}
 
-                {/* Modal de suscripción */}
+                {/* Modal de suscripción con contador */}
                 {showSubscriptionModal && (
                     <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl border border-green-100">
+                            {/* Contador circular en la parte superior */}
+                            <div className="flex justify-center mb-4">
+                                <div className="relative w-16 h-16">
+                                    <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
+                                        {/* Círculo de fondo */}
+                                        <circle
+                                            cx="32"
+                                            cy="32"
+                                            r="28"
+                                            fill="none"
+                                            stroke="#e5e7eb"
+                                            strokeWidth="4"
+                                        />
+                                        {/* Círculo de progreso */}
+                                        <circle
+                                            cx="32"
+                                            cy="32"
+                                            r="28"
+                                            fill="none"
+                                            stroke="#059669"
+                                            strokeWidth="4"
+                                            strokeLinecap="round"
+                                            strokeDasharray={`${(countdown / 10) * 175.93} 175.93`}
+                                            className="transition-all duration-1000 ease-linear"
+                                        />
+                                    </svg>
+                                    {/* Número del contador */}
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <span className="text-2xl font-bold text-green-600">
+                                            {countdown}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="text-center">
                                 <div className="mb-6">
                                     <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center">
@@ -371,16 +435,28 @@ export default function Pntoventa() {
                                         </svg>
                                     </div>
                                 </div>
-                                <h2 className="text-2xl font-bold mb-4 text-red-600">Suscripción Requerida</h2>
-                                <p className="text-gray-700 mb-8 leading-relaxed">
+                                
+                                <h2 className="text-2xl font-bold mb-4 text-green-600">Suscripción Requerida</h2>
+                                
+                                <p className="text-gray-700 mb-4 leading-relaxed">
                                     Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
                                     Por favor, renueva tu suscripción para continuar.
                                 </p>
+
+                                {/* Mensaje del contador */}
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
+                                    <p className="text-green-700 text-sm text-center">
+                                        <span className="font-semibold">Redirección automática en {countdown} segundo{countdown !== 1 ? 's' : ''}</span>
+                                        <br />
+                                        Serás redirigido a la página de pagos automáticamente
+                                    </p>
+                                </div>
+
                                 <button
                                     onClick={handleGoToPayments}
                                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
                                 >
-                                    Ir a Pagos
+                                    Ir a Pagos Ahora
                                 </button>
                             </div>
                         </div>

@@ -22,6 +22,8 @@ export default function Ticketview() {
     const [ticketsData, setTicketsData] = useState([]);
     const [activeTab, setActiveTab] = useState("hoy");
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+    // Estado para el contador
+    const [countdown, setCountdown] = useState(10);
     // Estados para el modal de selección de fecha
     const [showDatePickerModal, setShowDatePickerModal] = useState(false);
     const [startDate, setStartDate] = useState(null);
@@ -188,8 +190,13 @@ export default function Ticketview() {
                 } else if (activeTab === "mes") {
                     const response = await getOrdersMes();
                     
-                    // La API de getOrdersMes devuelve directamente el array de órdenes
-                    const apiData = response;
+                    if (!response.success) {
+                        console.error("Error fetching orders:", response.error);
+                        setShowSubscriptionModal(true);
+                        return;
+                    }
+
+                    const apiData = response.data;
                     
                     // Mapear los datos de la API al formato esperado por el componente
                     const mappedTickets = apiData.map(order => ({
@@ -235,6 +242,13 @@ export default function Ticketview() {
                         
                         const response = await getOrdersFecha(fechaInicio, fechaFin);
                         
+                        // Verificar si la respuesta es válida (array vacío es válido para clientes nuevos)
+                        if (!Array.isArray(response)) {
+                            console.error("Error fetching orders:", "Invalid response format");
+                            setShowSubscriptionModal(true);
+                            return;
+                        }
+
                         // Mapear los datos de la API al formato esperado por el componente
                         const mappedTickets = response.map(order => ({
                             id: order.order_uuid,
@@ -298,8 +312,36 @@ export default function Ticketview() {
         setIsModalOpen(true);
     };
 
+    // Efecto para el contador de la modal de suscripción
+    useEffect(() => {
+        let interval = null;
+        
+        if (showSubscriptionModal && countdown > 0) {
+            interval = setInterval(() => {
+                setCountdown(prev => prev - 1);
+            }, 1000);
+        } else if (showSubscriptionModal && countdown === 0) {
+            // Cuando llegue a 0, redirigir automáticamente
+            handleGoToPayments();
+        }
+
+        return () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+        };
+    }, [showSubscriptionModal, countdown]);
+
+    // Función para resetear el contador cuando se abre la modal
+    useEffect(() => {
+        if (showSubscriptionModal) {
+            setCountdown(10);
+        }
+    }, [showSubscriptionModal]);
+
     const handleGoToPayments = () => {
         setShowSubscriptionModal(false);
+        setCountdown(10); // Resetear contador
         router.push('/payments');
     };
 
@@ -373,18 +415,66 @@ export default function Ticketview() {
             {/* Modal de suscripción */}
             {showSubscriptionModal && (
                 <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-                        <h2 className="text-xl font-bold mb-4 text-red-600">Suscripción Requerida</h2>
-                        <p className="text-gray-700 mb-6">
+                    <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-2xl">
+                        {/* Contador circular en la parte superior */}
+                        <div className="flex justify-center mb-4">
+                            <div className="relative w-16 h-16">
+                                <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
+                                    {/* Círculo de fondo */}
+                                    <circle
+                                        cx="32"
+                                        cy="32"
+                                        r="28"
+                                        fill="none"
+                                        stroke="#e5e7eb"
+                                        strokeWidth="4"
+                                    />
+                                    {/* Círculo de progreso */}
+                                    <circle
+                                        cx="32"
+                                        cy="32"
+                                        r="28"
+                                        fill="none"
+                                        stroke="#059669"
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                        strokeDasharray={`${(countdown / 10) * 175.93} 175.93`}
+                                        className="transition-all duration-1000 ease-linear"
+                                    />
+                                </svg>
+                                {/* Número del contador */}
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-2xl font-bold text-green-600">
+                                        {countdown}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h2 className="text-xl font-bold mb-4 text-green-600 text-center">
+                            Suscripción Requerida
+                        </h2>
+                        
+                        <p className="text-gray-700 mb-4 text-center">
                             Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
                             Por favor, renueva tu suscripción para continuar.
                         </p>
+
+                        {/* Mensaje del contador */}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
+                            <p className="text-green-700 text-sm text-center">
+                                <span className="font-semibold">Redirección automática en {countdown} segundo{countdown !== 1 ? 's' : ''}</span>
+                                <br />
+                                Serás redirigido a la página de pagos automáticamente
+                            </p>
+                        </div>
+
                         <div className="flex gap-3">
                             <button
                                 onClick={handleGoToPayments}
-                                className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-semibold"
                             >
-                                Ir a Pagos
+                                Ir a Pagos Ahora
                             </button>
                         </div>
                     </div>

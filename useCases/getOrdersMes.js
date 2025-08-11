@@ -19,12 +19,26 @@ async function getOrdersMes() {
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
 
+    // Si es 204 (No Content), retornar array vacío directamente
+    if (response.status === 204) {
+      return {
+        success: true,
+        data: []
+      };
+    }
+
     const data = await response.json();
-    return data;
+    return {
+      success: true,
+      data: data
+    };
 
   } catch (error) {
     console.error('Error al obtener las órdenes del mes:', error);
-    throw error;
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }
 

@@ -33,11 +33,14 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
         onSearch(value); // Pasar el término de búsqueda al componente padre
     };
 
+    // Actualizar el validationSchemaProducto
     const validationSchemaProducto = Yup.object().shape({
         nombre: Yup.string().required("El nombre del producto es obligatorio"),
         descripcion: Yup.string().required("La descripción es obligatoria"),
         precio: Yup.number()
             .typeError("El precio debe ser un número")
+            .positive("El precio debe ser un número positivo")
+            .min(0.01, "El precio debe ser mayor a 0")
             .required("El precio es obligatorio"),
         imagen: Yup.mixed().required("La imagen del producto es obligatoria"),
     });
@@ -309,8 +312,22 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                             name="precio"
                                                             type="number"
                                                             step="0.01"
+                                                            min="0"
                                                             className="w-full pl-8 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                                                             placeholder="0.00"
+                                                            onKeyDown={(e) => {
+                                                                // Prevenir números negativos y algunos caracteres
+                                                                if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                                                                    e.preventDefault();
+                                                                }
+                                                            }}
+                                                            onChange={(e) => {
+                                                                const value = e.target.value;
+                                                                // Solo permitir números positivos
+                                                                if (value === '' || (parseFloat(value) >= 0 && !isNaN(parseFloat(value)))) {
+                                                                    setFieldValue("precio", value);
+                                                                }
+                                                            }}
                                                         />
                                                     </div>
                                                     {errors.precio && touched.precio && (
