@@ -157,7 +157,12 @@ export default function MenuWebDinamico() {
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
                         <div className="flex items-center">
                             <GoChecklist size={36} className="text-yellow-300 drop-shadow-lg" />
-                            <h1 className="text-3xl font-bold ml-2 text-white">WapiFood</h1>
+                            <button
+                                onClick={() => router.push('/')}
+                                className="text-3xl font-bold ml-2 text-white hover:text-yellow-200 transition-colors duration-200 cursor-pointer"
+                            >
+                                WapiFood
+                            </button>
                         </div>
                         <button
                             className="z-20 cursor-pointer py-3 hamburger-button"
