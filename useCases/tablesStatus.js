@@ -6,9 +6,9 @@ export const updateTableStatus = async (tableId, status) => {
             throw new Error('No hay token de autenticación');
         }
 
-        console.log('=== ACTUALIZANDO ESTADO DE MESA ===');
-        console.log('Table ID:', tableId);
-        console.log('Status recibido:', status);
+        // console.log('=== ACTUALIZANDO ESTADO DE MESA ===');
+        // console.log('Table ID:', tableId);
+        // console.log('Status recibido:', status);
 
         const numeroMesa = parseInt(tableId);
         // Mapear el estado al formato correcto que acepta la API
@@ -29,7 +29,7 @@ export const updateTableStatus = async (tableId, status) => {
                 estadoMesa = 'NoDisponible'; // Por defecto
         }
 
-        console.log('Estado mapeado:', estadoMesa);
+        // console.log('Estado mapeado:', estadoMesa);
 
         if (isNaN(numeroMesa)) {
             throw new Error('Número de mesa inválido');
@@ -40,7 +40,7 @@ export const updateTableStatus = async (tableId, status) => {
         params.append('number', numeroMesa);
         params.append('state', estadoMesa);
         
-        console.log('Parámetros a enviar:', params.toString());
+        // console.log('Parámetros a enviar:', params.toString());
 
         const response = await fetch('https://api.wapifood.com/tables/status', {
             method: 'POST',
@@ -51,17 +51,17 @@ export const updateTableStatus = async (tableId, status) => {
             body: params.toString()
         });
 
-        console.log('Response status:', response.status);
+        // console.log('Response status:', response.status);
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.log('Error response:', errorText);
+            // console.log('Error response:', errorText);
             throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('Mesa actualizada exitosamente:', data);
-        console.log('=== FIN ACTUALIZACIÓN ===');
+        // console.log('Mesa actualizada exitosamente:', data);
+        // console.log('=== FIN ACTUALIZACIÓN ===');
         
         return data;
 

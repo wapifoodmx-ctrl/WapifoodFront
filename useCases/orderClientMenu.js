@@ -48,12 +48,12 @@ export async function createClientOrder(orderData) {
             formData.append('order_uuid', orderData.order_uuid.trim());
         }
 
-        console.log('Enviando orden del cliente:', {
-            product_ids: orderData.product_ids.join(','),
-            quantities: orderData.quantities.join(','),
-            table_number: orderData.table_number,
-            order_uuid: orderData.order_uuid || 'Se generará automáticamente'
-        });
+        // console.log('Enviando orden del cliente:', {
+        //     product_ids: orderData.product_ids.join(','),
+        //     quantities: orderData.quantities.join(','),
+        //     table_number: orderData.table_number,
+        //     order_uuid: orderData.order_uuid || 'Se generará automáticamente'
+        // });
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -64,7 +64,7 @@ export async function createClientOrder(orderData) {
             body: formData
         });
 
-        console.log('Status de respuesta:', response.status);
+        // console.log('Status de respuesta:', response.status);
 
         if (!response.ok) {
             let errorData = {};
@@ -90,7 +90,7 @@ export async function createClientOrder(orderData) {
         }
 
         const data = await response.json();
-        console.log('Orden del cliente creada exitosamente:', data);
+        // console.log('Orden del cliente creada exitosamente:', data);
         return data;
 
     } catch (error) {

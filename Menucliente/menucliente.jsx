@@ -111,7 +111,7 @@ export default function MenuCliente() {
                 
                 // Si la mesa cambió a "Libre", significa que fue liberada desde otra vista
                 if (estadoMesaActual === 'Libre') {
-                    console.log(`Mesa ${numeroMesa} fue liberada desde otra vista. Limpiando datos locales...`);
+                    // console.log(`Mesa ${numeroMesa} fue liberada desde otra vista. Limpiando datos locales...`);
                     
                     // Limpiar localStorage
                     localStorage.removeItem('numeroMesa');
@@ -148,7 +148,7 @@ export default function MenuCliente() {
                     if (ticketData) {
                         // *** NUEVA VERIFICACIÓN: Detectar orden cancelada ***
                         if (ticketData.order_status === "Cancelado") {
-                            console.log('Orden cancelada detectada por el listener');
+                            // console.log('Orden cancelada detectada por el listener');
                             
                             // Mostrar modal de orden cancelada automáticamente
                             setShowCancelledOrderModal(true);
@@ -216,14 +216,14 @@ export default function MenuCliente() {
                             
                             // Solo mostrar modal si HAY productos REALMENTE NUEVOS cancelados
                             if (nuevosProductosCancelados.length > 0) {
-                                console.log('Nuevos productos cancelados detectados:', nuevosProductosCancelados.length);
+                                // console.log('Nuevos productos cancelados detectados:', nuevosProductosCancelados.length);
                                 setProductosCancelados(nuevosProductosCancelados);
                                 setModalProductosCanceladosOpen(true);
                                 
                                 // Actualizar snapshot con TODOS los productos cancelados (anteriores + nuevos)
                                 localStorage.setItem(snapshotKey, JSON.stringify(productosAhoraCancelados));
                             } else {
-                                console.log('No hay nuevos productos cancelados. Match encontrado.');
+                                // console.log('No hay nuevos productos cancelados. Match encontrado.');
                             }
 
                             // Solo actualizar si hay cambios
@@ -263,11 +263,11 @@ export default function MenuCliente() {
                         setOrdenActiva(ordenActualizada);
                         
                         // Log para debugging
-                        console.log('Estado actual de la orden:', {
-                            order_status: ticketData.order_status,
-                            productos_total: ticketData.products?.length || 0,
-                            total: ticketData.total
-                        });
+                        // console.log('Estado actual de la orden:', {
+                        //     order_status: ticketData.order_status,
+                        //     productos_total: ticketData.products?.length || 0,
+                        //     total: ticketData.total
+                        // });
                     }
                 } catch (error) {
                     console.error('Error al verificar estado de la orden:', error);
@@ -291,14 +291,14 @@ export default function MenuCliente() {
             // Configurar intervalo de 45 segundos
             intervalId = setInterval(monitorearEstadoMesaYOrden, 45000);
             
-            console.log(`Iniciando monitoreo de mesa ${numeroMesa} y orden cada 45 segundos`);
+            // console.log(`Iniciando monitoreo de mesa ${numeroMesa} y orden cada 45 segundos`);
         }
         
         // Limpiar intervalo cuando se desmonta o cambia la mesa
         return () => {
             if (intervalId) {
                 clearInterval(intervalId);
-                console.log('Deteniendo monitoreo de mesa y orden');
+                // console.log('Deteniendo monitoreo de mesa y orden');
             }
         };
     }, [numeroMesa, isAuthenticated, ordenActiva?.order_uuid]);
@@ -441,7 +441,7 @@ export default function MenuCliente() {
             localStorage.setItem('lastMesasResponse', JSON.stringify(mesasData));
             
             if (mesasData.error && mesasData.status === 403) {
-                console.log('Error 403 detectado - Suscripción requerida');
+                // console.log('Error 403 detectado - Suscripción requerida');
                 setSubscriptionError(true);
                 setMesas([]);
                 setModalMesaOpen(true);
@@ -456,7 +456,7 @@ export default function MenuCliente() {
                 Object.keys(mesasData.table_status).length === 1 &&
                 mesasData.table_status["1"] === "Libre") {
                 
-                console.log('Detectado paquete básico sin función de mesas');
+                // console.log('Detectado paquete básico sin función de mesas');
                 setSubscriptionError(true);
                 setMesas([]);
                 setModalMesaOpen(true);
@@ -880,7 +880,7 @@ export default function MenuCliente() {
             if (numeroMesa) {
                 try {
                     await updateTableStatus(parseInt(numeroMesa), 'NoDisponible');
-                    console.log(`Mesa ${numeroMesa} cambiada a NoDisponible`);
+                    // console.log(`Mesa ${numeroMesa} cambiada a NoDisponible`);
                 } catch (error) {
                     console.error('Error al cambiar mesa a NoDisponible:', error);
                 }
@@ -1687,14 +1687,14 @@ export default function MenuCliente() {
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6">
-                            {ordenActiva && (
+                            {/* {ordenActiva && (
                                 <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                                     <h3 className="font-semibold text-blue-800 mb-2">Orden Activa</h3>
                                     <p className="text-sm text-blue-700">UUID: {ordenActiva.order_uuid.slice(0, 8)}...</p>
                                     <p className="text-sm text-blue-700">Estado: {ordenActiva.order_status}</p>
                                     <p className="text-sm text-blue-700">Mesa: {numeroMesa || 'Sin asignar'}</p>
                                 </div>
-                            )}
+                            )} */}
 
                             {carrito.length > 0 ? (
                                 <div className="mb-6">

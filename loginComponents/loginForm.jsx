@@ -36,7 +36,7 @@ const LoginForm = () => {
     const onSubmit = async (values, { setSubmitting }) => {
         setServerError('');
         setIsLoading(true);
-        console.log('Valores del formulario:', values);
+        // console.log('Valores del formulario:', values);
         try {
             const response = await loginUser(values);
 

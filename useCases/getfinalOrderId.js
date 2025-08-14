@@ -20,7 +20,7 @@ export async function getFinalOrder(UUID) {
         if (!response.ok) {
             // Si es un 404, retornar null o un objeto vacío
             if (response.status === 404) {
-                console.log('No se encontró la orden final para este UUID');
+                // console.log('No se encontró la orden final para este UUID');
                 return null;
             }
             
@@ -29,7 +29,7 @@ export async function getFinalOrder(UUID) {
             
             // Si el mensaje indica que no se encontró la orden, retornar null
             if (errorData.detail && errorData.detail.includes('No se encontró')) {
-                console.log('No se encontró la orden final para este UUID');
+                // console.log('No se encontró la orden final para este UUID');
                 return null;
             }
             

@@ -196,7 +196,7 @@ export default function UserPage() {
         updateData.image = values.profileImage;
       }
 
-      console.log('Enviando datos:', updateData); // Para debug
+      // console.log('Enviando datos:', updateData); // Para debug
 
       const updatedUser = await patchUserInfo(updateData);
       setUserInfo(updatedUser);
@@ -248,7 +248,7 @@ export default function UserPage() {
     userInfo.image_user.url !== "undefined"
   );
 
-  console.log('hasExistingImage:', hasExistingImage, 'Image URL:', userInfo?.image_user?.url); // Para debug
+  // console.log('hasExistingImage:', hasExistingImage, 'Image URL:', userInfo?.image_user?.url); // Para debug
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">

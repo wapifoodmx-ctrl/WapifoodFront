@@ -26,7 +26,7 @@ export default function RecuperacionLink() {
             setSuccessMessage("");
             setErrorMessage("");
 
-            console.log('Enviando datos:', JSON.stringify({ email: values.email }));
+            // console.log('Enviando datos:', JSON.stringify({ email: values.email }));
 
             const result = await resetPass(values.email);
 

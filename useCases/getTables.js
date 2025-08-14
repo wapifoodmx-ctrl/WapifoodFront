@@ -6,7 +6,7 @@ export const getTables = async () => {
             throw new Error('No hay token de autenticación');
         }
 
-        console.log('Haciendo petición a la API de mesas...');
+        // console.log('Haciendo petición a la API de mesas...');
         
         const response = await fetch('https://api.wapifood.com/tables/status', {
             method: 'GET',
@@ -16,11 +16,11 @@ export const getTables = async () => {
             },
         });
 
-        console.log('Status de la respuesta:', response.status);
+        // console.log('Status de la respuesta:', response.status);
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.log('Error response:', errorText);
+            // console.log('Error response:', errorText);
             
             // Manejar específicamente el error 403 (falta de pago)
             if (response.status === 403) {
@@ -36,9 +36,9 @@ export const getTables = async () => {
         }
 
         const data = await response.json();
-        console.log('Datos recibidos de la API:', data);
-        console.log('Max mesas:', data.max_mesas);
-        console.log('Estado de las mesas:', data.table_status);
+        // console.log('Datos recibidos de la API:', data);
+        // console.log('Max mesas:', data.max_mesas);
+        // console.log('Estado de las mesas:', data.table_status);
         
         // Contar mesas por estado
         if (data.table_status) {
@@ -46,7 +46,7 @@ export const getTables = async () => {
                 acc[estado] = (acc[estado] || 0) + 1;
                 return acc;
             }, {});
-            console.log('Estadísticas de mesas:', estadisticas);
+            // console.log('Estadísticas de mesas:', estadisticas);
         }
         
         return data;

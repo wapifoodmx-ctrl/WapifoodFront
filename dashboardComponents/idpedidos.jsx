@@ -83,7 +83,7 @@ export default function IdPedidos() {
     };
 
     const handleCancelPedido = () => {
-        console.log("Pedido cancelado:", selectedPedido.ID);
+        // console.log("Pedido cancelado:", selectedPedido.ID);
         closeConfirmModal();
         closeModal();
     };

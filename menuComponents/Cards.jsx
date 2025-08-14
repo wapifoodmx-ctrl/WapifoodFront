@@ -48,7 +48,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     const handleDeleteProduct = async () => {
         try {
             await deleteProduct(selectedProduct.id_products);
-            console.log(`Producto eliminado con ID: ${selectedProduct.id_products}`);
+            // console.log(`Producto eliminado con ID: ${selectedProduct.id_products}`);
             
             setModalMessage("Producto eliminado con éxito.");
             closeModals();

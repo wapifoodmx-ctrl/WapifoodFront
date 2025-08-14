@@ -18,9 +18,9 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
         setLoading(true);
         setError('');
         try {
-            console.log('Fetching ticket data for UUID:', orderUuid);
+            // console.log('Fetching ticket data for UUID:', orderUuid);
             const data = await getTicket(orderUuid);
-            console.log('Ticket data received:', data);
+            // console.log('Ticket data received:', data);
             setTicketData(data);
         } catch (err) {
             console.error('Error al obtener datos del ticket:', err);

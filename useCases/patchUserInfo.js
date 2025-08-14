@@ -42,7 +42,7 @@ export async function patchUserInfo(userData) {
         }
 
         const data = await response.json();
-        console.log('Usuario actualizado exitosamente:', data);
+        // console.log('Usuario actualizado exitosamente:', data);
         return data;
     } catch (error) {
         console.error('Error al actualizar la información del usuario:', error.message);

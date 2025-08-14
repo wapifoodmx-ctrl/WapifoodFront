@@ -100,7 +100,7 @@ export default function Ventas() {
       }))
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    console.log('Datos transformados y agrupados:', resultado);
+    // console.log('Datos transformados y agrupados:', resultado);
     return resultado;
   };
 
@@ -111,17 +111,17 @@ export default function Ventas() {
       setLoadingSemana(true);
       setErrorSemana(null);
 
-      console.log('Cargando datos de semana...');
+      // console.log('Cargando datos de semana...');
       const resultado = await getGraficaSemana();
-      console.log('Resultado de getGraficaSemana:', resultado);
+      // console.log('Resultado de getGraficaSemana:', resultado);
 
       if (resultado.success) {
-        console.log('Datos originales de semana:', resultado.data);
+        // console.log('Datos originales de semana:', resultado.data);
         const datosTransformados = transformarDatosAPI(resultado.data);
-        console.log('Datos transformados de semana:', datosTransformados);
+        // console.log('Datos transformados de semana:', datosTransformados);
         setDatosSemana(datosTransformados);
       } else {
-        console.log('Error al cargar datos de semana:', resultado.error);
+        // console.log('Error al cargar datos de semana:', resultado.error);
         setErrorSemana(resultado.error);
         setDatosSemana([]);
       }
@@ -139,17 +139,17 @@ export default function Ventas() {
       setLoadingMes(true);
       setErrorMes(null);
 
-      console.log('Cargando datos de mes...');
+      // console.log('Cargando datos de mes...');
       const resultado = await getGraficaMes();
-      console.log('Resultado de getGraficaMes:', resultado);
+      // console.log('Resultado de getGraficaMes:', resultado);
 
       if (resultado.success) {
-        console.log('Datos originales de mes:', resultado.data);
+        // console.log('Datos originales de mes:', resultado.data);
         const datosTransformados = transformarDatosAPI(resultado.data);
-        console.log('Datos transformados de mes:', datosTransformados);
+        // console.log('Datos transformados de mes:', datosTransformados);
         setDatosMes(datosTransformados);
       } else {
-        console.log('Error al cargar datos de mes:', resultado.error);
+        // console.log('Error al cargar datos de mes:', resultado.error);
         setErrorMes(resultado.error);
         setDatosMes([]);
       }
@@ -172,17 +172,17 @@ export default function Ventas() {
       const fechaInicio = formatDateToAPI(startDate);
       const fechaFin = formatDateToAPI(endDate);
 
-      console.log('Cargando datos de fechas...', { fechaInicio, fechaFin });
+      // console.log('Cargando datos de fechas...', { fechaInicio, fechaFin });
       const resultado = await getGraficaFechas(fechaInicio, fechaFin);
-      console.log('Resultado de getGraficaFechas:', resultado);
+      // console.log('Resultado de getGraficaFechas:', resultado);
 
       if (resultado.success) {
-        console.log('Datos originales de fechas:', resultado.data);
+        // console.log('Datos originales de fechas:', resultado.data);
         const datosTransformados = transformarDatosAPI(resultado.data);
-        console.log('Datos transformados de fechas:', datosTransformados);
+        // console.log('Datos transformados de fechas:', datosTransformados);
         setDatosFechas(datosTransformados);
       } else {
-        console.log('Error al cargar datos de fechas:', resultado.error);
+        // console.log('Error al cargar datos de fechas:', resultado.error);
         setErrorFechas(resultado.error);
         setDatosFechas([]);
       }
@@ -200,17 +200,17 @@ export default function Ventas() {
       setLoadingTodo(true);
       setErrorTodo(null);
 
-      console.log('Cargando datos de todo...');
+      // console.log('Cargando datos de todo...');
       const resultado = await getADataGrafico();
-      console.log('Resultado de getADataGrafico:', resultado);
+      // console.log('Resultado de getADataGrafico:', resultado);
 
       if (resultado.success) {
-        console.log('Datos originales de todo:', resultado.data);
+        // console.log('Datos originales de todo:', resultado.data);
         const datosTransformados = transformarDatosAPI(resultado.data);
-        console.log('Datos transformados de todo:', datosTransformados);
+        // console.log('Datos transformados de todo:', datosTransformados);
         setDatosTodo(datosTransformados);
       } else {
-        console.log('Error al cargar datos totales:', resultado.error);
+        // console.log('Error al cargar datos totales:', resultado.error);
         setErrorTodo(resultado.error);
         setDatosTodo([]);
       }

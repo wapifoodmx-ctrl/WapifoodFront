@@ -11,7 +11,7 @@ export const cancelOrder = async (orderUuid) => {
     // Construir la URL con los parámetros de query
     const endpoint = `https://api.wapifood.com/orders/orders/${orderUuid}/cambio_estatus?order_status=Cancelado&metodo_pago=efectivo`;
 
-    console.log('Cancelando orden:', endpoint);
+    // console.log('Cancelando orden:', endpoint);
 
     const response = await fetch(endpoint, {
       method: "PUT",
@@ -29,7 +29,7 @@ export const cancelOrder = async (orderUuid) => {
     }
 
     const data = await response.json();
-    console.log('Orden cancelada exitosamente:', data);
+    // console.log('Orden cancelada exitosamente:', data);
     return data;
   } catch (error) {
     console.error("Error al cancelar la orden:", error);
