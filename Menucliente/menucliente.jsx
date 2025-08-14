@@ -1661,53 +1661,46 @@ export default function MenuCliente() {
 
             {carritoModalOpen && (
                 <div
-                    className="fixed inset-0 backdrop-blur-sm bg-black/50 z-[9998] flex justify-end"
+                    className="fixed inset-0 backdrop-blur-sm bg-black/50 z-[9998] flex justify-end items-stretch"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {
                             setCarritoModalOpen(false);
                         }
                     }}
                 >
-                    <div className="bg-white w-96 h-screen flex flex-col shadow-2xl border-l border-gray-200">
-                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
+                    <div className="bg-white w-3/4 h-full sm:w-96 sm:h-screen flex flex-col shadow-2xl border border-gray-200 rounded-l-2xl sm:rounded-none sm:border-l overflow-hidden">
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6 text-white rounded-tl-2xl sm:rounded-none">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-2xl font-bold flex items-center gap-3">
-                                    <FaShoppingCart className="text-xl" />
+                                <h2 className="text-lg sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
+                                    <FaShoppingCart className="text-base sm:text-xl" />
                                     Tu Pedido
                                 </h2>
                                 <button
                                     onClick={() => setCarritoModalOpen(false)}
-                                    className="text-white hover:text-gray-200 transition-colores"
+                                    className="text-white hover:text-gray-200 transition-colores p-1 rounded-full hover:bg-white/20"
                                 >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
                                 </button>
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6">
-                            {/* {ordenActiva && (
-                                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                    <h3 className="font-semibold text-blue-800 mb-2">Orden Activa</h3>
-                                    <p className="text-sm text-blue-700">UUID: {ordenActiva.order_uuid.slice(0, 8)}...</p>
-                                    <p className="text-sm text-blue-700">Estado: {ordenActiva.order_status}</p>
-                                    <p className="text-sm text-blue-700">Mesa: {numeroMesa || 'Sin asignar'}</p>
-                                </div>
-                            )} */}
-
+                        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
                             {carrito.length > 0 ? (
-                                <div className="mb-6">
-                                    <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <div className="mb-4 sm:mb-6">
+                                    <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                         Productos en carrito
                                     </h3>
-                                    <div className="max-h-48 overflow-y-auto space-y-3">
+                                    <div className="max-h-36 sm:max-h-48 overflow-y-auto space-y-2 sm:space-y-3">
                                         {carrito.map((item) => (
-                                            <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100 shadow-sm">
+                                            <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-2 sm:p-4 border border-green-100 shadow-sm">
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <div className="flex-1">
-                                                        <p className="font-bold text-green-800">{item.nombre || item.name}</p>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-green-800 text-xs sm:text-base truncate">
+                                                            {item.nombre || item.name}
+                                                        </p>
                                                         {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
                                                             <p className="text-xs text-green-700">
                                                                 Sin: {item.ingredientesExcluidos.join(", ")}
@@ -1718,24 +1711,24 @@ export default function MenuCliente() {
                                                                 Nota: {item.comentario}
                                                             </p>
                                                         )}
-                                                        <p className="text-sm text-green-600">
+                                                        <p className="text-xs sm:text-sm text-green-600">
                                                             ${parseFloat(item.precio || item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
                                                         </p>
                                                     </div>
                                                     <button
-                                                        className="text-red-500 hover:text-red-700 transition-colores ml-2"
+                                                        className="text-red-500 hover:text-red-700 transition-colores ml-2 flex-shrink-0 p-1"
                                                         onClick={() => {
                                                             setCarrito((prevCarrito) =>
                                                                 prevCarrito.filter((producto) => producto.id !== item.id)
                                                             );
                                                         }}
                                                     >
-                                                        <IoTrashOutline className="text-lg" />
+                                                        <IoTrashOutline className="text-base sm:text-lg" />
                                                     </button>
                                                 </div>
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2 sm:gap-3">
                                                     <button
-                                                        className="bg-green-200 hover:bg-green-300 text-green-800 w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colores"
+                                                        className="bg-green-200 hover:bg-green-300 text-green-800 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold transition-colores text-sm"
                                                         onClick={() => {
                                                             setCarrito((prevCarrito) =>
                                                                 prevCarrito.map((producto) =>
@@ -1748,9 +1741,9 @@ export default function MenuCliente() {
                                                     >
                                                         -
                                                     </button>
-                                                    <span className="text-lg font-bold text-green-800 min-w-[2rem] text-center">{item.cantidad}</span>
+                                                    <span className="text-base sm:text-lg font-bold text-green-800 min-w-[1.5rem] sm:min-w-[2rem] text-center">{item.cantidad}</span>
                                                     <button
-                                                        className="bg-green-200 hover:bg-green-300 text-green-800 w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colores"
+                                                        className="bg-green-200 hover:bg-green-300 text-green-800 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold transition-colores text-sm"
                                                         onClick={() => {
                                                             setCarrito((prevCarrito) =>
                                                                 prevCarrito.map((producto) =>
@@ -1769,19 +1762,19 @@ export default function MenuCliente() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center py-8">
-                                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <FaShoppingCart className="text-gray-400 text-xl" />
+                                <div className="text-center py-6 sm:py-8">
+                                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                                        <FaShoppingCart className="text-gray-400 text-lg sm:text-xl" />
                                     </div>
-                                    <p className="text-gray-500">Tu carrito está vacío</p>
+                                    <p className="text-gray-500 text-sm sm:text-base">Tu carrito está vacío</p>
                                 </div>
                             )}
 
                             {carrito.length > 0 && (
-                                <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-4 mb-6 border border-green-200">
+                                <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 border border-green-200">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-lg font-bold text-green-800">Total del carrito:</span>
-                                        <span className="text-xl font-bold text-green-600">
+                                        <span className="text-sm sm:text-lg font-bold text-green-800">Total del carrito:</span>
+                                        <span className="text-base sm:text-xl font-bold text-green-600">
                                             ${calcularTotal()}
                                         </span>
                                     </div>
@@ -1789,72 +1782,82 @@ export default function MenuCliente() {
                             )}
 
                             {historialPedidos.length > 0 && (
-                                <div className="mt-8">
-                                    <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <div className="mt-6 sm:mt-8">
+                                    <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                                         <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
                                         Historial de Pedidos
                                     </h3>
-                                    <div className="max-h-48 overflow-y-auto space-y-3">
-                                        {historialPedidos.map((item, index) => (
-                                            <div key={index} className={`rounded-xl p-4 border shadow-sm ${
-                                                item.estado === 'Preparado' ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' :
-                                                item.estado === 'Cancelado' ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200' :
-                                                'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'
-                                            }`}>
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <p className={`font-bold ${
-                                                        item.estado === 'Preparado' ? 'text-green-800' :
-                                                        item.estado === 'Cancelado' ? 'text-red-800' :
-                                                        'text-yellow-800'
-                                                    }`}>
-                                                        {item.cantidad} x {item.nombre || item.name}
-                                                    </p>
-                                                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                                                        item.estado === 'Preparado' ? 'bg-green-500 text-white' :
-                                                        item.estado === 'Cancelado' ? 'bg-red-500 text-white' :
-                                                        'bg-yellow-500 text-white'
-                                                    }`}>
-                                                        {item.estado === 'Preparado' ? '✅ Listo' :
-                                                         item.estado === 'Cancelado' ? '❌ Cancelado' :
-                                                         '⏱️ Pendiente'}
-                                                    </span>
-                                                </div>
-                                                {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
-                                                    <p className={`text-xs ${
-                                                        item.estado === 'Preparado' ? 'text-green-700' :
-                                                        item.estado === 'Cancelado' ? 'text-red-700' :
-                                                        'text-yellow-700'
-                                                    }`}>
-                                                        Sin: {item.ingredientesExcluidos.join(", ")}
-                                                    </p>
-                                                )}
-                                                {item.comentario && (
-                                                    <p className={`text-xs ${
-                                                        item.estado === 'Preparado' ? 'text-green-700' :
-                                                        item.estado === 'Cancelado' ? 'text-red-700' :
-                                                        'text-yellow-700'
-                                                    }`}>
-                                                        Nota: {item.comentario}
-                                                    </p>
-                                                )}
-                                                <p className={`text-sm ${
-                                                    item.estado === 'Preparado' ? 'text-green-600' :
-                                                    item.estado === 'Cancelado' ? 'text-red-600 line-through' :
-                                                    'text-yellow-600'
+                                    <div className="max-h-36 sm:max-h-48 overflow-y-auto space-y-2 sm:space-y-3">
+                                        {historialPedidos.map((item, index) => {
+                                            const nombreCorto = (item.nombre || item.name).length > 16 
+                                                ? `${(item.nombre || item.name).substring(0, 16)}...` 
+                                                : (item.nombre || item.name);
+                                            
+                                            return (
+                                                <div key={index} className={`rounded-xl p-2 sm:p-4 border shadow-sm ${
+                                                    item.estado === 'Preparado' ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' :
+                                                    item.estado === 'Cancelado' ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200' :
+                                                    'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'
                                                 }`}>
-                                                    ${parseFloat(item.precio || item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                                </p>
-                                            </div>
-                                        ))}
+                                                    <div className="flex justify-between items-start mb-1 sm:mb-2">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={`font-bold text-xs sm:text-base ${
+                                                                item.estado === 'Preparado' ? 'text-green-800' :
+                                                                item.estado === 'Cancelado' ? 'text-red-800' :
+                                                                'text-yellow-800'
+                                                            }`} title={`${item.cantidad} x ${item.nombre || item.name}`}>
+                                                                {item.cantidad} x {nombreCorto}
+                                                            </p>
+                                                            {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                                                <p className={`text-xs ${
+                                                                    item.estado === 'Preparado' ? 'text-green-700' :
+                                                                    item.estado === 'Cancelado' ? 'text-red-700' :
+                                                                    'text-yellow-700'
+                                                                }`}>
+                                                                    Sin: {item.ingredientesExcluidos.join(", ")}
+                                                                </p>
+                                                            )}
+                                                            {item.comentario && (
+                                                                <p className={`text-xs ${
+                                                                    item.estado === 'Preparado' ? 'text-green-700' :
+                                                                    item.estado === 'Cancelado' ? 'text-red-700' :
+                                                                    'text-yellow-700'
+                                                                }`}>
+                                                                    Nota: {item.comentario}
+                                                                </p>
+                                                            )}
+                                                            <p className={`text-xs ${
+                                                                item.estado === 'Preparado' ? 'text-green-600' :
+                                                                item.estado === 'Cancelado' ? 'text-red-600 line-through' :
+                                                                'text-yellow-600'
+                                                            }`}>
+                                                                ${parseFloat(item.precio || item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                            </p>
+                                                        </div>
+                                                        <div className="ml-2 flex-shrink-0">
+                                                            <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${
+                                                                item.estado === 'Preparado' ? 'bg-green-500 text-white' :
+                                                                item.estado === 'Cancelado' ? 'bg-red-500 text-white' :
+                                                                'bg-yellow-500 text-white'
+                                                            }`}>
+                                                                {item.estado === 'Preparado' ? '✅ Listo' :
+                                                                 item.estado === 'Cancelado' ? '❌ Cancelado' :
+                                                                 '⏱️ Pendiente'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
 
                             {totalFinal > 0 && (
-                                <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-4 mt-4 border border-yellow-200">
+                                <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-3 sm:p-4 mt-3 sm:mt-4 border border-yellow-200">
                                     <div className="flex justify-between items-center">
-                                        <span className="font-semibold text-yellow-800">Total Final:</span>
-                                        <span className="text-lg font-bold text-yellow-600">
+                                        <span className="font-semibold text-yellow-800 text-sm sm:text-base">Total Final:</span>
+                                        <span className="text-sm sm:text-lg font-bold text-yellow-600">
                                             ${totalFinal.toFixed(2)}
                                         </span>
                                     </div>
@@ -1862,9 +1865,9 @@ export default function MenuCliente() {
                             )}
                         </div>
 
-                        <div className="p-6 bg-white border-t border-gray-200">
+                        <div className="p-3 sm:p-6 bg-white border-t border-gray-200 rounded-bl-2xl sm:rounded-none">
                             {mensajeError && (
-                                <div className={`p-4 rounded-xl mb-4 text-sm font-medium ${
+                                <div className={`p-2 sm:p-4 rounded-xl mb-3 sm:mb-4 text-xs sm:text-sm font-medium ${
                                     mensajeError.includes('exitosamente') 
                                         ? 'bg-green-100 text-green-800 border border-green-200' 
                                         : 'bg-green-100 text-green-800 border border-green-200'
@@ -1874,7 +1877,7 @@ export default function MenuCliente() {
                             )}
 
                             <button
-                                className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${
+                                className={`w-full py-2 sm:py-3 rounded-xl font-medium transition-all duration-200 text-xs sm:text-base ${
                                     isCreatingOrder 
                                         ? 'bg-gray-300 cursor-not-allowed text-gray-500' 
                                         : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
@@ -1884,7 +1887,7 @@ export default function MenuCliente() {
                             >
                                 {isCreatingOrder ? (
                                     <span className="flex items-center justify-center gap-2">
-                                        <svg className="animate-spin h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                         </svg>
                                         Enviando...
@@ -1894,7 +1897,7 @@ export default function MenuCliente() {
 
                             {historialPedidos.length > 0 && (
                                 <button
-                                    className="w-full py-3 rounded-xl font-medium transition-all duration-200 mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg transform hover:scale-105"
+                                    className="w-full py-2 sm:py-3 rounded-xl font-medium transition-all duration-200 mt-2 sm:mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg transform hover:scale-105 text-xs sm:text-base"
                                     onClick={terminarOrden}
                                 >
                                     💳 Terminar Orden
@@ -1919,7 +1922,7 @@ export default function MenuCliente() {
                         <div className="text-center mb-6">
                             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 00-2 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                 </svg>
                             </div>
                             <h2 className="text-2xl font-bold text-gray-800">Confirmar Pago</h2>
