@@ -4,8 +4,8 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { IoClose, IoCalendarOutline, IoTrendingUpOutline, IoStatsChartOutline } from "react-icons/io5";
-import { FaChartLine, FaCalendarAlt, FaClock, FaGlobe } from "react-icons/fa";
+import { IoClose, IoCalendarOutline, IoTrendingUpOutline, IoStatsChartOutline, IoTrophyOutline } from "react-icons/io5";
+import { FaChartLine, FaCalendarAlt, FaClock, FaGlobe, FaTrophy, FaMedal, FaCrown } from "react-icons/fa";
 import Populares from './populares';
 import IdPedidos from './idpedidos';
 import MainStats from './mainStats';
@@ -28,6 +28,13 @@ export default function Ventas() {
   const [datosMes, setDatosMes] = React.useState([]);
   const [datosFechas, setDatosFechas] = React.useState([]);
   const [datosTodo, setDatosTodo] = React.useState([]);
+  
+  // Estados para el ranking de días
+  const [datosRanking, setDatosRanking] = React.useState([]);
+  const [loadingRanking, setLoadingRanking] = React.useState(false);
+  const [errorRanking, setErrorRanking] = React.useState(null);
+  const [startDateRanking, setStartDateRanking] = React.useState(null);
+  const [endDateRanking, setEndDateRanking] = React.useState(null);
   
   // Estados de loading
   const [loadingSemana, setLoadingSemana] = React.useState(false);
@@ -70,6 +77,72 @@ export default function Ventas() {
       year: 'numeric'
     });
   };
+
+  // Función para obtener el nombre del día de la semana
+  const obtenerNombreDia = (fecha) => {
+    const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const date = new Date(fecha);
+    return diasSemana[date.getDay()];
+  };
+
+  // Función para transformar datos para el ranking
+  const transformarDatosRanking = (datosAPI) => {
+    if (!Array.isArray(datosAPI) || datosAPI.length === 0) {
+      return [];
+    }
+
+    // Procesar y ordenar los datos por valor descendente
+    const datosOrdenados = datosAPI
+      .map(item => {
+        const fecha = item.date.split('T')[0];
+        const fechaObj = new Date(fecha);
+        return {
+          fecha: fecha,
+          fechaFormateada: formatDate(fechaObj),
+          diaSemana: obtenerNombreDia(fecha),
+          valor: parseFloat(item.value || 0)
+        };
+      })
+      .sort((a, b) => b.valor - a.valor);
+
+    return datosOrdenados;
+  };
+
+  // Función para cargar datos del ranking
+  const cargarDatosRanking = async () => {
+    if (!startDateRanking || !endDateRanking) return;
+
+    try {
+      setLoadingRanking(true);
+      setErrorRanking(null);
+
+      const fechaInicio = formatDateToAPI(startDateRanking);
+      const fechaFin = formatDateToAPI(endDateRanking);
+
+      const resultado = await getGraficaFechas(fechaInicio, fechaFin);
+
+      if (resultado.success) {
+        const datosTransformados = transformarDatosRanking(resultado.data);
+        setDatosRanking(datosTransformados);
+      } else {
+        setErrorRanking(resultado.error);
+        setDatosRanking([]);
+      }
+    } catch (error) {
+      console.error('Error inesperado al cargar datos de ranking:', error);
+      setErrorRanking('Error inesperado al cargar los datos');
+      setDatosRanking([]);
+    } finally {
+      setLoadingRanking(false);
+    }
+  };
+
+  // Cargar datos del ranking cuando se seleccionen fechas
+  React.useEffect(() => {
+    if (startDateRanking && endDateRanking) {
+      cargarDatosRanking();
+    }
+  }, [startDateRanking, endDateRanking]);
 
   // FUNCIÓN UNIFICADA para transformar datos - agrupar por fecha y sumar valores
   const transformarDatosAPI = (datosAPI) => {
@@ -636,6 +709,251 @@ export default function Ventas() {
     );
   };
 
+  // Componente del Ranking de Días ACTUALIZADO
+  const RankingTab = () => {
+    // Función para obtener el icono según la posición
+    const obtenerIconoPosicion = (posicion) => {
+      switch (posicion) {
+        case 1:
+          return <FaCrown className="text-yellow-500 text-2xl" />;
+        case 2:
+          return <FaMedal className="text-gray-400 text-xl" />;
+        case 3:
+          return <FaTrophy className="text-orange-500 text-xl" />;
+        default:
+          return <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-sm">{posicion}</div>;
+      }
+    };
+
+    // Función para obtener el color del fondo según la posición
+    const obtenerColorFondo = (posicion) => {
+      switch (posicion) {
+        case 1:
+          return 'from-yellow-100 to-yellow-200 border-yellow-300';
+        case 2:
+          return 'from-gray-100 to-gray-200 border-gray-300';
+        case 3:
+          return 'from-orange-100 to-orange-200 border-orange-300';
+        default:
+          return 'from-blue-50 to-blue-100 border-blue-200';
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Selector de fechas para ranking */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
+            <div className="flex items-center gap-3 text-white">
+              <IoTrophyOutline className="text-xl sm:text-2xl flex-shrink-0" />
+              <h3 className="text-lg sm:text-xl font-bold">Selecciona el Período para el Ranking</h3>
+            </div>
+          </div>
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-3">
+                <label className="block text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <IoCalendarOutline className="text-white text-sm" />
+                  </div>
+                  <span>Fecha de inicio</span>
+                </label>
+                <div className="border-2 border-gray-200 rounded-xl p-3 sm:p-4 hover:border-green-500 transition-colors focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-200">
+                  <DatePicker
+                    selected={startDateRanking}
+                    onChange={(date) => setStartDateRanking(date)}
+                    selectsStart
+                    startDate={startDateRanking}
+                    endDate={endDateRanking}
+                    placeholderText="Selecciona fecha de inicio"
+                    className="w-full text-base sm:text-lg font-medium text-gray-800 bg-transparent border-none outline-none"
+                    dateFormat="dd/MM/yyyy"
+                    showYearDropdown
+                    showMonthDropdown
+                    dropdownMode="select"
+                    locale="es"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <label className="block text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <IoCalendarOutline className="text-white text-sm" />
+                  </div>
+                  <span>Fecha de fin</span>
+                </label>
+                <div className="border-2 border-gray-200 rounded-xl p-3 sm:p-4 hover:border-emerald-500 transition-colors focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200">
+                  <DatePicker
+                    selected={endDateRanking}
+                    onChange={(date) => setEndDateRanking(date)}
+                    selectsEnd
+                    startDate={startDateRanking}
+                    endDate={endDateRanking}
+                    minDate={startDateRanking}
+                    placeholderText="Selecciona fecha de fin"
+                    className="w-full text-base sm:text-lg font-medium text-gray-800 bg-transparent border-none outline-none"
+                    dateFormat="dd/MM/yyyy"
+                    showYearDropdown
+                    showMonthDropdown
+                    dropdownMode="select"
+                    locale="es"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Información del rango seleccionado */}
+            {startDateRanking && endDateRanking && (
+              <div className="mt-4 sm:mt-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-3 sm:p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <IoTrophyOutline className="text-white text-sm sm:text-lg" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-green-800 font-bold text-base sm:text-lg mb-2">🏆 Período seleccionado para el ranking</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-green-700">
+                      <div className="bg-white/60 rounded-lg p-2 sm:p-3">
+                        <p className="font-semibold text-xs sm:text-sm text-green-600 mb-1">Fecha de inicio:</p>
+                        <p className="text-sm sm:text-base font-bold truncate">{formatDate(startDateRanking)}</p>
+                      </div>
+                      <div className="bg-white/60 rounded-lg p-2 sm:p-3">
+                        <p className="font-semibold text-xs sm:text-sm text-green-600 mb-1">Fecha de fin:</p>
+                        <p className="text-sm sm:text-base font-bold truncate">{formatDate(endDateRanking)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-xs sm:text-sm text-green-600">
+                      <p>📊 Días a evaluar: {Math.ceil((endDateRanking - startDateRanking) / (1000 * 60 * 60 * 24)) + 1} días</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Estados de carga y ranking */}
+        {loadingRanking && (
+          <LoadingCard 
+            message="Generando ranking de días..." 
+            icon={IoTrophyOutline}
+          />
+        )}
+
+        {errorRanking && !loadingRanking && (
+          <ErrorCard
+            title="Error al generar ranking"
+            message="No se pudo generar el ranking de días para el período especificado."
+            error={errorRanking}
+            onRetry={() => cargarDatosRanking()}
+          />
+        )}
+
+        {!loadingRanking && !errorRanking && datosRanking.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
+              <div className="flex items-center justify-between text-white">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <IoTrophyOutline className="text-xl sm:text-2xl flex-shrink-0" />
+                  <h3 className="text-lg sm:text-xl font-bold truncate">🏆 Ranking de Días por Ventas</h3>
+                </div>
+                <div className="text-xs sm:text-sm bg-white/20 px-2 sm:px-3 py-1 rounded-lg flex-shrink-0 ml-2">
+                  {datosRanking.length} días
+                </div>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <div className="grid gap-3 sm:gap-4">
+                {datosRanking.map((dia, index) => {
+                  const posicion = index + 1;
+                  return (
+                    <div
+                      key={dia.fecha}
+                      className={`bg-gradient-to-r ${obtenerColorFondo(posicion)} border-2 rounded-xl p-3 sm:p-4 transition-all duration-200 hover:scale-[1.01] sm:hover:scale-[1.02] hover:shadow-lg`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                          <div className="flex items-center justify-center flex-shrink-0">
+                            {obtenerIconoPosicion(posicion)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <h4 className="text-base sm:text-lg font-bold text-gray-800 truncate">
+                                {dia.diaSemana}
+                              </h4>
+                              <span className="text-xs sm:text-sm text-gray-600 bg-white/70 px-2 py-1 rounded-lg self-start">
+                                {dia.fechaFormateada}
+                              </span>
+                            </div>
+                            <p className="text-xs sm:text-sm text-gray-600">
+                              Posición #{posicion} en el ranking
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-lg sm:text-2xl font-bold text-gray-800">
+                            ${dia.valor.toLocaleString()}
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-600">
+                            en ventas
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Estadísticas del ranking */}
+              <div className="mt-6 sm:mt-8 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 border border-yellow-300 rounded-xl p-3 sm:p-4 text-center">
+                  <FaCrown className="text-yellow-600 text-xl sm:text-2xl mx-auto mb-2" />
+                  <h4 className="font-bold text-yellow-800 text-sm sm:text-base">Mejor Día</h4>
+                  <p className="text-xs sm:text-sm text-yellow-700 truncate">{datosRanking[0]?.diaSemana}</p>
+                  <p className="text-base sm:text-lg font-bold text-yellow-800">${datosRanking[0]?.valor.toLocaleString()}</p>
+                </div>
+                <div className="bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300 rounded-xl p-3 sm:p-4 text-center">
+                  <FaChartLine className="text-blue-600 text-xl sm:text-2xl mx-auto mb-2" />
+                  <h4 className="font-bold text-blue-800 text-sm sm:text-base">Promedio</h4>
+                  <p className="text-base sm:text-lg font-bold text-blue-800">
+                    ${Math.round(datosRanking.reduce((acc, dia) => acc + dia.valor, 0) / datosRanking.length).toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-green-100 to-green-200 border border-green-300 rounded-xl p-3 sm:p-4 text-center">
+                  <FaGlobe className="text-green-600 text-xl sm:text-2xl mx-auto mb-2" />
+                  <h4 className="font-bold text-green-800 text-sm sm:text-base">Total Período</h4>
+                  <p className="text-base sm:text-lg font-bold text-green-800">
+                    ${datosRanking.reduce((acc, dia) => acc + dia.valor, 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loadingRanking && !errorRanking && startDateRanking && endDateRanking && datosRanking.length === 0 && (
+          <EmptyStateCard
+            title="Sin ventas en el período seleccionado"
+            message="No se encontraron ventas para las fechas especificadas en el ranking."
+            icon={IoTrophyOutline}
+            action={
+              <button
+                onClick={() => {
+                  setStartDateRanking(null);
+                  setEndDateRanking(null);
+                }}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 flex items-center gap-2 mx-auto text-sm sm:text-base"
+              >
+                <IoCalendarOutline className="text-base sm:text-lg" />
+                Seleccionar otras fechas
+              </button>
+            }
+          />
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       <Box sx={{ width: '100%', typography: 'body1' }}>
@@ -650,12 +968,17 @@ export default function Ventas() {
             <TabList 
               onChange={handleChange} 
               aria-label="lab API tabs example"
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
               sx={{
                 '& .MuiTab-root': {
                   color: 'white',
                   fontWeight: 'bold',
-                  fontSize: '1rem',
+                  fontSize: { xs: '0.9rem', sm: '1rem' },
                   minHeight: '64px',
+                  minWidth: { xs: 'auto', sm: '160px' },
+                  padding: { xs: '12px 16px', sm: '12px 24px' },
                   '&.Mui-selected': {
                     color: '#fbbf24',
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -665,15 +988,21 @@ export default function Ventas() {
                   backgroundColor: '#fbbf24',
                   height: '4px',
                   borderRadius: '2px'
+                },
+                '& .MuiTabs-scrollButtons': {
+                  color: 'white',
+                  '&.Mui-disabled': {
+                    opacity: 0.3
+                  }
                 }
               }}
             >
-
               <Tab 
                 label={
                   <div className="flex items-center gap-2">
                     <IoTrendingUpOutline className="text-xl" />
-                    <span>Populares</span>
+                    <span className="hidden sm:inline">Populares</span>
+                    <span className="sm:hidden">Pop.</span>
                   </div>
                 } 
                 value="1" 
@@ -687,10 +1016,20 @@ export default function Ventas() {
                 } 
                 value="2" 
               />
+              <Tab 
+                label={
+                  <div className="flex items-center gap-2">
+                    <IoTrophyOutline className="text-xl" />
+                    <span className="hidden sm:inline">Ranking de días</span>
+                    <span className="sm:hidden">Ranking</span>
+                  </div>
+                } 
+                value="3" 
+              />
             </TabList>
           </Box>
           
-          <TabPanel value="1" sx={{ padding: '24px' }}>
+          <TabPanel value="1" sx={{ padding: { xs: '16px', sm: '24px' } }}>
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
@@ -718,7 +1057,7 @@ export default function Ventas() {
             </div>
           </TabPanel>
           
-          <TabPanel value="2" sx={{ padding: '24px' }}>
+          <TabPanel value="2" sx={{ padding: { xs: '16px', sm: '24px' } }}>
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
@@ -829,6 +1168,10 @@ export default function Ventas() {
                 </TabContext>
               </Box>
             </div>
+          </TabPanel>
+          
+          <TabPanel value="3" sx={{ padding: { xs: '16px', sm: '24px' } }}>
+            <RankingTab />
           </TabPanel>
         </TabContext>
       </Box>
