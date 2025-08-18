@@ -26,7 +26,7 @@ export default function Creditos() {
         Legal: {
             terminos: {
                 title: "Términos y condiciones",
-                href: "#",
+                href: "/terminosyCondiciones",
             },
             politicas: {
                 title: "Políticas de privacidad",
