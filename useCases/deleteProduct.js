@@ -23,7 +23,7 @@ export async function deleteProduct(productId) {
 
         // Si la respuesta es exitosa, devolver true o los datos de respuesta
         const data = await response.json().catch(() => null); // Algunos endpoints DELETE no devuelven JSON
-        console.log('Producto eliminado exitosamente:', productId);
+        // console.log('Producto eliminado exitosamente:', productId);
         return data || { success: true, productId };
     } catch (error) {
         console.error('Error al eliminar el producto:', error.message);

@@ -47,7 +47,7 @@ export default function Pntoventa() {
     useEffect(() => {
         // Establecer permisos de ticket para testing
         localStorage.setItem('tickets', 'true');
-        console.log('Permisos de ticket establecidos automáticamente');
+        // console.log('Permisos de ticket establecidos automáticamente');
     }, []);
 
     // Recuperar datos del localStorage al cargar la página
@@ -201,7 +201,7 @@ export default function Pntoventa() {
         setMensajeError("");
 
         try {
-            console.log(`Procesando pago con ${metodoPago} por $${totalPedidos}`);
+            // console.log(`Procesando pago con ${metodoPago} por $${totalPedidos}`);
             
             // Crear la orden en el sistema
             const productosParaOrden = pedidosPendientes.map(item => ({
@@ -210,20 +210,20 @@ export default function Pntoventa() {
             }));
 
             const response = await createSimpleOrder(productosParaOrden, null);
-            console.log('Orden creada en cocina:', response);
+            // console.log('Orden creada en cocina:', response);
 
             // Obtener el estado del switch de cocina
             const cocinaEnabled = localStorage.getItem('cocinaSwitch');
             const switchEnabled = cocinaEnabled ? JSON.parse(cocinaEnabled) : false;
             
             const orderStatus = switchEnabled ? 'PuntoDeVenta' : 'Finalizado';
-            console.log(`Estado de la orden será: ${orderStatus} (Switch cocina: ${switchEnabled ? 'ON' : 'OFF'})`);
+            // console.log(`Estado de la orden será: ${orderStatus} (Switch cocina: ${switchEnabled ? 'ON' : 'OFF'})`);
 
             // Finalizar con el pago
             const pagoResponse = await endOrderPuntoDeVenta(response.order_uuid, metodoPago, orderStatus);
             
             if (pagoResponse && (pagoResponse.success !== false)) {
-                console.log('Pago procesado exitosamente:', pagoResponse);
+                // console.log('Pago procesado exitosamente:', pagoResponse);
                 
                 // Limpiar todo después del éxito
                 setPedidosPendientes([]);

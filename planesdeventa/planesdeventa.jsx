@@ -137,7 +137,7 @@ export default function PlanDeVentas() {
     async function getLink(prop) {
         try {
             const response = await getPaymentsLink({ plan: prop });
-            console.log("Enlace de pago obtenido:", response);
+            // console.log("Enlace de pago obtenido:", response);
             
             if (response.checkout_url) {
                 window.location.href = response.checkout_url;

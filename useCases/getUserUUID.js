@@ -6,8 +6,8 @@ export async function getUserUUID(userUuid) {
     const endpoint = `https://api.wapifood.com/user/info/${userUuid}`;
     
     // Debug: Ver qué UUID y endpoint estamos usando
-    console.log('User UUID recibido:', userUuid);
-    console.log('Endpoint construido:', endpoint);
+    // console.log('User UUID recibido:', userUuid);
+    // console.log('Endpoint construido:', endpoint);
 
     try {
        
@@ -19,8 +19,8 @@ export async function getUserUUID(userUuid) {
         });
 
         // Debug: Ver el status de la respuesta
-        console.log('Status de respuesta:', response.status);
-        console.log('Response headers:', response.headers);
+        // console.log('Status de respuesta:', response.status);
+        // console.log('Response headers:', response.headers);
 
         if (!response.ok) {
             let errorData = {};
@@ -42,7 +42,7 @@ export async function getUserUUID(userUuid) {
 
         // Parsear la respuesta exitosa como JSON
         const data = await response.json();
-        console.log('XDXDXDD', data); // Debug
+        // console.log('XDXDXDD', data); // Debug
         return data;
     } catch (error) {
         console.error('Error al obtener la información del usuario:', error.message);

@@ -43,8 +43,8 @@ export async function createProduct(productData, imageFile) {
     const queryParam = `?product=${encodeURIComponent(JSON.stringify(productData))}`;
     const url = `https://api.wapifood.com/products/${queryParam}`;
 
-    console.log("URL de la solicitud:", url);
-    console.log("Datos enviados (formData):", Object.fromEntries(formData.entries())); // Log form data
+    // console.log("URL de la solicitud:", url);
+    // console.log("Datos enviados (formData):", Object.fromEntries(formData.entries())); // Log form data
 
     try {
         const response = await axios.post(url, formData, {

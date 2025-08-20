@@ -64,8 +64,8 @@ export default function VistaCocina() {
 
             const ordersData = ordersResponse.data;
 
-            console.log("Orders data:", ordersData);
-            console.log("Tables data:", tablesData);
+            // console.log("Orders data:", ordersData);
+            // console.log("Tables data:", tablesData);
 
             // Guardar los datos de las tablas en el estado
             setTablesData(tablesData);
@@ -329,7 +329,7 @@ export default function VistaCocina() {
 
             setVisibleDropdown(null);
             await fetchTablesData();
-            console.log('Producto cancelado exitosamente');
+            // console.log('Producto cancelado exitosamente');
         } catch (error) {
             console.error('Error al cancelar el producto:', error);
             alert('Error al cancelar el producto: ' + error.message);
@@ -353,15 +353,15 @@ export default function VistaCocina() {
             const orderUuid = selectedTable.orderUuid;
 
             if (selectedTable.tableNumber === 1) {
-                console.log('Mesa 1 detectada - usando endPuntoDeVenta');
+                // console.log('Mesa 1 detectada - usando endPuntoDeVenta');
 
                 const metodoPago = selectedTable.metodoPago || 'efectivo';
 
-                console.log('Finalizando orden con endPuntoDeVenta:', {
-                    orderUuid,
-                    metodoPago,
-                    tableNumber: selectedTable.tableNumber
-                });
+                // console.log('Finalizando orden con endPuntoDeVenta:', {
+                //     orderUuid,
+                //     metodoPago,
+                //     tableNumber: selectedTable.tableNumber
+                // });
 
                 await endPuntoDeVenta(orderUuid, metodoPago);
 
@@ -379,9 +379,9 @@ export default function VistaCocina() {
                     })
                 );
 
-                console.log('Orden finalizada exitosamente con endPuntoDeVenta');
+                // console.log('Orden finalizada exitosamente con endPuntoDeVenta');
             } else {
-                console.log('Mesa normal - usando updateProductStatus');
+                // console.log('Mesa normal - usando updateProductStatus');
 
                 const productIds = activeProducts.map(product => product.id);
 
@@ -401,7 +401,7 @@ export default function VistaCocina() {
                     })
                 );
 
-                console.log('Orden completada exitosamente con updateProductStatus');
+                // console.log('Orden completada exitosamente con updateProductStatus');
             }
 
             await fetchTablesData();
@@ -424,7 +424,7 @@ export default function VistaCocina() {
 
             const orderUuid = selectedTable.orderUuid;
 
-            console.log('Cancelando orden completa:', orderUuid);
+            // console.log('Cancelando orden completa:', orderUuid);
 
             await cancelOrder(orderUuid);
 
@@ -446,7 +446,7 @@ export default function VistaCocina() {
 
             setActiveModal(null);
             setIsTableDetailModalOpen(false);
-            console.log('Orden cancelada exitosamente');
+            // console.log('Orden cancelada exitosamente');
         } catch (error) {
             console.error('Error al cancelar la orden:', error);
             alert('Error al cancelar la orden: ' + error.message);
@@ -461,12 +461,12 @@ export default function VistaCocina() {
 
     const confirmReleaseTable = async () => {
         try {
-            console.log(`Liberando mesa ${selectedTableToRelease}`);
+            // console.log(`Liberando mesa ${selectedTableToRelease}`);
             
             // Cambiar el estado de la mesa de "NoDisponible" a "Libre"
             await updateTableStatus(selectedTableToRelease, 'Libre');
             
-            console.log(`Mesa ${selectedTableToRelease} liberada exitosamente`);
+            // console.log(`Mesa ${selectedTableToRelease} liberada exitosamente`);
             
             // Actualizar los datos para reflejar el cambio
             await fetchTablesData();

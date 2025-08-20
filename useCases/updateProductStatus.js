@@ -32,14 +32,14 @@ async function updateProductStatus(orderUuid, idOrdersDetails, orderDetailStatus
   formData.append('order_detail_status', orderDetailStatus);
 
   // Agregar logs para debugging
-  console.log('Datos enviados a la API:', {
-    url,
-    orderUuid,
-    idOrdersDetails,
-    idsString,
-    orderDetailStatus,
-    formDataEntries: Array.from(formData.entries())
-  });
+  // console.log('Datos enviados a la API:', {
+  //   url,
+  //   orderUuid,
+  //   idOrdersDetails,
+  //   idsString,
+  //   orderDetailStatus,
+  //   formDataEntries: Array.from(formData.entries())
+  // });
 
   try {
     const response = await fetch(url, {
@@ -51,7 +51,7 @@ async function updateProductStatus(orderUuid, idOrdersDetails, orderDetailStatus
       body: formData
     });
 
-    console.log('Response status:', response.status);
+    // console.log('Response status:', response.status);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -60,7 +60,7 @@ async function updateProductStatus(orderUuid, idOrdersDetails, orderDetailStatus
     }
 
     const responseData = await response.json();
-    console.log('Respuesta exitosa:', responseData);
+    // console.log('Respuesta exitosa:', responseData);
     return responseData;
   } catch (error) {
     console.error('Error al actualizar el estado del producto:', error);

@@ -31,7 +31,7 @@ export async function getProducts() {
             }))
         );
 
-        console.log('Productos transformados:', transformedData);
+        // console.log('Productos transformados:', transformedData);
         return transformedData;
     } catch (error) {
         console.error('Error al obtener los productos:', error.message);

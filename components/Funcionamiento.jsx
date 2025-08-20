@@ -12,7 +12,7 @@ export default function Funcionamiento() {
         },
         {
             title: "¡Comienza a recibir pedidos!",
-            description: "Gestiona tus pedidos en tiempo real y haz crecer tu negocio.",
+            description: "Gestiona tus pedidos recibidos y haz crecer tu negocio.",
             icon: "3",
         },
         {

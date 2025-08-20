@@ -15,7 +15,7 @@ export async function createUser(user) {
         }
 
         const data = await response.json();
-        console.log('Usuario creado con éxito:', data);
+        // console.log('Usuario creado con éxito:', data);
         return data;
     } catch (error) {
         console.error('Error al crear usuario:', error.message);

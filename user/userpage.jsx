@@ -10,6 +10,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getUserInfo } from "@/useCases/getUserInfo";
 import { patchUserInfo } from "@/useCases/patchUserInfo";
+import { checkPayment } from "@/useCases/checkPayment"; // Importar checkPayment
 import Profile from "@/pages/assets/images/Profile.jpg";
 import { useRouter } from 'next/router';
 import Navbar from "@/dashboardComponents/navbar";
@@ -125,6 +126,8 @@ export default function UserPage() {
   const [editMode, setEditMode] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [processingImage, setProcessingImage] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false); // Estado para suscripción
+  const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false); // Estado para popup
   const router = useRouter();
 
   useEffect(() => {
@@ -140,7 +143,18 @@ export default function UserPage() {
       }
     };
 
+    const checkSubscriptionStatus = async () => {
+      try {
+        const response = await checkPayment();
+        setHasActiveSubscription(response.has_active_subscription || false);
+      } catch (error) {
+        console.error('Error al verificar suscripción:', error);
+        setHasActiveSubscription(false);
+      }
+    };
+
     fetchUserInfo();
+    checkSubscriptionStatus();
   }, []);
 
   const handleImageChange = async (event, setFieldValue) => {
@@ -196,7 +210,7 @@ export default function UserPage() {
         updateData.image = values.profileImage;
       }
 
-      console.log('Enviando datos:', updateData); // Para debug
+      // console.log('Enviando datos:', updateData); // Para debug
 
       const updatedUser = await patchUserInfo(updateData);
       setUserInfo(updatedUser);
@@ -248,7 +262,22 @@ export default function UserPage() {
     userInfo.image_user.url !== "undefined"
   );
 
-  console.log('hasExistingImage:', hasExistingImage, 'Image URL:', userInfo?.image_user?.url); // Para debug
+  // console.log('hasExistingImage:', hasExistingImage, 'Image URL:', userInfo?.image_user?.url); // Para debug
+
+  // Función para manejar el click en "Ver menú"
+  const handleViewMenuClick = () => {
+    if (hasActiveSubscription) {
+      // Si tiene suscripción activa, abrir el menú normalmente
+      window.open(`/webmenu/${userInfo?.user_uuid}`, '_blank');
+    } else {
+      // Si no tiene suscripción activa, mostrar popup
+      setShowSubscriptionPopup(true);
+      // Auto-cerrar el popup después de 4 segundos
+      setTimeout(() => {
+        setShowSubscriptionPopup(false);
+      }, 4000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
@@ -278,6 +307,42 @@ export default function UserPage() {
               >
                 Continuar
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Popup de suscripción requerida para menú digital */}
+        {showSubscriptionPopup && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-md mx-auto text-center shadow-2xl transform animate-scale-in border-l-4 border-orange-500">
+              <div className="mb-6">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <TbWorldShare className="text-orange-500 text-3xl" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  Suscripción Requerida
+                </h3>
+                <p className="text-gray-600">
+                  Para ver tu Menú Digital favor de renovar o contratar uno de nuestros paquetes
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowSubscriptionPopup(false)}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all duration-200"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSubscriptionPopup(false);
+                    router.push('/payments');
+                  }}
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                >
+                  Ver Paquetes
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -354,7 +419,7 @@ export default function UserPage() {
                   </p>
                 </div>
 
-                {/* Menú Digital */}
+                {/* Menú Digital - MODIFICADO */}
                 <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl p-4 text-center">
                   <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <TbWorldShare className="text-white text-xl" />
@@ -362,8 +427,12 @@ export default function UserPage() {
                   <p className="text-xs text-gray-600 mb-1">Menú Digital</p>
                   {shouldShowDigitalMenu(userInfo) ? (
                     <button 
-                      onClick={() => window.open(`/webmenu/${userInfo?.user_uuid}`, '_blank')}
-                      className="text-sm font-semibold text-green-600 hover:text-emerald-700 transition-colors"
+                      onClick={handleViewMenuClick}
+                      className={`text-sm font-semibold transition-colors ${
+                        hasActiveSubscription 
+                          ? 'text-green-600 hover:text-emerald-700' 
+                          : 'text-orange-600 hover:text-red-700'
+                      }`}
                     >
                       Ver menú
                     </button>

@@ -6,8 +6,8 @@ export async function getwebMenu(uuid) {
     const endpoint = `https://api.wapifood.com/categoria/web-menu/${uuid}`;
     
     // Debug: Ver qué UUID y endpoint estamos usando
-    console.log('UUID recibido:', uuid);
-    console.log('Endpoint construido:', endpoint);
+    // console.log('UUID recibido:', uuid);
+    // console.log('Endpoint construido:', endpoint);
 
     try {
        
@@ -19,8 +19,8 @@ export async function getwebMenu(uuid) {
         });
 
         // Debug: Ver el status de la respuesta
-        console.log('Status de respuesta:', response.status);
-        console.log('Response headers:', response.headers);
+        // console.log('Status de respuesta:', response.status);
+        // console.log('Response headers:', response.headers);
 
         if (!response.ok) {
             let errorData = {};
@@ -42,7 +42,7 @@ export async function getwebMenu(uuid) {
 
         // Parsear la respuesta exitosa como JSON
         const data = await response.json();
-        console.log('Datos recibidos de la API:', data); // Debug
+        // console.log('Datos recibidos de la API:', data); // Debug
         return data;
     } catch (error) {
         console.error('Error al obtener las categorías:', error.message);

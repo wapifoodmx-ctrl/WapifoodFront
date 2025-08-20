@@ -46,8 +46,8 @@ export async function postDataUser(userInfo, imageFile) {
 
     const url = "https://api.wapifood.com/user/me/info";
 
-    console.log("URL de la solicitud:", url);
-    console.log("Datos enviados (formData):", Object.fromEntries(formData.entries())); // Log form data
+    // console.log("URL de la solicitud:", url);
+    // console.log("Datos enviados (formData):", Object.fromEntries(formData.entries())); // Log form data
 
     try {
         const response = await axios.post(url, formData, {

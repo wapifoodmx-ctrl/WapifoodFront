@@ -8,7 +8,7 @@ const data = [
     {
         icon: <IoCartOutline size={32} />,
         title: "Gestiona tus pedidos",
-        interm: "Recibe y organiza pedidos en tiempo real. Mantén un seguimiento claro de cada orden y optimiza la gestión de tu negocio.",
+        interm: "Recibe y organiza pedidos. Mantén un seguimiento claro de cada orden y optimiza la gestión de tu negocio.",
     },
     {
         icon: <FaRegUser size={32} />,
@@ -23,7 +23,7 @@ const data = [
     {
         icon: <AiFillSignal size={32} />,
         title: "Informes y estadísticas",
-        interm: "Visualiza informes y estadísticas en tiempo real. Comprende el rendimiento de tu negocio y toma decisiones informadas.",
+        interm: "Visualiza tus informes y estadísticas cuando quieras. Comprende el rendimiento de tu negocio y toma decisiones informadas.",
     },
     
 

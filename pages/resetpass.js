@@ -19,7 +19,7 @@ export default function ResetPass() {
       const { token: queryToken } = router.query;
       if (queryToken) {
         setToken(queryToken);
-        console.log('Token extraído:', queryToken);
+        // console.log('Token extraído:', queryToken);
       } else {
         setIsValidToken(false);
         setErrorMessage("Token de recuperación no válido o expirado");
@@ -57,10 +57,10 @@ export default function ResetPass() {
         return;
       }
 
-      console.log('Enviando datos:', JSON.stringify({ 
-        token: token, 
-        new_password: values.newPassword 
-      }));
+      // console.log('Enviando datos:', JSON.stringify({ 
+      //   token: token, 
+      //   new_password: values.newPassword 
+      // }));
 
       const result = await cambiarPass(token, values.newPassword);
 

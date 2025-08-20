@@ -42,8 +42,8 @@ export async function updateProduct(id_products, productData, imageFile) {
         throw new Error("No se encontró un token de autenticación. Por favor, inicia sesión.");
     }
 
-    console.log("URL de la solicitud:", url);
-    console.log("Datos enviados (FormData):", formData.get("file")); // Log para verificar el archivo
+    // console.log("URL de la solicitud:", url);
+    // console.log("Datos enviados (FormData):", formData.get("file")); // Log para verificar el archivo
 
     try {
         const response = await axios.patch(url, formData, {

@@ -20,7 +20,7 @@ async function getOrderTickets() {
     if (!response.ok) {
       // Si es un 404 o el mensaje indica que no hay órdenes, retornar array vacío
       if (response.status === 404) {
-        console.log('No se encontraron órdenes para este usuario');
+        // console.log('No se encontraron órdenes para este usuario');
         return [];
       }
       
@@ -29,7 +29,7 @@ async function getOrderTickets() {
       
       // Si el mensaje indica que no hay órdenes, retornar array vacío
       if (errorData.detail && errorData.detail.includes('No se encontraron órdenes')) {
-        console.log('No se encontraron órdenes para este usuario');
+        // console.log('No se encontraron órdenes para este usuario');
         return [];
       }
       
