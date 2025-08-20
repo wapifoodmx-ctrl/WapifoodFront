@@ -60,10 +60,34 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>WapiFood</title>
-        <meta name="description" content="Sistema de gestión de órdenes para restaurantes en tiempo real" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        {/* SEO base */}
+        <title>WapiFood | Menú digital y punto de venta para restaurantes</title>
+        <meta name="description" content="Crea tu menú digital y gestiona ventas y cocina en tiempo real con WapiFood." />
+        <link rel="canonical" href={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://wapifood.com'}/`} />
+
+        {/* Open Graph */}
+        <meta property="og:title" content="WapiFood | Menú digital y punto de venta" />
+        <meta property="og:description" content="Crea tu menú digital y gestiona ventas y cocina en tiempo real con WapiFood." />
+        <meta property="og:url" content={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://wapifood.com'}/`} />
+        <meta property="og:type" content="website" />
+
+        {/* JSON-LD WebSite + SearchAction */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'WapiFood',
+              url: process.env.NEXT_PUBLIC_SITE_URL || 'https://wapifood.com',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://wapifood.com'}/clientmenu?search={query}`,
+                'query-input': 'required name=query',
+              },
+            }),
+          }}
+        />
       </Head>
 
       <div className="min-h-screen flex flex-col w-full bg-gradient-to-b from-gray-50 to-white pt-16">
