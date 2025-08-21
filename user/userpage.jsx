@@ -5,7 +5,6 @@ import { IoLocationOutline } from "react-icons/io5";
 import { FaPhoneAlt, FaCheckCircle, FaEdit, FaUser, FaClock, FaMapMarkerAlt } from "react-icons/fa";
 import { CiMail } from "react-icons/ci";
 import { BsWhatsapp } from "react-icons/bs";
-import { HiOutlineCode } from "react-icons/hi";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getUserInfo } from "@/useCases/getUserInfo";
@@ -638,9 +637,7 @@ export default function UserPage() {
                         <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="confirmationCode">
                           Código de confirmación
                         </label>
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                          <HiOutlineCode className="text-purple-500 text-lg" />
-                        </div>
+                        
                         <Field 
                           type="text" 
                           id="confirmationCode" 
