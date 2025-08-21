@@ -12,6 +12,7 @@ import Pntoventa from "@/pages/assets/images/Pntoventa.png";
 import Pago from "@/pages/assets/images/Pago.png";
 import Ticket2 from "@/pages/assets/images/Tickets2.png";
 import Tickets1 from "@/pages/assets/images/Tickets1.png";
+import Vistadecocina from "@/pages/assets/images/Vistadecocina.png";
 import Creditos from "@/components/Creditos";
 import getPaymentsLink, { getAllPaymentLinks } from "@/useCases/getPaymentsLink";
 import { useEffect, useState } from "react";
@@ -28,7 +29,7 @@ export default function PlanDeVentas() {
                 "Se registran ventas y rendimiento hasta anualmente",
                 "Grafica tu rendimiento para mejor comprencion",
             ],
-            image: Ticket2,
+            image: Vistadecocina,
         },
         {
             id: 2,
@@ -107,7 +108,7 @@ export default function PlanDeVentas() {
             promoPrice: "$1960.00 mxn al año",
             promoText: "Precio de apertura",
             buttonText: "Seleccionar",
-            prop: "basico + impresora",
+            prop: "basico_impresora",
             popular: false,
         },
         {
@@ -118,7 +119,7 @@ export default function PlanDeVentas() {
             promoPrice: "$2920.00 mxn al año",
             promoText: "Precio de apertura",
             buttonText: "Seleccionar",
-            prop: "plan restaurante + impresora",
+            prop: "restaurante_impresora",
             popular: false,
         },
         {
@@ -126,10 +127,10 @@ export default function PlanDeVentas() {
             title: "Plan Restaurante Plus + Impresora",
             description: "App de punto de venta + 25 mesas para tu negocio + impresora + 1 año de servicio.",
             price: "$5200.00 mxn al mes",
-            promoPrice: "$3880.00 mxn al mes",
+            promoPrice: "$3880.00 mxn al año",
             promoText: "Precio de apertura",
             buttonText: "Seleccionar",
-            prop: "plan restaurante plus + impresora",
+            prop: "plus_restaurante_impresora",
             popular: false,
         }
     ]);
@@ -171,7 +172,74 @@ export default function PlanDeVentas() {
                             <p className="text-xl md:text-2xl text-green-100 mb-8 max-w-3xl mx-auto">
                                 Descubre las herramientas perfectas para hacer crecer tu restaurante con tecnología de vanguardia
                             </p>
-                            <div className="flex items-center justify-center gap-2 text-yellow-300">
+                            
+                            {/* Card Especial de Inauguración */}
+                            <div className="max-w-5xl mx-auto mb-8 pt-8">
+                                <div className="relative bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 border-4 border-yellow-300 overflow-visible">
+                                    {/* Efectos de fondo */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-green-600/30 via-emerald-600/30 to-teal-600/30 rounded-3xl"></div>
+                                    <div className="absolute top-0 left-0 w-full h-full">
+                                        <div className="absolute top-4 left-4 w-8 h-8 bg-yellow-300 rounded-full opacity-60 animate-pulse"></div>
+                                        <div className="absolute top-8 right-8 w-12 h-12 bg-white/20 rounded-full opacity-40 animate-pulse delay-500"></div>
+                                        <div className="absolute bottom-6 left-8 w-6 h-6 bg-yellow-400 rounded-full opacity-70 animate-pulse delay-1000"></div>
+                                        <div className="absolute bottom-8 right-12 w-10 h-10 bg-green-200/30 rounded-full opacity-50 animate-pulse delay-700"></div>
+                                    </div>
+                                    
+                                    {/* Badge de Inauguración */}
+                                    <div className="absolute -top-6 md:-top-8 left-1/2 transform -translate-x-1/2 z-30">
+                                        <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 text-white px-4 py-2 md:px-8 md:py-3 rounded-full font-bold text-sm md:text-lg flex items-center gap-2 md:gap-3 shadow-xl border-2 border-white ">
+                                            <HiSparkles className="text-lg md:text-xl animate-spin" />
+                                            <span className="hidden sm:inline">OFERTA ESPECIAL DE</span>
+                                            <span className="sm:hidden">OFERTA</span>
+                                            INAUGURACIÓN
+                                            <HiSparkles className="text-lg md:text-xl animate-spin" />
+                                        </div>
+                                    </div>
+
+                                    <div className="relative z-10 pt-10 md:pt-24 pb-8 md:pb-12 px-6 md:px-12 text-center ">
+                                        <h2 className="text-2xl  sm:text-3xl md:text-5xl lg:text-6xl font-black text-white mb-2 md:mb-4 leading-tight">
+                                            PRECIO ÚNICO POR
+                                        </h2>
+                                        <h3 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black text-yellow-300 mb-4 md:mb-6 leading-tight">
+                                            INAUGURACIÓN
+                                        </h3>
+                                        
+                                        <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 md:p-6 mb-6 md:mb-8 border border-white/30 mx-auto max-w-md md:max-w-lg">
+                                            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 md:mb-3">
+                                                "PLAN VENTAS"
+                                            </p>
+                                            <div className="flex items-center justify-center gap-2 md:gap-4 mb-3 md:mb-4 flex-wrap">
+                                                <span className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-200 line-through">$150.00 mxn</span>
+                                                <div className="bg-red-500 text-white px-2 py-1 md:px-3 md:py-1 rounded-full text-xs md:text-sm font-bold transform -rotate-12 shadow-lg">
+                                                    90% OFF
+                                                </div>
+                                            </div>
+                                            <div className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-yellow-300 mb-1 md:mb-2 leading-none">
+                                                $15.00
+                                            </div>
+                                            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white font-bold">
+                                                mxn por mes
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            className="bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 hover:from-yellow-500 hover:via-orange-500 hover:to-yellow-600 text-white font-black text-base sm:text-lg md:text-xl lg:text-2xl px-6 py-3 md:px-12 md:py-4 rounded-2xl transform hover:scale-110 transition-all duration-300 shadow-2xl border-2 border-white/30 w-full sm:w-auto"
+                                            onClick={() => getLink("inauguracion")}
+                                        >
+                                            ¡APROVECHA AHORA! 🚀
+                                        </button>
+                                    </div>
+
+                                    {/* Efecto de brillo animado */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform skew-x-12 animate-pulse opacity-50 rounded-3xl"></div>
+                                    
+                                    {/* Bordes decorativos */}
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-300 via-white to-yellow-300 rounded-t-3xl"></div>
+                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-300 via-white to-yellow-300 rounded-b-3xl"></div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-center gap-2 text-yellow-300 mt-6">
                                 <HiSparkles className="text-2xl animate-pulse" />
                                 <span className="text-lg font-medium">Precios especiales de lanzamiento</span>
                                 <HiSparkles className="text-2xl animate-pulse" />

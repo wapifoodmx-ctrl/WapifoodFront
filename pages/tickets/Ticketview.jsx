@@ -39,6 +39,11 @@ export default function Ticketview() {
         return date.toISOString().split('T')[0];
     };
 
+    // Función para calcular el total de tickets por fecha
+    const calculateDayTotal = (tickets) => {
+        return tickets.reduce((total, ticket) => total + (ticket.total || 0), 0);
+    };
+
     // Función para agrupar tickets por fecha
     const groupTicketsByDate = (tickets) => {
         const groups = {};
@@ -131,7 +136,7 @@ export default function Ticketview() {
                         restaurant_name: order.restaurant_name,
                         order_status: order.order_status,
                         metodo_pago: order.metodo_pago,
-                        ticket_number: order.ticket_number // *** AGREGAR ESTA LÍNEA ***
+                        ticket_number: order.ticket_number
                     }));
                     
                     // Ordenar por fecha descendente (más recientes primero)
@@ -178,7 +183,8 @@ export default function Ticketview() {
                         order_uuid: order.order_uuid,
                         restaurant_name: order.restaurant_name,
                         order_status: order.order_status,
-                        metodo_pago: order.metodo_pago
+                        metodo_pago: order.metodo_pago,
+                        ticket_number: order.ticket_number
                     }));
                     
                     // Ordenar por fecha descendente (más recientes primero)
@@ -225,7 +231,8 @@ export default function Ticketview() {
                         order_uuid: order.order_uuid,
                         restaurant_name: order.restaurant_name,
                         order_status: order.order_status,
-                        metodo_pago: order.metodo_pago
+                        metodo_pago: order.metodo_pago,
+                        ticket_number: order.ticket_number
                     }));
                     
                     // Ordenar por fecha descendente (más recientes primero)
@@ -276,7 +283,8 @@ export default function Ticketview() {
                             order_uuid: order.order_uuid,
                             restaurant_name: order.restaurant_name,
                             order_status: order.order_status,
-                            metodo_pago: order.metodo_pago
+                            metodo_pago: order.metodo_pago,
+                            ticket_number: order.ticket_number
                         }));
                         
                         // Ordenar por fecha descendente (más recientes primero)
@@ -567,11 +575,16 @@ export default function Ticketview() {
                                                 ({tickets.length} ticket{tickets.length !== 1 ? 's' : ''})
                                             </span>
                                         </div>
-                                        {expandedDates.has(date) ? (
-                                            <IoChevronUp className="text-gray-500" />
-                                        ) : (
-                                            <IoChevronDown className="text-gray-500" />
-                                        )}
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-sm font-bold text-green-600">
+                                                Total: ${calculateDayTotal(tickets).toFixed(2)}
+                                            </span>
+                                            {expandedDates.has(date) ? (
+                                                <IoChevronUp className="text-gray-500" />
+                                            ) : (
+                                                <IoChevronDown className="text-gray-500" />
+                                            )}
+                                        </div>
                                     </button>
 
                                     {/* Contenido desplegable */}
@@ -584,7 +597,12 @@ export default function Ticketview() {
                                                         className="cursor-pointer transition-opacity hover:opacity-80"
                                                         onClick={() => handleCardClick(ticket)}
                                                     >
-                                                        <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col">
+                                                        <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col relative">
+                                                            {/* Número de ticket en la esquina superior derecha */}
+                                                            <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded z-10">
+                                                                #{ticket.ticket_number || 'N/A'}
+                                                            </div>
+                                                            
                                                             <div className="p-3 flex-grow flex flex-col overflow-hidden">
                                                                 {/* Header fijo */}
                                                                 <div className="flex items-center mb-2 flex-shrink-0">
@@ -607,7 +625,6 @@ export default function Ticketview() {
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Área flexible para productos */}
                                                                 <div className="flex-grow flex flex-col min-h-0">
                                                                     <p className="text-xs text-gray-500 font-semibold mb-1 flex-shrink-0">
                                                                         Productos ({ticket.productos.length})
@@ -675,7 +692,12 @@ export default function Ticketview() {
                                     className="cursor-pointer transition-opacity hover:opacity-80"
                                     onClick={() => handleCardClick(ticket)}
                                 >
-                                    <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col">
+                                    <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col relative">
+                                        {/* Número de ticket en la esquina superior derecha */}
+                                        <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded z-10">
+                                            #{ticket.ticket_number || 'N/A'}
+                                        </div>
+                                        
                                         <div className="p-3 flex-grow flex flex-col overflow-hidden">
                                             {/* Header fijo */}
                                             <div className="flex items-center mb-2 flex-shrink-0">
@@ -702,7 +724,6 @@ export default function Ticketview() {
                                                 </div>
                                             </div>
 
-                                            {/* Área flexible para productos */}
                                             <div className="flex-grow flex flex-col min-h-0">
                                                 <p className="text-xs text-gray-500 font-semibold mb-1 flex-shrink-0">
                                                     Productos ({ticket.productos.length})

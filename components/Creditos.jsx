@@ -28,10 +28,7 @@ export default function Creditos() {
                 title: "Términos y condiciones",
                 href: "/terminosyCondiciones",
             },
-            politicas: {
-                title: "Políticas de privacidad",
-                href: "#",
-            },
+           
         }
     };
 

@@ -13,14 +13,14 @@ export default function AppTickets() {
                         Descarga nuestra app en Play Store, contrata un paquete con impresora e imprime los tickets de tus clientes.
                     </p>
                     <div className="flex flex-col gap-6 w-full max-w-md my-6">
-                        <a
+                        {/* <a
                             href="https://play.google.com/store/apps/details?id=tuapp"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="rounded-xl bg-gradient-to-r from-green-400 to-emerald-400 text-white font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:from-green-500 hover:to-emerald-500 transition-all duration-200 border-2 border-green-300 text-center"
                         >
                             Descargar en Play Store
-                        </a>
+                        </a> */}
                         
                     </div>
                 </div>

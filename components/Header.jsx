@@ -128,7 +128,7 @@ export default function Header() {
             ${isOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}
           `}
         >
-          <div className="flex justify-end px-4">
+          <div className="flex justify-end px-4 pt-2">
             <button
               className="text-green-700 text-2xl font-bold hover:text-emerald-600 transition-colors duration-200"
               onClick={() => setIsOpen(false)}
@@ -137,12 +137,12 @@ export default function Header() {
               ✕
             </button>
           </div>
-          <div className="py-4 px-4">
+          <div className="py-4 px-4 space-y-3">
             {Object.values(menu).map((item, index) => (
               <button
                 key={index}
                 onClick={item.action}
-                className="block w-full text-left py-3 px-4 text-green-700 hover:text-emerald-700 hover:bg-green-100 rounded-xl font-semibold transition-all duration-200 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 shadow"
+                className="block w-full text-left py-4 px-4 text-green-700 hover:text-emerald-700 hover:bg-green-100 rounded-xl font-semibold transition-all duration-200 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 shadow mb-2"
               >
                 {item.title}
               </button>
