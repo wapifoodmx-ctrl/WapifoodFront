@@ -61,10 +61,23 @@ export default function Home() {
     <>
       <Head>
         <title>WapiFood</title>
-        <meta name="description" content="Sistema de gestión de órdenes para restaurantes en tiempo real" />
+        <meta
+          name="description"
+          content="Sistema de gestión de órdenes para restaurantes en tiempo real"
+        />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+
+        {/* Favicon clásico */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+
+        {/* Favicons recomendados */}
+        <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
+        <link rel="icon" type="image/png" href="/favicon-48x48.png" sizes="48x48" />
+
+        {/* Apple */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </Head>
+
 
       <div className="min-h-screen flex flex-col w-full bg-gradient-to-b from-gray-50 to-white pt-16">
         {/* Header con mejor z-index y sombra sutil */}
