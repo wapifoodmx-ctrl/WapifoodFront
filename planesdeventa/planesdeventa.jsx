@@ -151,30 +151,30 @@ export default function PlanDeVentas() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+        <div className="bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-20 left-10 w-32 h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>
-                <div className="absolute top-40 right-20 w-40 h-40 bg-emerald-100 rounded-full opacity-25 blur-xl animate-pulse delay-1000"></div>
-                <div className="absolute bottom-32 left-1/4 w-24 h-24 bg-teal-100 rounded-full opacity-20 blur-lg animate-pulse delay-500"></div>
-                <div className="absolute bottom-20 right-10 w-36 h-36 bg-green-200 rounded-full opacity-15 blur-2xl animate-pulse delay-1500"></div>
+                <div className="absolute top-20 left-4 sm:left-10 w-24 h-24 sm:w-32 sm:h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>
+                <div className="absolute top-40 right-4 sm:right-20 w-32 h-32 sm:w-40 sm:h-40 bg-emerald-100 rounded-full opacity-25 blur-xl animate-pulse delay-1000"></div>
+                <div className="absolute bottom-32 left-1/4 w-20 h-20 sm:w-24 sm:h-24 bg-teal-100 rounded-full opacity-20 blur-lg animate-pulse delay-500"></div>
+                <div className="absolute bottom-20 right-4 sm:right-10 w-28 h-28 sm:w-36 sm:h-36 bg-green-200 rounded-full opacity-15 blur-2xl animate-pulse delay-1500"></div>
             </div>
 
             <section className="relative z-10">
-                {/* Header Hero Section */}
-                <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 py-16 md:py-20">
+                {/* Header Hero Section - Simplificado para evitar conflictos */}
+                <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 py-12 md:py-16">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                         <div className="animate-fade-in-up">
-                            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+                            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
                                 Planes que impulsan tu 
                                 <span className="text-yellow-300"> negocio</span>
-                            </h1>
-                            <p className="text-xl md:text-2xl text-green-100 mb-8 max-w-3xl mx-auto">
+                            </h2>
+                            <p className="text-lg md:text-xl text-green-100 mb-6 max-w-3xl mx-auto">
                                 Descubre las herramientas perfectas para hacer crecer tu restaurante con tecnología de vanguardia
                             </p>
                             
                             {/* Card Especial de Inauguración */}
-                            <div className="max-w-5xl mx-auto mb-8 pt-8">
+                            <div className="max-w-5xl mx-auto mb-6 pt-6">
                                 <div className="relative bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 border-4 border-yellow-300 overflow-visible">
                                     {/* Efectos de fondo */}
                                     <div className="absolute inset-0 bg-gradient-to-r from-green-600/30 via-emerald-600/30 to-teal-600/30 rounded-3xl"></div>
@@ -196,13 +196,13 @@ export default function PlanDeVentas() {
                                         </div>
                                     </div>
 
-                                    <div className="relative z-10 pt-10 md:pt-24 pb-8 md:pb-12 px-6 md:px-12 text-center ">
-                                        <h2 className="text-2xl  sm:text-3xl md:text-5xl lg:text-6xl font-black text-white mb-2 md:mb-4 leading-tight">
+                                    <div className="relative z-10 pt-10 md:pt-20 pb-6 md:pb-10 px-6 md:px-12 text-center ">
+                                        <h3 className="text-2xl  sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-2 md:mb-4 leading-tight">
                                             PRECIO ÚNICO POR
-                                        </h2>
-                                        <h3 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black text-yellow-300 mb-4 md:mb-6 leading-tight">
-                                            INAUGURACIÓN
                                         </h3>
+                                        <h4 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-yellow-300 mb-4 md:mb-6 leading-tight">
+                                            INAUGURACIÓN
+                                        </h4>
                                         
                                         <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 md:p-6 mb-6 md:mb-8 border border-white/30 mx-auto max-w-md md:max-w-lg">
                                             <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 md:mb-3">
@@ -214,7 +214,7 @@ export default function PlanDeVentas() {
                                                     90% OFF
                                                 </div>
                                             </div>
-                                            <div className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-yellow-300 mb-1 md:mb-2 leading-none">
+                                            <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-yellow-300 mb-1 md:mb-2 leading-none">
                                                 $15.00
                                             </div>
                                             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white font-bold">
@@ -228,6 +228,7 @@ export default function PlanDeVentas() {
                                         >
                                             ¡APROVECHA AHORA! 🚀
                                         </button>
+                                        <p className="text-white text-sm">Solo para nuevos usuarios</p>
                                     </div>
 
                                     {/* Efecto de brillo animado */}
@@ -239,7 +240,7 @@ export default function PlanDeVentas() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-center gap-2 text-yellow-300 mt-6">
+                            <div className="flex items-center justify-center gap-2 text-yellow-300 mt-4">
                                 <HiSparkles className="text-2xl animate-pulse" />
                                 <span className="text-lg font-medium">Precios especiales de lanzamiento</span>
                                 <HiSparkles className="text-2xl animate-pulse" />
@@ -249,7 +250,7 @@ export default function PlanDeVentas() {
                 </div>
 
                 {/* Planes de Precios - Tarjetas */}
-                <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20">
+                <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                         {planesAdicionales.map((plan) => (
                             <div 
@@ -273,7 +274,7 @@ export default function PlanDeVentas() {
                                 <div className="p-6 md:p-8 flex flex-col h-full">
                                     {/* Header del plan */}
                                     <div className="text-center mb-6">
-                                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-3">{plan.title}</h3>
+                                        <h5 className="text-xl md:text-2xl font-bold text-gray-800 mb-3">{plan.title}</h5>
                                         <p className="text-gray-600 text-sm md:text-base">{plan.description}</p>
                                     </div>
 
@@ -308,6 +309,7 @@ export default function PlanDeVentas() {
                                             {plan.buttonText}
                                         </button>
                                     </div>
+
                                 </div>
 
                                 {/* Efecto de brillo en hover */}
@@ -359,7 +361,7 @@ export default function PlanDeVentas() {
                                             <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl flex items-center justify-center">
                                                 {plan.icon}
                                             </div>
-                                            <h3 className="text-2xl md:text-3xl font-bold text-gray-800">{plan.title}</h3>
+                                            <h4 className="text-2xl md:text-3xl font-bold text-gray-800">{plan.title}</h4>
                                         </div>
 
                                         {/* Features */}
