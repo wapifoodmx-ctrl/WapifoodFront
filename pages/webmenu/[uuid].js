@@ -25,6 +25,8 @@ export default function MenuWebDinamico() {
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [restauranteInfo, setRestauranteInfo] = useState(null);
 
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://wapifood.com';
+
     // Función para validar si un valor es válido (no null ni "string")
     const esValorValido = (valor) => {
         return valor && valor !== "string" && typeof valor === 'string' && valor.trim() !== "";
@@ -136,12 +138,18 @@ export default function MenuWebDinamico() {
 
     return (
         <>
-        <Head>
-    <title>Menú - {restauranteInfo?.nombre_restaurante && esValorValido(restauranteInfo.nombre_restaurante) 
+      <Head>
+        <title>Menú - {restauranteInfo?.nombre_restaurante && esValorValido(restauranteInfo.nombre_restaurante) 
         ? restauranteInfo.nombre_restaurante 
         : "WapiFood"}</title>
-    <meta name="description" content="Menú digital del restaurante - Descubre nuestros deliciosos platillos" />
-</Head>
+        <meta name="description" content="Menú digital del restaurante - Descubre nuestros deliciosos platillos" />
+        {/* Canónico y Open Graph dinámicos por restaurante/UUID */}
+        <link rel="canonical" href={`${baseUrl}/webmenu/${uuid || ''}`} />
+        <meta property="og:title" content={`Menú - ${restauranteInfo?.nombre_restaurante || 'WapiFood'}`} />
+        <meta property="og:description" content="Menú digital del restaurante - Descubre nuestros deliciosos platillos" />
+        <meta property="og:url" content={`${baseUrl}/webmenu/${uuid || ''}`} />
+        <meta property="og:type" content="website" />
+      </Head>
         <section className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 relative">
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
