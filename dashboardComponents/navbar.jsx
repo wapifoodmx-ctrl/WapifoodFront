@@ -9,7 +9,6 @@ import { FaUser } from "react-icons/fa";
 import { ImExit } from "react-icons/im";
 import { LuIdCard } from "react-icons/lu";
 import { FaKitchenSet } from "react-icons/fa6";
-// import { GiGasStove } from "react-icons/gi"; // Ya no necesitamos este ícono
 import { checkPayment } from '../useCases/checkPayment';
 
 export default function Navbar() {
@@ -18,15 +17,14 @@ export default function Navbar() {
     const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
     const [subscriptionLoading, setSubscriptionLoading] = useState(true);
     const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
-    const [switchEnabled, setSwitchEnabled] = useState(false); // Estado para el switch
-    // Nuevos estados para el modal de expiración
+    const [switchEnabled, setSwitchEnabled] = useState(false);
     const [showExpirationModal, setShowExpirationModal] = useState(false);
     const [daysUntilExpiration, setDaysUntilExpiration] = useState(0);
     const menuRef = useRef(null);
 
     // Función para calcular días entre dos fechas
     const calculateDaysDifference = (date1, date2) => {
-        const oneDay = 24 * 60 * 60 * 1000; // horas*minutos*segundos*milisegundos
+        const oneDay = 24 * 60 * 60 * 1000;
         const firstDate = new Date(date1);
         const secondDate = new Date(date2);
         return Math.round((secondDate - firstDate) / oneDay);
@@ -40,13 +38,11 @@ export default function Navbar() {
         const subscriptionEndDate = new Date(subscriptionData.payment.subscription_end_date);
         const daysRemaining = calculateDaysDifference(currentTime, subscriptionEndDate);
 
-        // Solo mostrar si faltan 5 días o menos y la suscripción aún está activa
         if (daysRemaining <= 5 && daysRemaining > 0) {
             const lastShownKey = 'lastExpirationWarningShown';
             const lastShown = localStorage.getItem(lastShownKey);
             const today = new Date().toDateString();
 
-            // Solo mostrar una vez por día
             if (lastShown !== today) {
                 setDaysUntilExpiration(daysRemaining);
                 setShowExpirationModal(true);
@@ -61,7 +57,6 @@ export default function Navbar() {
     };
 
     const handleLogout = () => {
-        // Limpiar elementos específicos del localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('numeroMesa');
         localStorage.removeItem('carrito1');
@@ -74,12 +69,10 @@ export default function Navbar() {
         localStorage.removeItem('carrito');
         localStorage.removeItem('historialPedidos');
         localStorage.removeItem('pedidosPendientes');
-        localStorage.removeItem('lastExpirationWarningShown'); // Limpiar también esto
+        localStorage.removeItem('lastExpirationWarningShown');
         
-        // Limpiar elementos específicos del sessionStorage
         sessionStorage.removeItem('token');
         
-        // Redirigir al login
         router.push("/login");
     };
 
@@ -96,8 +89,8 @@ export default function Navbar() {
             setSubscriptionLoading(true);
             const response = await checkPayment();
             setHasActiveSubscription(response.has_active_subscription || false);
+            //console.log("Estado de suscripción:", response.has_active_subscription);
             
-            // Verificar si debe mostrar advertencia de expiración
             checkExpirationWarning(response);
             
         } catch (error) {
@@ -114,7 +107,6 @@ export default function Navbar() {
             originalFunction();
         } else {
             setShowSubscriptionPopup(true);
-            // Auto-cerrar el popup después de 3 segundos
             setTimeout(() => {
                 setShowSubscriptionPopup(false);
             }, 3000);
@@ -125,7 +117,6 @@ export default function Navbar() {
     const handleSwitchToggle = () => {
         const newState = !switchEnabled;
         setSwitchEnabled(newState);
-        // Guardar en localStorage
         localStorage.setItem('cocinaSwitch', JSON.stringify(newState));
     };
 
@@ -182,6 +173,7 @@ export default function Navbar() {
         },
     };
 
+    // useEffect principal - verifica token y estado inicial
     useEffect(() => {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (!token) {
@@ -199,11 +191,53 @@ export default function Navbar() {
         // Configurar verificación cada 24 horas
         const checkInterval = setInterval(() => {
             checkSubscriptionStatus();
-        }, 24 * 60 * 60 * 1000); // 24 horas en milisegundos
+        }, 24 * 60 * 60 * 1000);
 
         return () => clearInterval(checkInterval);
     }, [router]);
 
+    // useEffect para detectar cuando el usuario regresa después del pago
+    useEffect(() => {
+        const handleFocus = () => {
+            //console.log('Window focused - Checking subscription status...');
+            checkSubscriptionStatus();
+        };
+
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                //console.log('Page visible - Checking subscription status...');
+                checkSubscriptionStatus();
+            }
+        };
+
+        // Agregar listeners para detectar cuando el usuario regresa
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
+
+    // useEffect para detectar cambios de ruta (cuando regresa del pago)
+    useEffect(() => {
+        const handleRouteChange = (url) => {
+            //console.log('Route changed to:', url);
+            // Verificar suscripción cuando cambie la ruta
+            setTimeout(() => {
+                checkSubscriptionStatus();
+            }, 1000); // Delay para asegurar que la página se cargue completamente
+        };
+
+        router.events.on('routeChangeComplete', handleRouteChange);
+
+        return () => {
+            router.events.off('routeChangeComplete', handleRouteChange);
+        };
+    }, [router.events]);
+
+    // useEffect para el menú desplegable
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -233,7 +267,6 @@ export default function Navbar() {
 
     // Función para manejar el click en cocina
     const handleCocinaClick = () => {
-        // Usar la función normal de restricción por suscripción
         handleRestrictedClick(cocina);
     };
 
@@ -250,7 +283,7 @@ export default function Navbar() {
 
                     {/* Container para el botón de power y el menú hamburguesa */}
                     <div className="flex items-center gap-2 sm:gap-4">
-                        {/* Botón de power para cocina - SOLO mostrar en punto de venta - MÁS GRANDE */}
+                        {/* Botón de power para cocina - SOLO mostrar en punto de venta */}
                         {isPointOfSalePage && (
                             <button
                                 onClick={handleSwitchToggle}
@@ -435,7 +468,6 @@ export default function Navbar() {
                 <div className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[100]">
                     <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl border-4 border-orange-400">
                         <div className="text-center">
-                            {/* Icono de advertencia */}
                             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-orange-100 mb-4">
                                 <svg 
                                     className="h-8 w-8 text-orange-600" 
@@ -452,17 +484,14 @@ export default function Navbar() {
                                 </svg>
                             </div>
                             
-                            {/* Título */}
                             <h3 className="text-xl font-bold text-gray-900 mb-4">
                                 ¡Recordatorio de Suscripción!
                             </h3>
                             
-                            {/* Mensaje */}
                             <p className="text-gray-600 mb-6 text-lg">
                                 ¡Recuerda que tu suscripción vence en <span className="font-bold text-orange-600">{daysUntilExpiration}</span> días!
                             </p>
                             
-                            {/* Botón de aceptar */}
                             <button
                                 onClick={handleAcceptExpirationWarning}
                                 className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"

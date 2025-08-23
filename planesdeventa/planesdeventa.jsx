@@ -173,70 +173,55 @@ export default function PlanDeVentas() {
                                 Descubre las herramientas perfectas para hacer crecer tu restaurante con tecnología de vanguardia
                             </p>
                             
-                            {/* Card Especial de Inauguración */}
-                            <div className="max-w-5xl mx-auto mb-6 pt-6">
-                                <div className="relative bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 border-4 border-yellow-300 overflow-visible">
-                                    {/* Efectos de fondo */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-green-600/30 via-emerald-600/30 to-teal-600/30 rounded-3xl"></div>
-                                    <div className="absolute top-0 left-0 w-full h-full">
-                                        <div className="absolute top-4 left-4 w-8 h-8 bg-yellow-300 rounded-full opacity-60 animate-pulse"></div>
-                                        <div className="absolute top-8 right-8 w-12 h-12 bg-white/20 rounded-full opacity-40 animate-pulse delay-500"></div>
-                                        <div className="absolute bottom-6 left-8 w-6 h-6 bg-yellow-400 rounded-full opacity-70 animate-pulse delay-1000"></div>
-                                        <div className="absolute bottom-8 right-12 w-10 h-10 bg-green-200/30 rounded-full opacity-50 animate-pulse delay-700"></div>
-                                    </div>
-                                    
-                                    {/* Badge de Inauguración */}
-                                    <div className="absolute -top-6 md:-top-8 left-1/2 transform -translate-x-1/2 z-30">
-                                        <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 text-white px-4 py-2 md:px-8 md:py-3 rounded-full font-bold text-sm md:text-lg flex items-center gap-2 md:gap-3 shadow-xl border-2 border-white ">
-                                            <HiSparkles className="text-lg md:text-xl animate-spin" />
+                            {/* Card Especial de Inauguración - CORREGIDA */}
+                            <div className="max-w-4xl mx-auto mb-6 pt-8">
+                                <div className="relative bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 border-2 border-yellow-300">
+                                    {/* Badge de Inauguración - Corregido */}
+                                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-20">
+                                        <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-2 rounded-full font-bold text-xs sm:text-sm md:text-base flex items-center gap-1 sm:gap-2 shadow-lg border border-white/30 whitespace-nowrap">
+                                            <HiSparkles className="text-sm sm:text-lg flex-shrink-0" />
                                             <span className="hidden sm:inline">OFERTA ESPECIAL DE</span>
                                             <span className="sm:hidden">OFERTA</span>
-                                            INAUGURACIÓN
-                                            <HiSparkles className="text-lg md:text-xl animate-spin" />
+                                            <span>INAUGURACIÓN</span>
+                                            <HiSparkles className="text-sm sm:text-lg flex-shrink-0" />
                                         </div>
                                     </div>
 
-                                    <div className="relative z-10 pt-10 md:pt-20 pb-6 md:pb-10 px-6 md:px-12 text-center ">
-                                        <h3 className="text-2xl  sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-2 md:mb-4 leading-tight">
+                                    <div className="relative z-10 pt-12 md:pt-16 pb-6 md:pb-8 px-6 md:px-10 text-center">
+                                        <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-2 leading-tight">
                                             PRECIO ÚNICO POR
                                         </h3>
-                                        <h4 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-yellow-300 mb-4 md:mb-6 leading-tight">
+                                        <h4 className="text-xl sm:text-2xl md:text-3xl font-black text-yellow-300 mb-4 leading-tight">
                                             INAUGURACIÓN
                                         </h4>
                                         
-                                        <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 md:p-6 mb-6 md:mb-8 border border-white/30 mx-auto max-w-md md:max-w-lg">
-                                            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 md:mb-3">
+                                        <div className="bg-white/15 rounded-xl p-4 md:p-6 mb-6 border border-white/20 mx-auto max-w-md">
+                                            <p className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-2">
                                                 "PLAN VENTAS"
                                             </p>
-                                            <div className="flex items-center justify-center gap-2 md:gap-4 mb-3 md:mb-4 flex-wrap">
-                                                <span className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-200 line-through">$150.00 mxn</span>
-                                                <div className="bg-red-500 text-white px-2 py-1 md:px-3 md:py-1 rounded-full text-xs md:text-sm font-bold transform -rotate-12 shadow-lg">
+                                            <div className="flex items-center justify-center gap-3 mb-3 flex-wrap">
+                                                <span className="text-base sm:text-lg md:text-xl text-gray-200 line-through">$150.00 mxn</span>
+                                                <div className="bg-red-500 text-white px-2 py-1 rounded-full text-xs md:text-sm font-bold shadow-md">
                                                     90% OFF
                                                 </div>
                                             </div>
-                                            <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-yellow-300 mb-1 md:mb-2 leading-none">
+                                            <div className="text-3xl sm:text-4xl md:text-5xl font-black text-yellow-300 mb-1 leading-none">
                                                 $15.00
                                             </div>
-                                            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white font-bold">
+                                            <p className="text-base sm:text-lg md:text-xl text-white font-bold">
                                                 mxn por mes
                                             </p>
                                         </div>
 
                                         <button
-                                            className="bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 hover:from-yellow-500 hover:via-orange-500 hover:to-yellow-600 text-white font-black text-base sm:text-lg md:text-xl lg:text-2xl px-6 py-3 md:px-12 md:py-4 rounded-2xl transform hover:scale-110 transition-all duration-300 shadow-2xl border-2 border-white/30 w-full sm:w-auto"
+                                            className="bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white font-black text-base sm:text-lg md:text-xl px-8 py-3 md:px-10 md:py-4 rounded-xl hover:scale-105 transition-transform duration-200 shadow-lg border border-white/20 w-full sm:w-auto"
                                             onClick={() => getLink("inauguracion")}
                                         >
                                             ¡APROVECHA AHORA! 🚀
                                         </button>
-                                        <p className="text-white text-sm">Solo para nuevos usuarios</p>
+                                        <p className="text-white/90 text-sm mt-2">Solo para nuevos usuarios</p>
                                     </div>
 
-                                    {/* Efecto de brillo animado */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform skew-x-12 animate-pulse opacity-50 rounded-3xl"></div>
-                                    
-                                    {/* Bordes decorativos */}
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-300 via-white to-yellow-300 rounded-t-3xl"></div>
-                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-300 via-white to-yellow-300 rounded-b-3xl"></div>
                                 </div>
                             </div>
 
@@ -319,7 +304,7 @@ export default function PlanDeVentas() {
                     </div>
                 </div>
 
-                {/* Sección de Características */}
+                {/* Sección de Características - Con animaciones consistentes */}
                 <div className="py-16 md:py-24">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
@@ -336,19 +321,18 @@ export default function PlanDeVentas() {
                             {planes.map((plan, index) => (
                                 <div
                                     key={plan.id}
-                                    className={`flex flex-col bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 md:flex-row lg:items-center ${
+                                    className={`flex flex-col bg-white rounded-3xl shadow-xl hover:shadow-2xl hover:scale-105 transition-transform duration-200 overflow-hidden border border-gray-100 md:flex-row lg:items-center ${
                                         index % 2 === 1 ? "md:flex-row-reverse" : ""
                                     }`}
                                 >
                                     {/* Imagen */}
                                     <div className="flex-shrink-0 relative overflow-hidden md:w-1/2">
-                                        <div className="absolute inset-0 bg-gradient-to-br z-10"></div>
                                         <Image
                                             src={plan.image}
                                             alt={`Imagen del plan ${plan.title}`}
                                             width={600}
                                             height={400}
-                                            className="w-full h-64 md:h-80 lg:h-96 object-cover transform hover:scale-105 transition-transform duration-500"
+                                            className="w-full h-64 md:h-80 lg:h-96 object-cover"
                                         />
                                     </div>
 
@@ -388,12 +372,12 @@ export default function PlanDeVentas() {
                 </div>
             </section>
 
-            {/* Estilos CSS personalizados */}
+            {/* Estilos CSS personalizados - OPTIMIZADOS */}
             <style jsx>{`
                 @keyframes fade-in-up {
                     from {
                         opacity: 0;
-                        transform: translateY(30px);
+                        transform: translateY(20px);
                     }
                     to {
                         opacity: 1;
@@ -402,27 +386,15 @@ export default function PlanDeVentas() {
                 }
 
                 .animate-fade-in-up {
-                    animation: fade-in-up 0.8s ease-out;
+                    animation: fade-in-up 0.6s ease-out;
                 }
 
-                .delay-200 {
-                    animation-delay: 200ms;
-                }
-
-                .delay-300 {
-                    animation-delay: 300ms;
-                }
-
-                .delay-500 {
-                    animation-delay: 500ms;
-                }
-
-                .delay-1000 {
-                    animation-delay: 1000ms;
-                }
-
-                .delay-1500 {
-                    animation-delay: 1500ms;
+                /* Reducir el uso de backdrop-blur en móviles */}
+                @media (max-width: 768px) {
+                    .backdrop-blur-sm {
+                        backdrop-filter: none;
+                        background: rgba(255, 255, 255, 0.2);
+                    }
                 }
             `}</style>
         </div>
