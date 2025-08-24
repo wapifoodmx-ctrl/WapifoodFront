@@ -9,7 +9,7 @@ export default function Success() {
                 <title>Pago Exitoso - WapiFood</title>
                 <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
             </Head>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 relative">
+        <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-20 left-10 w-32 h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>

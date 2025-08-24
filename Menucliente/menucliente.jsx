@@ -1015,14 +1015,7 @@ export default function MenuCliente() {
     }
 
     return (
-        <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 relative">
-            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-20 left-10 w-32 h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>
-                <div className="absolute top-40 right-20 w-40 h-40 bg-emerald-100 rounded-full opacity-25 blur-xl animate-pulse delay-1000"></div>
-                <div className="absolute bottom-32 left-1/4 w-24 h-24 bg-teal-100 rounded-full opacity-20 blur-lg animate-pulse delay-500"></div>
-                <div className="absolute bottom-20 right-10 w-36 h-36 bg-green-200 rounded-full opacity-15 blur-2xl animate-pulse delay-1500"></div>
-            </div>
-
+        <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
             <header className="relative z-10">
                 <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
@@ -2269,6 +2262,6 @@ export default function MenuCliente() {
                     }
                 }
             `}</style>
-        </section>
+        </div>
     );
 }

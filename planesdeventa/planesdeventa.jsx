@@ -151,7 +151,7 @@ export default function PlanDeVentas() {
     }
 
     return (
-        <div className="bg-gradient-to-br from-gray-50 via-white to-green-50">
+        <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-20 left-4 sm:left-10 w-24 h-24 sm:w-32 sm:h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>

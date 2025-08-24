@@ -238,7 +238,7 @@ export default function UserPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+      <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
         {/* Navbar */}
         <Navbar />
         
@@ -279,7 +279,7 @@ export default function UserPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+    <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
       {/* Navbar */}
       <Navbar />
       
