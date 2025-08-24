@@ -13,6 +13,10 @@ import Pago from "@/pages/assets/images/Pago.png";
 import Ticket2 from "@/pages/assets/images/Tickets2.png";
 import Tickets1 from "@/pages/assets/images/Tickets1.png";
 import Vistadecocina from "@/pages/assets/images/Vistadecocina.png";
+// Importar las imágenes del carrusel
+import ticketApp1 from "@/pages/assets/images/ticketApp1.jpeg";
+import ticketApp2 from "@/pages/assets/images/ticketApp2.jpeg";
+import ticketApp3 from "@/pages/assets/images/ticketApp3.jpeg";
 import Creditos from "@/components/Creditos";
 import getPaymentsLink, { getAllPaymentLinks } from "@/useCases/getPaymentsLink";
 import { useEffect, useState } from "react";
@@ -56,13 +60,14 @@ export default function PlanDeVentas() {
         {
             id: 4,
             icon: <AiTwotonePrinter className="text-3xl text-green-600" />,
-            title: "Imprime tikets desde Wapiticket",
+            title: "Imprime tickets desde nuestra App",
             features: [
-                "Impresión de tikets de venta",
+                "Impresión de tickets de venta",
                 "Busqueda con código QR",
                 "Impresora térmica incluida",
             ],
-            image: Ticket,
+            // Esta será especial con carrusel
+            isCarousel: true,
         },
     ];
 
@@ -304,7 +309,7 @@ export default function PlanDeVentas() {
                     </div>
                 </div>
 
-                {/* Sección de Características - Con animaciones consistentes */}
+                {/* Sección de Características - Con carrusel en la card 4 */}
                 <div className="py-16 md:py-24">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
@@ -325,15 +330,96 @@ export default function PlanDeVentas() {
                                         index % 2 === 1 ? "md:flex-row-reverse" : ""
                                     }`}
                                 >
-                                    {/* Imagen */}
+                                    {/* Imagen o Carrusel */}
                                     <div className="flex-shrink-0 relative overflow-hidden md:w-1/2">
-                                        <Image
-                                            src={plan.image}
-                                            alt={`Imagen del plan ${plan.title}`}
-                                            width={600}
-                                            height={400}
-                                            className="w-full h-64 md:h-80 lg:h-96 object-cover"
-                                        />
+                                        {plan.isCarousel ? (
+                                            // Carrusel especial para la card 4
+                                            <div className="w-full h-64 md:h-80 lg:h-96 bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
+                                                {/* Versión para pantallas grandes - 3 imágenes */}
+                                                <div className="hidden xl:flex gap-3 items-center justify-center h-full">
+                                                    <Image 
+                                                        src={ticketApp1} 
+                                                        className="h-auto max-h-[280px] w-auto max-w-[140px] shadow-xl rounded-xl border-2 border-green-200 transition-all duration-300 hover:scale-105"
+                                                        alt="Ticket App 1"
+                                                        priority
+                                                    />
+                                                    <Image 
+                                                        src={ticketApp2} 
+                                                        className="h-auto max-h-[280px] w-auto max-w-[140px] shadow-xl rounded-xl border-2 border-green-200 transition-all duration-300 hover:scale-105"
+                                                        alt="Ticket App 2"
+                                                        priority
+                                                    />
+                                                    <Image 
+                                                        src={ticketApp3} 
+                                                        className="h-auto max-h-[280px] w-auto max-w-[140px] shadow-xl rounded-xl border-2 border-green-200 transition-all duration-300 hover:scale-105"
+                                                        alt="Ticket App 3"
+                                                        priority
+                                                    />
+                                                </div>
+                                                
+                                                {/* Versión para pantallas medianas - 2 imágenes */}
+                                                <div className="hidden lg:flex xl:hidden gap-4 items-center justify-center h-full">
+                                                    <Image 
+                                                        src={ticketApp1} 
+                                                        className="h-auto max-h-[320px] w-auto max-w-[160px] shadow-xl rounded-xl border-2 border-green-200 transition-all duration-300 hover:scale-105"
+                                                        alt="Ticket App 1"
+                                                        priority
+                                                    />
+                                                    <Image 
+                                                        src={ticketApp2} 
+                                                        className="h-auto max-h-[320px] w-auto max-w-[160px] shadow-xl rounded-xl border-2 border-green-200 transition-all duration-300 hover:scale-105"
+                                                        alt="Ticket App 2"
+                                                        priority
+                                                    />
+                                                </div>
+                                                
+                                                {/* Carrusel para pantallas pequeñas */}
+                                                <div className="flex lg:hidden w-full h-full items-center justify-center">
+                                                    <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 px-4 items-center h-full max-w-full">
+                                                        <div className="flex-shrink-0 snap-center">
+                                                            <Image 
+                                                                src={ticketApp1}
+                                                                className="h-auto max-h-[200px] w-auto max-w-[120px] sm:max-h-[240px] sm:max-w-[140px] shadow-xl rounded-xl border-2 border-emerald-200 transition-all duration-300"
+                                                                alt="Ticket App 1"
+                                                                priority
+                                                            />
+                                                        </div>
+                                                        <div className="flex-shrink-0 snap-center">
+                                                            <Image 
+                                                                src={ticketApp2}
+                                                                className="h-auto max-h-[200px] w-auto max-w-[120px] sm:max-h-[240px] sm:max-w-[140px] shadow-xl rounded-xl border-2 border-emerald-200 transition-all duration-300"
+                                                                alt="Ticket App 2"
+                                                                priority
+                                                            />
+                                                        </div>
+                                                        <div className="flex-shrink-0 snap-center">
+                                                            <Image 
+                                                                src={ticketApp3}
+                                                                className="h-auto max-h-[200px] w-auto max-w-[120px] sm:max-h-[240px] sm:max-w-[140px] shadow-xl rounded-xl border-2 border-emerald-200 transition-all duration-300"
+                                                                alt="Ticket App 3"
+                                                                priority
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Indicadores para móvil */}
+                                                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex lg:hidden gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                                                    <div className="w-2 h-2 rounded-full bg-green-200"></div>
+                                                    <div className="w-2 h-2 rounded-full bg-green-200"></div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            // Imagen normal para las otras cards
+                                            <Image
+                                                src={plan.image}
+                                                alt={`Imagen del plan ${plan.title}`}
+                                                width={600}
+                                                height={400}
+                                                className="w-full h-64 md:h-80 lg:h-96 object-cover"
+                                            />
+                                        )}
                                     </div>
 
                                     {/* Contenido */}
@@ -372,7 +458,7 @@ export default function PlanDeVentas() {
                 </div>
             </section>
 
-            {/* Estilos CSS personalizados - OPTIMIZADOS */}
+            {/* Estilos CSS personalizados - AÑADIR scrollbar-hide */}
             <style jsx>{`
                 @keyframes fade-in-up {
                     from {
@@ -389,7 +475,16 @@ export default function PlanDeVentas() {
                     animation: fade-in-up 0.6s ease-out;
                 }
 
-                /* Reducir el uso de backdrop-blur en móviles */}
+                .scrollbar-hide {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+
+                .scrollbar-hide::-webkit-scrollbar {
+                    display: none;
+                }
+
+                /* Reducir el uso de backdrop-blur en móviles */
                 @media (max-width: 768px) {
                     .backdrop-blur-sm {
                         backdrop-filter: none;

@@ -761,7 +761,7 @@ export default function Ventas() {
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-3 min-w-0">
-                <label className="block text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+                <label className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
                   <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
                     <IoCalendarOutline className="text-white text-sm" />
                   </div>
@@ -793,7 +793,7 @@ export default function Ventas() {
               </div>
               
               <div className="space-y-3 min-w-0">
-                <label className="block text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+                <label className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
                   <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
                     <IoCalendarOutline className="text-white text-sm" />
                   </div>
@@ -1252,7 +1252,7 @@ export default function Ventas() {
         }
 
         .react-datepicker__day--selected {
-          background-color: #059669 !important;
+          background-color: #059669 !important;z
           color: white !important;
           font-weight: bold;
         }
