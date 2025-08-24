@@ -348,7 +348,7 @@ export default function Pntoventa() {
     }, [showSubscriptionModal]);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+        <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
             <Navbar />
 
             {/* Fondo decorativo */}

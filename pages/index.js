@@ -103,7 +103,7 @@ export default function Home() {
       </Head>
 
 
-      <div className="min-h-screen flex flex-col w-full bg-gradient-to-b from-gray-50 to-white pt-16">
+      <div className="h-screen min-h-[100dvh] flex flex-col w-full bg-gradient-to-b from-gray-50 to-white pt-16">
         {/* Header con mejor z-index y sombra sutil */}
         <div className="relative z-50">
           <Header />

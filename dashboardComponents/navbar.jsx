@@ -349,13 +349,13 @@ export default function Navbar() {
                     <div
                         ref={menuRef}
                         className={`
-                        fixed top-16 right-0 h-full w-72 bg-gradient-to-br from-green-50 via-white to-emerald-50 z-40
+                        fixed top-16 right-0 h-[calc(100dvh-4rem)] w-72 bg-gradient-to-br from-green-50 via-white to-emerald-50 z-40
                         transition-transform duration-300 ease-in-out
                         ${isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}
                         overflow-y-auto overflow-x-hidden border-l-4 border-green-200 rounded-l-3xl
                     `}
                     >
-                        <div className="min-h-full">
+                        <div className="min-h-full pb-8">
                             <ul className="flex flex-col mt-4 p-4 text-xl pb-8">
                                 <p className="text-green-700 font-bold mb-2">Menú principal</p>
                                 {Object.keys(menu).map((item, index) => (

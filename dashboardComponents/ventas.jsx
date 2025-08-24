@@ -317,20 +317,20 @@ export default function Ventas() {
 
   // Componente de Loading mejorado
   const LoadingCard = ({ message, icon: Icon }) => (
-    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-8">
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-8">
       <div className="flex flex-col items-center text-center">
-        <div className="relative mb-4 sm:mb-6">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center animate-pulse">
-            <Icon className="text-white text-xl sm:text-2xl" />
+        <div className="relative mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center animate-pulse">
+            <Icon className="text-white text-2xl" />
           </div>
-          <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 bg-green-400 rounded-full border-2 border-white animate-bounce"></div>
+          <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-white animate-bounce"></div>
         </div>
-        <div className="space-y-3 w-full max-w-xs">
+        <div className="space-y-3">
           <div className="flex items-center justify-center gap-2">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-500 border-t-transparent"></div>
-            <span className="text-gray-600 font-medium text-sm sm:text-base">{message}</span>
+            <span className="text-gray-600 font-medium">{message}</span>
           </div>
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full animate-pulse"></div>
           </div>
         </div>
@@ -340,22 +340,22 @@ export default function Ventas() {
 
   // Componente de Error mejorado
   const ErrorCard = ({ title, message, error, onRetry }) => (
-    <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl shadow-lg border border-red-100 p-4 sm:p-8">
+    <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl shadow-lg border border-red-100 p-8">
       <div className="text-center">
-        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-          <IoStatsChartOutline className="text-white text-xl sm:text-2xl" />
+        <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <IoStatsChartOutline className="text-white text-2xl" />
         </div>
-        <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">{title}</h3>
-        <p className="text-gray-600 mb-4 text-sm sm:text-base">{message}</p>
+        <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
+        <p className="text-gray-600 mb-4">{message}</p>
         {error && (
-          <div className="bg-red-100 border border-red-200 rounded-lg p-3 mb-4 max-w-full">
-            <p className="text-red-700 text-xs sm:text-sm font-mono break-all">{error}</p>
+          <div className="bg-red-100 border border-red-200 rounded-lg p-3 mb-4">
+            <p className="text-red-700 text-sm font-mono">{error}</p>
           </div>
         )}
         {onRetry && (
           <button
             onClick={onRetry}
-            className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 text-sm sm:text-base"
+            className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
           >
             Reintentar
           </button>
@@ -366,13 +366,13 @@ export default function Ventas() {
 
   // Componente de Empty State mejorado
   const EmptyStateCard = ({ title, message, icon: Icon, action }) => (
-    <div className="bg-gradient-to-br from-gray-50 to-green-50 rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-8">
+    <div className="bg-gradient-to-br from-gray-50 to-green-50 rounded-2xl shadow-lg border border-gray-200 p-8">
       <div className="text-center">
-        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-          <Icon className="text-white text-2xl sm:text-3xl" />
+        <div className="w-20 h-20 bg-gradient-to-br from-gray-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Icon className="text-white text-3xl" />
         </div>
-        <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">{title}</h3>
-        <p className="text-gray-600 mb-4 sm:mb-6 max-w-md mx-auto text-sm sm:text-base">{message}</p>
+        <h3 className="text-xl font-bold text-gray-800 mb-3">{title}</h3>
+        <p className="text-gray-600 mb-6 max-w-md mx-auto">{message}</p>
         {action && action}
       </div>
     </div>
@@ -388,7 +388,7 @@ export default function Ventas() {
     }, []);
 
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6">
         {loadingSemana && (
           <LoadingCard 
             message="Cargando datos de ventas semanales..." 
@@ -407,19 +407,17 @@ export default function Ventas() {
 
         {!loadingSemana && !errorSemana && datosSemana.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 text-white">
-                <FaChartLine className="text-xl sm:text-2xl flex-shrink-0" />
-                <h3 className="text-lg sm:text-xl font-bold">Ventas Semanales</h3>
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+              <div className="flex items-center gap-3 text-white">
+                <FaChartLine className="text-2xl" />
+                <h3 className="text-xl font-bold">Ventas Semanales</h3>
               </div>
             </div>
-            <div className="p-4 sm:p-6">
-              <div className="w-full overflow-hidden">
-                <LineChartFull
-                  data={datosSemana}
-                  title="Ventas por Semana"
-                />
-              </div>
+            <div className="p-6">
+              <LineChartFull
+                data={datosSemana}
+                title="Ventas por Semana"
+              />
             </div>
           </div>
         )}
@@ -444,7 +442,7 @@ export default function Ventas() {
     }, []);
 
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6">
         {loadingMes && (
           <LoadingCard 
             message="Cargando datos de ventas mensuales..." 
@@ -463,19 +461,17 @@ export default function Ventas() {
 
         {!loadingMes && !errorMes && datosMes.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 text-white">
-                <FaCalendarAlt className="text-xl sm:text-2xl flex-shrink-0" />
-                <h3 className="text-lg sm:text-xl font-bold">Ventas Mensuales</h3>
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+              <div className="flex items-center gap-3 text-white">
+                <FaCalendarAlt className="text-2xl" />
+                <h3 className="text-xl font-bold">Ventas Mensuales</h3>
               </div>
             </div>
-            <div className="p-4 sm:p-6">
-              <div className="w-full overflow-hidden">
-                <LineChartFull
-                  data={datosMes}
-                  title="Ventas por Mes"
-                />
-              </div>
+            <div className="p-6">
+              <LineChartFull
+                data={datosMes}
+                title="Ventas por Mes"
+              />
             </div>
           </div>
         )}
@@ -493,93 +489,111 @@ export default function Ventas() {
 
   const FechasTab = () => {
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6">
         {/* Selector de fechas integrado */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
-            <div className="flex items-center gap-2 sm:gap-3 text-white">
-              <IoCalendarOutline className="text-xl sm:text-2xl flex-shrink-0" />
-              <h3 className="text-lg sm:text-xl font-bold">Selecciona el Rango de Fechas</h3>
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+            <div className="flex items-center gap-3 text-white">
+              <IoCalendarOutline className="text-2xl" />
+              <h3 className="text-xl font-bold">Selecciona el Rango de Fechas</h3>
             </div>
           </div>
-          <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div className="space-y-3 min-w-0">
-                <label className="block text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center">
                     <IoCalendarOutline className="text-white text-sm" />
                   </div>
-                  <span>Fecha de inicio</span>
+                  Fecha de inicio
                 </label>
-                <div className="border-2 border-gray-200 rounded-xl p-3 sm:p-4 hover:border-green-500 transition-colors focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-200">
-                  <DatePicker
-                    selected={startDate}
-                    onChange={(date) => setStartDate(date)}
-                    selectsStart
-                    startDate={startDate}
-                    endDate={endDate}
-                    placeholderText="Selecciona fecha de inicio"
-                    className="w-full text-sm sm:text-lg font-medium text-gray-800 bg-transparent border-none outline-none"
-                    dateFormat="dd/MM/yyyy"
-                    showYearDropdown
-                    showMonthDropdown
-                    dropdownMode="select"
-                    locale="es"
-                    popperClassName="custom-datepicker-popper"
-                    popperPlacement="bottom-start"
-                  />
+                <div 
+                  className="border-2 border-gray-200 rounded-xl p-4 hover:border-green-500 transition-colors focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-200 cursor-pointer"
+                  onClick={() => {
+                    // Buscar el input del DatePicker y hacer click
+                    const input = document.querySelector('.fecha-inicio-input input');
+                    if (input) input.focus();
+                  }}
+                >
+                  <div className="fecha-inicio-input">
+                    <DatePicker
+                      selected={startDate}
+                      onChange={(date) => setStartDate(date)}
+                      selectsStart
+                      startDate={startDate}
+                      endDate={endDate}
+                      placeholderText="Selecciona fecha de inicio"
+                      className="w-full text-lg font-medium text-gray-800 bg-transparent border-none outline-none cursor-pointer"
+                      dateFormat="dd/MM/yyyy"
+                      showYearDropdown
+                      showMonthDropdown
+                      dropdownMode="select"
+                      locale="es"
+                      popperClassName="custom-datepicker-popper"
+                      popperPlacement="bottom-start"
+                    />
+                  </div>
                 </div>
               </div>
               
-              <div className="space-y-3 min-w-0">
-                <label className="block text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="space-y-3">
+                <label className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center">
                     <IoCalendarOutline className="text-white text-sm" />
                   </div>
-                  <span>Fecha de fin</span>
+                  Fecha de fin
                 </label>
-                <div className="border-2 border-gray-200 rounded-xl p-3 sm:p-4 hover:border-emerald-500 transition-colors focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200">
-                  <DatePicker
-                    selected={endDate}
-                    onChange={(date) => setEndDate(date)}
-                    selectsEnd
-                    startDate={startDate}
-                    endDate={endDate}
-                    minDate={startDate}
-                    placeholderText="Selecciona fecha de fin"
-                    className="w-full text-sm sm:text-lg font-medium text-gray-800 bg-transparent border-none outline-none"
-                    dateFormat="dd/MM/yyyy"
-                    showYearDropdown
-                    showMonthDropdown
-                    dropdownMode="select"
-                    locale="es"
-                    popperClassName="custom-datepicker-popper"
-                    popperPlacement="bottom-start"
-                  />
+                <div 
+                  className="border-2 border-gray-200 rounded-xl p-4 hover:border-emerald-500 transition-colors focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 cursor-pointer"
+                  onClick={() => {
+                    // Buscar el input del DatePicker y hacer click
+                    const input = document.querySelector('.fecha-fin-input input');
+                    if (input) input.focus();
+                  }}
+                >
+                  <div className="fecha-fin-input">
+                    <DatePicker
+                      selected={endDate}
+                      onChange={(date) => setEndDate(date)}
+                      selectsEnd
+                      startDate={startDate}
+                      endDate={endDate}
+                      minDate={startDate}
+                      placeholderText="Selecciona fecha de fin"
+                      className="w-full text-lg font-medium text-gray-800 bg-transparent border-none outline-none cursor-pointer"
+                      dateFormat="dd/MM/yyyy"
+                      showYearDropdown
+                      showMonthDropdown
+                      dropdownMode="select"
+                      locale="es"
+                      popperClassName="custom-datepicker-popper"
+                      popperPlacement="bottom-start"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Información del rango seleccionado */}
             {startDate && endDate && (
-              <div className="mt-4 sm:mt-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-3 sm:p-4">
+              <div className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <IoCalendarOutline className="text-white text-sm sm:text-lg" />
+                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <IoCalendarOutline className="text-white text-lg" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-green-800 font-bold text-base sm:text-lg mb-2">✅ Rango seleccionado correctamente</h4>
+                  <div className="flex-1">
+                    <h4 className="text-green-800 font-bold text-lg mb-2">✅ Rango seleccionado correctamente</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-green-700">
-                      <div className="bg-white/60 rounded-lg p-2 sm:p-3 min-w-0">
-                        <p className="font-semibold text-xs sm:text-sm text-green-600 mb-1">Fecha de inicio:</p>
-                        <p className="text-sm sm:text-base font-bold break-all">{formatDate(startDate)}</p>
+                      <div className="bg-white/60 rounded-lg p-3">
+                        <p className="font-semibold text-sm text-green-600 mb-1">Fecha de inicio:</p>
+                        <p className="text-base font-bold">{formatDate(startDate)}</p>
                       </div>
-                      <div className="bg-white/60 rounded-lg p-2 sm:p-3 min-w-0">
-                        <p className="font-semibold text-xs sm:text-sm text-green-600 mb-1">Fecha de fin:</p>
-                        <p className="text-sm sm:text-base font-bold break-all">{formatDate(endDate)}</p>
+                      <div className="bg-white/60 rounded-lg p-3">
+                        <p className="font-semibold text-sm text-green-600 mb-1">Fecha de fin:</p>
+                        <p className="text-base font-bold">{formatDate(endDate)}</p>
                       </div>
                     </div>
-                    <div className="mt-3 text-xs sm:text-sm text-green-600">
+                    <div className="mt-3 text-sm text-green-600">
                       <p>📊 Días incluidos: {Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1} días</p>
                     </div>
                   </div>
@@ -608,11 +622,11 @@ export default function Ventas() {
 
         {!loadingFechas && !errorFechas && datosFechas.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
-              <div className="flex items-center justify-between text-white gap-2">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                  <IoCalendarOutline className="text-xl sm:text-2xl flex-shrink-0" />
-                  <h3 className="text-lg sm:text-xl font-bold truncate">Ventas por Rango de Fechas</h3>
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+              <div className="flex items-center justify-between text-white">
+                <div className="flex items-center gap-3">
+                  <IoCalendarOutline className="text-2xl" />
+                  <h3 className="text-xl font-bold">Ventas por Rango de Fechas</h3>
                 </div>
                 <button
                   onClick={() => {
@@ -620,21 +634,18 @@ export default function Ventas() {
                     setEndDate(null);
                     setDatosFechas([]);
                   }}
-                  className="bg-white/20 hover:bg-white/30 text-white px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-white/30 flex items-center gap-1 sm:gap-2 flex-shrink-0 text-sm sm:text-base"
+                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-white/30 flex items-center gap-2"
                 >
-                  <IoCalendarOutline className="text-sm sm:text-lg" />
-                  <span className="hidden sm:inline">Seleccionar otras fechas</span>
-                  <span className="sm:hidden">Cambiar</span>
+                  <IoCalendarOutline className="text-lg" />
+                  Seleccionar otras fechas
                 </button>
               </div>
             </div>
-            <div className="p-4 sm:p-6">
-              <div className="w-full overflow-hidden">
-                <LineChartFull
-                  data={datosFechas}
-                  title="Ventas por Rango de Fechas"
-                />
-              </div>
+            <div className="p-6">
+              <LineChartFull
+                data={datosFechas}
+                title="Ventas por Rango de Fechas"
+              />
             </div>
           </div>
         )}
@@ -650,9 +661,9 @@ export default function Ventas() {
                   setStartDate(null);
                   setEndDate(null);
                 }}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 flex items-center gap-2 mx-auto text-sm sm:text-base"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 flex items-center gap-2 mx-auto"
               >
-                <IoCalendarOutline className="text-base sm:text-lg" />
+                <IoCalendarOutline className="text-lg" />
                 Seleccionar otras fechas
               </button>
             }
@@ -671,7 +682,7 @@ export default function Ventas() {
     }, []);
 
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6">
         {loadingTodo && (
           <LoadingCard 
             message="Cargando todos los datos de ventas..." 
@@ -690,19 +701,17 @@ export default function Ventas() {
 
         {!loadingTodo && !errorTodo && datosTodo.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-gray-500 to-gray-700 p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 text-white">
-                <FaGlobe className="text-xl sm:text-2xl flex-shrink-0" />
-                <h3 className="text-lg sm:text-xl font-bold">Todas las Ventas</h3>
+            <div className="bg-gradient-to-r from-gray-500 to-gray-700 p-6">
+              <div className="flex items-center gap-3 text-white">
+                <FaGlobe className="text-2xl" />
+                <h3 className="text-xl font-bold">Todas las Ventas</h3>
               </div>
             </div>
-            <div className="p-4 sm:p-6">
-              <div className="w-full overflow-hidden">
-                <LineChartFull
-                  data={datosTodo}
-                  title="Todas las Ventas"
-                />
-              </div>
+            <div className="p-6">
+              <LineChartFull
+                data={datosTodo}
+                title="Todas las Ventas"
+              />
             </div>
           </div>
         )}
@@ -724,13 +733,13 @@ export default function Ventas() {
     const obtenerIconoPosicion = (posicion) => {
       switch (posicion) {
         case 1:
-          return <FaCrown className="text-yellow-500 text-xl sm:text-2xl" />;
+          return <FaCrown className="text-yellow-500 text-2xl" />;
         case 2:
-          return <FaMedal className="text-gray-400 text-lg sm:text-xl" />;
+          return <FaMedal className="text-gray-400 text-xl" />;
         case 3:
-          return <FaTrophy className="text-orange-500 text-lg sm:text-xl" />;
+          return <FaTrophy className="text-orange-500 text-xl" />;
         default:
-          return <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs sm:text-sm">{posicion}</div>;
+          return <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-sm">{posicion}</div>;
       }
     };
 
@@ -749,78 +758,86 @@ export default function Ventas() {
     };
 
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6">
         {/* Selector de fechas para ranking */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
-            <div className="flex items-center gap-2 sm:gap-3 text-white">
+            <div className="flex items-center gap-3 text-white">
               <IoTrophyOutline className="text-xl sm:text-2xl flex-shrink-0" />
               <h3 className="text-lg sm:text-xl font-bold">Selecciona el Período para el Ranking</h3>
             </div>
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div className="space-y-3 min-w-0">
+              <div className="space-y-3">
                 <label className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
                   <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
                     <IoCalendarOutline className="text-white text-sm" />
                   </div>
                   <span>Fecha de inicio</span>
                 </label>
-                <div className="relative border-2 border-gray-200 rounded-xl hover:border-green-500 transition-colors focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-200 cursor-pointer">
-                  <DatePicker
-                    selected={startDateRanking}
-                    onChange={(date) => setStartDateRanking(date)}
-                    selectsStart
-                    startDate={startDateRanking}
-                    endDate={endDateRanking}
-                    placeholderText="Selecciona fecha de inicio"
-                    className="w-full text-sm sm:text-base font-medium text-gray-800 bg-transparent border-none outline-none p-3 sm:p-4 cursor-pointer pr-10"
-                    dateFormat="dd/MM/yyyy"
-                    showYearDropdown
-                    showMonthDropdown
-                    dropdownMode="select"
-                    locale="es"
-                    popperClassName="custom-datepicker-popper"
-                    popperPlacement="bottom-start"
-                    wrapperClassName="w-full"
-                    calendarClassName="custom-calendar"
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <IoCalendarOutline className="text-gray-400 text-lg sm:text-xl" />
+                <div 
+                  className="border-2 border-gray-200 rounded-xl p-3 sm:p-4 hover:border-green-500 transition-colors focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-200 cursor-pointer"
+                  onClick={() => {
+                    // Buscar el input del DatePicker y hacer click
+                    const input = document.querySelector('.ranking-fecha-inicio-input input');
+                    if (input) input.focus();
+                  }}
+                >
+                  <div className="ranking-fecha-inicio-input">
+                    <DatePicker
+                      selected={startDateRanking}
+                      onChange={(date) => setStartDateRanking(date)}
+                      selectsStart
+                      startDate={startDateRanking}
+                      endDate={endDateRanking}
+                      placeholderText="Selecciona fecha de inicio"
+                      className="w-full text-base sm:text-lg font-medium text-gray-800 bg-transparent border-none outline-none cursor-pointer"
+                      dateFormat="dd/MM/yyyy"
+                      showYearDropdown
+                      showMonthDropdown
+                      dropdownMode="select"
+                      locale="es"
+                      popperClassName="custom-datepicker-popper"
+                      popperPlacement="bottom-start"
+                    />
                   </div>
                 </div>
               </div>
               
-              <div className="space-y-3 min-w-0">
+              <div className="space-y-3">
                 <label className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
                   <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
                     <IoCalendarOutline className="text-white text-sm" />
                   </div>
                   <span>Fecha de fin</span>
                 </label>
-                <div className="relative border-2 border-gray-200 rounded-xl hover:border-emerald-500 transition-colors focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 cursor-pointer">
-                  <DatePicker
-                    selected={endDateRanking}
-                    onChange={(date) => setEndDateRanking(date)}
-                    selectsEnd
-                    startDate={startDateRanking}
-                    endDate={endDateRanking}
-                    minDate={startDateRanking}
-                    placeholderText="Selecciona fecha de fin"
-                    className="w-full text-sm sm:text-base font-medium text-gray-800 bg-transparent border-none outline-none p-3 sm:p-4 cursor-pointer pr-10"
-                    dateFormat="dd/MM/yyyy"
-                    showYearDropdown
-                    showMonthDropdown
-                    dropdownMode="select"
-                    locale="es"
-                    popperClassName="custom-datepicker-popper"
-                    popperPlacement="bottom-start"
-                    wrapperClassName="w-full"
-                    calendarClassName="custom-calendar"
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <IoCalendarOutline className="text-gray-400 text-lg sm:text-xl" />
+                <div 
+                  className="border-2 border-gray-200 rounded-xl p-3 sm:p-4 hover:border-emerald-500 transition-colors focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 cursor-pointer"
+                  onClick={() => {
+                    // Buscar el input del DatePicker y hacer click
+                    const input = document.querySelector('.ranking-fecha-fin-input input');
+                    if (input) input.focus();
+                  }}
+                >
+                  <div className="ranking-fecha-fin-input">
+                    <DatePicker
+                      selected={endDateRanking}
+                      onChange={(date) => setEndDateRanking(date)}
+                      selectsEnd
+                      startDate={startDateRanking}
+                      endDate={endDateRanking}
+                      minDate={startDateRanking}
+                      placeholderText="Selecciona fecha de fin"
+                      className="w-full text-base sm:text-lg font-medium text-gray-800 bg-transparent border-none outline-none cursor-pointer"
+                      dateFormat="dd/MM/yyyy"
+                      showYearDropdown
+                      showMonthDropdown
+                      dropdownMode="select"
+                      locale="es"
+                      popperClassName="custom-datepicker-popper"
+                      popperPlacement="bottom-start"
+                    />
                   </div>
                 </div>
               </div>
@@ -836,13 +853,13 @@ export default function Ventas() {
                   <div className="flex-1 min-w-0">
                     <h4 className="text-green-800 font-bold text-base sm:text-lg mb-2">🏆 Período seleccionado para el ranking</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-green-700">
-                      <div className="bg-white/60 rounded-lg p-2 sm:p-3 min-w-0">
+                      <div className="bg-white/60 rounded-lg p-2 sm:p-3">
                         <p className="font-semibold text-xs sm:text-sm text-green-600 mb-1">Fecha de inicio:</p>
-                        <p className="text-sm sm:text-base font-bold break-all">{formatDate(startDateRanking)}</p>
+                        <p className="text-sm sm:text-base font-bold truncate">{formatDate(startDateRanking)}</p>
                       </div>
-                      <div className="bg-white/60 rounded-lg p-2 sm:p-3 min-w-0">
+                      <div className="bg-white/60 rounded-lg p-2 sm:p-3">
                         <p className="font-semibold text-xs sm:text-sm text-green-600 mb-1">Fecha de fin:</p>
-                        <p className="text-sm sm:text-base font-bold break-all">{formatDate(endDateRanking)}</p>
+                        <p className="text-sm sm:text-base font-bold truncate">{formatDate(endDateRanking)}</p>
                       </div>
                     </div>
                     <div className="mt-3 text-xs sm:text-sm text-green-600">
@@ -875,7 +892,7 @@ export default function Ventas() {
         {!loadingRanking && !errorRanking && datosRanking.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
-              <div className="flex items-center justify-between text-white gap-2">
+              <div className="flex items-center justify-between text-white">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <IoTrophyOutline className="text-xl sm:text-2xl flex-shrink-0" />
                   <h3 className="text-lg sm:text-xl font-bold truncate">🏆 Ranking de Días por Ventas</h3>
@@ -904,7 +921,7 @@ export default function Ventas() {
                               <h4 className="text-base sm:text-lg font-bold text-gray-800 truncate">
                                 {dia.diaSemana}
                               </h4>
-                              <span className="text-xs sm:text-sm text-gray-600 bg-white/70 px-2 py-1 rounded-lg self-start break-all">
+                              <span className="text-xs sm:text-sm text-gray-600 bg-white/70 px-2 py-1 rounded-lg self-start">
                                 {dia.fechaFormateada}
                               </span>
                             </div>
@@ -914,7 +931,7 @@ export default function Ventas() {
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <div className="text-lg sm:text-2xl font-bold text-gray-800 break-all">
+                          <div className="text-lg sm:text-2xl font-bold text-gray-800">
                             ${dia.valor.toLocaleString()}
                           </div>
                           <div className="text-xs sm:text-sm text-gray-600">
@@ -929,23 +946,23 @@ export default function Ventas() {
 
               {/* Estadísticas del ranking */}
               <div className="mt-6 sm:mt-8 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-                <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 border border-yellow-300 rounded-xl p-3 sm:p-4 text-center min-w-0">
+                <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 border border-yellow-300 rounded-xl p-3 sm:p-4 text-center">
                   <FaCrown className="text-yellow-600 text-xl sm:text-2xl mx-auto mb-2" />
                   <h4 className="font-bold text-yellow-800 text-sm sm:text-base">Mejor Día</h4>
                   <p className="text-xs sm:text-sm text-yellow-700 truncate">{datosRanking[0]?.diaSemana}</p>
-                  <p className="text-base sm:text-lg font-bold text-yellow-800 break-all">${datosRanking[0]?.valor.toLocaleString()}</p>
+                  <p className="text-base sm:text-lg font-bold text-yellow-800">${datosRanking[0]?.valor.toLocaleString()}</p>
                 </div>
-                <div className="bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300 rounded-xl p-3 sm:p-4 text-center min-w-0">
+                <div className="bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300 rounded-xl p-3 sm:p-4 text-center">
                   <FaChartLine className="text-blue-600 text-xl sm:text-2xl mx-auto mb-2" />
                   <h4 className="font-bold text-blue-800 text-sm sm:text-base">Promedio</h4>
-                  <p className="text-base sm:text-lg font-bold text-blue-800 break-all">
+                  <p className="text-base sm:text-lg font-bold text-blue-800">
                     ${Math.round(datosRanking.reduce((acc, dia) => acc + dia.valor, 0) / datosRanking.length).toLocaleString()}
                   </p>
                 </div>
-                <div className="bg-gradient-to-br from-green-100 to-green-200 border border-green-300 rounded-xl p-3 sm:p-4 text-center min-w-0">
+                <div className="bg-gradient-to-br from-green-100 to-green-200 border border-green-300 rounded-xl p-3 sm:p-4 text-center">
                   <FaGlobe className="text-green-600 text-xl sm:text-2xl mx-auto mb-2" />
                   <h4 className="font-bold text-green-800 text-sm sm:text-base">Total Período</h4>
-                  <p className="text-base sm:text-lg font-bold text-green-800 break-all">
+                  <p className="text-base sm:text-lg font-bold text-green-800">
                     ${datosRanking.reduce((acc, dia) => acc + dia.valor, 0).toLocaleString()}
                   </p>
                 </div>
@@ -978,7 +995,7 @@ export default function Ventas() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 w-full overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       <Box sx={{ width: '100%', typography: 'body1' }}>
         <TabContext value={value}>
           <Box sx={{ 
@@ -998,10 +1015,10 @@ export default function Ventas() {
                 '& .MuiTab-root': {
                   color: 'white',
                   fontWeight: 'bold',
-                  fontSize: { xs: '0.8rem', sm: '1rem' },
-                  minHeight: '56px',
-                  minWidth: { xs: '120px', sm: '160px' },
-                  padding: { xs: '8px 12px', sm: '12px 24px' },
+                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                  minHeight: '64px',
+                  minWidth: { xs: 'auto', sm: '160px' },
+                  padding: { xs: '12px 16px', sm: '12px 24px' },
                   '&.Mui-selected': {
                     color: '#fbbf24',
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -1022,8 +1039,8 @@ export default function Ventas() {
             >
               <Tab 
                 label={
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <IoTrendingUpOutline className="text-lg sm:text-xl" />
+                  <div className="flex items-center gap-2">
+                    <IoTrendingUpOutline className="text-xl" />
                     <span className="hidden sm:inline">Populares</span>
                     <span className="sm:hidden">Pop.</span>
                   </div>
@@ -1032,8 +1049,8 @@ export default function Ventas() {
               />
               <Tab 
                 label={
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <IoStatsChartOutline className="text-lg sm:text-xl" />
+                  <div className="flex items-center gap-2">
+                    <IoStatsChartOutline className="text-xl" />
                     <span>Ventas</span>
                   </div>
                 } 
@@ -1041,8 +1058,8 @@ export default function Ventas() {
               />
               <Tab 
                 label={
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <IoTrophyOutline className="text-lg sm:text-xl" />
+                  <div className="flex items-center gap-2">
+                    <IoTrophyOutline className="text-xl" />
                     <span className="hidden sm:inline">Ranking de días</span>
                     <span className="sm:hidden">Ranking</span>
                   </div>
@@ -1052,44 +1069,44 @@ export default function Ventas() {
             </TabList>
           </Box>
           
-          <TabPanel value="1" sx={{ padding: { xs: '12px', sm: '24px' } }}>
-            <div className="space-y-4 sm:space-y-6">
+          <TabPanel value="1" sx={{ padding: { xs: '16px', sm: '24px' } }}>
+            <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
-                  <div className="flex items-center gap-2 sm:gap-3 text-white">
-                    <IoTrendingUpOutline className="text-xl sm:text-2xl flex-shrink-0" />
-                    <h3 className="text-lg sm:text-xl font-bold">Productos Populares</h3>
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+                  <div className="flex items-center gap-3 text-white">
+                    <IoTrendingUpOutline className="text-2xl" />
+                    <h3 className="text-xl font-bold">Productos Populares</h3>
                   </div>
                 </div>
-                <div className="p-4 sm:p-6">
+                <div className="p-6">
                   <Populares />
                 </div>
               </div>
               
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-gray-500 to-gray-700 p-4 sm:p-6">
-                  <div className="flex items-center gap-2 sm:gap-3 text-white">
-                    <IoStatsChartOutline className="text-xl sm:text-2xl flex-shrink-0" />
-                    <h3 className="text-lg sm:text-xl font-bold">Análisis de Ventas</h3>
+                <div className="bg-gradient-to-r from-gray-500 to-gray-700 p-6">
+                  <div className="flex items-center gap-3 text-white">
+                    <IoStatsChartOutline className="text-2xl" />
+                    <h3 className="text-xl font-bold">Análisis de Ventas</h3>
                   </div>
                 </div>
-                <div className="p-4 sm:p-6">
+                <div className="p-6">
                   <BarChartBreakdown />
                 </div>
               </div>
             </div>
           </TabPanel>
           
-          <TabPanel value="2" sx={{ padding: { xs: '12px', sm: '24px' } }}>
-            <div className="space-y-4 sm:space-y-6">
+          <TabPanel value="2" sx={{ padding: { xs: '16px', sm: '24px' } }}>
+            <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6">
-                  <div className="flex items-center gap-2 sm:gap-3 text-white">
-                    <IoStatsChartOutline className="text-xl sm:text-2xl flex-shrink-0" />
-                    <h3 className="text-lg sm:text-xl font-bold">Estadísticas Principales</h3>
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+                  <div className="flex items-center gap-3 text-white">
+                    <IoStatsChartOutline className="text-2xl" />
+                    <h3 className="text-xl font-bold">Estadísticas Principales</h3>
                   </div>
                 </div>
-                <div className="p-4 sm:p-6">
+                <div className="p-6">
                   <MainStats />
                 </div>
               </div>
@@ -1113,10 +1130,8 @@ export default function Ventas() {
                         '& .MuiTab-root': {
                           color: 'white',
                           fontWeight: '600',
-                          fontSize: { xs: '0.8rem', sm: '0.95rem' },
-                          minHeight: '48px',
-                          minWidth: { xs: '80px', sm: '120px' },
-                          padding: { xs: '8px 12px', sm: '12px 16px' },
+                          fontSize: '0.95rem',
+                          minHeight: '56px',
                           '&.Mui-selected': {
                             color: '#fbbf24',
                             backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -1137,8 +1152,8 @@ export default function Ventas() {
                     >
                       <Tab 
                         label={
-                          <div className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
-                            <FaClock className="text-sm sm:text-lg" />
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <FaClock className="text-lg" />
                             <span>Semana</span>
                           </div>
                         } 
@@ -1146,8 +1161,8 @@ export default function Ventas() {
                       />
                       <Tab 
                         label={
-                          <div className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
-                            <FaCalendarAlt className="text-sm sm:text-lg" />
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <FaCalendarAlt className="text-lg" />
                             <span>Mes</span>
                           </div>
                         } 
@@ -1155,18 +1170,17 @@ export default function Ventas() {
                       />
                       <Tab 
                         label={
-                          <div className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
-                            <IoCalendarOutline className="text-sm sm:text-lg" />
-                            <span className="hidden sm:inline">Entre fechas</span>
-                            <span className="sm:hidden">Fechas</span>
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <IoCalendarOutline className="text-lg" />
+                            <span>Entre fechas</span>
                           </div>
                         } 
                         value="Entre fechas" 
                       />
                       <Tab 
                         label={
-                          <div className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
-                            <FaGlobe className="text-sm sm:text-lg" />
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <FaGlobe className="text-lg" />
                             <span>Todo</span>
                           </div>
                         } 
@@ -1196,7 +1210,7 @@ export default function Ventas() {
             </div>
           </TabPanel>
           
-          <TabPanel value="3" sx={{ padding: { xs: '12px', sm: '24px' } }}>
+          <TabPanel value="3" sx={{ padding: { xs: '16px', sm: '24px' } }}>
             <RankingTab />
           </TabPanel>
         </TabContext>
