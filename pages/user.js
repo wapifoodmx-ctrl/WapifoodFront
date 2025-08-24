@@ -8,7 +8,7 @@ export default function User() {
                 <title>Usuario - WapiFood</title>
                 <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
             </Head>
-        <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 {/* Círculos decorativos */}

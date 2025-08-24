@@ -279,12 +279,12 @@ export default function UserPage() {
   };
 
   return (
-    <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       {/* Navbar */}
       <Navbar />
       
       {/* Contenido principal con padding-top para evitar solapamiento */}
-      <div className="pt-16 p-4">
+      <div className="pt-16 p-4 pb-8">
         {/* Modal de éxito mejorado */}
         {showSuccessModal && (
           <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">

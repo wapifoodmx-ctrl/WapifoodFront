@@ -83,6 +83,34 @@ export default function TermsAndConditions() {
             icon: <MdOutlinePrivacyTip className="text-2xl text-green-600" />,
             content: 'Podemos compartir datos con terceros (procesadores de pago) únicamente para procesar la vigencia de su servicio, cualquier otro uso deberá validarlo en las políticas de privacidad de la pasarela de pago (Mercadopago).',
             privacy: 'Wapifood en ningún momento tendrá acceso a los datos de su tarjeta, cuenta bancaria o demás información relacionado con los pagos, dado que todo lo gestiona mercado pago.'
+        },
+        {
+            id: 'support',
+            title: '9. Soporte y Asistencia Técnica',
+            icon: <HiOutlineShieldCheck className="text-2xl text-blue-600" />,
+            content: 'Como cliente activo con suscripción vigente de WapiFood, usted tiene derecho a recibir soporte técnico y asistencia general para el correcto funcionamiento del sistema.',
+            supportInfo: {
+                eligibility: 'Todos los usuarios con suscripción activa son acreedores de soporte técnico general y apoyo con el sistema.',
+                schedule: 'El soporte está disponible de lunes a viernes de 12:00 PM a 5:00 PM (Hora de la Ciudad de México - GMT-6).',
+                channels: [
+                    'Correo electrónico: wapitech.dev@gmail.com (mencionado en la sección 12 de Contacto)',
+                    'WhatsApp: 55-2053-5967 (número disponible en la sección 12 de Contacto)'
+                ],
+                coverage: [
+                    'Resolución de problemas técnicos',
+                    'Orientación sobre el uso de funcionalidades',
+                    'Ayuda con el menú digital y configuraciones generales',
+                    'Asistencia con la integración de app Wapifood en su celuluar',
+                    'Soporte total para la configuración de impresora térmica compatible con Wapifood'
+                ],
+                limitations: [
+                    'El soporte no incluye capacitación personalizada extensa',
+                    'No se proporciona soporte para modificaciones personalizadas del sistema',
+                    'El tiempo de respuesta puede variar según la complejidad de la consulta',
+                    'El soporte fuera del horario establecido no está garantizado',
+                    'La duración máxima del soporte es de 15 minutos por consulta'
+                ]
+            }
         }
     ];
 
@@ -247,12 +275,85 @@ export default function TermsAndConditions() {
                                                 <p className="text-purple-700 text-sm sm:text-base">{section.privacy}</p>
                                             </div>
                                         )}
+
+                                        {section.supportInfo && (
+                                            <div className="space-y-4">
+                                                {/* Elegibilidad */}
+                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                    <h4 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base flex items-center gap-2">
+                                                        ✅ Elegibilidad para Soporte
+                                                    </h4>
+                                                    <p className="text-blue-700 text-sm sm:text-base">{section.supportInfo.eligibility}</p>
+                                                </div>
+
+                                                {/* Horario de atención */}
+                                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                                    <h4 className="font-semibold text-green-800 mb-2 text-sm sm:text-base flex items-center gap-2">
+                                                        🕒 Horario de Atención
+                                                    </h4>
+                                                    <p className="text-green-700 text-sm sm:text-base">{section.supportInfo.schedule}</p>
+                                                </div>
+
+                                                {/* Canales de contacto */}
+                                                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                                                    <h4 className="font-semibold text-indigo-800 mb-3 text-sm sm:text-base flex items-center gap-2">
+                                                        📞 Canales de Contacto para Soporte
+                                                    </h4>
+                                                    <ul className="space-y-2">
+                                                        {section.supportInfo.channels.map((channel, idx) => (
+                                                            <li key={idx} className="flex items-start gap-2">
+                                                                <div className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0"></div>
+                                                                <span className="text-indigo-700 text-sm sm:text-base">{channel}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+
+                                                {/* Cobertura del soporte */}
+                                                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                                                    <h4 className="font-semibold text-emerald-800 mb-3 text-sm sm:text-base flex items-center gap-2">
+                                                        🛠️ ¿Qué incluye nuestro soporte?
+                                                    </h4>
+                                                    <ul className="space-y-2">
+                                                        {section.supportInfo.coverage.map((item, idx) => (
+                                                            <li key={idx} className="flex items-start gap-2">
+                                                                <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
+                                                                <span className="text-emerald-700 text-sm sm:text-base">{item}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+
+                                                {/* Limitaciones */}
+                                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                                    <h4 className="font-semibold text-amber-800 mb-3 text-sm sm:text-base flex items-center gap-2">
+                                                        ⚠️ Limitaciones del Soporte
+                                                    </h4>
+                                                    <ul className="space-y-2">
+                                                        {section.supportInfo.limitations.map((limitation, idx) => (
+                                                            <li key={idx} className="flex items-start gap-2">
+                                                                <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
+                                                                <span className="text-amber-700 text-sm sm:text-base">{limitation}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+
+                                                {/* Nota importante */}
+                                                <div className="bg-gray-100 border border-gray-300 rounded-lg p-4">
+                                                    <p className="text-gray-700 text-sm sm:text-base text-center">
+                                                        <strong>Nota:</strong> El soporte técnico está disponible únicamente para usuarios con suscripción activa. 
+                                                        Una vez que su suscripción expire, el acceso al soporte técnico será suspendido hasta que renueve su plan.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         ))}
 
-                        {/* Sección 9: Limitación de Responsabilidad */}
+                        {/* Sección 10: Limitación de Responsabilidad */}
                         <div className="bg-white rounded-2xl shadow-lg border border-green-100 p-6 sm:p-8">
                             <div className="flex items-start gap-4 mb-6">
                                 <div className="bg-gradient-to-r from-red-100 to-pink-100 rounded-full p-3">
@@ -260,22 +361,51 @@ export default function TermsAndConditions() {
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 mb-4">
-                                        9. Limitación de Responsabilidad
+                                        10. Limitación de Responsabilidad
                                     </h3>
-                                    <p className="text-gray-700 leading-relaxed mb-4 text-sm sm:text-base">
-                                        La Aplicación se proporciona "tal cual" y "según disponibilidad". 
-                                        No garantizamos que sea ininterrumpida, segura o libre de errores.
-                                    </p>
-                                    <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
-                                        No seremos responsables por daños indirectos, incidentales, especiales o 
-                                        consecuentes que resulten del uso o la incapacidad de usar la Aplicación, 
-                                        incluidos los relacionados con transacciones fallidas o pérdida de datos.
-                                    </p>
+                                    <div className="space-y-4">
+                                        <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
+                                            La Aplicación se proporciona "tal cual" y "según disponibilidad". 
+                                            No garantizamos que sea ininterrumpida, segura o libre de errores.
+                                        </p>
+                                        <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
+                                            No seremos responsables por daños indirectos, incidentales, especiales o 
+                                            consecuentes que resulten del uso o la incapacidad de usar la Aplicación, 
+                                            incluidos los relacionados con transacciones fallidas o pérdida de datos.
+                                        </p>
+                                        
+                                        {/* Nueva subsección para responsabilidad del uso */}
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+                                            <h4 className="font-semibold text-red-800 mb-3 text-sm sm:text-base flex items-center gap-2">
+                                                ⚠️ Responsabilidad del Usuario
+                                            </h4>
+                                            <div className="space-y-3">
+                                                <p className="text-red-700 text-sm sm:text-base">
+                                                    <strong>Wapifood no se hace responsable por el uso que el cliente haga del software. </strong> 
+                                                    El usuario es completamente responsable del contenido, información, productos, servicios 
+                                                    y cualquier material que publique, promocione o comercialice a través de la Aplicación.
+                                                </p>
+                                                <p className="text-red-700 text-sm sm:text-base">
+                                                    En caso de que algún tercero presente una queja, reclamo, demanda o solicitud relacionada 
+                                                    con el uso que usted haga de la Aplicación, el contenido publicado por usted, o los 
+                                                    servicios que ofrezca a través de la plataforma, <strong>dicho tercero afectado deberá 
+                                                    ponerse en contacto directamente al correo electrónico wapitech.dev@gmail.com </strong> 
+                                                    (mencionado en la sección 12 de Contacto) para dar seguimiento a su queja o solicitud 
+                                                    y buscar la resolución correspondiente.
+                                                </p>
+                                                <p className="text-red-700 text-sm sm:text-base">
+                                                    Wapifood actuará únicamente como intermediario para facilitar la comunicación entre 
+                                                    las partes, pero la responsabilidad legal y comercial recae completamente en el 
+                                                    usuario de la Aplicación.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Sección 10: Terminación */}
+                        {/* Sección 11: Terminación */}
                         <div className="bg-white rounded-2xl shadow-lg border border-green-100 p-6 sm:p-8">
                             <div className="flex items-start gap-4 mb-6">
                                 <div className="bg-gradient-to-r from-orange-100 to-yellow-100 rounded-full p-3">
@@ -283,12 +413,12 @@ export default function TermsAndConditions() {
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 mb-4">
-                                        10. Terminación
+                                        11. Terminación
                                     </h3>
                                     <div className="space-y-3">
                                         <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
                                             Podemos terminar o suspender su acceso a la Aplicación en cualquier momento, 
-                                            con o sin notificación, si violamos estos términos o por motivos operativos.
+                                            con o sin notificación, si el usuario viola estos términos o por motivos operativos.
                                         </p>
                                         <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
                                             Usted puede dejar de usar la Aplicación en cualquier momento, 
@@ -303,10 +433,10 @@ export default function TermsAndConditions() {
                     {/* Contacto */}
                     <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-xl p-6 sm:p-8 mt-8 text-white">
                         <h3 className="text-xl sm:text-2xl font-bold mb-4 text-center">
-                            11. Contacto
+                            12. Contacto
                         </h3>
                         <p className="text-green-100 mb-6 text-center text-sm sm:text-base">
-                            Si tiene preguntas sobre estos Términos y Condiciones, contáctenos en:
+                            Si tiene preguntas sobre estos Términos y Condiciones, o necesita soporte técnico, contáctenos en:
                         </p>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -316,15 +446,23 @@ export default function TermsAndConditions() {
                                 </div>
                                 <p className="font-semibold mb-1">Correo electrónico</p>
                                 <p className="text-sm sm:text-base">wapitech.dev@gmail.com</p>
+                                <p className="text-xs text-green-100 mt-1">Para soporte y consultas generales</p>
                             </div>
                             
                             <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center hover:bg-white/30 transition-colors duration-200">
                                 <div className="flex items-center justify-center mb-2">
                                     <MdOutlinePhone className="text-2xl" />
                                 </div>
-                                <p className="font-semibold mb-1">Teléfono</p>
+                                <p className="font-semibold mb-1">WhatsApp</p>
                                 <p className="text-sm sm:text-base">55-2053-5967</p>
+                                <p className="text-xs text-green-100 mt-1">Soporte técnico en horario laboral</p>
                             </div>
+                        </div>
+                        
+                        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mt-4 text-center">
+                            <p className="text-sm text-green-100">
+                                <strong>Horario de Atención:</strong> Lunes a Viernes de 12:00 PM a 5:00 PM (Ciudad de México - GMT-6)
+                            </p>
                         </div>
                     </div>
                 </div>
