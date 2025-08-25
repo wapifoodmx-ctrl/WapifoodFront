@@ -21,6 +21,7 @@ const baseSchema = Yup.object().shape({
     .required("Teléfono es requerido"),
   restaurantName: Yup.string().required("Nombre del restaurante es requerido"),
   confirmationCode: Yup.string()
+    .required("Código de confirmación es requerido")
     .matches(/^\d{4}$/, 'El código debe tener exactamente 4 números')
     .test('positive-numbers', 'Solo se permiten números positivos (1-9)', function(value) {
       if (!value) return true;
@@ -635,7 +636,7 @@ export default function UserPage() {
                       {/* Código de confirmación */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="confirmationCode">
-                          Código de confirmación
+                          Código de confirmación <span className="text-red-500">*</span>
                         </label>
                         
                         <Field 
@@ -653,7 +654,7 @@ export default function UserPage() {
                           }}
                         />
                         <ErrorMessage name="confirmationCode" component="div" className="text-red-500 text-sm mt-1" />
-                        <p className="text-gray-500 text-xs mt-1">4 números del 1 al 9 (opcional)</p>
+                        <p className="text-gray-500 text-xs mt-1">4 números del 1 al 9 (requerido)</p>
                       </div>
                       
                       {/* Imagen de perfil MEJORADA con indicador de obligatoriedad */}
