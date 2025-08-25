@@ -131,7 +131,7 @@ export default function Navbar() {
             title: "Productos",
             href: "#",
             icon: <LuPizza className="h-full w-[24px]" />,
-            alwaysShow: true,
+            requiresSubscription: true, // Cambiar de alwaysShow: true a requiresSubscription: true
         },
         Tickets: {
             title: "Tickets",
@@ -370,7 +370,7 @@ export default function Navbar() {
                                         ) : item === "Register" ? (
                                             <button
                                                 className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
-                                                onClick={productos}
+                                                onClick={() => handleRestrictedClick(productos)} // Cambiar de productos a handleRestrictedClick(productos)
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
