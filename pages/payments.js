@@ -6,8 +6,7 @@ export default function Payments() {
     return (
         <>
         <Head>
-                <title>Payments
-                     - WapiFood</title>
+                <title>Pagos - WapiFood</title>
                 <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
             </Head>
         <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">

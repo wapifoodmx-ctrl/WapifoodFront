@@ -5,7 +5,7 @@ export default function User() {
     return (
         <>
         <Head>
-                <title>Usuario - WapiFood</title>
+                <title>Perfil - WapiFood</title>
                 <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
             </Head>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
