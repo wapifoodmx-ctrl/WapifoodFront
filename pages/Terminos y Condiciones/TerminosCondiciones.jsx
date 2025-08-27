@@ -76,7 +76,7 @@ export default function TermsAndConditions() {
             icon: <MdOutlineGavel className="text-2xl text-green-600" />,
             content: 'Todos los derechos de propiedad intelectual de la Aplicación, incluidos el diseño, logotipos, código y contenido, son propiedad de Wapifood o sus licenciantes.',
             license: 'Usted recibe una licencia limitada, no exclusiva y no transferible para usar la Aplicación conforme a estos términos, pero no adquiere ningún derecho de propiedad sobre ella. Al obtener su licencia limitada usted podrá hacer uso del sistema conforme a las limitaciones de su paquete.'
-        },
+        }, 
         {
             id: 'privacy',
             title: '8. Privacidad',
