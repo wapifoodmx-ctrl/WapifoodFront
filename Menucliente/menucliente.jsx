@@ -11,6 +11,7 @@ import { FaCreditCard } from "react-icons/fa";
 import { BsCashCoin } from "react-icons/bs";
 import { GoChecklist } from "react-icons/go";
 import { MdTableRestaurant } from "react-icons/md";
+import { MdFullscreen, MdFullscreenExit } from "react-icons/md";
 import kime from "@/pages/assets/img/kime.jpeg";
 import { getProducts } from "@/useCases/getProducts";
 import { loginUser } from '@/useCases/login';
@@ -78,6 +79,7 @@ export default function MenuCliente() {
     const [redirectCountdown, setRedirectCountdown] = useState(10);
     const [modalProductosCanceladosOpen, setModalProductosCanceladosOpen] = useState(false);
     const [productosCancelados, setProductosCancelados] = useState([]);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('tickets', 'true');
@@ -407,6 +409,34 @@ export default function MenuCliente() {
             setProcesandoCambioMesa(false);
         }
     };
+
+    // Función para manejar el modo pantalla completa
+    const toggleFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+                setIsFullscreen(true);
+            } else {
+                await document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        } catch (error) {
+            console.error('Error al cambiar modo pantalla completa:', error);
+        }
+    };
+
+    // Escuchar cambios en el estado de pantalla completa
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        };
+    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -1565,10 +1595,23 @@ export default function MenuCliente() {
                             </div>
                         ) : (
                             <>
-                                <div className='text-[#3fe283] text-4xl flex justify-center mb-4'>
-                                    <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
-                                        <MdTableRestaurant size={32} />
+                                <div className='flex justify-between items-start mb-4'>
+                                    <div className='text-[#3fe283] text-4xl flex justify-center w-full'>
+                                        <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
+                                            <MdTableRestaurant size={32} />
+                                        </div>
                                     </div>
+                                    <button
+                                        onClick={toggleFullscreen}
+                                        className="absolute top-6 right-6 p-2 text-white hover:text-[#3fe283] hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                                        title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                                    >
+                                        {isFullscreen ? (
+                                            <MdFullscreenExit size={50} />
+                                        ) : (
+                                            <MdFullscreen size={50} />
+                                        )}
+                                    </button>
                                 </div>
                                 <h2 className="text-2xl text-center font-bold text-black mb-2">Cambiar Mesa</h2>
                                 <p className='text-center text-gray-600 mb-4'>
