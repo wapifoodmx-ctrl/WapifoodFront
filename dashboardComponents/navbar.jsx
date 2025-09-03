@@ -9,6 +9,7 @@ import { FaUser } from "react-icons/fa";
 import { ImExit } from "react-icons/im";
 import { LuIdCard } from "react-icons/lu";
 import { FaKitchenSet } from "react-icons/fa6";
+import { MdFullscreen, MdFullscreenExit } from "react-icons/md";
 import { checkPayment } from '../useCases/checkPayment';
 
 export default function Navbar() {
@@ -20,6 +21,7 @@ export default function Navbar() {
     const [switchEnabled, setSwitchEnabled] = useState(false);
     const [showExpirationModal, setShowExpirationModal] = useState(false);
     const [daysUntilExpiration, setDaysUntilExpiration] = useState(0);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const menuRef = useRef(null);
 
     // Función para calcular días entre dos fechas
@@ -120,6 +122,21 @@ export default function Navbar() {
         localStorage.setItem('cocinaSwitch', JSON.stringify(newState));
     };
 
+    // Función para manejar el modo pantalla completa
+    const toggleFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+                setIsFullscreen(true);
+            } else {
+                await document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        } catch (error) {
+            console.error('Error al cambiar modo pantalla completa:', error);
+        }
+    };
+
     const menu = {
         Dashboard: {
             title: "Dashboard",
@@ -172,6 +189,19 @@ export default function Navbar() {
             function: handleLogout,
         },
     };
+
+    // Escuchar cambios en el estado de pantalla completa
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        };
+    }, []);
 
     // useEffect principal - verifica token y estado inicial
     useEffect(() => {
@@ -330,6 +360,20 @@ export default function Navbar() {
                                 )}
                             </button>
                         )}
+
+                        {/* Botón de pantalla completa */}
+                        <button
+                            onClick={toggleFullscreen}
+                            className="z-50 cursor-pointer bg-white/20 rounded-full p-2 shadow-lg border border-green-200 hover:bg-white/40 transition-all duration-200"
+                            title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                        >
+                            {isFullscreen ? (
+                                <MdFullscreenExit className="w-6 h-6 text-white" />
+                            ) : (
+                                <MdFullscreen className="w-6 h-6 text-white" />
+                            )}
+                        </button>
 
                         {/* Menú hamburguesa */}
                         <button

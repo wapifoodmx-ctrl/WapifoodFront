@@ -80,6 +80,10 @@ export default function MenuCliente() {
     const [modalProductosCanceladosOpen, setModalProductosCanceladosOpen] = useState(false);
     const [productosCancelados, setProductosCancelados] = useState([]);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [modalExitFullscreenOpen, setModalExitFullscreenOpen] = useState(false);
+    const [codigoExitFullscreen, setCodigoExitFullscreen] = useState('');
+    const [errorCodigoExitFullscreen, setErrorCodigoExitFullscreen] = useState('');
+    const [procesandoExitFullscreen, setProcesandoExitFullscreen] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('tickets', 'true');
@@ -414,14 +418,44 @@ export default function MenuCliente() {
     const toggleFullscreen = async () => {
         try {
             if (!document.fullscreenElement) {
+                // Entrar a pantalla completa - sin restricciones
                 await document.documentElement.requestFullscreen();
                 setIsFullscreen(true);
             } else {
-                await document.exitFullscreen();
-                setIsFullscreen(false);
+                // Salir de pantalla completa - requiere código de seguridad
+                setModalExitFullscreenOpen(true);
+                setCodigoExitFullscreen('');
+                setErrorCodigoExitFullscreen('');
             }
         } catch (error) {
             console.error('Error al cambiar modo pantalla completa:', error);
+        }
+    };
+
+    // Función para confirmar salida de pantalla completa con código
+    const confirmarExitFullscreen = async () => {
+        try {
+            const codigoAPI = await getCodigoConfirmacion();
+            const codigoEsperado = codigoAPI.codigo_confirmacion;
+            
+            if (codigoExitFullscreen !== codigoEsperado.toString()) {
+                setErrorCodigoExitFullscreen('Código incorrecto. Intenta nuevamente.');
+                return;
+            }
+
+            setProcesandoExitFullscreen(true);
+            setErrorCodigoExitFullscreen('');
+
+            // Salir de pantalla completa
+            await document.exitFullscreen();
+            setIsFullscreen(false);
+            setModalExitFullscreenOpen(false);
+
+        } catch (error) {
+            console.error('Error al salir de pantalla completa:', error);
+            setErrorCodigoExitFullscreen('Error al obtener código de confirmación.');
+        } finally {
+            setProcesandoExitFullscreen(false);
         }
     };
 
@@ -1595,23 +1629,26 @@ export default function MenuCliente() {
                             </div>
                         ) : (
                             <>
-                                <div className='flex justify-between items-start mb-4'>
+                                <div className='flex justify-between items-start mb-4 relative'>
                                     <div className='text-[#3fe283] text-4xl flex justify-center w-full'>
                                         <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
                                             <MdTableRestaurant size={32} />
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={toggleFullscreen}
-                                        className="absolute top-6 right-6 p-2 text-white hover:text-[#3fe283] hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                                        title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-                                    >
-                                        {isFullscreen ? (
-                                            <MdFullscreenExit size={50} />
-                                        ) : (
-                                            <MdFullscreen size={50} />
-                                        )}
-                                    </button>
+                                    <div className="absolute top-0 right-0">
+                                        <button
+                                            onClick={toggleFullscreen}
+                                            className="z-50 cursor-pointer bg-white/20 rounded-full p-2 shadow-lg border border-green-200 hover:bg-white/40 transition-all duration-200"
+                                            title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                                            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                                        >
+                                            {isFullscreen ? (
+                                                <MdFullscreenExit className="w-6 h-6 text-black"/>
+                                            ) : (
+                                                <MdFullscreen className="w-6 h-6 text-black"/>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                                 <h2 className="text-2xl text-center font-bold text-black mb-2">Cambiar Mesa</h2>
                                 <p className='text-center text-gray-600 mb-4'>
@@ -2287,6 +2324,90 @@ export default function MenuCliente() {
                         <div className="mt-6 text-center text-sm text-gray-500">
                             Disculpa las molestias. Nuestro equipo trabaja para ofrecerte la mejor experiencia.
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {modalExitFullscreenOpen && (
+                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1004]">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
+                        {procesandoExitFullscreen ? (
+                            <div className="flex flex-col justify-center items-center h-32">
+                                <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin mb-4"></div>
+                                <p className="text-gray-600">Procesando...</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className='text-red-500 text-4xl flex justify-center mb-4'>
+                                    <div className='bg-red-500 text-white p-2 rounded-lg'>
+                                        <MdFullscreenExit size={32} />
+                                    </div>
+                                </div>
+                                <h2 className="text-2xl text-center font-bold text-black mb-2">Salir de Pantalla Completa</h2>
+                                <p className='text-center text-gray-600 mb-4'>
+                                    Ingrese código de 4 dígitos para salir del modo pantalla completa
+                                </p>
+                                
+                                <div className="flex flex-col gap-4">
+                                    <div className='flex flex-col gap-2'>
+                                        <label className="text-sm font-medium text-gray-700 text-center">
+                                            Código de Seguridad
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={codigoExitFullscreen}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                if (/^\d{0,4}$/.test(value)) {
+                                                    setCodigoExitFullscreen(value);
+                                                    if (errorCodigoExitFullscreen) {
+                                                        setErrorCodigoExitFullscreen('');
+                                                    }
+                                                }
+                                            }}
+                                            placeholder="****"
+                                            maxLength="4"
+                                            className="p-3 border border-gray-300 rounded-lg w-full text-lg text-center font-mono focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                            autoFocus
+                                        />
+                                        
+                                        {errorCodigoExitFullscreen && (
+                                            <p className="text-red-500 text-sm text-center mt-1">
+                                                {errorCodigoExitFullscreen}
+                                            </p>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="flex gap-3">
+                                        <button
+                                            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                                setModalExitFullscreenOpen(false);
+                                                setCodigoExitFullscreen('');
+                                                setErrorCodigoExitFullscreen('');
+                                            }}
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            className={`flex-1 py-2 px-4 rounded-lg transition-colors ${
+                                                codigoExitFullscreen.length === 4
+                                                    ? 'bg-red-500 text-white hover:bg-red-600'
+                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                            onClick={confirmarExitFullscreen}
+                                            disabled={codigoExitFullscreen.length !== 4}
+                                        >
+                                            Salir de Pantalla Completa
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="text-center text-xs text-gray-500">
+                                        Por seguridad, se requiere código para salir del modo pantalla completa.
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
