@@ -17,7 +17,6 @@ import Vistadecocina from "@/pages/assets/images/Vistadecocina.png";
 import ticketApp1 from "@/pages/assets/images/ticketApp1.jpeg";
 import ticketApp2 from "@/pages/assets/images/ticketApp2.jpeg";
 import ticketApp3 from "@/pages/assets/images/ticketApp3.jpeg";
-import Creditos from "@/components/Creditos";
 import getPaymentsLink, { getAllPaymentLinks } from "@/useCases/getPaymentsLink";
 import { useEffect, useState } from "react";
 
@@ -451,11 +450,28 @@ export default function PlanDeVentas() {
                         </div>
                     </div>
                 </div>
+                {/* Footer informativo */}
+                <footer className="relative z-10 bg-white/60 backdrop-blur-sm border-t border-gray-100 mt-auto">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span>Pagos - WapiFood</span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                                <div className="flex items-center gap-1">
+                                    <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
+                                    <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse delay-150"></div>
+                                    <div className="w-1 h-1 bg-teal-400 rounded-full animate-pulse delay-300"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
 
-                {/* Footer con Creditos */}
-                <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500">
-                    <Creditos />
-                </div>
+               
             </section>
 
             {/* Estilos CSS personalizados - AÑADIR scrollbar-hide */}

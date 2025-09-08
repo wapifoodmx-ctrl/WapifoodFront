@@ -2,6 +2,7 @@ import { IoCartOutline } from "react-icons/io5";
 import { FaRegCopyright, FaWhatsapp } from "react-icons/fa";
 import { MdEmail, MdPhone, MdLocationOn } from "react-icons/md";
 import { FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
+import { FaTiktok } from "react-icons/fa";
 
 export default function Creditos() {
     const data = {
@@ -66,16 +67,16 @@ export default function Creditos() {
 
                     {/* Social Media Icons */}
                     <div className="flex gap-4">
-                        <a href="#" className="p-2 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full text-white hover:scale-110 transition-transform duration-200 shadow-md">
+                        <a href="https://www.facebook.com/people/Wapifood/61579855973221/" target="_blank" className="p-2 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full text-white hover:scale-110 transition-transform duration-200 shadow-md">
                             <FaFacebook size={18} />
                         </a>
-                        <a href="#" className="p-2 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full text-white hover:scale-110 transition-transform duration-200 shadow-md">
-                            <FaTwitter size={18} />
+                        <a href="https://www.tiktok.com/@wapifood" target="_blank" className="p-2 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full text-white hover:scale-110 transition-transform duration-200 shadow-md">
+                            <FaTiktok size={18} />
                         </a>
-                        <a href="#" className="p-2 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full text-white hover:scale-110 transition-transform duration-200 shadow-md">
+                        <a href="https://www.instagram.com/wapi.food/" target="_blank" className="p-2 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full text-white hover:scale-110 transition-transform duration-200 shadow-md">
                             <FaInstagram size={18} />
                         </a>
-                        <a href="https://api.whatsapp.com/message/DJESQM3TOQH5G1" className="p-2 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full text-white hover:scale-110 transition-transform duration-200 shadow-md">
+                        <a href="https://api.whatsapp.com/message/DJESQM3TOQH5G1" target="_blank" className="p-2 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full text-white hover:scale-110 transition-transform duration-200 shadow-md">
                             <FaWhatsapp size={18} />
                         </a>
                     </div>

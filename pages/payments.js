@@ -74,7 +74,7 @@ export default function Payments() {
                     </div>
                 </div>
                 
-                {/* Footer informativo */}
+                
                
             </main>
 
