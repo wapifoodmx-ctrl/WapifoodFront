@@ -482,7 +482,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                 onSubmit={async (values, { setSubmitting }) => {
                                     try {
                                         const categoriaData = {
-                                            nombre_categoria: capitalizeFirstLetter(values.nombre_categoria),
+                                            nombre_categoria: values.nombre_categoria.toUpperCase(),
                                             descripcion_categoria: values.descripcion_categoria,
                                         };
                                         await postCategoria(categoriaData);
@@ -507,13 +507,14 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                             <Field
                                                 name="nombre_categoria"
                                                 type="text"
-                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                                                placeholder="Ej: Pizzas, Bebidas, Postres..."
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 uppercase"
+                                                placeholder="EJ: PIZZAS, BEBIDAS, POSTRES..."
                                                 onChange={(e) => {
-                                                    const capitalizedValue = capitalizeFirstLetter(e.target.value);
-                                                    setFieldValue("nombre_categoria", capitalizedValue);
+                                                    const upperCaseValue = e.target.value.toUpperCase();
+                                                    setFieldValue("nombre_categoria", upperCaseValue);
                                                 }}
                                                 value={values.nombre_categoria}
+                                                style={{ textTransform: 'uppercase' }}
                                             />
                                             {errors.nombre_categoria && touched.nombre_categoria && (
                                                 <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
