@@ -687,10 +687,26 @@ export default function Pntoventa() {
                                 {/* Pedidos pendientes */}
                                 {pedidosPendientes.length > 0 && (
                                     <div className="mt-8">
-                                        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                                            Pedidos Pendientes de Pago
-                                        </h3>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                                                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                                                Pedidos Pendientes de Pago
+                                            </h3>
+                                            <button
+                                                onClick={() => {
+                                                    setPedidosPendientes([]);
+                                                    localStorage.removeItem("pedidosPendientes");
+                                                    setMensajeError("Pedidos pendientes eliminados.");
+                                                    setTimeout(() => {
+                                                        setMensajeError("");
+                                                    }, 2000);
+                                                }}
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200 transform hover:scale-110"
+                                                title="Eliminar todos los pedidos pendientes"
+                                            >
+                                                <IoTrashOutline className="text-lg" />
+                                            </button>
+                                        </div>
                                         <div className="max-h-64 overflow-y-auto space-y-3">
                                             {pedidosPendientes.map((item, index) => (
                                                 <div key={index} className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200 shadow-sm">
@@ -720,7 +736,7 @@ export default function Pntoventa() {
                                         </div>
                                     </div>
                                 )}
-                               
+
                                 {/* Botón "Proceder al Pago" */}
                                 <button
                                     className={`w-full py-3 rounded-xl font-medium transition-all duration-200 mt-6 ${
