@@ -10,7 +10,6 @@ export default function Inventarios() {
                 <meta name="description" content="Vista de inventarios para organizar tu restaurante" />
             </Head>
       <Inventario />  
-      <PestañasInventario />
     </>
   );
 }

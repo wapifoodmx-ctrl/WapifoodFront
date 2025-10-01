@@ -1,12 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-const PestañasInventario = () => {
-  const [pestañaActiva, setPestañaActiva] = useState('insumos');
-
-  const cambiarPestaña = (pestaña) => {
-    setPestañaActiva(pestaña);
-  };
-
+const PestañasInventario = ({ pestañaActiva, cambiarPestaña }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       {/* Navegación de pestañas */}
@@ -53,7 +47,6 @@ const PestañasInventario = () => {
             <p className="text-gray-600 leading-relaxed">
               Aquí va el contenido de los insumos...
             </p>
-            {/* Agrega aquí tu contenido para insumos */}
           </div>
         )}
 
@@ -65,7 +58,6 @@ const PestañasInventario = () => {
             <p className="text-gray-600 leading-relaxed">
               Aquí va el contenido de los productos...
             </p>
-            {/* Agrega aquí tu contenido para productos */}
           </div>
         )}
 
@@ -77,7 +69,6 @@ const PestañasInventario = () => {
             <p className="text-gray-600 leading-relaxed">
               Aquí va el contenido de otros elementos...
             </p>
-            {/* Agrega aquí tu contenido para otros */}
           </div>
         )}
       </div>
