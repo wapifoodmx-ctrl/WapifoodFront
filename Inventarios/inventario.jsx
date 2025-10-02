@@ -233,21 +233,23 @@ export default function Inventario() {
                 />
               </div>
 
-              {/* Categoría Adicional */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Categoría Adicional
-                </label>
-                <select
-                  name="categoriaAdicional"
-                  value={formData.categoriaAdicional}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                >
-                  <option value="No">No</option>
-                  <option value="Si">Sí</option>
-                </select>
-              </div>
+              {/* Categoría Adicional - Solo para insumos */}
+              {pestañaActiva === 'insumos' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Categoría Adicional
+                  </label>
+                  <select
+                    name="categoriaAdicional"
+                    value={formData.categoriaAdicional}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="No">No</option>
+                    <option value="Si">Sí</option>
+                  </select>
+                </div>
+              )}
 
               {/* Botón Guardar */}
               <div className="pt-4">
