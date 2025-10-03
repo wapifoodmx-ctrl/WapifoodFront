@@ -10,6 +10,7 @@ export default function Inventario() {
   const [pestañaActiva, setPestañaActiva] = useState('insumos');
   const [formData, setFormData] = useState({
     nombreProducto: "",
+    medida: "Gramos", // Agregar campo medida con valor por defecto
     cantidad: "",
     costo: "",
     comentarios: "",
@@ -60,6 +61,7 @@ export default function Inventario() {
     setIsAddProductModalOpen(false);
     setFormData({
       nombreProducto: "",
+      medida: "Gramos", // Resetear también el campo medida
       cantidad: "",
       costo: "",
       comentarios: "",
@@ -182,6 +184,29 @@ export default function Inventario() {
                   required
                 />
               </div>
+
+              {/* Medidas - Solo para insumos */}
+              {pestañaActiva === 'insumos' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Medidas
+                  </label>
+                  <select
+                    name="medida"
+                    value={formData.medida}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="Gramos">Gramos</option>
+                    <option value="Kilos">Kilos</option>
+                    <option value="Litros">Litros</option>
+                    <option value="Mililitros">Mililitros</option>
+                    <option value="Tazas">Tazas</option>
+                    <option value="Cucharada (tbsp)">Cucharada (tbsp)</option>
+                    <option value="Cucharadita (tsp)">Cucharadita (tsp)</option>
+                  </select>
+                </div>
+              )}
 
               {/* Cantidad */}
               <div>
