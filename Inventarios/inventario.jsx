@@ -4,13 +4,16 @@ import { FiEdit } from "react-icons/fi";
 import Navbar from "@/dashboardComponents/navbar";
 import NavegacionPestañas from "@/Inventarios/navegaciónPestañas";
 import { useState } from "react";
+import { createIngredient } from "@/useCases/postInventarioIngredientes";
 
 export default function Inventario() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [pestañaActiva, setPestañaActiva] = useState('insumos');
+  const [isLoading, setIsLoading] = useState(false);
+  const [insumos, setInsumos] = useState([]); // Estado para almacenar insumos creados
   const [formData, setFormData] = useState({
     nombreProducto: "",
-    medida: "Gramos", // Agregar campo medida con valor por defecto
+    medida: "Gramos",
     cantidad: "",
     costo: "",
     comentarios: "",
@@ -55,18 +58,61 @@ export default function Inventario() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Producto a guardar:", formData);
-    setIsAddProductModalOpen(false);
-    setFormData({
-      nombreProducto: "",
-      medida: "Gramos", // Resetear también el campo medida
-      cantidad: "",
-      costo: "",
-      comentarios: "",
-      categoriaAdicional: "No"
-    });
+    setIsLoading(true);
+
+    try {
+      // Solo procesar si estamos en la pestaña de insumos
+      if (pestañaActiva === 'insumos') {
+        // Mapear los datos del formulario al formato de la API
+        const ingredientData = {
+          name: formData.nombreProducto,
+          description: formData.comentarios || `Insumo: ${formData.nombreProducto}`,
+          cost: parseFloat(formData.costo),
+          stock: parseInt(formData.cantidad),
+          unit: formData.medida
+        };
+
+        // Llamar a la API
+        const result = await createIngredient(ingredientData);
+        
+        // Agregar el nuevo insumo al estado local
+        const nuevoInsumo = {
+          id: result.id || Date.now(), // Usar ID de la respuesta o timestamp
+          name: ingredientData.name,
+          stock: ingredientData.stock,
+          unit: ingredientData.unit,
+          cost: ingredientData.cost,
+          description: ingredientData.description
+        };
+        
+        setInsumos(prev => [...prev, nuevoInsumo]);
+        
+        console.log("Insumo creado exitosamente:", result);
+        alert("Insumo agregado exitosamente");
+      } else {
+        // Para productos y otros, solo mostrar en consola por ahora
+        console.log("Producto a guardar:", formData);
+      }
+
+      // Cerrar modal y resetear formulario
+      setIsAddProductModalOpen(false);
+      setFormData({
+        nombreProducto: "",
+        medida: "Gramos",
+        cantidad: "",
+        costo: "",
+        comentarios: "",
+        categoriaAdicional: "No"
+      });
+
+    } catch (error) {
+      console.error("Error al crear insumo:", error);
+      alert(`Error al agregar insumo: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -110,7 +156,8 @@ export default function Inventario() {
             {/* Solo la navegación */}
             <NavegacionPestañas 
               pestañaActiva={pestañaActiva} 
-              cambiarPestaña={setPestañaActiva} 
+              cambiarPestaña={setPestañaActiva}
+              insumos={insumos} // Pasar insumos al componente
             />
             
             {/* Aquí puedes agregar el contenido específico de cada pestaña */}
@@ -280,10 +327,24 @@ export default function Inventario() {
               <div className="pt-4">
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+                  disabled={isLoading}
+                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 ${
+                    isLoading 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+                  } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95`}
                 >
-                  <IoAddOutline className="text-lg" />
-                  Guardar {pestañaActiva === 'otros' ? 'Elemento' : pestañaActiva.charAt(0).toUpperCase() + pestañaActiva.slice(1, -1)}
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <IoAddOutline className="text-lg" />
+                      Guardar {pestañaActiva === 'otros' ? 'Elemento' : pestañaActiva.charAt(0).toUpperCase() + pestañaActiva.slice(1, -1)}
+                    </>
+                  )}
                 </button>
               </div>
             </form>
