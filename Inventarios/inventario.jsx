@@ -1,15 +1,18 @@
 import { LiaFilterSolid } from "react-icons/lia";
-import { IoAddOutline, IoClose } from "react-icons/io5";
+import { IoAddOutline, IoClose, IoEyeOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import Navbar from "@/dashboardComponents/navbar";
 import NavegacionPestañas from "@/Inventarios/navegaciónPestañas";
-import { useState } from "react";
-import { createIngredient } from "@/useCases/postInventarioIngredientes";
+import { useState, useEffect } from "react";
+import { postInventarioIngredientes } from "@/useCases/postInventarioIngredientes";
+import getIngredientesInventario from "@/useCases/getIngredientesInventario";
 
 export default function Inventario() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [pestañaActiva, setPestañaActiva] = useState('insumos');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [vistaActiva, setVistaActiva] = useState('cards'); // 'cards' o 'lista'
   const [insumos, setInsumos] = useState([]); // Estado para almacenar insumos creados
   const [formData, setFormData] = useState({
     nombreProducto: "",
@@ -19,6 +22,41 @@ export default function Inventario() {
     comentarios: "",
     categoriaAdicional: "No"
   });
+
+  // Cargar ingredientes al montar el componente
+  useEffect(() => {
+    cargarIngredientes();
+  }, []);
+
+  const cargarIngredientes = async () => {
+    setIsLoadingData(true);
+    try {
+      const response = await getIngredientesInventario();
+      
+      if (response.success && response.data) {
+        // Mapear los datos de la API al formato esperado por las cards
+        const ingredientesMapeados = response.data.map(ingrediente => ({
+          id: ingrediente.id_ingredient,
+          name: ingrediente.name,
+          stock: ingrediente.stock,
+          unit: ingrediente.unit,
+          cost: ingrediente.cost,
+          description: ingrediente.description
+        }));
+        
+        setInsumos(ingredientesMapeados);
+        console.log("Ingredientes cargados:", ingredientesMapeados);
+      } else {
+        console.error("Error al cargar ingredientes:", response.message);
+        alert(`Error al cargar ingredientes: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error al cargar ingredientes:", error);
+      alert("Error al cargar los ingredientes del inventario");
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
   // Función para obtener el texto según la pestaña activa
   const obtenerTextosPorPestaña = (pestaña) => {
@@ -75,22 +113,14 @@ export default function Inventario() {
         };
 
         // Llamar a la API
-        const result = await createIngredient(ingredientData);
-        
-        // Agregar el nuevo insumo al estado local
-        const nuevoInsumo = {
-          id: result.id || Date.now(), // Usar ID de la respuesta o timestamp
-          name: ingredientData.name,
-          stock: ingredientData.stock,
-          unit: ingredientData.unit,
-          cost: ingredientData.cost,
-          description: ingredientData.description
-        };
-        
-        setInsumos(prev => [...prev, nuevoInsumo]);
+        const result = await postInventarioIngredientes(ingredientData);
         
         console.log("Insumo creado exitosamente:", result);
         alert("Insumo agregado exitosamente");
+        
+        // Recargar la lista de ingredientes para mostrar el nuevo
+        await cargarIngredientes();
+        
       } else {
         // Para productos y otros, solo mostrar en consola por ahora
         console.log("Producto a guardar:", formData);
@@ -137,14 +167,23 @@ export default function Inventario() {
                 className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-orange-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base"
               >
                 <IoAddOutline className="text-lg" />
-                <span >{textos.agregar}</span>
+                <span>{textos.agregar}</span>
               </button>
               
               {/* Botón Modificar */}
               <button className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base">
                 <FiEdit className="text-lg" />
-                <span >{textos.modificar}</span>
+                <span>{textos.modificar}</span>
+              </button>
 
+              {/* Botón Cambiar Vista */}
+              <button 
+                onClick={() => setVistaActiva(vistaActiva === 'cards' ? 'lista' : 'cards')}
+                className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-blue-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base cursor-pointer"
+                title={vistaActiva === 'cards' ? 'Cambiar a vista de lista' : 'Cambiar a vista de cards'}
+              >
+                <IoEyeOutline className="text-lg" />
+                <span>{vistaActiva === 'cards' ? 'Lista' : 'Cards'}</span>
               </button>
             </div>
           </div>
@@ -158,15 +197,15 @@ export default function Inventario() {
               pestañaActiva={pestañaActiva} 
               cambiarPestaña={setPestañaActiva}
               insumos={insumos} // Pasar insumos al componente
+              isLoadingData={isLoadingData} // Pasar estado de carga
+              vistaActiva={vistaActiva} // Pasar vista activa
             />
             
             {/* Aquí puedes agregar el contenido específico de cada pestaña */}
             <div className="p-6 bg-white min-h-96">
               {pestañaActiva === 'insumos' && (
                 <div className="animate-fade-in">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                    Gestión de Insumos
-                  </h2>
+                 
                   {/* Aquí va tu contenido de insumos */}
                 </div>
               )}
