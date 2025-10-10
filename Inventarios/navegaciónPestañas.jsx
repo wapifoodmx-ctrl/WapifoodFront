@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { IoChevronDownOutline, IoChevronUpOutline } from "react-icons/io5";
 
-const NavegacionPestañas = ({ pestañaActiva, cambiarPestaña, insumos = [], isLoadingData = false, vistaActiva = 'cards' }) => {
-  const [insumosSeleccionados, setInsumosSeleccionados] = useState([]);
+const NavegacionPestañas = ({ 
+  pestañaActiva, 
+  cambiarPestaña, 
+  insumos = [], 
+  isLoadingData = false, 
+  vistaActiva = 'cards',
+  insumosSeleccionados = [],
+  setInsumosSeleccionados
+}) => {
   const [insumoExpandido, setInsumoExpandido] = useState(null);
 
   const toggleSeleccionInsumo = (insumoId) => {
@@ -24,7 +31,7 @@ const NavegacionPestañas = ({ pestañaActiva, cambiarPestaña, insumos = [], is
           key={insumo.id}
           className={`border rounded-lg p-4 transition-all duration-200 cursor-pointer hover:shadow-md ${
             insumosSeleccionados.includes(insumo.id)
-              ? 'border-green-500 bg-green-50 shadow-md'
+              ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200'
               : 'border-gray-200 hover:border-gray-300'
           }`}
           onClick={() => toggleSeleccionInsumo(insumo.id)}
@@ -91,11 +98,11 @@ const NavegacionPestañas = ({ pestañaActiva, cambiarPestaña, insumos = [], is
 
           {/* Indicador de selección */}
           {insumosSeleccionados.includes(insumo.id) && (
-            <div className="mt-3 flex items-center text-green-600 bg-green-100 p-2 rounded">
+            <div className="mt-3 flex items-center text-blue-600 bg-blue-100 p-2 rounded border border-blue-200">
               <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <span className="text-xs font-medium">Seleccionado</span>
+              <span className="text-xs font-medium">Seleccionado para modificar</span>
             </div>
           )}
         </div>
@@ -349,6 +356,9 @@ const NavegacionPestañas = ({ pestañaActiva, cambiarPestaña, insumos = [], is
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                   <span>Vista: <span className="font-medium">{vistaActiva === 'cards' ? 'Tarjetas' : 'Lista'}</span></span>
                   <span>Total: <span className="font-medium text-green-600">{insumos.length}</span></span>
+                  {insumosSeleccionados.length > 0 && (
+                    <span>Seleccionados: <span className="font-medium text-blue-600">{insumosSeleccionados.length}</span></span>
+                  )}
                 </div>
               )}
             </div>
@@ -404,9 +414,6 @@ const NavegacionPestañas = ({ pestañaActiva, cambiarPestaña, insumos = [], is
                       className="px-3 py-1 text-sm text-green-700 hover:text-green-900 transition-colors"
                     >
                       Deseleccionar todo
-                    </button>
-                    <button className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
-                      Acciones
                     </button>
                   </div>
                 </div>

@@ -12,7 +12,7 @@ export const postInventarioIngredientes = async (ingredientData) => {
       throw new Error('No se encontró token de autenticación');
     }
 
-    const response = await fetch('https://74fa41077d62.ngrok-free.app/inventory/ingredients/', {
+    const response = await fetch('http://192.168.1.69:8001/inventory/ingredients/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

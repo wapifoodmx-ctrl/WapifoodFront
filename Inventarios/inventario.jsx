@@ -6,14 +6,19 @@ import NavegacionPestañas from "@/Inventarios/navegaciónPestañas";
 import { useState, useEffect } from "react";
 import { postInventarioIngredientes } from "@/useCases/postInventarioIngredientes";
 import getIngredientesInventario from "@/useCases/getIngredientesInventario";
+import { getIngredienteById } from "@/useCases/getIngredienteId";
+import putEditarIngrediente from "@/useCases/putEditarIngrediente";
 
 export default function Inventario() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
   const [pestañaActiva, setPestañaActiva] = useState('insumos');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [vistaActiva, setVistaActiva] = useState('cards'); // 'cards' o 'lista'
   const [insumos, setInsumos] = useState([]); // Estado para almacenar insumos creados
+  const [insumosSeleccionados, setInsumosSeleccionados] = useState([]);
+  const [insumoAEditar, setInsumoAEditar] = useState(null);
   const [formData, setFormData] = useState({
     nombreProducto: "",
     medida: "Gramos",
@@ -36,7 +41,8 @@ export default function Inventario() {
       if (response.success && response.data) {
         // Mapear los datos de la API al formato esperado por las cards
         const ingredientesMapeados = response.data.map(ingrediente => ({
-          id: ingrediente.id_ingredient,
+          id: ingrediente.id_ingredient, // Usar id_ingredient como id
+          originalId: ingrediente.id_ingredient, // Mantener el ID original para la API
           name: ingrediente.name,
           stock: ingrediente.stock,
           unit: ingrediente.unit,
@@ -145,6 +151,147 @@ export default function Inventario() {
     }
   };
 
+  const handleModificarInsumo = async () => {
+    // Verificar que solo hay un insumo seleccionado
+    if (insumosSeleccionados.length !== 1) {
+      if (insumosSeleccionados.length === 0) {
+        alert('Por favor selecciona un insumo para modificar');
+      } else {
+        alert('Solo puedes modificar un insumo a la vez');
+      }
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const ingredienteId = insumosSeleccionados[0];
+      console.log("ID seleccionado:", ingredienteId);
+      console.log("Cargando ingrediente con ID:", ingredienteId);
+      
+      const response = await getIngredienteById(ingredienteId);
+      console.log("Respuesta completa de la API:", response);
+      
+      // La respuesta puede venir directamente o dentro de response.data
+      const ingrediente = response.data || response;
+      
+      if (ingrediente) {
+        console.log("Datos del ingrediente:", ingrediente);
+        setInsumoAEditar(ingrediente);
+        
+        // Llenar el formulario con los datos del ingrediente
+        setFormData({
+          nombreProducto: ingrediente.name || "",
+          medida: ingrediente.unit || "Gramos",
+          cantidad: ingrediente.stock?.toString() || "",
+          costo: ingrediente.cost?.toString() || "",
+          comentarios: ingrediente.description || "",
+          categoriaAdicional: "No"
+        });
+        
+        setIsEditProductModalOpen(true);
+      } else {
+        throw new Error('No se pudieron cargar los datos del ingrediente');
+      }
+    } catch (error) {
+      console.error("Error completo:", error);
+      alert(`Error al cargar el ingrediente: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmitEdit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      console.log('=== INICIANDO EDIT SUBMIT ===');
+      
+      if (!insumoAEditar) {
+        throw new Error('No hay insumo seleccionado para editar');
+      }
+
+      console.log('Insumo a editar:', insumoAEditar);
+      console.log('Form data actual:', formData);
+
+      // Validar que los campos numéricos sean válidos
+      const cost = parseFloat(formData.costo);
+      const stock = parseInt(formData.cantidad);
+
+      if (isNaN(cost) || cost < 0) {
+        throw new Error('El costo debe ser un número válido mayor o igual a 0');
+      }
+
+      if (isNaN(stock) || stock < 0) {
+        throw new Error('La cantidad debe ser un número válido mayor o igual a 0');
+      }
+
+      const ingredientData = {
+        name: formData.nombreProducto.trim(),
+        description: formData.comentarios.trim() || `Insumo: ${formData.nombreProducto.trim()}`,
+        cost: cost,
+        stock: stock,
+        unit: formData.medida
+      };
+
+      console.log('=== DATOS PREPARADOS PARA ENVIAR ===');
+      console.log('ID del ingrediente:', insumoAEditar.id_ingredient);
+      console.log('Datos del ingrediente:', ingredientData);
+
+      // Verificar conectividad antes de enviar
+      try {
+        const testResponse = await fetch('http://192.168.1.69:8001/health', { method: 'GET' });
+        console.log('Test de conectividad:', testResponse.status);
+      } catch (testError) {
+        console.error('Error de conectividad:', testError);
+        throw new Error('No se puede conectar con el servidor. Verifica que esté ejecutándose.');
+      }
+
+      console.log('=== LLAMANDO A LA API ===');
+      const result = await putEditarIngrediente(insumoAEditar.id_ingredient, ingredientData);
+      
+      console.log('=== RESULTADO EXITOSO ===');
+      console.log('Resultado:', result);
+      
+      // Mostrar mensaje de éxito más específico
+      alert(`Insumo "${ingredientData.name}" modificado exitosamente`);
+      
+      // Recargar la lista de ingredientes
+      await cargarIngredientes();
+      
+      // Cerrar modal y resetear
+      setIsEditProductModalOpen(false);
+      setInsumoAEditar(null);
+      setInsumosSeleccionados([]);
+      setFormData({
+        nombreProducto: "",
+        medida: "Gramos",
+        cantidad: "",
+        costo: "",
+        comentarios: "",
+        categoriaAdicional: "No"
+      });
+
+    } catch (error) {
+      console.error('=== ERROR EN HANDLE SUBMIT EDIT ===');
+      console.error('Error completo:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      
+      let errorMessage = 'Error desconocido al modificar insumo';
+      
+      if (error.message.includes('conectar') || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        errorMessage = `Error de conexión: ${error.message}. Verifica que el servidor esté ejecutándose en http://192.168.1.69:8001`;
+      } else {
+        errorMessage = `Error al modificar insumo: ${error.message}`;
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <section>
       <Navbar />
@@ -171,15 +318,28 @@ export default function Inventario() {
               </button>
               
               {/* Botón Modificar */}
-              <button className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base">
+              <button 
+                onClick={handleModificarInsumo}
+                disabled={insumosSeleccionados.length !== 1 || isLoading}
+                className={`flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 transform lg:text-base ${
+                  insumosSeleccionados.length === 1 && !isLoading
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                }`}
+              >
                 <FiEdit className="text-lg" />
-                <span>{textos.modificar}</span>
+                <span>
+                  {isLoading ? 'Cargando...' : 
+                   insumosSeleccionados.length === 0 ? 'Selecciona un insumo' :
+                   insumosSeleccionados.length > 1 ? 'Solo un insumo' :
+                   textos.modificar}
+                </span>
               </button>
 
               {/* Botón Cambiar Vista */}
               <button 
                 onClick={() => setVistaActiva(vistaActiva === 'cards' ? 'lista' : 'cards')}
-                className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-blue-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base cursor-pointer"
+                className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base cursor-pointer"
                 title={vistaActiva === 'cards' ? 'Cambiar a vista de lista' : 'Cambiar a vista de cards'}
               >
                 <IoEyeOutline className="text-lg" />
@@ -196,38 +356,12 @@ export default function Inventario() {
             <NavegacionPestañas 
               pestañaActiva={pestañaActiva} 
               cambiarPestaña={setPestañaActiva}
-              insumos={insumos} // Pasar insumos al componente
-              isLoadingData={isLoadingData} // Pasar estado de carga
-              vistaActiva={vistaActiva} // Pasar vista activa
+              insumos={insumos}
+              isLoadingData={isLoadingData}
+              vistaActiva={vistaActiva}
+              insumosSeleccionados={insumosSeleccionados}
+              setInsumosSeleccionados={setInsumosSeleccionados}
             />
-            
-            {/* Aquí puedes agregar el contenido específico de cada pestaña */}
-            <div className="p-6 bg-white min-h-96">
-              {pestañaActiva === 'insumos' && (
-                <div className="animate-fade-in">
-                 
-                  {/* Aquí va tu contenido de insumos */}
-                </div>
-              )}
-
-              {pestañaActiva === 'productos' && (
-                <div className="animate-fade-in">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                    Gestión de Productos
-                  </h2>
-                  {/* Aquí va tu contenido de productos */}
-                </div>
-              )}
-
-              {pestañaActiva === 'otros' && (
-                <div className="animate-fade-in">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                    Otros Elementos
-                  </h2>
-                  {/* Aquí va tu contenido de otros */}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -382,6 +516,169 @@ export default function Inventario() {
                     <>
                       <IoAddOutline className="text-lg" />
                       Guardar {pestañaActiva === 'otros' ? 'Elemento' : pestañaActiva.charAt(0).toUpperCase() + pestañaActiva.slice(1, -1)}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Producto */}
+      {isEditProductModalOpen && (
+        <div 
+          className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setIsEditProductModalOpen(false);
+            setInsumoAEditar(null);
+            setInsumosSeleccionados([]);
+          }}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Editar Insumo</h2>
+              <button
+                onClick={() => {
+                  setIsEditProductModalOpen(false);
+                  setInsumoAEditar(null);
+                  setInsumosSeleccionados([]);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+              >
+                <IoClose className="text-2xl" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmitEdit} className="p-6 space-y-4">
+              {/* Nombre del Producto */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Editar Insumo
+                </label>
+                <input
+                  type="text"
+                  name="nombreProducto"
+                  value={formData.nombreProducto}
+                  onChange={handleInputChange}
+                  placeholder="Nombre del insumo"
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  required
+                />
+              </div>
+
+              {/* Medidas */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Medidas
+                </label>
+                <select
+                  name="medida"
+                  value={formData.medida}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="Gramos">Gramos</option>
+                  <option value="Kilos">Kilos</option>
+                  <option value="Litros">Litros</option>
+                  <option value="Mililitros">Mililitros</option>
+                  <option value="Tazas">Tazas</option>
+                  <option value="Cucharada (tbsp)">Cucharada (tbsp)</option>
+                  <option value="Cucharadita (tsp)">Cucharadita (tsp)</option>
+                </select>
+              </div>
+
+              {/* Cantidad */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Cantidad
+                </label>
+                <input
+                  type="number"
+                  name="cantidad"
+                  value={formData.cantidad}
+                  onChange={handleInputChange}
+                  placeholder="Cantidad"
+                  min="1"
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  required
+                />
+              </div>
+
+              {/* Costo por pieza */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Costo por pieza
+                </label>
+                <input
+                  type="number"
+                  name="costo"
+                  value={formData.costo}
+                  onChange={handleInputChange}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  required
+                />
+              </div>
+
+              {/* Comentarios */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Comentarios
+                </label>
+                <textarea
+                  name="comentarios"
+                  value={formData.comentarios}
+                  onChange={handleInputChange}
+                  placeholder="Comentarios adicionales (opcional)"
+                  rows="3"
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 resize-none"
+                />
+              </div>
+
+              {/* Categoría Adicional */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Categoría Adicional
+                </label>
+                <select
+                  name="categoriaAdicional"
+                  value={formData.categoriaAdicional}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="No">No</option>
+                  <option value="Si">Sí</option>
+                </select>
+              </div>
+
+              {/* Botón Editar */}
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 ${
+                    isLoading 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+                } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95`}
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Editando...
+                    </>
+                  ) : (
+                    <>
+                      <FiEdit className="text-lg" />
+                      Editar Insumo
                     </>
                   )}
                 </button>
