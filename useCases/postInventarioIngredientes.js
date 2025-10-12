@@ -1,6 +1,12 @@
 /**
  * Función para crear un nuevo ingrediente en el inventario
  * @param {Object} ingredientData - Datos del ingrediente a crear
+ * @param {string} ingredientData.name - Nombre del ingrediente (requerido)
+ * @param {string} [ingredientData.description] - Descripción del ingrediente (opcional)
+ * @param {number} ingredientData.cost - Costo del ingrediente (requerido)
+ * @param {number} ingredientData.stock - Stock del ingrediente (requerido)
+ * @param {string} ingredientData.unit - Unidad del ingrediente (requerido)
+ * @param {string} [ingredientData.category] - Categoría del ingrediente (opcional)
  * @returns {Promise<Object>} - Respuesta de la API
  */
 export const postInventarioIngredientes = async (ingredientData) => {
@@ -12,14 +18,27 @@ export const postInventarioIngredientes = async (ingredientData) => {
       throw new Error('No se encontró token de autenticación');
     }
 
+    // Crear FormData para envío como form-urlencoded
+    const formData = new URLSearchParams();
+    formData.append('name', ingredientData.name);
+    if (ingredientData.description) {
+      formData.append('description', ingredientData.description);
+    }
+    formData.append('cost', ingredientData.cost.toString());
+    formData.append('stock', ingredientData.stock.toString());
+    formData.append('unit', ingredientData.unit);
+    if (ingredientData.category) {
+      formData.append('category', ingredientData.category);
+    }
+
     const response = await fetch('http://192.168.1.69:8001/inventory/ingredients/', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true' // Para evitar advertencias de ngrok
       },
-      body: JSON.stringify(ingredientData)
+      body: formData
     });
 
     if (!response.ok) {

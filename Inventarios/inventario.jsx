@@ -47,7 +47,8 @@ export default function Inventario() {
           stock: ingrediente.stock,
           unit: ingrediente.unit,
           cost: ingrediente.cost,
-          description: ingrediente.description
+          description: ingrediente.description,
+          category: ingrediente.category // Agregar categoría para filtrado
         }));
         
         setInsumos(ingredientesMapeados);
@@ -107,30 +108,24 @@ export default function Inventario() {
     setIsLoading(true);
 
     try {
-      // Solo procesar si estamos en la pestaña de insumos
-      if (pestañaActiva === 'insumos') {
-        // Mapear los datos del formulario al formato de la API
-        const ingredientData = {
-          name: formData.nombreProducto,
-          description: formData.comentarios || `Insumo: ${formData.nombreProducto}`,
-          cost: parseFloat(formData.costo),
-          stock: parseInt(formData.cantidad),
-          unit: formData.medida
-        };
+      // Mapear los datos del formulario al formato de la API
+      const ingredientData = {
+        name: formData.nombreProducto,
+        description: formData.comentarios || `${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Otro'}: ${formData.nombreProducto}`,
+        cost: parseFloat(formData.costo),
+        stock: parseInt(formData.cantidad),
+        unit: pestañaActiva === 'insumos' ? formData.medida : "Pieza", // Para productos y otros siempre "Pieza"
+        category: pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros' // Enviar categoría según pestaña activa
+      };
 
-        // Llamar a la API
-        const result = await postInventarioIngredientes(ingredientData);
-        
-        console.log("Insumo creado exitosamente:", result);
-        alert("Insumo agregado exitosamente");
-        
-        // Recargar la lista de ingredientes para mostrar el nuevo
-        await cargarIngredientes();
-        
-      } else {
-        // Para productos y otros, solo mostrar en consola por ahora
-        console.log("Producto a guardar:", formData);
-      }
+      // Llamar a la API usando la misma función para todas las pestañas
+      const result = await postInventarioIngredientes(ingredientData);
+      
+      console.log(`${pestañaActiva.charAt(0).toUpperCase() + pestañaActiva.slice(1, -1)} creado exitosamente:`, result);
+      alert(`${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'} agregado exitosamente`);
+      
+      // Recargar la lista de ingredientes para mostrar el nuevo
+      await cargarIngredientes();
 
       // Cerrar modal y resetear formulario
       setIsAddProductModalOpen(false);
@@ -144,8 +139,8 @@ export default function Inventario() {
       });
 
     } catch (error) {
-      console.error("Error al crear insumo:", error);
-      alert(`Error al agregar insumo: ${error.message}`);
+      console.error(`Error al crear ${pestañaActiva.slice(0, -1)}:`, error);
+      alert(`Error al agregar ${pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'elemento'}: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
