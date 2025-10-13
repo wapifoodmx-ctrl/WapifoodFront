@@ -160,17 +160,35 @@ export default function Inventario() {
     setIsLoading(true);
     try {
       const ingredienteId = insumosSeleccionados[0];
+      console.log("=== INICIANDO MODIFICAR INSUMO ===");
       console.log("ID seleccionado:", ingredienteId);
-      console.log("Cargando ingrediente con ID:", ingredienteId);
       
+      // Verificar que el ID existe en los insumos locales
+      const insumoLocal = insumos.find(i => i.id === ingredienteId);
+      console.log("Insumo local encontrado:", insumoLocal);
+      
+      if (!insumoLocal) {
+        throw new Error('Insumo no encontrado en la lista local');
+      }
+      
+      console.log("Llamando a la API con ID:", ingredienteId);
       const response = await getIngredienteById(ingredienteId);
       console.log("Respuesta completa de la API:", response);
       
-      // La respuesta puede venir directamente o dentro de response.data
-      const ingrediente = response.data || response;
+      // Manejar diferentes estructuras de respuesta
+      let ingrediente = null;
+      
+      if (response.data) {
+        ingrediente = response.data;
+      } else if (response.id_ingredient || response.id) {
+        ingrediente = response;
+      } else {
+        throw new Error('Estructura de respuesta no reconocida');
+      }
+      
+      console.log("Ingrediente procesado:", ingrediente);
       
       if (ingrediente) {
-        console.log("Datos del ingrediente:", ingrediente);
         setInsumoAEditar(ingrediente);
         
         // Llenar el formulario con los datos del ingrediente
@@ -183,13 +201,34 @@ export default function Inventario() {
           categoriaAdicional: "No"
         });
         
+        console.log("Formulario llenado con datos:", {
+          nombreProducto: ingrediente.name || "",
+          medida: ingrediente.unit || "Gramos",
+          cantidad: ingrediente.stock?.toString() || "",
+          costo: ingrediente.cost?.toString() || ""
+        });
+        
         setIsEditProductModalOpen(true);
       } else {
-        throw new Error('No se pudieron cargar los datos del ingrediente');
+        throw new Error('No se pudieron procesar los datos del ingrediente');
       }
     } catch (error) {
+      console.error("=== ERROR EN HANDLE MODIFICAR INSUMO ===");
       console.error("Error completo:", error);
-      alert(`Error al cargar el ingrediente: ${error.message}`);
+      console.error("Tipo de error:", error.name);
+      console.error("Mensaje:", error.message);
+      
+      let mensajeError = 'Error desconocido';
+      
+      if (error.message.includes('conectar') || error.message.includes('fetch')) {
+        mensajeError = 'No se puede conectar con el servidor. Verifica la conexión.';
+      } else if (error.message.includes('Token')) {
+        mensajeError = 'Error de autenticación. Inicia sesión nuevamente.';
+      } else {
+        mensajeError = `Error al cargar el ingrediente: ${error.message}`;
+      }
+      
+      alert(mensajeError);
     } finally {
       setIsLoading(false);
     }
@@ -223,10 +262,11 @@ export default function Inventario() {
 
       const ingredientData = {
         name: formData.nombreProducto.trim(),
-        description: formData.comentarios.trim() || `Insumo: ${formData.nombreProducto.trim()}`,
+        description: formData.comentarios.trim() || `${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'}: ${formData.nombreProducto.trim()}`,
         cost: cost,
         stock: stock,
-        unit: formData.medida
+        unit: pestañaActiva === 'insumos' ? formData.medida : 'Pieza', // Para productos y otros siempre "Pieza"
+        category: insumoAEditar.category || (pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros')
       };
 
       console.log('=== DATOS PREPARADOS PARA ENVIAR ===');
@@ -235,7 +275,7 @@ export default function Inventario() {
 
       // Verificar conectividad antes de enviar
       try {
-        const testResponse = await fetch('http://192.168.1.69:8001/health', { method: 'GET' });
+        const testResponse = await fetch('https://5ef571a92209.ngrok-free.app/health', { method: 'GET' });
         console.log('Test de conectividad:', testResponse.status);
       } catch (testError) {
         console.error('Error de conectividad:', testError);
@@ -276,7 +316,7 @@ export default function Inventario() {
       let errorMessage = 'Error desconocido al modificar insumo';
       
       if (error.message.includes('conectar') || error.message.includes('fetch') || error.message.includes('NetworkError')) {
-        errorMessage = `Error de conexión: ${error.message}. Verifica que el servidor esté ejecutándose en http://192.168.1.69:8001`;
+        errorMessage = `Error de conexión: ${error.message}. Verifica que el servidor esté ejecutándose`;
       } else {
         errorMessage = `Error al modificar insumo: ${error.message}`;
       }
@@ -325,9 +365,9 @@ export default function Inventario() {
                 <FiEdit className="text-lg" />
                 <span>
                   {isLoading ? 'Cargando...' : 
-                   insumosSeleccionados.length === 0 ? 'Selecciona un insumo' :
-                   insumosSeleccionados.length > 1 ? 'Solo un insumo' :
-                   textos.modificar}
+                   insumosSeleccionados.length === 0 ? `Selecciona ${pestañaActiva === 'insumos' ? 'un insumo' : pestañaActiva === 'productos' ? 'un producto' : 'un elemento'}` :
+                   insumosSeleccionados.length > 1 ? `Solo ${pestañaActiva === 'insumos' ? 'un insumo' : pestañaActiva === 'productos' ? 'un producto' : 'un elemento'}` :
+                   pestañaActiva === 'insumos' ? 'Editar insumo' : pestañaActiva === 'productos' ? 'Editar producto' : 'Editar elemento'}
                 </span>
               </button>
 
@@ -536,7 +576,10 @@ export default function Inventario() {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800">Editar Insumo</h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                {pestañaActiva === 'insumos' ? 'Editar Insumo' : 
+                 pestañaActiva === 'productos' ? 'Editar Producto' : 'Editar Elemento'}
+              </h2>
               <button
                 onClick={() => {
                   setIsEditProductModalOpen(false);
@@ -554,39 +597,43 @@ export default function Inventario() {
               {/* Nombre del Producto */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Editar Insumo
+                  {pestañaActiva === 'insumos' ? 'Editar Insumo' : 
+                   pestañaActiva === 'productos' ? 'Editar Producto' : 'Editar Elemento'}
                 </label>
                 <input
                   type="text"
                   name="nombreProducto"
                   value={formData.nombreProducto}
                   onChange={handleInputChange}
-                  placeholder="Nombre del insumo"
+                  placeholder={`Nombre del ${pestañaActiva === 'insumos' ? 'insumo' : 
+                               pestañaActiva === 'productos' ? 'producto' : 'elemento'}`}
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   required
                 />
               </div>
 
-              {/* Medidas */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Medidas
-                </label>
-                <select
-                  name="medida"
-                  value={formData.medida}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                >
-                  <option value="Gramos">Gramos</option>
-                  <option value="Kilos">Kilos</option>
-                  <option value="Litros">Litros</option>
-                  <option value="Mililitros">Mililitros</option>
-                  <option value="Tazas">Tazas</option>
-                  <option value="Cucharada (tbsp)">Cucharada (tbsp)</option>
-                  <option value="Cucharadita (tsp)">Cucharadita (tsp)</option>
-                </select>
-              </div>
+              {/* Medidas - Solo para insumos */}
+              {pestañaActiva === 'insumos' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Medidas
+                  </label>
+                  <select
+                    name="medida"
+                    value={formData.medida}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="Gramos">Gramos</option>
+                    <option value="Kilos">Kilos</option>
+                    <option value="Litros">Litros</option>
+                    <option value="Mililitros">Mililitros</option>
+                    <option value="Tazas">Tazas</option>
+                    <option value="Cucharada (tbsp)">Cucharada (tbsp)</option>
+                    <option value="Cucharadita (tsp)">Cucharadita (tsp)</option>
+                  </select>
+                </div>
+              )}
 
               {/* Cantidad */}
               <div>
@@ -638,21 +685,23 @@ export default function Inventario() {
                 />
               </div>
 
-              {/* Categoría Adicional */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Categoría Adicional
-                </label>
-                <select
-                  name="categoriaAdicional"
-                  value={formData.categoriaAdicional}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                >
-                  <option value="No">No</option>
-                  <option value="Si">Sí</option>
-                </select>
-              </div>
+              {/* Categoría Adicional - Solo para insumos */}
+              {pestañaActiva === 'insumos' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Categoría Adicional
+                  </label>
+                  <select
+                    name="categoriaAdicional"
+                    value={formData.categoriaAdicional}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="No">No</option>
+                    <option value="Si">Sí</option>
+                  </select>
+                </div>
+              )}
 
               {/* Botón Editar */}
               <div className="pt-4">
@@ -663,7 +712,7 @@ export default function Inventario() {
                     isLoading 
                       ? 'bg-gray-400 cursor-not-allowed' 
                       : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
-                } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95`}
+                  } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95`}
                 >
                   {isLoading ? (
                     <>
@@ -673,7 +722,8 @@ export default function Inventario() {
                   ) : (
                     <>
                       <FiEdit className="text-lg" />
-                      Editar Insumo
+                      {pestañaActiva === 'insumos' ? 'Editar Insumo' : 
+                       pestañaActiva === 'productos' ? 'Editar Producto' : 'Editar Elemento'}
                     </>
                   )}
                 </button>

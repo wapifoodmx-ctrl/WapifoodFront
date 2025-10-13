@@ -22,11 +22,12 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
         const formData = new URLSearchParams();
         formData.append('name', ingredientData.name || '');
         formData.append('description', ingredientData.description || '');
-        formData.append('cost', ingredientData.cost?.toString() || '0');
-        formData.append('stock', ingredientData.stock?.toString() || '0');
+        formData.append('cost', ingredientData.cost?.toString() || '');
+        formData.append('stock', ingredientData.stock?.toString() || '');
         formData.append('unit', ingredientData.unit || '');
+        formData.append('category', ingredientData.category || '');
 
-        const url = `http://192.168.1.69:8001/inventory/ingredients/${ingredientId}`;
+        const url = `https://5ef571a92209.ngrok-free.app/inventory/ingredients/${ingredientId}`;
         
         console.log('=== DEBUGGING PUT EDITAR INGREDIENTE ===');
         console.log('URL:', url);
@@ -37,7 +38,8 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
             description: ingredientData.description,
             cost: ingredientData.cost,
             stock: ingredientData.stock,
-            unit: ingredientData.unit
+            unit: ingredientData.unit,
+            category: ingredientData.category
         });
         console.log('FormData entries:', Object.fromEntries(formData.entries()));
 

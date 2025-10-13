@@ -111,12 +111,6 @@ const NavegacionPestañas = ({
                 <span className="line-clamp-2">{elemento.description}</span>
               </div>
             )}
-
-            {/* Categoría */}
-            <div className="bg-blue-50 p-2 rounded text-sm">
-              <span className="font-medium text-blue-700">Categoría: </span>
-              <span className="text-blue-600 capitalize">{elemento.category}</span>
-            </div>
           </div>
 
           {/* Indicador de selección */}
