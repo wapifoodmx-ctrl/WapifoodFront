@@ -19,6 +19,7 @@ export default function Inventario() {
   const [insumos, setInsumos] = useState([]); // Estado para almacenar insumos creados
   const [insumosSeleccionados, setInsumosSeleccionados] = useState([]);
   const [insumoAEditar, setInsumoAEditar] = useState(null);
+  const [terminoBusqueda, setTerminoBusqueda] = useState(''); // Nuevo estado para búsqueda
   const [formData, setFormData] = useState({
     nombreProducto: "",
     medida: "Gramos",
@@ -275,7 +276,7 @@ export default function Inventario() {
 
       // Verificar conectividad antes de enviar
       try {
-        const testResponse = await fetch('https://5ef571a92209.ngrok-free.app/health', { method: 'GET' });
+        const testResponse = await fetch('http://192.168.1.69:8001/health', { method: 'GET' });
         console.log('Test de conectividad:', testResponse.status);
       } catch (testError) {
         console.error('Error de conectividad:', testError);
@@ -327,6 +328,32 @@ export default function Inventario() {
     }
   };
 
+  // Función para filtrar elementos por búsqueda
+  const filtrarPorBusqueda = (elementos, termino) => {
+    if (!termino.trim()) return elementos;
+    
+    const terminoLower = termino.toLowerCase();
+    return elementos.filter(elemento => 
+      elemento.name.toLowerCase().includes(terminoLower) ||
+      elemento.description?.toLowerCase().includes(terminoLower) ||
+      elemento.unit.toLowerCase().includes(terminoLower) ||
+      elemento.category?.toLowerCase().includes(terminoLower)
+    );
+  };
+
+  // Función para limpiar selecciones al cambiar de pestaña
+  const handleCambiarPestaña = (nuevaPestaña) => {
+    setPestañaActiva(nuevaPestaña);
+    setInsumosSeleccionados([]); // Limpiar selecciones al cambiar pestaña
+    setTerminoBusqueda(''); // Limpiar búsqueda al cambiar pestaña
+  };
+
+  // Función para manejar cambios en la búsqueda
+  const handleBusquedaChange = (e) => {
+    setTerminoBusqueda(e.target.value);
+    setInsumosSeleccionados([]); // Limpiar selecciones al buscar
+  };
+
   return (
     <section>
       <Navbar />
@@ -335,11 +362,33 @@ export default function Inventario() {
         <div className="px-4 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
             {/* Barra de búsqueda */}
-            <input
-              type="text"
-              placeholder={textos.buscar}
-              className="border border-gray-300 rounded-lg p-3 w-full lg:w-1/2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-            />
+            <div className="relative w-full lg:w-1/2">
+              <input
+                type="text"
+                placeholder={textos.buscar}
+                value={terminoBusqueda}
+                onChange={handleBusquedaChange}
+                className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 pl-10"
+              />
+              <svg 
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {terminoBusqueda && (
+                <button
+                  onClick={() => setTerminoBusqueda('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
             
             {/* Botones de acción */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:w-1/2 lg:justify-center lg:items-center">
@@ -366,7 +415,6 @@ export default function Inventario() {
                 <span>
                   {isLoading ? 'Cargando...' : 
                    insumosSeleccionados.length === 0 ? `Selecciona ${pestañaActiva === 'insumos' ? 'un insumo' : pestañaActiva === 'productos' ? 'un producto' : 'un elemento'}` :
-                   insumosSeleccionados.length > 1 ? `Solo ${pestañaActiva === 'insumos' ? 'un insumo' : pestañaActiva === 'productos' ? 'un producto' : 'un elemento'}` :
                    pestañaActiva === 'insumos' ? 'Editar insumo' : pestañaActiva === 'productos' ? 'Editar producto' : 'Editar elemento'}
                 </span>
               </button>
@@ -382,6 +430,13 @@ export default function Inventario() {
               </button>
             </div>
           </div>
+          
+          {/* Mostrar resultados de búsqueda si hay término */}
+          {terminoBusqueda && (
+            <div className="mt-2 text-sm text-gray-600">
+              Búsqueda: "<span className="font-medium">{terminoBusqueda}</span>"
+            </div>
+          )}
         </div>
 
         {/* Navegación de pestañas y contenido */}
@@ -390,12 +445,14 @@ export default function Inventario() {
             {/* Solo la navegación */}
             <NavegacionPestañas 
               pestañaActiva={pestañaActiva} 
-              cambiarPestaña={setPestañaActiva}
+              cambiarPestaña={handleCambiarPestaña}
               insumos={insumos}
               isLoadingData={isLoadingData}
               vistaActiva={vistaActiva}
               insumosSeleccionados={insumosSeleccionados}
               setInsumosSeleccionados={setInsumosSeleccionados}
+              terminoBusqueda={terminoBusqueda}
+              filtrarPorBusqueda={filtrarPorBusqueda}
             />
           </div>
         </div>

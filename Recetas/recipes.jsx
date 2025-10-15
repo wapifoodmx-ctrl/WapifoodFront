@@ -123,20 +123,6 @@ export default function Recipes() {
                 </button>
               </div>
 
-              {/* Cantidad de platillos */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cantidad de platillos
-                </label>
-                <input
-                  type="number"
-                  value={plateQuantity}
-                  onChange={(e) => setPlateQuantity(e.target.value)}
-                  placeholder="Número de platillos que se pueden hacer..."
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
-                />
-              </div>
-
               {/* Costo total */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

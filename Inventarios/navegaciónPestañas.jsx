@@ -8,7 +8,9 @@ const NavegacionPestañas = ({
   isLoadingData = false, 
   vistaActiva = 'cards',
   insumosSeleccionados = [],
-  setInsumosSeleccionados
+  setInsumosSeleccionados,
+  terminoBusqueda = '',
+  filtrarPorBusqueda
 }) => {
   const [insumoExpandido, setInsumoExpandido] = useState(null);
 
@@ -27,13 +29,19 @@ const NavegacionPestañas = ({
   };
 
   // Obtener elementos filtrados para la pestaña actual
-  const elementosFiltrados = filtrarElementosPorPestaña(insumos, pestañaActiva);
+  let elementosFiltrados = filtrarElementosPorPestaña(insumos, pestañaActiva);
+  
+  // Aplicar filtro de búsqueda si existe
+  if (terminoBusqueda && filtrarPorBusqueda) {
+    elementosFiltrados = filtrarPorBusqueda(elementosFiltrados, terminoBusqueda);
+  }
 
   const toggleSeleccionInsumo = (insumoId) => {
+    // Solo permitir seleccionar un elemento a la vez
     setInsumosSeleccionados(prev => 
       prev.includes(insumoId) 
-        ? prev.filter(id => id !== insumoId)
-        : [...prev, insumoId]
+        ? [] // Si ya está seleccionado, deseleccionar
+        : [insumoId] // Si no está seleccionado, seleccionar solo este
     );
   };
 
@@ -132,18 +140,8 @@ const NavegacionPestañas = ({
       {/* Header de la tabla - Solo en desktop */}
       <div className="hidden md:grid grid-cols-12 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-gray-700 text-sm">
         <div className="col-span-1 flex items-center">
-          <input
-            type="checkbox"
-            checked={insumosSeleccionados.length === elementosFiltrados.length && elementosFiltrados.length > 0}
-            onChange={() => {
-              if (insumosSeleccionados.length === elementosFiltrados.length) {
-                setInsumosSeleccionados([]);
-              } else {
-                setInsumosSeleccionados(elementosFiltrados.map(i => i.id));
-              }
-            }}
-            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-          />
+          {/* Remover el checkbox de seleccionar todos ya que solo permitimos uno */}
+          <span className="text-xs text-gray-500">Sel.</span>
         </div>
         <div className="col-span-4">Nombre</div>
         <div className="col-span-2 text-center">Stock</div>
@@ -168,10 +166,11 @@ const NavegacionPestañas = ({
                 {/* Checkbox */}
                 <div className="col-span-1 flex items-center">
                   <input
-                    type="checkbox"
+                    type="radio"
+                    name="elemento-seleccionado"
                     checked={insumosSeleccionados.includes(elemento.id)}
                     onChange={() => toggleSeleccionInsumo(elemento.id)}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
@@ -228,12 +227,13 @@ const NavegacionPestañas = ({
               <div className="md:hidden">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3 flex-1">
-                    {/* Checkbox */}
+                    {/* Radio button para mobile */}
                     <input
-                      type="checkbox"
+                      type="radio"
+                      name="elemento-seleccionado-mobile"
                       checked={insumosSeleccionados.includes(elemento.id)}
                       onChange={() => toggleSeleccionInsumo(elemento.id)}
-                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
                       onClick={(e) => e.stopPropagation()}
                     />
                     
@@ -284,6 +284,10 @@ const NavegacionPestañas = ({
                       <div className="flex justify-between">
                         <span className="text-gray-600">Unidad:</span>
                         <span className="font-medium">{elemento.unit}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Categoría:</span>
+                        <span className="font-medium capitalize">{elemento.category}</span>
                       </div>
                     </div>
                   </div>
@@ -423,14 +427,14 @@ const NavegacionPestañas = ({
               <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-green-800 font-medium">
-                    {insumosSeleccionados.length} insumo(s) seleccionado(s)
+                    1 insumo seleccionado
                   </span>
                   <div className="space-x-2">
                     <button
                       onClick={() => setInsumosSeleccionados([])}
                       className="px-3 py-1 text-sm text-green-700 hover:text-green-900 transition-colors"
                     >
-                      Deseleccionar todo
+                      Deseleccionar
                     </button>
                   </div>
                 </div>
@@ -499,14 +503,14 @@ const NavegacionPestañas = ({
               <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-green-800 font-medium">
-                    {insumosSeleccionados.length} producto(s) seleccionado(s)
+                    1 insumo seleccionado
                   </span>
                   <div className="space-x-2">
                     <button
                       onClick={() => setInsumosSeleccionados([])}
                       className="px-3 py-1 text-sm text-green-700 hover:text-green-900 transition-colors"
                     >
-                      Deseleccionar todo
+                      Deseleccionar
                     </button>
                   </div>
                 </div>
@@ -575,14 +579,14 @@ const NavegacionPestañas = ({
               <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-green-800 font-medium">
-                    {insumosSeleccionados.length} elemento(s) seleccionado(s)
+                    1 insumo seleccionado
                   </span>
                   <div className="space-x-2">
                     <button
                       onClick={() => setInsumosSeleccionados([])}
                       className="px-3 py-1 text-sm text-green-700 hover:text-green-900 transition-colors"
                     >
-                      Deseleccionar todo
+                      Deseleccionar
                     </button>
                   </div>
                 </div>
