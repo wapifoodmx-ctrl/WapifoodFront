@@ -86,7 +86,7 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
         
         // Verificar si es un error de red
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('Error de conexión. Verifica que el servidor esté ejecutándose en http://192.168.1.69:8001');
+            throw new Error('Error de conexión. Verifica que el servidor esté ejecutándose en http://192.168.1.69:8000');
         }
         
         throw error;

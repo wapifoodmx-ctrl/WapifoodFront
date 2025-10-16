@@ -1,5 +1,5 @@
 export async function deleteProduct(productId) {
-    const endpoint = `https://api.wapifood.com/products/${productId}`;
+    const endpoint = `http://192.168.1.69:8000/products/${productId}`;
 
     try {
         // Obtener el token del localStorage o sessionStorage

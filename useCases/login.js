@@ -1,5 +1,5 @@
 export async function loginUser(user) {
-    const endpoint = 'https://api.wapifood.com/login'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
+    const endpoint = 'http://192.168.1.69:8000/login'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
 
     try {
         const response = await fetch(endpoint, {

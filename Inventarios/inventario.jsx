@@ -49,7 +49,8 @@ export default function Inventario() {
           unit: ingrediente.unit,
           cost: ingrediente.cost,
           description: ingrediente.description,
-          category: ingrediente.category // Agregar categoría para filtrado
+          category: ingrediente.category, // Agregar categoría para filtrado
+          total_cost: ingrediente.total_cost // Agregar total_cost
         }));
         
         setInsumos(ingredientesMapeados);
@@ -104,6 +105,34 @@ export default function Inventario() {
     }));
   };
 
+  // Función para abrir el modal de agregar y limpiar formulario
+  const abrirModalAgregar = () => {
+    // Limpiar completamente el formulario
+    setFormData({
+      nombreProducto: "",
+      medida: "Gramos",
+      cantidad: "",
+      costo: "",
+      comentarios: "",
+      categoriaAdicional: "No"
+    });
+    setIsAddProductModalOpen(true);
+  };
+
+  // También agregar una función para cerrar el modal de agregar y limpiar
+  const cerrarModalAgregar = () => {
+    setIsAddProductModalOpen(false);
+    // Limpiar formulario al cerrar
+    setFormData({
+      nombreProducto: "",
+      medida: "Gramos",
+      cantidad: "",
+      costo: "",
+      comentarios: "",
+      categoriaAdicional: "No"
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -128,16 +157,8 @@ export default function Inventario() {
       // Recargar la lista de ingredientes para mostrar el nuevo
       await cargarIngredientes();
 
-      // Cerrar modal y resetear formulario
-      setIsAddProductModalOpen(false);
-      setFormData({
-        nombreProducto: "",
-        medida: "Gramos",
-        cantidad: "",
-        costo: "",
-        comentarios: "",
-        categoriaAdicional: "No"
-      });
+      // Cerrar modal usando la función que limpia
+      cerrarModalAgregar();
 
     } catch (error) {
       console.error(`Error al crear ${pestañaActiva.slice(0, -1)}:`, error);
@@ -199,14 +220,16 @@ export default function Inventario() {
           cantidad: ingrediente.stock?.toString() || "",
           costo: ingrediente.cost?.toString() || "",
           comentarios: ingrediente.description || "",
-          categoriaAdicional: "No"
+          categoriaAdicional: "No",
+          total_cost: ingrediente.total_cost || 0 // Agregar total_cost al formData
         });
         
         console.log("Formulario llenado con datos:", {
           nombreProducto: ingrediente.name || "",
           medida: ingrediente.unit || "Gramos",
           cantidad: ingrediente.stock?.toString() || "",
-          costo: ingrediente.cost?.toString() || ""
+          costo: ingrediente.cost?.toString() || "",
+          total_cost: ingrediente.total_cost || 0
         });
         
         setIsEditProductModalOpen(true);
@@ -276,7 +299,7 @@ export default function Inventario() {
 
       // Verificar conectividad antes de enviar
       try {
-        const testResponse = await fetch('http://192.168.1.69:8001/health', { method: 'GET' });
+        const testResponse = await fetch('http://192.168.1.69:8000/health', { method: 'GET' });
         console.log('Test de conectividad:', testResponse.status);
       } catch (testError) {
         console.error('Error de conectividad:', testError);
@@ -394,7 +417,7 @@ export default function Inventario() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:w-1/2 lg:justify-center lg:items-center">
               {/* Botón Añadir */}
               <button 
-                onClick={() => setIsAddProductModalOpen(true)}
+                onClick={abrirModalAgregar}
                 className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-orange-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base"
               >
                 <IoAddOutline className="text-lg" />
@@ -462,7 +485,7 @@ export default function Inventario() {
       {isAddProductModalOpen && (
         <div 
           className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 p-4"
-          onClick={() => setIsAddProductModalOpen(false)}
+          onClick={cerrarModalAgregar}
         >
           <div 
             className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
@@ -472,7 +495,7 @@ export default function Inventario() {
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-800">{textos.titulo}</h2>
               <button
-                onClick={() => setIsAddProductModalOpen(false)}
+                onClick={cerrarModalAgregar}
                 className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
               >
                 <IoClose className="text-2xl" />
@@ -513,9 +536,6 @@ export default function Inventario() {
                     <option value="Kilos">Kilos</option>
                     <option value="Litros">Litros</option>
                     <option value="Mililitros">Mililitros</option>
-                    <option value="Tazas">Tazas</option>
-                    <option value="Cucharada (tbsp)">Cucharada (tbsp)</option>
-                    <option value="Cucharadita (tsp)">Cucharadita (tsp)</option>
                   </select>
                 </div>
               )}
@@ -537,10 +557,10 @@ export default function Inventario() {
                 />
               </div>
 
-              {/* Costo por pieza */}
+              {/* Costo por unidad */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Costo por pieza
+                  Costo por unidad
                 </label>
                 <input
                   type="number"
@@ -685,9 +705,6 @@ export default function Inventario() {
                     <option value="Kilos">Kilos</option>
                     <option value="Litros">Litros</option>
                     <option value="Mililitros">Mililitros</option>
-                    <option value="Tazas">Tazas</option>
-                    <option value="Cucharada (tbsp)">Cucharada (tbsp)</option>
-                    <option value="Cucharadita (tsp)">Cucharadita (tsp)</option>
                   </select>
                 </div>
               )}
@@ -725,6 +742,22 @@ export default function Inventario() {
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   required
                 />
+              </div>
+
+              {/* Costo Total - Solo lectura */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Costo Total
+                </label>
+                <input
+                  type="number"
+                  value={formData.total_cost || 0}
+                  placeholder="0.00"
+                  step="0.01"
+                  readOnly
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">Este campo se calcula automáticamente</p>
               </div>
 
               {/* Comentarios */}

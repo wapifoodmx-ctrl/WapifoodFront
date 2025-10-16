@@ -13,7 +13,7 @@ export const endPuntoDeVenta = async (orderUuid, metodoPago) => {
         }
 
         // Construir la URL con los parámetros de query
-        const endpoint = `https://api.wapifood.com/orders/orders/${orderUuid}/cambio_estatus?order_status=Finalizado&metodo_pago=${metodoPago}`;
+        const endpoint = `http://192.168.1.69:8000/orders/orders/${orderUuid}/cambio_estatus?order_status=Finalizado&metodo_pago=${metodoPago}`;
 
         const response = await fetch(endpoint, {
             method: 'PUT',

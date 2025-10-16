@@ -1,6 +1,6 @@
 
 export async function getPopulares() {
-    const endpoint = 'https://api.wapifood.com/products/top';
+    const endpoint = 'http://192.168.1.69:8000/products/top';
 
     try {
         // Obtener el token del localStorage o sessionStorage

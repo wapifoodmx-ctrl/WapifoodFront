@@ -104,8 +104,16 @@ const NavegacionPestañas = ({
                 </span>
               </div>
               
+              {/* Costo Total */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Costo total:</span>
+                <span className="font-medium text-blue-600">
+                  ${elemento.total_cost ? elemento.total_cost.toFixed(2) : '0.00'}
+                </span>
+              </div>
+              
               <div className="flex items-center justify-between border-t pt-2">
-                <span className="text-sm text-gray-600 font-medium">Valor total:</span>
+                <span className="text-sm text-gray-600 font-medium">Valor calculado:</span>
                 <span className="font-semibold text-green-600">
                   ${(elemento.cost * elemento.stock).toFixed(2)}
                 </span>
@@ -303,8 +311,14 @@ const NavegacionPestañas = ({
                         <span className="text-gray-600">Costo unitario:</span>
                         <span className="font-medium">${elemento.cost}</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Costo total:</span>
+                        <span className="font-medium text-blue-600">
+                          ${elemento.total_cost ? elemento.total_cost.toFixed(2) : '0.00'}
+                        </span>
+                      </div>
                       <div className="flex justify-between border-t pt-1">
-                        <span className="text-gray-600 font-medium">Valor total:</span>
+                        <span className="text-gray-600 font-medium">Valor calculado:</span>
                         <span className="font-semibold text-green-600">
                           ${(elemento.cost * elemento.stock).toFixed(2)}
                         </span>

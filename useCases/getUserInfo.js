@@ -1,6 +1,6 @@
 
 export async function getUserInfo() {
-    const endpoint = 'https://api.wapifood.com/user/me/info';
+    const endpoint = 'http://192.168.1.69:8000/user/me/info';
 
     try {
         // Obtener el token del localStorage o sessionStorage
