@@ -27,7 +27,7 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
         formData.append('unit', ingredientData.unit || '');
         formData.append('category', ingredientData.category || '');
 
-        const url = `http://192.168.1.69:8001/inventory/ingredients/${ingredientId}`;
+        const url = `https://469db86c1b78.ngrok-free.app/inventory/ingredients/${ingredientId}`;
         
         console.log('=== DEBUGGING PUT EDITAR INGREDIENTE ===');
         console.log('URL:', url);
