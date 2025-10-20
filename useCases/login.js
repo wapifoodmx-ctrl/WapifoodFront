@@ -1,5 +1,5 @@
 export async function loginUser(user) {
-    const endpoint = 'https://469db86c1b78.ngrok-free.app/proxy/login'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
+    const endpoint = 'https://ab1d9ccc984d.ngrok-free.app/proxy/login'; // Reemplaza <your-project-id> con tu ID de proyecto de Firebase
 
     try {
         const response = await fetch(endpoint, {

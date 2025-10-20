@@ -341,9 +341,6 @@ export default function Recipes() {
                         <h3 className="font-bold text-gray-800 text-lg lg:text-xl mb-1 truncate">
                           {receta.name}
                         </h3>
-                        <p className="text-sm text-gray-500">
-                          ID: {receta.id_recipe}
-                        </p>
                       </div>
                       
                       {/* Checkbox personalizado */}
@@ -364,18 +361,23 @@ export default function Recipes() {
 
                     {/* Información de la receta */}
                     <div className="space-y-3">
-                      {/* Product ID */}
-                      <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-600">Producto ID:</span>
-                        <span className="text-sm font-bold text-gray-800">#{receta.product_id}</span>
-                      </div>
-
-                      {/* Costo */}
-                      <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-600">Costo:</span>
-                        <span className={`text-sm font-bold ${receta.cost > 0 ? 'text-green-600' : 'text-gray-500'}`}>
-                          {receta.cost > 0 ? `$${receta.cost.toFixed(2)}` : 'No calculado'}
-                        </span>
+                      {/* Ingredientes */}
+                      <div className="py-2 px-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-600 mb-2 block">Ingredientes:</span>
+                        {receta.ingredient_names && receta.ingredient_names.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {receta.ingredient_names.map((ingredient, index) => (
+                              <span 
+                                key={index}
+                                className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium"
+                              >
+                                {ingredient}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-500 italic">Sin ingredientes registrados</span>
+                        )}
                       </div>
                     </div>
 

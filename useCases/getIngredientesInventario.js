@@ -12,7 +12,7 @@ async function getIngredientesInventario() {
     }
 
     // Realizar petición GET
-    const response = await fetch('https://469db86c1b78.ngrok-free.app/inventory/ingredients/', {
+    const response = await fetch('https://ab1d9ccc984d.ngrok-free.app/inventory/ingredients/', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

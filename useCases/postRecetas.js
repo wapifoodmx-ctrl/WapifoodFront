@@ -20,7 +20,7 @@ export async function postRecetas(recipeData) {
         throw new Error("No se encontró un token de autenticación. Por favor, inicia sesión.");
     }
 
-    const url = "https://469db86c1b78.ngrok-free.app/inventory/recipes/";
+    const url = "https://ab1d9ccc984d.ngrok-free.app/inventory/recipes/";
 
     try {
         const response = await axios.post(url, recipeData, {
