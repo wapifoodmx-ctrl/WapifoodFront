@@ -6,12 +6,18 @@ import Navbar from "@/dashboardComponents/navbar";
 import getIngredientesInventario from "@/useCases/getIngredientesInventario";
 import { postRecetas } from "@/useCases/postRecetas";
 import { getRecetas } from "@/useCases/getRecetas";
+import { getProducts } from "@/useCases/getProducts";
+import { getRecetaById } from "@/useCases/getRecetasId"; // ← Añadir esta línea
+import { putReceta } from "@/useCases/putRecetas"; // ← Añadir esta línea
 
 export default function Recipes() {
   const [isAddRecipeModalOpen, setIsAddRecipeModalOpen] = useState(false);
+  const [isEditRecipeModalOpen, setIsEditRecipeModalOpen] = useState(false); // ← Nuevo estado
   const [isSelectSuppliesModalOpen, setIsSelectSuppliesModalOpen] = useState(false);
+  const [isSelectProductModalOpen, setIsSelectProductModalOpen] = useState(false);
   const [recipeName, setRecipeName] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [plateQuantity, setPlateQuantity] = useState("");
   const [totalCost, setTotalCost] = useState("");
   const [insumos, setInsumos] = useState([]);
@@ -19,6 +25,7 @@ export default function Recipes() {
   const [insumosSeleccionados, setInsumosSeleccionados] = useState([]);
   const [cantidadesInsumos, setCantidadesInsumos] = useState({});
   const [terminoBusquedaInsumos, setTerminoBusquedaInsumos] = useState("");
+  const [terminoBusquedaProductos, setTerminoBusquedaProductos] = useState("");
   const [isLoadingInsumos, setIsLoadingInsumos] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [isSubmittingRecipe, setIsSubmittingRecipe] = useState(false);
@@ -30,6 +37,10 @@ export default function Recipes() {
   const [isLoadingRecetas, setIsLoadingRecetas] = useState(false);
   const [selectedRecipeId, setSelectedRecipeId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Estados para editar receta
+  const [editingRecipe, setEditingRecipe] = useState(null); // ← Nuevo estado
+  const [isLoadingRecipeDetails, setIsLoadingRecipeDetails] = useState(false); // ← Nuevo estado
 
   const router = useRouter();
 
@@ -43,6 +54,18 @@ export default function Recipes() {
   // Cargar productos cuando se abre el modal de agregar receta
   useEffect(() => {
     if (isAddRecipeModalOpen) {
+      // Limpiar estados cuando se abre la modal
+      setRecipeName("");
+      setSelectedProduct(null);
+      setSelectedProductId("");
+      setPlateQuantity("");
+      setTotalCost("");
+      setInsumosSeleccionados([]);
+      setCantidadesInsumos({});
+      setTerminoBusquedaProductos("");
+      setErrorMessage("");
+      setSuccessMessage("");
+      
       cargarProductos();
     }
   }, [isAddRecipeModalOpen]);
@@ -112,6 +135,20 @@ export default function Recipes() {
     receta.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Obtener productos disponibles (que no tengan receta asignada)
+  const productosDisponibles = products.filter(product => {
+    // Verificar si este producto ya tiene una receta asignada
+    const tieneReceta = recetas.some(receta => receta.product_id === product.id_products);
+    return !tieneReceta;
+  });
+
+  // Filtrar productos disponibles por búsqueda
+  const productosFiltrados = productosDisponibles.filter(product =>
+    product.name.toLowerCase().includes(terminoBusquedaProductos.toLowerCase()) ||
+    product.description.toLowerCase().includes(terminoBusquedaProductos.toLowerCase()) ||
+    product.nombre_categoria.toLowerCase().includes(terminoBusquedaProductos.toLowerCase())
+  );
+
   // Manejar selección de insumos
   const toggleSeleccionInsumo = (insumoId) => {
     setInsumosSeleccionados(prev => {
@@ -147,15 +184,23 @@ export default function Recipes() {
     setSelectedRecipeId(selectedRecipeId === recipeId ? null : recipeId);
   };
 
+  // Función para seleccionar producto
+  const handleSelectProduct = (product) => {
+    setSelectedProduct(product);
+    setSelectedProductId(product.id_products);
+    setIsSelectProductModalOpen(false);
+    setTerminoBusquedaProductos("");
+  };
+
   // Obtener insumos seleccionados con sus datos completos
   const insumosSeleccionadosCompletos = insumosSeleccionados.map(id => 
     insumos.find(insumo => insumo.id_ingredient === id)
   ).filter(Boolean);
 
   const handleSaveRecipe = async () => {
-    // Validaciones básicas
-    if (!recipeName.trim()) {
-      setErrorMessage("El nombre de la receta es obligatorio");
+    // Validaciones básicas - Ya no necesitamos validar recipeName
+    if (!selectedProductId) {
+      setErrorMessage("Debe seleccionar un producto");
       return;
     }
 
@@ -179,10 +224,10 @@ export default function Recipes() {
     setSuccessMessage("");
 
     try {
-      // Preparar los datos en el formato que espera la API
+      // Preparar los datos en el formato que espera la API - Usar el nombre del producto
       const recipeData = {
-        name: recipeName.trim(),
-        product_id: 1, // Usar un product_id fijo por ahora
+        name: selectedProduct.name, // ✅ Usar el nombre del producto seleccionado
+        product_id: selectedProductId,
         ingredients: insumosSeleccionados.map(insumoId => ({
           ingredient_id: insumoId,
           quantity: parseFloat(cantidadesInsumos[insumoId])
@@ -203,8 +248,9 @@ export default function Recipes() {
       // Limpiar campos y cerrar modal después de un breve delay
       setTimeout(() => {
         setIsAddRecipeModalOpen(false);
-        setRecipeName("");
+        setRecipeName(""); // Mantener para limpiar aunque no se use
         setSelectedProductId("");
+        setSelectedProduct(null);
         setPlateQuantity("");
         setTotalCost("");
         setInsumosSeleccionados([]);
@@ -231,6 +277,133 @@ export default function Recipes() {
   const handleBackdropClick = (e, closeFunction) => {
     if (e.target === e.currentTarget) {
       closeFunction();
+    }
+  };
+
+  // Nueva función para abrir modal de edición
+  const handleEditRecipe = async () => {
+    if (!selectedRecipeId) return;
+
+    setIsLoadingRecipeDetails(true);
+    setIsEditRecipeModalOpen(true);
+    
+    try {
+      // Obtener los detalles de la receta
+      const recipeDetails = await getRecetaById(selectedRecipeId);
+      console.log('Detalles de la receta:', recipeDetails);
+      
+      setEditingRecipe(recipeDetails);
+      setRecipeName(recipeDetails.name);
+      
+      // Configurar ingredientes seleccionados y cantidades
+      const ingredientIds = recipeDetails.ingredients.map(ing => ing.ingredient_id);
+      const quantities = {};
+      recipeDetails.ingredients.forEach(ing => {
+        quantities[ing.ingredient_id] = ing.quantity.toString();
+      });
+      
+      setInsumosSeleccionados(ingredientIds);
+      setCantidadesInsumos(quantities);
+      
+      // Cargar todos los insumos disponibles
+      await cargarInsumos();
+      
+    } catch (error) {
+      console.error('Error al cargar detalles de la receta:', error);
+      setErrorMessage('Error al cargar los detalles de la receta: ' + error.message);
+      setIsEditRecipeModalOpen(false);
+    } finally {
+      setIsLoadingRecipeDetails(false);
+    }
+  };
+
+  // Función para eliminar ingrediente de la receta en edición
+  const handleRemoveIngredient = (ingredientId) => {
+    setInsumosSeleccionados(prev => prev.filter(id => id !== ingredientId));
+    setCantidadesInsumos(prev => {
+      const newQuantities = { ...prev };
+      delete newQuantities[ingredientId];
+      return newQuantities;
+    });
+  };
+
+  // Función para eliminar ingrediente en modal de agregar receta
+  const handleRemoveIngredientFromAdd = (ingredientId) => {
+    setInsumosSeleccionados(prev => prev.filter(id => id !== ingredientId));
+    setCantidadesInsumos(prev => {
+      const newQuantities = { ...prev };
+      delete newQuantities[ingredientId];
+      return newQuantities;
+    });
+  };
+
+  // Función para guardar cambios en la receta
+  const handleUpdateRecipe = async () => {
+    if (!editingRecipe) return;
+
+    // Validaciones
+    if (!recipeName.trim()) {
+      setErrorMessage("El nombre de la receta es requerido");
+      return;
+    }
+
+    if (insumosSeleccionados.length === 0) {
+      setErrorMessage("Debe tener al menos un ingrediente");
+      return;
+    }
+
+    // Validar cantidades
+    const insumosInvalidos = insumosSeleccionados.filter(id => 
+      !cantidadesInsumos[id] || parseFloat(cantidadesInsumos[id]) <= 0
+    );
+
+    if (insumosInvalidos.length > 0) {
+      setErrorMessage("Todos los ingredientes deben tener una cantidad válida mayor a 0");
+      return;
+    }
+
+    setIsSubmittingRecipe(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      // Preparar datos para la actualización
+      const updateData = {
+        name: recipeName.trim(),
+        product_id: editingRecipe.product_id,
+        ingredients: insumosSeleccionados.map(ingredientId => ({
+          ingredient_id: ingredientId,
+          quantity: parseFloat(cantidadesInsumos[ingredientId])
+        }))
+      };
+
+      console.log('Actualizando receta:', updateData);
+      
+      // Llamar a la API de actualización
+      const response = await putReceta(editingRecipe.id_recipe, updateData);
+      console.log('Receta actualizada exitosamente:', response);
+      
+      setSuccessMessage("Receta actualizada exitosamente");
+      
+      // Recargar las recetas
+      await cargarRecetas();
+      
+      // Cerrar modal después de un breve delay
+      setTimeout(() => {
+        setIsEditRecipeModalOpen(false);
+        setEditingRecipe(null);
+        setSelectedRecipeId(null);
+        setRecipeName("");
+        setInsumosSeleccionados([]);
+        setCantidadesInsumos({});
+        setSuccessMessage("");
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error al actualizar la receta:', error);
+      setErrorMessage(error.message || "Error al actualizar la receta");
+    } finally {
+      setIsSubmittingRecipe(false);
     }
   };
 
@@ -263,6 +436,7 @@ export default function Recipes() {
               
               {/* Botón Modificar */}
               <button 
+                onClick={handleEditRecipe} // ← Cambiar esta línea
                 disabled={!selectedRecipeId}
                 className={`flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform lg:text-base ${
                   selectedRecipeId 
@@ -364,14 +538,14 @@ export default function Recipes() {
                       {/* Ingredientes */}
                       <div className="py-2 px-3 bg-gray-50 rounded-lg">
                         <span className="text-sm font-medium text-gray-600 mb-2 block">Ingredientes:</span>
-                        {receta.ingredient_names && receta.ingredient_names.length > 0 ? (
+                        {receta.ingredients && receta.ingredients.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {receta.ingredient_names.map((ingredient, index) => (
+                            {receta.ingredients.map((ingredient, index) => (
                               <span 
-                                key={index}
+                                key={ingredient.id_ingredient || index}
                                 className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium"
                               >
-                                {ingredient}
+                                {ingredient.name}
                               </span>
                             ))}
                           </div>
@@ -459,9 +633,47 @@ export default function Recipes() {
                     type="text"
                     value={recipeName}
                     onChange={(e) => setRecipeName(e.target.value)}
-                    placeholder="Ingresa el nombre de la receta..."
+                    placeholder="Nombre de la receta..."
                     className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
                   />
+                </div>
+
+                {/* Botón seleccionar producto */}
+                <div>
+                  <button 
+                    onClick={() => setIsSelectProductModalOpen(true)}
+                    className="w-full px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold transition-colors"
+                  >
+                    {selectedProduct ? `Producto: ${selectedProduct.name}` : 'Seleccionar Producto'}
+                  </button>
+                  {selectedProduct && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+                      {selectedProduct.image_url && selectedProduct.image_url.length > 0 ? (
+                        <img 
+                          src={selectedProduct.image_url[0]} 
+                          alt={selectedProduct.name}
+                          className="w-12 h-12 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">Sin imagen</span>
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium text-blue-800 text-sm">{selectedProduct.name}</p>
+                        <p className="text-xs text-blue-600">{selectedProduct.nombre_categoria}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedProduct(null);
+                          setSelectedProductId("");
+                        }}
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                      >
+                        <IoClose className="text-lg" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Botón seleccionar insumos */}
@@ -477,47 +689,72 @@ export default function Recipes() {
                 {/* Botón Guardar */}
                 <button
                   onClick={handleSaveRecipe}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+                  disabled={isSubmittingRecipe}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Guardar Receta
+                  {isSubmittingRecipe ? 'Guardando...' : 'Guardar Receta'}
                 </button>
+
+                {/* Mensajes de error y éxito */}
+                {errorMessage && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {errorMessage}
+                  </div>
+                )}
+                {successMessage && (
+                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                    {successMessage}
+                  </div>
+                )}
               </div>
 
               {/* Columna derecha - Insumos seleccionados */}
               <div className="w-1/2 border-l border-gray-200 pl-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  Insumos Seleccionados ({insumosSeleccionadosCompletos.length})
+                  Insumos Seleccionados ({insumosSeleccionados.length})
                 </h3>
                 
-                {insumosSeleccionadosCompletos.length === 0 ? (
+                {insumosSeleccionados.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
                     <p className="text-sm">Selecciona insumos para la receta</p>
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {insumosSeleccionadosCompletos.map((insumo) => (
-                      <div key={insumo.id_ingredient} className="bg-green-50 border border-green-200 rounded-lg p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-800 text-sm line-clamp-1">
-                              {insumo.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Stock: {insumo.stock} {insumo.unit}
-                            </p>
-                          </div>
-                          <div className="w-20">
-                            <input
-                              type="text"
-                              placeholder="0"
-                              value={cantidadesInsumos[insumo.id_ingredient] || ''}
-                              onChange={(e) => handleCantidadChange(insumo.id_ingredient, e.target.value)}
-                              className="w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
-                            />
+                    {insumosSeleccionados.map((ingredientId) => {
+                      const insumo = insumos.find(i => i.id_ingredient === ingredientId);
+                      if (!insumo) return null;
+                      
+                      return (
+                        <div key={ingredientId} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-800 text-sm line-clamp-1">
+                                {insumo.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Stock: {insumo.stock} {insumo.unit}
+                              </p>
+                            </div>
+                            <div className="w-20">
+                              <input
+                                type="text"
+                                placeholder="0"
+                                value={cantidadesInsumos[ingredientId] || ''}
+                                onChange={(e) => handleCantidadChange(ingredientId, e.target.value)}
+                                className="w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                              />
+                            </div>
+                            <button
+                              onClick={() => handleRemoveIngredientFromAdd(ingredientId)}
+                              className="text-red-500 hover:text-red-700 transition-colors p-1"
+                              title="Eliminar ingrediente"
+                            >
+                              <IoClose className="text-lg" />
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -548,9 +785,47 @@ export default function Recipes() {
                   type="text"
                   value={recipeName}
                   onChange={(e) => setRecipeName(e.target.value)}
-                  placeholder="Ingresa el nombre de la receta..."
+                  placeholder="Nombre de la receta..."
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
                 />
+              </div>
+
+              {/* Botón seleccionar producto */}
+              <div>
+                <button 
+                  onClick={() => setIsSelectProductModalOpen(true)}
+                  className="w-full px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors"
+                >
+                  {selectedProduct ? `Producto: ${selectedProduct.name}` : 'Seleccionar Producto'}
+                </button>
+                {selectedProduct && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+                    {selectedProduct.image_url && selectedProduct.image_url.length > 0 ? (
+                      <img 
+                        src={selectedProduct.image_url[0]} 
+                        alt={selectedProduct.name}
+                        className="w-12 h-12 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-400 text-xs">Sin imagen</span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium text-blue-800 text-sm">{selectedProduct.name}</p>
+                      <p className="text-xs text-blue-600">{selectedProduct.nombre_categoria}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedProduct(null);
+                        setSelectedProductId("");
+                      }}
+                      className="text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      <IoClose className="text-lg" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Botón seleccionar insumos */}
@@ -564,33 +839,45 @@ export default function Recipes() {
               </div>
 
               {/* Lista de insumos seleccionados - MÓVIL */}
-              {insumosSeleccionadosCompletos.length > 0 && (
+              {insumosSeleccionados.length > 0 && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                    Insumos Seleccionados ({insumosSeleccionadosCompletos.length})
+                    Insumos Seleccionados ({insumosSeleccionados.length})
                   </h3>
                   <div className="space-y-3 max-h-48 overflow-y-auto">
-                    {insumosSeleccionadosCompletos.map((insumo) => (
-                      <div key={insumo.id_ingredient} className="flex items-center gap-3 bg-white p-3 rounded-lg">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-800 line-clamp-1">
-                            {insumo.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Stock: {insumo.stock} {insumo.unit}
-                          </p>
+                    {insumosSeleccionados.map((ingredientId) => {
+                      const insumo = insumos.find(i => i.id_ingredient === ingredientId);
+                      if (!insumo) return null;
+                      
+                      return (
+                        <div key={ingredientId} className="flex items-center gap-3 bg-white p-3 rounded-lg">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-800 line-clamp-1">
+                              {insumo.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Stock: {insumo.stock} {insumo.unit}
+                            </p>
+                          </div>
+                          <div className="w-16">
+                            <input
+                              type="text"
+                              placeholder="0"
+                              value={cantidadesInsumos[ingredientId] || ''}
+                              onChange={(e) => handleCantidadChange(ingredientId, e.target.value)}
+                              className="w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                            />
+                          </div>
+                          <button
+                            onClick={() => handleRemoveIngredientFromAdd(ingredientId)}
+                            className="text-red-500 hover:text-red-700 transition-colors p-1"
+                            title="Eliminar"
+                          >
+                            <IoClose className="text-lg" />
+                          </button>
                         </div>
-                        <div className="w-20">
-                          <input
-                            type="text"
-                            placeholder="0"
-                            value={cantidadesInsumos[insumo.id_ingredient] || ''}
-                            onChange={(e) => handleCantidadChange(insumo.id_ingredient, e.target.value)}
-                            className="w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -615,10 +902,23 @@ export default function Recipes() {
             <div className="p-6 border-t border-gray-200">
               <button
                 onClick={handleSaveRecipe}
-                className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+                disabled={isSubmittingRecipe}
+                className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Guardar Receta
+                {isSubmittingRecipe ? 'Guardando...' : 'Guardar Receta'}
               </button>
+
+              {/* Mensajes de error y éxito */}
+              {errorMessage && (
+                <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {errorMessage}
+                </div>
+              )}
+              {successMessage && (
+                <div className="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                  {successMessage}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -762,6 +1062,352 @@ export default function Recipes() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Seleccionar Productos */}
+      {isSelectProductModalOpen && (
+        <div 
+          className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-60 p-4"
+          onClick={(e) => handleBackdropClick(e, () => setIsSelectProductModalOpen(false))}
+        >
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">
+                Seleccionar Producto
+                {productosDisponibles.length !== products.length && (
+                  <span className="text-sm font-normal text-gray-600 ml-2">
+                    ({productosDisponibles.length} disponibles de {products.length} total)
+                  </span>
+                )}
+              </h2>
+              <button
+                onClick={() => setIsSelectProductModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <IoClose className="text-2xl" />
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-6">
+              {/* Barra de búsqueda */}
+              <div className="mb-6">
+                <input
+                  type="text"
+                  placeholder="Buscar producto..."
+                  value={terminoBusquedaProductos}
+                  onChange={(e) => setTerminoBusquedaProductos(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                />
+              </div>
+
+              {/* Lista de productos */}
+              <div className="max-h-96 overflow-y-auto">
+                {isLoadingProducts ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <span className="ml-3 text-gray-600">Cargando productos...</span>
+                  </div>
+                ) : productosFiltrados.length === 0 ? (
+                  <div className="text-center text-gray-500 py-12">
+                    <p>
+                      {terminoBusquedaProductos 
+                        ? "No se encontraron productos con ese nombre" 
+                        : "No hay productos disponibles"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {productosFiltrados.map((product) => (
+                      <div
+                        key={product.id_products}
+                        onClick={() => handleSelectProduct(product)}
+                        className="border-2 border-gray-200 rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-300 bg-white"
+                      >
+                        {/* Imagen del producto */}
+                        <div className="mb-3">
+                          {product.image_url && product.image_url.length > 0 ? (
+                            <img 
+                              src={product.image_url[0]} 
+                              alt={product.name}
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center">
+                              <span className="text-gray-400 text-sm">Sin imagen</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Información del producto */}
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-gray-800 text-sm lg:text-base line-clamp-2">
+                            {product.name}
+                          </h3>
+                          <p className="text-xs text-blue-600 font-medium">
+                            {product.nombre_categoria}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Receta */}
+      {isEditRecipeModalOpen && (
+        <div 
+          className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 p-4"
+          onClick={(e) => handleBackdropClick(e, () => setIsEditRecipeModalOpen(false))}
+        >
+          {/* Desktop - Modal más ancho con dos columnas */}
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto hidden lg:block">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">
+                Editar Receta
+                {editingRecipe && <span className="text-base font-normal text-gray-600 ml-2">- {editingRecipe.name}</span>}
+              </h2>
+              <button
+                onClick={() => setIsEditRecipeModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <IoClose className="text-2xl" />
+              </button>
+            </div>
+
+            {/* Contenido Desktop - Loading o Formulario */}
+            {isLoadingRecipeDetails ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+                <span className="ml-4 text-lg text-gray-600">Cargando detalles de la receta...</span>
+              </div>
+            ) : (
+              <div className="p-6 flex gap-6">
+                {/* Columna izquierda - Formulario */}
+                <div className="w-1/2 space-y-6">
+                  {/* Nombre de la receta */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre de la receta
+                    </label>
+                    <input
+                      type="text"
+                      value={recipeName}
+                      onChange={(e) => setRecipeName(e.target.value)}
+                      placeholder="Nombre de la receta..."
+                      className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
+                    />
+                  </div>
+
+                  {/* Botón seleccionar insumos adicionales */}
+                  <div className="flex flex-col gap-3">
+                    <button 
+                      onClick={handleSelectSupplies}
+                      className="flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition-colors"
+                    >
+                      Agregar Más Insumos {insumosSeleccionados.length > 0 && `(${insumosSeleccionados.length} total)`}
+                    </button>
+                  </div>
+                  
+                  {/* Botón Guardar */}
+                  <button
+                    onClick={handleUpdateRecipe}
+                    disabled={isSubmittingRecipe}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingRecipe ? 'Actualizando...' : 'Actualizar Receta'}
+                  </button>
+
+                  {/* Mensajes de error y éxito */}
+                  {errorMessage && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                      {errorMessage}
+                    </div>
+                  )}
+                  {successMessage && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                      {successMessage}
+                    </div>
+                  )}
+                </div>
+
+                {/* Columna derecha - Ingredientes actuales */}
+                <div className="w-1/2 border-l border-gray-200 pl-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    Ingredientes Actuales ({insumosSeleccionados.length})
+                  </h3>
+                  
+                  {insumosSeleccionados.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      <p className="text-sm">No hay ingredientes en esta receta</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {insumosSeleccionados.map((ingredientId) => {
+                        const insumo = insumos.find(i => i.id_ingredient === ingredientId);
+                        if (!insumo) return null;
+                        
+                        return (
+                          <div key={ingredientId} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-800 text-sm line-clamp-1">
+                                  {insumo.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Stock: {insumo.stock} {insumo.unit}
+                                </p>
+                              </div>
+                              <div className="w-20">
+                                <input
+                                  type="text"
+                                  placeholder="0"
+                                  value={cantidadesInsumos[ingredientId] || ''}
+                                  onChange={(e) => handleCantidadChange(ingredientId, e.target.value)}
+                                  className="w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                                />
+                              </div>
+                              <button
+                                onClick={() => handleRemoveIngredient(ingredientId)}
+                                className="text-red-500 hover:text-red-700 transition-colors p-1"
+                                title="Eliminar ingrediente"
+                              >
+                                <IoClose className="text-lg" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile - Modal para editar */}
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto lg:hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Editar Receta</h2>
+              <button
+                onClick={() => setIsEditRecipeModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <IoClose className="text-2xl" />
+              </button>
+            </div>
+
+            {/* Contenido Mobile */}
+            {isLoadingRecipeDetails ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+                <span className="ml-3 text-gray-600">Cargando...</span>
+              </div>
+            ) : (
+              <div className="p-6 space-y-6">
+                {/* Nombre de la receta */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre de la receta
+                  </label>
+                  <input
+                    type="text"
+                    value={recipeName}
+                    onChange={(e) => setRecipeName(e.target.value)}
+                    placeholder="Nombre de la receta..."
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
+                  />
+                </div>
+
+                {/* Botón seleccionar insumos adicionales */}
+                <div className="flex flex-col gap-3">
+                  <button 
+                    onClick={handleSelectSupplies}
+                    className="flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition-colors"
+                  >
+                    Agregar Más Insumos {insumosSeleccionados.length > 0 && `(${insumosSeleccionados.length})`}
+                  </button>
+                </div>
+
+                {/* Lista de ingredientes actuales - MÓVIL */}
+                {insumosSeleccionados.length > 0 && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                      Ingredientes Actuales ({insumosSeleccionados.length})
+                    </h3>
+                    <div className="space-y-3 max-h-48 overflow-y-auto">
+                      {insumosSeleccionados.map((ingredientId) => {
+                        const insumo = insumos.find(i => i.id_ingredient === ingredientId);
+                        if (!insumo) return null;
+                        
+                        return (
+                          <div key={ingredientId} className="flex items-center gap-3 bg-white p-3 rounded-lg">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-800 line-clamp-1">
+                                {insumo.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Stock: {insumo.stock} {insumo.unit}
+                              </p>
+                            </div>
+                            <div className="w-16">
+                              <input
+                                type="text"
+                                placeholder="0"
+                                value={cantidadesInsumos[ingredientId] || ''}
+                                onChange={(e) => handleCantidadChange(ingredientId, e.target.value)}
+                                className="w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                              />
+                            </div>
+                            <button
+                              onClick={() => handleRemoveIngredient(ingredientId)}
+                              className="text-red-500 hover:text-red-700 transition-colors p-1"
+                              title="Eliminar"
+                            >
+                              <IoClose className="text-lg" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Footer Mobile */}
+            {!isLoadingRecipeDetails && (
+              <div className="p-6 border-t border-gray-200">
+                <button
+                  onClick={handleUpdateRecipe}
+                  disabled={isSubmittingRecipe}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmittingRecipe ? 'Actualizando...' : 'Actualizar Receta'}
+                </button>
+
+                {/* Mensajes de error y éxito */}
+                {errorMessage && (
+                  <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                    {errorMessage}
+                  </div>
+                )}
+                {successMessage && (
+                  <div className="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                    {successMessage}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

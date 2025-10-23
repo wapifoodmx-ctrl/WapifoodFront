@@ -7,7 +7,7 @@ export const getRecetas = async () => {
       throw new Error('No se encontró token de autenticación');
     }
 
-    const response = await fetch('https://ab1d9ccc984d.ngrok-free.app/inventory/recipes/my-recipes', {
+    const response = await fetch('http://192.168.1.69:8001/inventory/recipes/my-recipes', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

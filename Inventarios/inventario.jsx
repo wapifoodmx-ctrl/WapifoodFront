@@ -1,5 +1,5 @@
 import { LiaFilterSolid } from "react-icons/lia";
-import { IoAddOutline, IoClose, IoEyeOutline } from "react-icons/io5";
+import { IoAddOutline, IoClose, IoEyeOutline, IoSwapHorizontalOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import Navbar from "@/dashboardComponents/navbar";
 import NavegacionPestañas from "@/Inventarios/navegaciónPestañas";
@@ -28,6 +28,9 @@ export default function Inventario() {
     comentarios: "",
     categoriaAdicional: "No"
   });
+
+  // Nuevo estado para manejar la unidad de edición
+  const [unidadEdit, setUnidadEdit] = useState("Gramos");
 
   // Cargar ingredientes al montar el componente
   useEffect(() => {
@@ -133,20 +136,119 @@ export default function Inventario() {
     });
   };
 
+  // Función para convertir unidades al formato de la API
+  const convertirUnidadParaAPI = (cantidad, unidad) => {
+    const cantidadNum = parseFloat(cantidad);
+    
+    switch (unidad) {
+      case "Kilos":
+        return {
+          stock: cantidadNum * 1000, // Convertir kilos a gramos
+          unit: "Gramos"
+        };
+      case "Litros":
+        return {
+          stock: cantidadNum * 1000, // Convertir litros a mililitros
+          unit: "Mililitros"
+        };
+      case "Gramos":
+      case "Mililitros":
+      default:
+        return {
+          stock: cantidadNum,
+          unit: unidad
+        };
+    }
+  };
+
+  // Función para convertir desde la API a unidades de visualización
+  const convertirDesdeAPI = (stock, unit) => {
+    switch (unit) {
+      case "Gramos":
+        if (stock >= 1000 && stock % 1000 === 0) {
+          return {
+            cantidad: stock / 1000,
+            unidad: "Kilos"
+          };
+        }
+        return {
+          cantidad: stock,
+          unidad: "Gramos"
+        };
+      case "Mililitros":
+        if (stock >= 1000 && stock % 1000 === 0) {
+          return {
+            cantidad: stock / 1000,
+            unidad: "Litros"
+          };
+        }
+        return {
+          cantidad: stock,
+          unidad: "Mililitros"
+        };
+      default:
+        return {
+          cantidad: stock,
+          unidad: unit
+        };
+    }
+  };
+
+  // Función para alternar entre unidades en la modal de edición
+  const toggleUnidadEdit = () => {
+    const cantidadActual = parseFloat(formData.cantidad);
+    
+    if (unidadEdit === "Gramos") {
+      // Convertir de gramos a kilos
+      setUnidadEdit("Kilos");
+      setFormData(prev => ({
+        ...prev,
+        cantidad: (cantidadActual / 1000).toString()
+      }));
+    } else if (unidadEdit === "Kilos") {
+      // Convertir de kilos a gramos
+      setUnidadEdit("Gramos");
+      setFormData(prev => ({
+        ...prev,
+        cantidad: (cantidadActual * 1000).toString()
+      }));
+    } else if (unidadEdit === "Mililitros") {
+      // Convertir de mililitros a litros
+      setUnidadEdit("Litros");
+      setFormData(prev => ({
+        ...prev,
+        cantidad: (cantidadActual / 1000).toString()
+      }));
+    } else if (unidadEdit === "Litros") {
+      // Convertir de litros a mililitros
+      setUnidadEdit("Mililitros");
+      setFormData(prev => ({
+        ...prev,
+        cantidad: (cantidadActual * 1000).toString()
+      }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      // Convertir unidades para la API
+      const { stock, unit } = convertirUnidadParaAPI(formData.cantidad, formData.medida);
+
       // Mapear los datos del formulario al formato de la API
       const ingredientData = {
         name: formData.nombreProducto,
         description: formData.comentarios || `${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Otro'}: ${formData.nombreProducto}`,
         cost: parseFloat(formData.costo),
-        stock: parseInt(formData.cantidad),
-        unit: pestañaActiva === 'insumos' ? formData.medida : "Pieza", // Para productos y otros siempre "Pieza"
-        category: pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros' // Enviar categoría según pestaña activa
+        stock: stock, // Usar stock convertido
+        unit: pestañaActiva === 'insumos' ? unit : "Pieza", // Usar unidad convertida para insumos
+        category: pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros'
       };
+
+      console.log('Datos originales:', { cantidad: formData.cantidad, medida: formData.medida });
+      console.log('Datos convertidos:', { stock, unit });
 
       // Llamar a la API usando la misma función para todas las pestañas
       const result = await postInventarioIngredientes(ingredientData);
@@ -213,22 +315,29 @@ export default function Inventario() {
       if (ingrediente) {
         setInsumoAEditar(ingrediente);
         
+        // Convertir unidades desde la API para la visualización
+        const { cantidad, unidad } = convertirDesdeAPI(ingrediente.stock, ingrediente.unit);
+        
         // Llenar el formulario con los datos del ingrediente
         setFormData({
           nombreProducto: ingrediente.name || "",
           medida: ingrediente.unit || "Gramos",
-          cantidad: ingrediente.stock?.toString() || "",
+          cantidad: cantidad.toString(),
           costo: ingrediente.cost?.toString() || "",
           comentarios: ingrediente.description || "",
           categoriaAdicional: "No",
-          total_cost: ingrediente.total_cost || 0 // Agregar total_cost al formData
+          total_cost: ingrediente.total_cost || 0
         });
+
+        // Establecer la unidad de edición basada en la conversión
+        setUnidadEdit(unidad);
         
         console.log("Formulario llenado con datos:", {
           nombreProducto: ingrediente.name || "",
           medida: ingrediente.unit || "Gramos",
-          cantidad: ingrediente.stock?.toString() || "",
+          cantidad: cantidad.toString(),
           costo: ingrediente.cost?.toString() || "",
+          unidadEdit: unidad,
           total_cost: ingrediente.total_cost || 0
         });
         
@@ -271,31 +380,53 @@ export default function Inventario() {
 
       console.log('Insumo a editar:', insumoAEditar);
       console.log('Form data actual:', formData);
+      console.log('Unidad de edición actual:', unidadEdit);
 
       // Validar que los campos numéricos sean válidos
       const cost = parseFloat(formData.costo);
-      const stock = parseInt(formData.cantidad);
+      const cantidadInput = parseFloat(formData.cantidad);
 
       if (isNaN(cost) || cost < 0) {
         throw new Error('El costo debe ser un número válido mayor o igual a 0');
       }
 
-      if (isNaN(stock) || stock < 0) {
+      if (isNaN(cantidadInput) || cantidadInput < 0) {
         throw new Error('La cantidad debe ser un número válido mayor o igual a 0');
+      }
+
+      // Convertir la cantidad desde la unidad de edición a la unidad base de la API
+      let stockFinal = cantidadInput;
+      let unitFinal = unidadEdit;
+
+      // Si estamos editando en kilos, convertir a gramos para la API
+      if (unidadEdit === "Kilos") {
+        stockFinal = cantidadInput * 1000;
+        unitFinal = "Gramos";
+      } 
+      // Si estamos editando en litros, convertir a mililitros para la API
+      else if (unidadEdit === "Litros") {
+        stockFinal = cantidadInput * 1000;
+        unitFinal = "Mililitros";
       }
 
       const ingredientData = {
         name: formData.nombreProducto.trim(),
         description: formData.comentarios.trim() || `${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'}: ${formData.nombreProducto.trim()}`,
         cost: cost,
-        stock: stock,
-        unit: pestañaActiva === 'insumos' ? formData.medida : 'Pieza', // Para productos y otros siempre "Pieza"
+        stock: stockFinal, // Usar stock convertido
+        unit: pestañaActiva === 'insumos' ? unitFinal : 'Pieza', // Usar unidad convertida
         category: insumoAEditar.category || (pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros')
       };
 
       console.log('=== DATOS PREPARADOS PARA ENVIAR ===');
       console.log('ID del ingrediente:', insumoAEditar.id_ingredient);
       console.log('Datos del ingrediente:', ingredientData);
+      console.log('Conversión realizada:', {
+        cantidadOriginal: cantidadInput,
+        unidadOriginal: unidadEdit,
+        stockFinal: stockFinal,
+        unitFinal: unitFinal
+      });
 
       // Verificar conectividad antes de enviar
       try {
@@ -322,6 +453,7 @@ export default function Inventario() {
       setIsEditProductModalOpen(false);
       setInsumoAEditar(null);
       setInsumosSeleccionados([]);
+      setUnidadEdit("Gramos"); // Resetear unidad de edición
       setFormData({
         nombreProducto: "",
         medida: "Gramos",
@@ -537,6 +669,14 @@ export default function Inventario() {
                     <option value="Litros">Litros</option>
                     <option value="Mililitros">Mililitros</option>
                   </select>
+                  {(formData.medida === "Kilos" || formData.medida === "Litros") && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      {formData.medida === "Kilos" 
+                        ? "Se guardará automáticamente en gramos (1 kilo = 1000 gramos)"
+                        : "Se guardará automáticamente en mililitros (1 litro = 1000 mililitros)"
+                      }
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -551,7 +691,8 @@ export default function Inventario() {
                   value={formData.cantidad}
                   onChange={handleInputChange}
                   placeholder="Cantidad"
-                  min="1"
+                  min="0.01"
+                  step="0.01"
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   required
                 />
@@ -644,7 +785,7 @@ export default function Inventario() {
           onClick={() => {
             setIsEditProductModalOpen(false);
             setInsumoAEditar(null);
-            setInsumosSeleccionados([]);
+            setUnidadEdit("Gramos");
           }}
         >
           <div 
@@ -661,7 +802,7 @@ export default function Inventario() {
                 onClick={() => {
                   setIsEditProductModalOpen(false);
                   setInsumoAEditar(null);
-                  setInsumosSeleccionados([]);
+                  setUnidadEdit("Gramos");
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
               >
@@ -693,37 +834,69 @@ export default function Inventario() {
               {pestañaActiva === 'insumos' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Medidas
+                    Unidad Base (Solo lectura)
                   </label>
-                  <select
-                    name="medida"
+                  <input
+                    type="text"
                     value={formData.medida}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                  >
-                    <option value="Gramos">Gramos</option>
-                    <option value="Kilos">Kilos</option>
-                    <option value="Litros">Litros</option>
-                    <option value="Mililitros">Mililitros</option>
-                  </select>
+                    readOnly
+                    className="w-full border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Esta es la unidad base registrada en el sistema
+                  </p>
                 </div>
               )}
 
-              {/* Cantidad */}
+              {/* Cantidad con botón de conversión */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Cantidad
+                  {pestañaActiva === 'insumos' && (
+                    <span className="text-blue-600 ml-1">({unidadEdit})</span>
+                  )}
                 </label>
-                <input
-                  type="number"
-                  name="cantidad"
-                  value={formData.cantidad}
-                  onChange={handleInputChange}
-                  placeholder="Cantidad"
-                  min="1"
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                  required
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    name="cantidad"
+                    value={formData.cantidad}
+                    onChange={handleInputChange}
+                    placeholder="Cantidad"
+                    min="0.01"
+                    step="0.01"
+                    className="flex-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                    required
+                  />
+                  {/* Botón de conversión - Solo para insumos con unidades convertibles */}
+                  {pestañaActiva === 'insumos' && 
+                   (unidadEdit === "Gramos" || unidadEdit === "Kilos" || 
+                    unidadEdit === "Mililitros" || unidadEdit === "Litros") && (
+                    <button
+                      type="button"
+                      onClick={toggleUnidadEdit}
+                      className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-1 text-sm"
+                      title={`Cambiar a ${
+                        unidadEdit === "Gramos" ? "Kilos" : 
+                        unidadEdit === "Kilos" ? "Gramos" :
+                        unidadEdit === "Mililitros" ? "Litros" : "Mililitros"
+                      }`}
+                    >
+                      <IoSwapHorizontalOutline className="text-sm" />
+                      {unidadEdit === "Gramos" ? "Kg" : 
+                       unidadEdit === "Kilos" ? "g" :
+                       unidadEdit === "Mililitros" ? "L" : "ml"}
+                    </button>
+                  )}
+                </div>
+                {pestañaActiva === 'insumos' && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {unidadEdit === "Kilos" && "1 kilo = 1000 gramos"}
+                    {unidadEdit === "Litros" && "1 litro = 1000 mililitros"}
+                    {unidadEdit === "Gramos" && "Unidad base: gramos"}
+                    {unidadEdit === "Mililitros" && "Unidad base: mililitros"}
+                  </p>
+                )}
               </div>
 
               {/* Costo por pieza */}
@@ -744,7 +917,7 @@ export default function Inventario() {
                 />
               </div>
 
-              {/* Costo Total - Solo lectura */}
+              {/* Costo Total */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Costo Total
@@ -793,7 +966,7 @@ export default function Inventario() {
                 </div>
               )}
 
-              {/* Botón Editar */}
+              {/* Botón Guardar */}
               <div className="pt-4">
                 <button
                   type="submit"
