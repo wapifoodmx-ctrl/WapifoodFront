@@ -91,10 +91,12 @@ const NavegacionPestañas = ({
 
   const toggleSeleccionInsumo = (insumoId) => {
     setInsumosSeleccionados(prev => {
+      // Si el insumo ya está seleccionado, deseleccionarlo
       if (prev.includes(insumoId)) {
-        return prev.filter(id => id !== insumoId);
+        return [];
       } else {
-        return [...prev, insumoId];
+        // Si no está seleccionado, seleccionar solo este (reemplazar cualquier selección anterior)
+        return [insumoId];
       }
     });
   };
@@ -121,7 +123,7 @@ const NavegacionPestañas = ({
             key={elemento.id}
             className={`border rounded-lg p-4 transition-all duration-200 cursor-pointer hover:shadow-md ${
               insumosSeleccionados.includes(elemento.id)
-                ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200'
+                ? 'border-green-500 bg-green-50 shadow-lg ring-2 ring-green-200'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
             onClick={() => toggleSeleccionInsumo(elemento.id)}
@@ -130,8 +132,8 @@ const NavegacionPestañas = ({
             <div className="flex items-start justify-between mb-3">
               <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
                 insumosSeleccionados.includes(elemento.id)
-                  ? 'bg-blue-500 border-blue-500'
-                  : 'border-gray-300 hover:border-blue-400'
+                  ? 'bg-green-500 border-green-500'
+                  : 'border-gray-300 hover:border-green-400'
               }`}>
                 {insumosSeleccionados.includes(elemento.id) && (
                   <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -224,8 +226,8 @@ const NavegacionPestañas = ({
 
             {/* Indicador de selección */}
             {insumosSeleccionados.includes(elemento.id) && (
-              <div className="mt-3 py-2 px-3 bg-blue-100 rounded-lg border border-blue-200">
-                <p className="text-sm font-medium text-blue-700 text-center">
+              <div className="mt-3 py-2 px-3 bg-green-100 rounded-lg border border-green-200">
+                <p className="text-sm font-medium text-green-700 text-center">
                   ✓ Seleccionado
                 </p>
               </div>
@@ -277,15 +279,15 @@ const NavegacionPestañas = ({
               <tr
                 key={elemento.id}
                 className={`hover:bg-gray-50 cursor-pointer transition-colors duration-200 ${
-                  insumosSeleccionados.includes(elemento.id) ? 'bg-blue-50' : ''
+                  insumosSeleccionados.includes(elemento.id) ? 'bg-green-50' : ''
                 }`}
                 onClick={() => toggleSeleccionInsumo(elemento.id)}
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
                     insumosSeleccionados.includes(elemento.id)
-                      ? 'bg-blue-500 border-blue-500'
-                      : 'border-gray-300 hover:border-blue-400'
+                      ? 'bg-green-500 border-green-500'
+                      : 'border-gray-300 hover:border-green-400'
                   }`}>
                     {insumosSeleccionados.includes(elemento.id) && (
                       <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">

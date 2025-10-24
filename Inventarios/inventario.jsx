@@ -271,12 +271,10 @@ export default function Inventario() {
   };
 
   const handleModificarInsumo = async () => {
-    // Verificar que solo hay un insumo seleccionado
+    // Verificar que hay exactamente un insumo seleccionado
     if (insumosSeleccionados.length !== 1) {
       if (insumosSeleccionados.length === 0) {
-        alert('Por favor selecciona un insumo para modificar');
-      } else {
-        alert('Solo puedes modificar un insumo a la vez');
+        alert('Por favor selecciona un elemento para modificar');
       }
       return;
     }
@@ -569,8 +567,8 @@ export default function Inventario() {
                 <FiEdit className="text-lg" />
                 <span>
                   {isLoading ? 'Cargando...' : 
-                   insumosSeleccionados.length === 0 ? `Selecciona ${pestañaActiva === 'insumos' ? 'un insumo' : pestañaActiva === 'productos' ? 'un producto' : 'un elemento'}` :
-                   pestañaActiva === 'insumos' ? 'Editar insumo' : pestañaActiva === 'productos' ? 'Editar producto' : 'Editar elemento'}
+                   insumosSeleccionados.length === 0 ? `Selecciona un elemento` :
+                   'Editar elemento'}
                 </span>
               </button>
 

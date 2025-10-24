@@ -624,20 +624,6 @@ export default function Recipes() {
             <div className="p-6 flex gap-6">
               {/* Columna izquierda - Formulario */}
               <div className="w-1/2 space-y-6">
-                {/* Nombre de la receta */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre de la receta
-                  </label>
-                  <input
-                    type="text"
-                    value={recipeName}
-                    onChange={(e) => setRecipeName(e.target.value)}
-                    placeholder="Nombre de la receta..."
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
-                  />
-                </div>
-
                 {/* Botón seleccionar producto */}
                 <div>
                   <button 
@@ -662,6 +648,9 @@ export default function Recipes() {
                       <div className="flex-1">
                         <p className="font-medium text-blue-800 text-sm">{selectedProduct.name}</p>
                         <p className="text-xs text-blue-600">{selectedProduct.nombre_categoria}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          La receta llevará el nombre: "{selectedProduct.name}"
+                        </p>
                       </div>
                       <button
                         onClick={() => {
@@ -776,25 +765,11 @@ export default function Recipes() {
 
             {/* Contenido Mobile */}
             <div className="p-6 space-y-6">
-              {/* Nombre de la receta */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre de la receta
-                </label>
-                <input
-                  type="text"
-                  value={recipeName}
-                  onChange={(e) => setRecipeName(e.target.value)}
-                  placeholder="Nombre de la receta..."
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
-                />
-              </div>
-
               {/* Botón seleccionar producto */}
               <div>
                 <button 
                   onClick={() => setIsSelectProductModalOpen(true)}
-                  className="w-full px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors"
+                  className="w-full px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold transition-colors"
                 >
                   {selectedProduct ? `Producto: ${selectedProduct.name}` : 'Seleccionar Producto'}
                 </button>
@@ -814,6 +789,9 @@ export default function Recipes() {
                     <div className="flex-1">
                       <p className="font-medium text-blue-800 text-sm">{selectedProduct.name}</p>
                       <p className="text-xs text-blue-600">{selectedProduct.nombre_categoria}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Nombre de receta: "{selectedProduct.name}"
+                      </p>
                     </div>
                     <button
                       onClick={() => {
@@ -882,20 +860,7 @@ export default function Recipes() {
                 </div>
               )}
 
-              {/* Costo total */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Costo total del platillo
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={totalCost}
-                  onChange={(e) => setTotalCost(e.target.value)}
-                  placeholder="Costo total en pesos..."
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
-                />
-              </div>
+              {/* Costo total - Removido ya que no se usa */}
             </div>
 
             {/* Footer Mobile */}
