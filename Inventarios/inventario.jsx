@@ -428,7 +428,7 @@ export default function Inventario() {
 
       // Verificar conectividad antes de enviar
       try {
-        const testResponse = await fetch('http://192.168.1.69:8000/health', { method: 'GET' });
+        const testResponse = await fetch('http://201.137.184.207:8000/health', { method: 'GET' });
         console.log('Test de conectividad:', testResponse.status);
       } catch (testError) {
         console.error('Error de conectividad:', testError);

@@ -6,6 +6,7 @@ import { BsTag } from "react-icons/bs";
 import { FiFilter } from "react-icons/fi";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FaShoppingCart } from "react-icons/fa";
+import { FaPercent, FaDollarSign } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { getProducts } from "@/useCases/getProducts";
@@ -42,6 +43,14 @@ export default function Pntoventa() {
     // Estado para pedidos pendientes (no enviados a cocina)
     const [pedidosPendientes, setPedidosPendientes] = useState([]);
     const [showCancelledOrderModal, setShowCancelledOrderModal] = useState(false);
+
+    // Nuevos estados para descuentos
+    const [modalDescuentoOpen, setModalDescuentoOpen] = useState(false);
+    const [productoDescuento, setProductoDescuento] = useState(null);
+    const [tipoDescuento, setTipoDescuento] = useState('porcentaje'); // 'porcentaje' o 'pesos'
+    const [valorDescuento, setValorDescuento] = useState('');
+    const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
+    const [modalDescuentoOrdenOpen, setModalDescuentoOrdenOpen] = useState(false);
 
     // Mock para establecer permisos de ticket automáticamente
     useEffect(() => {
@@ -115,10 +124,162 @@ export default function Pntoventa() {
         setModalProductoOpen(false);
     };
 
+    // Función para calcular el precio con descuento de un producto
+    const calcularPrecioConDescuento = (producto) => {
+        if (!producto.descuento || producto.descuento.valor === '' || producto.descuento.valor === '0') {
+            return producto.price;
+        }
+
+        const precio = parseFloat(producto.price);
+        const valorDesc = parseFloat(producto.descuento.valor);
+
+        if (producto.descuento.tipo === 'porcentaje') {
+            return precio - (precio * valorDesc / 100);
+        } else {
+            return Math.max(0, precio - valorDesc);
+        }
+    };
+
+    // Función para calcular el total del carrito con descuentos
+    const calcularTotalCarrito = () => {
+        const subtotal = carrito.reduce((total, item) => {
+            const precioConDescuento = calcularPrecioConDescuento(item);
+            return total + (precioConDescuento * item.cantidad);
+        }, 0);
+
+        if (!descuentoOrden.aplicado || descuentoOrden.valor === '' || descuentoOrden.valor === '0') {
+            return subtotal;
+        }
+
+        const valorDesc = parseFloat(descuentoOrden.valor);
+        if (descuentoOrden.tipo === 'porcentaje') {
+            return subtotal - (subtotal * valorDesc / 100);
+        } else {
+            return Math.max(0, subtotal - valorDesc);
+        }
+    };
+
+    // Función para abrir modal de descuento por producto
+    const abrirModalDescuento = (producto) => {
+        setProductoDescuento(producto);
+        setTipoDescuento(producto.descuento?.tipo || 'porcentaje');
+        setValorDescuento(producto.descuento?.valor || '');
+        setModalDescuentoOpen(true);
+    };
+
+    // Función para aplicar descuento a un producto
+    const aplicarDescuentoProducto = () => {
+        if (!productoDescuento || valorDescuento === '') return;
+
+        const valor = parseFloat(valorDescuento);
+        if (isNaN(valor) || valor < 0) {
+            setMensajeError("El valor del descuento debe ser un número positivo");
+            return;
+        }
+
+        if (tipoDescuento === 'porcentaje' && valor > 99) {
+            setMensajeError("El descuento porcentual no puede ser mayor al 99%");
+            return;
+        }
+
+        if (tipoDescuento === 'pesos') {
+            const precioProducto = parseFloat(productoDescuento.price);
+            if (valor >= precioProducto) {
+                setMensajeError(`El descuento en pesos no puede ser mayor o igual al precio del producto ($${precioProducto.toFixed(2)})`);
+                return;
+            }
+        }
+
+        setCarrito(prevCarrito =>
+            prevCarrito.map(item =>
+                item.id === productoDescuento.id
+                    ? {
+                        ...item,
+                        descuento: {
+                            tipo: tipoDescuento,
+                            valor: valorDescuento
+                        }
+                    }
+                    : item
+            )
+        );
+
+        setModalDescuentoOpen(false);
+        setProductoDescuento(null);
+        setValorDescuento('');
+        setMensajeError('');
+    };
+
+    // Función para quitar descuento de un producto
+    const quitarDescuentoProducto = (productId) => {
+        setCarrito(prevCarrito =>
+            prevCarrito.map(item =>
+                item.id === productId
+                    ? { ...item, descuento: null }
+                    : item
+            )
+        );
+    };
+
+    // Función para aplicar descuento a toda la orden
+    const aplicarDescuentoOrden = () => {
+        if (descuentoOrden.valor === '') return;
+
+        const valor = parseFloat(descuentoOrden.valor);
+        if (isNaN(valor) || valor < 0) {
+            setMensajeError("El valor del descuento debe ser un número positivo");
+            return;
+        }
+
+        if (descuentoOrden.tipo === 'porcentaje' && valor > 99) {
+            setMensajeError("El descuento porcentual no puede ser mayor al 99%");
+            return;
+        }
+
+        if (descuentoOrden.tipo === 'pesos') {
+            const totalCarrito = carrito.reduce((total, item) => {
+                const precioConDescuento = calcularPrecioConDescuento(item);
+                return total + (precioConDescuento * item.cantidad);
+            }, 0);
+            
+            if (valor >= totalCarrito) {
+                setMensajeError(`El descuento en pesos no puede ser mayor o igual al total de la orden ($${totalCarrito.toFixed(2)})`);
+                return;
+            }
+        }
+
+        setDescuentoOrden(prev => ({ ...prev, aplicado: true }));
+        setModalDescuentoOrdenOpen(false);
+        setMensajeError('');
+    };
+
+    // Función para generar string de descuentos por producto para la API
+    const generarDescuentosProductos = (productos) => {
+        return productos.map(producto => {
+            if (!producto.descuento || producto.descuento.valor === '' || producto.descuento.valor === '0') {
+                return '0';
+            }
+            return producto.descuento.tipo === 'porcentaje' 
+                ? `${producto.descuento.valor}%` 
+                : producto.descuento.valor;
+        }).join(',');
+    };
+
+    // Función para generar string de descuento de orden para la API
+    const generarDescuentoOrden = () => {
+        if (!descuentoOrden.aplicado || descuentoOrden.valor === '' || descuentoOrden.valor === '0') {
+            return '0';
+        }
+        return descuentoOrden.tipo === 'porcentaje' 
+            ? `${descuentoOrden.valor}%` 
+            : descuentoOrden.valor;
+    };
+
     const agregarAlCarrito = (producto) => {
         const productoConPersonalizacion = {
             ...producto,
             id: producto.id_products,
+            descuento: null, // Inicializar sin descuento
         };
 
         setCarrito((prevCarrito) => {
@@ -145,14 +306,15 @@ export default function Pntoventa() {
         setMensajeError("");
 
         try {
-            // Mover productos del carrito a pedidos pendientes
+            // Mover productos del carrito a pedidos pendientes con descuentos
             setPedidosPendientes((prevPendientes) => [
                 ...prevPendientes,
                 ...carrito.map((item) => ({
                     id_products: item.id_products,
                     name: item.name,
                     cantidad: item.cantidad,
-                    price: item.price,
+                    price: item.price, // Precio original
+                    descuento: item.descuento, // Información del descuento
                     fechaAgregado: new Date().toISOString()
                 })),
             ]);
@@ -179,9 +341,24 @@ export default function Pntoventa() {
             return;
         }
 
-        const totalPendientes = pedidosPendientes.reduce((total, item) => total + (item.price * item.cantidad), 0);
+        // Calcular total con descuentos de productos
+        const subtotalConDescuentos = pedidosPendientes.reduce((total, item) => {
+            const precioConDescuento = calcularPrecioConDescuento(item);
+            return total + (precioConDescuento * item.cantidad);
+        }, 0);
+
+        // Aplicar descuento de orden si existe
+        let totalFinal = subtotalConDescuentos;
+        if (descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0') {
+            const valorDesc = parseFloat(descuentoOrden.valor);
+            if (descuentoOrden.tipo === 'porcentaje') {
+                totalFinal = subtotalConDescuentos - (subtotalConDescuentos * valorDesc / 100);
+            } else {
+                totalFinal = Math.max(0, subtotalConDescuentos - valorDesc);
+            }
+        }
         
-        setTotalPedidos(totalPendientes.toFixed(2));
+        setTotalPedidos(totalFinal.toFixed(2));
         setModalTotalOpen(true);
         setMensajeError("");
     };
@@ -203,13 +380,17 @@ export default function Pntoventa() {
         try {
             // console.log(`Procesando pago con ${metodoPago} por $${totalPedidos}`);
             
-            // Crear la orden en el sistema
-            const productosParaOrden = pedidosPendientes.map(item => ({
-                id: item.id_products,
-                cantidad: item.cantidad
-            }));
-
-            const response = await createSimpleOrder(productosParaOrden, null);
+            // Crear la orden en el sistema usando pedidosPendientes, NO carrito
+            const response = await createSimpleOrder(
+                pedidosPendientes.map(item => ({
+                    id: item.id_products,
+                    cantidad: item.cantidad,
+                    descuento: item.descuento
+                })), 
+                null, 
+                descuentoOrden.aplicado ? descuentoOrden : null,
+                metodoPago
+            );
             // console.log('Orden creada en cocina:', response);
 
             // Obtener el estado del switch de cocina
@@ -220,7 +401,17 @@ export default function Pntoventa() {
             // console.log(`Estado de la orden será: ${orderStatus} (Switch cocina: ${switchEnabled ? 'ON' : 'OFF'})`);
 
             // Finalizar con el pago
-            const pagoResponse = await endOrderPuntoDeVenta(response.order_uuid, metodoPago, orderStatus);
+            const pagoResponse = await endOrderPuntoDeVenta(
+                response.order_uuid, 
+                metodoPago, 
+                orderStatus,
+                pedidosPendientes.map(item => ({
+                    id: item.id_products,
+                    cantidad: item.cantidad,
+                    descuento: item.descuento
+                })),
+                descuentoOrden.aplicado ? descuentoOrden : null
+            );
             
             if (pagoResponse && (pagoResponse.success !== false)) {
                 // console.log('Pago procesado exitosamente:', pagoResponse);
@@ -229,6 +420,9 @@ export default function Pntoventa() {
                 setPedidosPendientes([]);
                 localStorage.removeItem("pedidosPendientes");
                 localStorage.removeItem("carrito");
+                
+                // Resetear descuentos
+                setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
                 
                 setModalTotalOpen(false);
                 setMetodoPago('efectivo');
@@ -463,6 +657,234 @@ export default function Pntoventa() {
                     </div>
                 )}
 
+                {/* Modal de descuento por producto */}
+                {modalDescuentoOpen && (
+                    <div 
+                        className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10001]"
+                        onClick={(e) => {
+                            if (e.target === e.currentTarget) {
+                                setModalDescuentoOpen(false);
+                                setProductoDescuento(null);
+                                setValorDescuento('');
+                                setMensajeError('');
+                            }
+                        }}
+                    >
+                        <div className="bg-white rounded-2xl p-8 w-11/12 md:w-96 shadow-2xl border border-green-100">
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <FaPercent className="w-8 h-8 text-white" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-800">Aplicar Descuento</h2>
+                                <p className="text-gray-600">{productoDescuento?.name}</p>
+                                <p className="text-sm text-gray-500">
+                                    Precio: ${parseFloat(productoDescuento?.price || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                            </div>
+
+                            {/* Mensaje de error */}
+                            {mensajeError && (
+                                <div className="bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-4 text-sm">
+                                    {mensajeError}
+                                </div>
+                            )}
+
+                            {/* Tipo de descuento */}
+                            <div className="mb-6">
+                                <h3 className="text-lg font-semibold text-gray-700 mb-4">Tipo de descuento:</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button 
+                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                                            tipoDescuento === 'porcentaje' 
+                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
+                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
+                                        }`}
+                                        onClick={() => {
+                                            setTipoDescuento('porcentaje');
+                                            setValorDescuento('');
+                                            setMensajeError('');
+                                        }}
+                                    >
+                                        <FaPercent className="text-2xl mb-2"/>
+                                        <span className="font-medium">Porcentaje</span>
+                                        <span className="text-xs text-gray-500 mt-1">Máx: 99%</span>
+                                    </button>
+                                    <button 
+                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                                            tipoDescuento === 'pesos' 
+                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
+                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
+                                        }`}
+                                        onClick={() => {
+                                            setTipoDescuento('pesos');
+                                            setValorDescuento('');
+                                            setMensajeError('');
+                                        }}
+                                    >
+                                        <FaDollarSign className="text-2xl mb-2"/>
+                                        <span className="font-medium">Pesos</span>
+                                        <span className="text-xs text-gray-500 mt-1">
+                                            Máx: ${(parseFloat(productoDescuento?.price || 0) - 0.01).toFixed(2)}
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Valor del descuento */}
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Valor del descuento {tipoDescuento === 'porcentaje' ? '(%)' : '($)'}:
+                                </label>
+                                <input
+                                    type="number"
+                                    step={tipoDescuento === 'pesos' ? "0.01" : "1"}
+                                    min="0"
+                                    max={tipoDescuento === 'porcentaje' ? "99" : (parseFloat(productoDescuento?.price || 0) - 0.01).toString()}
+                                    value={valorDescuento}
+                                    onChange={(e) => {
+                                        setValorDescuento(e.target.value);
+                                        setMensajeError('');
+                                    }}
+                                    className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all duration-200"
+                                    placeholder={tipoDescuento === 'porcentaje' ? "Ej: 10 (máx 99)" : `Ej: 5.00 (máx ${(parseFloat(productoDescuento?.price || 0) - 0.01).toFixed(2)})`}
+                                />
+                            </div>
+
+                            {/* Botones */}
+                            <div className="space-y-3">
+                                <button
+                                    onClick={aplicarDescuentoProducto}
+                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
+                                >
+                                    Aplicar Descuento
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setModalDescuentoOpen(false);
+                                        setProductoDescuento(null);
+                                        setValorDescuento('');
+                                        setMensajeError('');
+                                    }}
+                                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal de descuento para toda la orden */}
+                {modalDescuentoOrdenOpen && (
+                    <div 
+                        className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10001]"
+                        onClick={(e) => {
+                            if (e.target === e.currentTarget) {
+                                setModalDescuentoOrdenOpen(false);
+                                setMensajeError('');
+                            }
+                        }}
+                    >
+                        <div className="bg-white rounded-2xl p-8 w-11/12 md:w-96 shadow-2xl border border-green-100">
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <FaPercent className="w-8 h-8 text-white" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-800">Descuento General</h2>
+                                <p className="text-gray-600">Aplicar a toda la orden</p>
+                                <p className="text-sm text-gray-500">
+                                    Total actual: ${calcularTotalCarrito().toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                            </div>
+
+                            {/* Mensaje de error */}
+                            {mensajeError && (
+                                <div className="bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-4 text-sm">
+                                    {mensajeError}
+                                </div>
+                            )}
+
+                            {/* Tipo de descuento */}
+                            <div className="mb-6">
+                                <h3 className="text-lg font-semibold text-gray-700 mb-4">Tipo de descuento:</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button 
+                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                                            descuentoOrden.tipo === 'porcentaje' 
+                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
+                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
+                                        }`}
+                                        onClick={() => {
+                                            setDescuentoOrden(prev => ({ ...prev, tipo: 'porcentaje', valor: '' }));
+                                            setMensajeError('');
+                                        }}
+                                    >
+                                        <FaPercent className="text-2xl mb-2"/>
+                                        <span className="font-medium">Porcentaje</span>
+                                        <span className="text-xs text-gray-500 mt-1">Máx: 99%</span>
+                                    </button>
+                                    <button 
+                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                                            descuentoOrden.tipo === 'pesos' 
+                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
+                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
+                                        }`}
+                                        onClick={() => {
+                                            setDescuentoOrden(prev => ({ ...prev, tipo: 'pesos', valor: '' }));
+                                            setMensajeError('');
+                                        }}
+                                    >
+                                        <FaDollarSign className="text-2xl mb-2"/>
+                                        <span className="font-medium">Pesos</span>
+                                        <span className="text-xs text-gray-500 mt-1">
+                                            Máx: ${(calcularTotalCarrito() - 0.01).toFixed(2)}
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Valor del descuento */}
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Valor del descuento {descuentoOrden.tipo === 'porcentaje' ? '(%)' : '($)'}:
+                                </label>
+                                <input
+                                    type="number"
+                                    step={descuentoOrden.tipo === 'pesos' ? "0.01" : "1"}
+                                    min="0"
+                                    max={descuentoOrden.tipo === 'porcentaje' ? "99" : (calcularTotalCarrito() - 0.01).toString()}
+                                    value={descuentoOrden.valor}
+                                    onChange={(e) => {
+                                        setDescuentoOrden(prev => ({ ...prev, valor: e.target.value }));
+                                        setMensajeError('');
+                                    }}
+                                    className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all duration-200"
+                                    placeholder={descuentoOrden.tipo === 'porcentaje' ? "Ej: 10 (máx 99)" : `Ej: 5.00 (máx ${(calcularTotalCarrito() - 0.01).toFixed(2)})`}
+                                />
+                            </div>
+
+                            {/* Botones */}
+                            <div className="space-y-3">
+                                <button
+                                    onClick={aplicarDescuentoOrden}
+                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
+                                >
+                                    Aplicar Descuento
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setModalDescuentoOrdenOpen(false);
+                                        setMensajeError('');
+                                    }}
+                                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Barra de búsqueda y filtros mejorada */}
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-6">
@@ -537,7 +959,7 @@ export default function Pntoventa() {
                     )}
                 </button>
 
-                {/* Modal del carrito mejorado */}
+                {/* Modal del carrito mejorado con descuentos */}
                 {carritoModalOpen && (
                     <div
                         className="fixed inset-0 backdrop-blur-sm bg-black/50 z-[9998] flex justify-end"
@@ -569,7 +991,7 @@ export default function Pntoventa() {
                             </div>
 
                             <div className="p-6">
-                                {/* Carrito actual */}
+                                {/* Carrito actual con descuentos */}
                                 {carrito.length > 0 ? (
                                     <div className="mb-6">
                                         <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -577,59 +999,98 @@ export default function Pntoventa() {
                                             Productos en carrito
                                         </h3>
                                         <div className="max-h-64 overflow-y-auto space-y-3">
-                                            {carrito.map((item) => (
-                                                <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100 shadow-sm">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <div className="flex-1">
-                                                            <p className="font-bold text-green-800">{item.name}</p>
-                                                            <p className="text-sm text-green-600">
-                                                                ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                                            </p>
+                                            {carrito.map((item) => {
+                                                const precioOriginal = parseFloat(item.price);
+                                                const precioConDescuento = calcularPrecioConDescuento(item);
+                                                const tieneDescuento = item.descuento && item.descuento.valor !== '' && item.descuento.valor !== '0';
+
+                                                return (
+                                                    <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100 shadow-sm">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="flex-1">
+                                                                <p className="font-bold text-green-800">{item.name}</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    {tieneDescuento ? (
+                                                                        <>
+                                                                            <span className="text-sm text-gray-500 line-through">
+                                                                                ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                            </span>
+                                                                            <span className="text-sm text-green-600 font-bold">
+                                                                                ${precioConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                                            </span>
+                                                                            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                                                                                -{item.descuento.tipo === 'porcentaje' ? `${item.descuento.valor}%` : `$${item.descuento.valor}`}
+                                                                            </span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <span className="text-sm text-green-600">
+                                                                            ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                className="text-red-500 hover:text-red-700 transition-colors ml-2"
+                                                                onClick={() => {
+                                                                    setCarrito((prevCarrito) =>
+                                                                        prevCarrito.filter((producto) => producto.id !== item.id)
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <IoTrashOutline className="text-lg" />
+                                                            </button>
                                                         </div>
-                                                        <button
-                                                            className="text-red-500 hover:text-red-700 transition-colors ml-2"
-                                                            onClick={() => {
-                                                                setCarrito((prevCarrito) =>
-                                                                    prevCarrito.filter((producto) => producto.id !== item.id)
-                                                                );
-                                                            }}
-                                                        >
-                                                            <IoTrashOutline className="text-lg" />
-                                                        </button>
+                                                        <div className="flex items-center gap-3 mb-3">
+                                                            <button
+                                                                className="bg-green-200 hover:bg-green-300 text-green-800 w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors"
+                                                                onClick={() => {
+                                                                    setCarrito((prevCarrito) =>
+                                                                        prevCarrito.map((producto) =>
+                                                                            producto.id === item.id
+                                                                                ? { ...producto, cantidad: Math.max(producto.cantidad - 1, 1) }
+                                                                                : producto
+                                                                        )
+                                                                    );
+                                                                }}
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <span className="text-lg font-bold text-green-800 min-w-[2rem] text-center">{item.cantidad}</span>
+                                                            <button
+                                                                className="bg-green-200 hover:bg-green-300 text-green-800 w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors"
+                                                                onClick={() => {
+                                                                    setCarrito((prevCarrito) =>
+                                                                        prevCarrito.map((producto) =>
+                                                                            producto.id === item.id
+                                                                                ? { ...producto, cantidad: producto.cantidad + 1 }
+                                                                                : producto
+                                                                        )
+                                                                    );
+                                                                }}
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                        {/* Botones de descuento */}
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => abrirModalDescuento(item)}
+                                                                className="flex-1 bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                                            >
+                                                                {tieneDescuento ? 'Editar Descuento' : 'Aplicar Descuento'}
+                                                            </button>
+                                                            {tieneDescuento && (
+                                                                <button
+                                                                    onClick={() => quitarDescuentoProducto(item.id)}
+                                                                    className="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                                                >
+                                                                    Quitar
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <button
-                                                            className="bg-green-200 hover:bg-green-300 text-green-800 w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors"
-                                                            onClick={() => {
-                                                                setCarrito((prevCarrito) =>
-                                                                    prevCarrito.map((producto) =>
-                                                                        producto.id === item.id
-                                                                            ? { ...producto, cantidad: Math.max(producto.cantidad - 1, 1) }
-                                                                            : producto
-                                                                    )
-                                                                );
-                                                            }}
-                                                        >
-                                                            -
-                                                        </button>
-                                                        <span className="text-lg font-bold text-green-800 min-w-[2rem] text-center">{item.cantidad}</span>
-                                                        <button
-                                                            className="bg-green-200 hover:bg-green-300 text-green-800 w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors"
-                                                            onClick={() => {
-                                                                setCarrito((prevCarrito) =>
-                                                                    prevCarrito.map((producto) =>
-                                                                        producto.id === item.id
-                                                                            ? { ...producto, cantidad: producto.cantidad + 1 }
-                                                                            : producto
-                                                                    )
-                                                                );
-                                                            }}
-                                                        >
-                                                            +
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 ) : (
@@ -641,14 +1102,39 @@ export default function Pntoventa() {
                                     </div>
                                 )}
 
-                                {/* Total del carrito */}
+                                {/* Total del carrito con descuentos */}
                                 {carrito.length > 0 && (
                                     <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-4 mb-6 border border-green-200">
                                         <div className="flex justify-between items-center">
                                             <span className="text-lg font-bold text-green-800">Total del carrito:</span>
                                             <span className="text-xl font-bold text-green-600">
-                                                ${carrito.reduce((total, item) => total + item.price * item.cantidad, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                ${calcularTotalCarrito().toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </span>
+                                        </div>
+                                        {/* Botón de descuento general */}
+                                        <div className="mt-3 pt-3 border-t border-green-200">
+                                            <button
+                                                onClick={() => setModalDescuentoOrdenOpen(true)}
+                                                className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                            >
+                                                {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Aplicar Descuento General'}
+                                            </button>
+                                            {descuentoOrden.aplicado && (
+                                                <div className="mt-2 flex justify-between items-center">
+                                                    <span className="text-sm text-green-700">
+                                                        Descuento aplicado: {descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => {
+                                                            setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
+                                                            setMensajeError('');
+                                                        }}
+                                                        className="text-red-600 hover:text-red-800 text-sm"
+                                                    >
+                                                        Quitar
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -708,47 +1194,126 @@ export default function Pntoventa() {
                                             </button>
                                         </div>
                                         <div className="max-h-64 overflow-y-auto space-y-3">
-                                            {pedidosPendientes.map((item, index) => (
-                                                <div key={index} className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200 shadow-sm">
-                                                    <div className="flex justify-between items-center">
-                                                        <div>
-                                                            <p className="font-bold text-yellow-800">{item.cantidad} x {item.name}</p>
-                                                            <p className="text-sm text-yellow-600">
-                                                                ${parseFloat(item.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                                            </p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="text-xs text-yellow-700 font-medium">⏳ Pendiente</p>
+                                            {pedidosPendientes.map((item, index) => {
+                                                const precioOriginal = parseFloat(item.price);
+                                                const precioConDescuento = calcularPrecioConDescuento(item);
+                                                const tieneDescuento = item.descuento && item.descuento.valor !== '' && item.descuento.valor !== '0';
+                                                const subtotalOriginal = precioOriginal * item.cantidad;
+                                                const subtotalConDescuento = precioConDescuento * item.cantidad;
+
+                                                return (
+                                                    <div key={index} className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200 shadow-sm">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="flex-1">
+                                                                <p className="font-bold text-yellow-800">{item.cantidad} x {item.name}</p>
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    {tieneDescuento ? (
+                                                                        <>
+                                                                            <span className="text-sm text-gray-500 line-through">
+                                                                                ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                                            </span>
+                                                                            <span className="text-sm text-yellow-600 font-bold">
+                                                                                ${precioConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                                            </span>
+                                                                            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                                                                                -{item.descuento.tipo === 'porcentaje' ? `${item.descuento.valor}%` : `$${item.descuento.valor}`}
+                                                                            </span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <span className="text-sm text-yellow-600">
+                                                                            ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {tieneDescuento && (
+                                                                    <div className="mt-1">
+                                                                        <div className="flex justify-between text-sm">
+                                                                            <span className="text-gray-500 line-through">
+                                                                                Subtotal: ${subtotalOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                            </span>
+                                                                            <span className="text-yellow-600 font-bold">
+                                                                                ${subtotalConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-xs text-yellow-700 font-medium">⏳ Pendiente</p>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                         
-                                        {/* Total pendiente */}
+                                        {/* Total pendiente con descuentos */}
                                         <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-4 mt-4 border border-yellow-200">
-                                            <div className="flex justify-between items-center">
-                                                <span className="font-semibold text-yellow-800">Total Pendiente:</span>
-                                                <span className="text-lg font-bold text-yellow-600">
-                                                    ${pedidosPendientes.reduce((total, item) => total + (item.price * item.cantidad), 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </span>
+                                            <div className="space-y-2">
+                                                {/* Subtotal sin descuentos de orden */}
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm text-yellow-700">Subtotal con descuentos por producto:</span>
+                                                    <span className="text-sm text-yellow-600 font-medium">
+                                                        ${pedidosPendientes.reduce((total, item) => {
+                                                            const precioConDescuento = calcularPrecioConDescuento(item);
+                                                            return total + (precioConDescuento * item.cantidad);
+                                                        }, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Descuento de orden si aplica */}
+                                                {descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0' && (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-sm text-yellow-700">
+                                                            Descuento general ({descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}):
+                                                        </span>
+                                                        <span className="text-sm text-red-600 font-medium">
+                                                            -${(() => {
+                                                                const subtotalConDescuentos = pedidosPendientes.reduce((total, item) => {
+                                                                    const precioConDescuento = calcularPrecioConDescuento(item);
+                                                                    return total + (precioConDescuento * item.cantidad);
+                                                                }, 0);
+                                                                const valorDesc = parseFloat(descuentoOrden.valor);
+                                                                if (descuentoOrden.tipo === 'porcentaje') {
+                                                                    return (subtotalConDescuentos * valorDesc / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                                } else {
+                                                                    return valorDesc.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                                }
+                                                            })()}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Total final */}
+                                                <div className="flex justify-between items-center pt-2 border-t border-yellow-300">
+                                                    <span className="font-semibold text-yellow-800">Total Pendiente:</span>
+                                                    <span className="text-lg font-bold text-yellow-600">
+                                                        ${(() => {
+                                                            // Calcular subtotal con descuentos por producto
+                                                            const subtotalConDescuentos = pedidosPendientes.reduce((total, item) => {
+                                                                const precioConDescuento = calcularPrecioConDescuento(item);
+                                                                return total + (precioConDescuento * item.cantidad);
+                                                            }, 0);
+
+                                                            // Aplicar descuento de orden si existe
+                                                            let totalFinal = subtotalConDescuentos;
+                                                            if (descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0') {
+                                                                const valorDesc = parseFloat(descuentoOrden.valor);
+                                                                if (descuentoOrden.tipo === 'porcentaje') {
+                                                                    totalFinal = subtotalConDescuentos - (subtotalConDescuentos * valorDesc / 100);
+                                                                } else {
+                                                                    totalFinal = Math.max(0, subtotalConDescuentos - valorDesc);
+                                                                }
+                                                            }
+                                                            
+                                                            return totalFinal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                        })()}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 )}
-
-                                {/* Botón "Proceder al Pago" */}
-                                <button
-                                    className={`w-full py-3 rounded-xl font-medium transition-all duration-200 mt-6 ${
-                                        pedidosPendientes.length > 0
-                                            ? "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg transform hover:scale-105"
-                                            : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                    }`}
-                                    onClick={finalizarTodasOrdenes}
-                                    disabled={pedidosPendientes.length === 0}
-                                >
-                                    💳 Proceder al Pago
-                                </button>
                             </div>
                         </div>
                     </div>

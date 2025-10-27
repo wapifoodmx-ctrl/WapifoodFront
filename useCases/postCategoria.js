@@ -1,5 +1,5 @@
 export default async function postCategoria(categoriaData) {
-    const endpoint = 'http://192.168.1.69:8000/categoria';
+    const endpoint = 'http://201.137.184.207:8000/categoria';
 
     try {
         // Obtener el token del localStorage

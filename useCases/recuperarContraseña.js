@@ -1,5 +1,5 @@
 export async function resetPass(email) {
-    const endpoint = 'http://192.168.1.69:8000/user/password-reset/request';
+    const endpoint = 'http://201.137.184.207:8000/user/password-reset/request';
 
     try {
         const response = await fetch(endpoint, {

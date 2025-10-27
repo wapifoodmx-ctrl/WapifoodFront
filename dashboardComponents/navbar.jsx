@@ -10,6 +10,9 @@ import { ImExit } from "react-icons/im";
 import { LuIdCard } from "react-icons/lu";
 import { FaKitchenSet } from "react-icons/fa6";
 import { MdFullscreen, MdFullscreenExit } from "react-icons/md";
+// Agregar nuevos iconos para Recetas e Inventarios
+import { FaBookOpen } from "react-icons/fa";
+import { MdInventory } from "react-icons/md";
 import { checkPayment } from '../useCases/checkPayment';
 
 export default function Navbar() {
@@ -85,6 +88,9 @@ export default function Navbar() {
     const payments = () => router.push('/payments');
     const puntoDeVenta = () => router.push('/puntodeventa');
     const cocina = () => router.push('/cocina');
+    // Agregar funciones para las nuevas páginas
+    const recetas = () => router.push('/recetas');
+    const inventarios = () => router.push('/inventarios');
 
     const checkSubscriptionStatus = async () => {
         try {
@@ -148,7 +154,7 @@ export default function Navbar() {
             title: "Productos",
             href: "#",
             icon: <LuPizza className="h-full w-[24px]" />,
-            requiresSubscription: true, // Cambiar de alwaysShow: true a requiresSubscription: true
+            requiresSubscription: true,
         },
         Tickets: {
             title: "Tickets",
@@ -160,6 +166,20 @@ export default function Navbar() {
             title: "Cocina",
             href: "#",
             icon: <FaKitchenSet className="h-full w-[24px]" />,
+            requiresSubscription: true,
+        },
+        // Agregar Recetas
+        Recetas: {
+            title: "Recetas",
+            href: "#",
+            icon: <FaBookOpen className="h-full w-[24px]" />,
+            requiresSubscription: true,
+        },
+        // Agregar Inventarios
+        Inventarios: {
+            title: "Inventarios",
+            href: "#",
+            icon: <MdInventory className="h-full w-[24px]" />,
             requiresSubscription: true,
         },
         PuntoDeVenta: {
@@ -300,6 +320,15 @@ export default function Navbar() {
         handleRestrictedClick(cocina);
     };
 
+    // Agregar funciones para manejar clicks en las nuevas páginas
+    const handleRecetasClick = () => {
+        handleRestrictedClick(recetas);
+    };
+
+    const handleInventariosClick = () => {
+        handleRestrictedClick(inventarios);
+    };
+
     // Verificar si estamos en la página del punto de venta
     const isPointOfSalePage = router.pathname === '/puntodeventa';
 
@@ -429,6 +458,20 @@ export default function Navbar() {
                                             <button
                                                 className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
                                                 onClick={handleCocinaClick}
+                                            >
+                                                <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                            </button>
+                                        ) : item === "Recetas" ? (
+                                            <button
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                onClick={handleRecetasClick}
+                                            >
+                                                <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                            </button>
+                                        ) : item === "Inventarios" ? (
+                                            <button
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                onClick={handleInventariosClick}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>

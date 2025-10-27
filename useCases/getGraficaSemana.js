@@ -11,7 +11,7 @@ export const getGraficaSemana = async () => {
             throw new Error('Token de autenticación no encontrado');
         }
 
-        const response = await fetch('http://192.168.1.69:8000/analytics/ventas_por_semana', {
+        const response = await fetch('http://201.137.184.207:8000/analytics/ventas_por_semana', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

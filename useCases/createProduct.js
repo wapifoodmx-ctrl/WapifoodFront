@@ -41,7 +41,7 @@ export async function createProduct(productData, imageFile) {
 
     // Construir la URL con el parámetro de consulta "product"
     const queryParam = `?product=${encodeURIComponent(JSON.stringify(productData))}`;
-    const url = `http://192.168.1.69:8000/products/${queryParam}`;
+    const url = `http://201.137.184.207:8000/products/${queryParam}`;
 
     // console.log("URL de la solicitud:", url);
     // console.log("Datos enviados (formData):", Object.fromEntries(formData.entries())); // Log form data
