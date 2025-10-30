@@ -8,7 +8,7 @@ async function getOrderTickets() {
     }
 
     // Realizar la petición GET
-    const response = await fetch('http://201.137.184.207:8000/orders/orders/allorders', {
+    const response = await fetch('http://192.168.1.69:8000/orders/orders/allorders', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

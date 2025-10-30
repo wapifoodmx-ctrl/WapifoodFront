@@ -4,14 +4,24 @@ import { FiEdit } from "react-icons/fi";
 import Navbar from "@/dashboardComponents/navbar";
 import NavegacionPestañas from "@/Inventarios/navegaciónPestañas";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { postInventarioIngredientes } from "@/useCases/postInventarioIngredientes";
 import getIngredientesInventario from "@/useCases/getIngredientesInventario";
 import { getIngredienteById } from "@/useCases/getIngredienteId";
 import putEditarIngrediente from "@/useCases/putEditarIngrediente";
+import { checkPayment } from "@/useCases/checkPayment";
 
 export default function Inventario() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
+  // Modal de éxito (crear/editar)
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalMessage, setSuccessModalMessage] = useState("");
+  // NUEVOS ESTADOS para restricción de pago / modal de suscripción
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [countdown, setCountdown] = useState(10);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(true);
+  const router = useRouter();
   const [pestañaActiva, setPestañaActiva] = useState('insumos');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -110,6 +120,11 @@ export default function Inventario() {
 
   // Función para abrir el modal de agregar y limpiar formulario
   const abrirModalAgregar = () => {
+    // Verificar suscripción antes de abrir
+    if (!hasActiveSubscription) {
+      setShowSubscriptionModal(true);
+      return;
+    }
     // Limpiar completamente el formulario
     setFormData({
       nombreProducto: "",
@@ -254,13 +269,19 @@ export default function Inventario() {
       const result = await postInventarioIngredientes(ingredientData);
       
       console.log(`${pestañaActiva.charAt(0).toUpperCase() + pestañaActiva.slice(1, -1)} creado exitosamente:`, result);
-      alert(`${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'} agregado exitosamente`);
+      // Mostrar modal de éxito en vez de alert
+      setSuccessModalMessage(`${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'} "${ingredientData.name}" agregado exitosamente`);
+      setShowSuccessModal(true);
       
       // Recargar la lista de ingredientes para mostrar el nuevo
       await cargarIngredientes();
 
       // Cerrar modal usando la función que limpia
       cerrarModalAgregar();
+
+      // Mostrar modal de éxito
+      setSuccessModalMessage(`${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'} agregado exitosamente`);
+      setShowSuccessModal(true);
 
     } catch (error) {
       console.error(`Error al crear ${pestañaActiva.slice(0, -1)}:`, error);
@@ -271,6 +292,11 @@ export default function Inventario() {
   };
 
   const handleModificarInsumo = async () => {
+    // Verificar suscripción antes de permitir edición
+    if (!hasActiveSubscription) {
+      setShowSubscriptionModal(true);
+      return;
+    }
     // Verificar que hay exactamente un insumo seleccionado
     if (insumosSeleccionados.length !== 1) {
       if (insumosSeleccionados.length === 0) {
@@ -428,7 +454,7 @@ export default function Inventario() {
 
       // Verificar conectividad antes de enviar
       try {
-        const testResponse = await fetch('http://201.137.184.207:8000/health', { method: 'GET' });
+        const testResponse = await fetch('http://192.168.1.69:8000/health', { method: 'GET' });
         console.log('Test de conectividad:', testResponse.status);
       } catch (testError) {
         console.error('Error de conectividad:', testError);
@@ -441,8 +467,9 @@ export default function Inventario() {
       console.log('=== RESULTADO EXITOSO ===');
       console.log('Resultado:', result);
       
-      // Mostrar mensaje de éxito más específico
-      alert(`Insumo "${ingredientData.name}" modificado exitosamente`);
+      // Mostrar modal de éxito en vez de alert
+      setSuccessModalMessage(`Insumo "${ingredientData.name}" modificado exitosamente`);
+      setShowSuccessModal(true);
       
       // Recargar la lista de ingredientes
       await cargarIngredientes();
@@ -460,6 +487,10 @@ export default function Inventario() {
         comentarios: "",
         categoriaAdicional: "No"
       });
+
+      // Mostrar modal de éxito
+      setSuccessModalMessage(`Insumo "${ingredientData.name}" modificado exitosamente`);
+      setShowSuccessModal(true);
 
     } catch (error) {
       console.error('=== ERROR EN HANDLE SUBMIT EDIT ===');
@@ -505,6 +536,59 @@ export default function Inventario() {
   const handleBusquedaChange = (e) => {
     setTerminoBusqueda(e.target.value);
     setInsumosSeleccionados([]); // Limpiar selecciones al buscar
+  };
+
+  // NUEVO: chequear suscripción al montar y bloquear acceso si no está activa
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const data = await checkPayment();
+        if (!data || !data.has_active_subscription) {
+          setHasActiveSubscription(false);
+          setShowSubscriptionModal(true);
+        } else {
+          setHasActiveSubscription(true);
+        }
+      } catch (error) {
+        console.error("Error checking subscription:", error);
+        setHasActiveSubscription(false);
+        setShowSubscriptionModal(true);
+      }
+    };
+
+    checkSubscription();
+  }, []);
+
+  // Efecto para el contador de la modal de suscripción (redirige cuando llega a 0)
+  useEffect(() => {
+    let interval = null;
+    
+    if (showSubscriptionModal && countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (showSubscriptionModal && countdown === 0) {
+      handleGoToPayments();
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [showSubscriptionModal, countdown]);
+  
+  // Resetear contador cuando se abre la modal
+  useEffect(() => {
+    if (showSubscriptionModal) {
+      setCountdown(10);
+    }
+  }, [showSubscriptionModal]);
+
+  const handleGoToPayments = () => {
+    setShowSubscriptionModal(false);
+    setCountdown(10);
+    router.push('/payments');
   };
 
   return (
@@ -990,6 +1074,89 @@ export default function Inventario() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal Suscripción / Restricción de acceso */}
+      {showSubscriptionModal && (
+        <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-center mb-4">
+              <div className="relative w-16 h-16">
+                <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="28" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    fill="none"
+                    stroke="#059669"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(countdown / 10) * 175.93} 175.93`}
+                    className="transition-all duration-1000 ease-linear"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-green-600">{countdown}</span>
+                </div>
+              </div>
+            </div>
+            
+            <h2 className="text-xl font-bold mb-4 text-green-600 text-center">Suscripción Requerida</h2>
+            <p className="text-gray-700 mb-4 text-center">
+              Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad.
+              Por favor, renueva tu suscripción para continuar.
+            </p>
+
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
+              <p className="text-green-700 text-sm text-center">
+                <span className="font-semibold">Redirección automática en {countdown} segundo{countdown !== 1 ? 's' : ''}</span>
+                <br />
+                Serás redirigido a la página de pagos automáticamente
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleGoToPayments}
+                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-semibold"
+              >
+                Ir a Pagos Ahora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal de Éxito (crear / editar) */}
+      {showSuccessModal && (
+        <div
+          className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+          onClick={() => setShowSuccessModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center">
+              <div className="p-3 rounded-full bg-green-100 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Operación exitosa</h3>
+              <p className="text-center text-gray-600">{successModalMessage}</p>
+              <div className="w-full mt-6">
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

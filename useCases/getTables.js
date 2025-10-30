@@ -8,7 +8,7 @@ export const getTables = async () => {
 
         // console.log('Haciendo petición a la API de mesas...');
         
-        const response = await fetch('http://201.137.184.207:8000/tables/status', {
+        const response = await fetch('http://192.168.1.69:8000/tables/status', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

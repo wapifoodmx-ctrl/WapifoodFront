@@ -983,22 +983,7 @@ export default function MenuCliente() {
             return;
         }
 
-        if (isProcessingPayment) {
-            return;
-        }
-
-        try {
-            const codigoAPI = await getCodigoConfirmacion();
-            const codigoEsperado = codigoAPI.codigo_confirmacion;
-
-            if (codigoConfirmacion !== codigoEsperado.toString()) {
-                setMensajeError('Código de confirmación incorrecto. Intenta nuevamente.');
-                return;
-            }
-        } catch (error) {
-            setMensajeError('Error al obtener el código de confirmación. Intenta nuevamente.');
-            return;
-        }
+        if (isProcessingPayment) return;
 
         setIsProcessingPayment(true);
         setMensajeError("");
@@ -1022,7 +1007,7 @@ export default function MenuCliente() {
                 localStorage.removeItem("ordenActiva1");
                 localStorage.removeItem("historialPedidos1");
                 localStorage.removeItem("carrito1");
-                localStorage.removeItem("productosCanceladosSnapshot1"); // Limpiar snapshot
+                localStorage.removeItem("productosCanceladosSnapshot1");
                 
                 setModalTotalOpen(false);
                 setMetodoPago('efectivo');
@@ -1039,30 +1024,24 @@ export default function MenuCliente() {
                 setTimeout(() => {
                     setMensajeError("");
                 }, 3000);
-                
             } else {
                 throw new Error(response?.message || 'La API indicó que el pago no se pudo procesar');
             }
-            
         } catch (error) {
             console.error('Error al procesar el pago:', error);
-            
             let mensajeErrorUsuario = "Error al procesar el pago. ";
-            
-            if (error.message.includes('fetch')) {
+            if (error.message && error.message.includes('fetch')) {
                 mensajeErrorUsuario += "Problemas de conexión. Verifica tu internet e intenta nuevamente.";
-            } else if (error.message.includes('token')) {
+            } else if (error.message && error.message.includes('token')) {
                 mensajeErrorUsuario += "Sesión expirada. Por favor, inicia sesión nuevamente.";
-            } else if (error.message.includes('404')) {
+            } else if (error.message && error.message.includes('404')) {
                 mensajeErrorUsuario += "Orden no encontrada. Contacta con el administrador.";
-            } else if (error.message.includes('500')) {
+            } else if (error.message && error.message.includes('500')) {
                 mensajeErrorUsuario += "Error del servidor. Intenta nuevamente en unos momentos.";
             } else {
                 mensajeErrorUsuario += error.message || "Error desconocido. Intenta nuevamente.";
             }
-            
             setMensajeError(mensajeErrorUsuario);
-            
         } finally {
             setIsProcessingPayment(false);
         }
@@ -1313,7 +1292,6 @@ export default function MenuCliente() {
                                     <div className='bg-green-500 text-white p-3 rounded-lg shadow-lg'>
                                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                        </svg>
                                     </div>
                                 </div>
                                 <h2 className="text-2xl text-center font-bold text-green-600 mb-2">
@@ -1836,7 +1814,7 @@ export default function MenuCliente() {
                                 </div>
                             ) : (
                                 <div className="text-center py-6 sm:py-8">
-                                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                                                                       <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                                         <FaShoppingCart className="text-gray-400 text-lg sm:text-xl" />
                                     </div>
                                     <p className="text-gray-500 text-sm sm:text-base">Tu carrito está vacío</p>
@@ -1968,7 +1946,7 @@ export default function MenuCliente() {
                                 ) : ordenActiva ? 'Agregar a la orden' : 'Realizar Pedido'}
                             </button>
 
-                            {historialPedidos.length > 0 && (
+                            {(historialPedidos.length > 0 || ordenActiva) && (
                                 <button
                                     className="w-full py-2 sm:py-3 rounded-xl font-medium transition-all duration-200 mt-2 sm:mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg transform hover:scale-105 text-xs sm:text-base"
                                     onClick={terminarOrden}
@@ -2046,23 +2024,11 @@ export default function MenuCliente() {
                         </div>
 
                         <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-                                Código de confirmación
-                            </label>
-                            <input
-                                type="text"
-                                value={codigoConfirmacion}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (/^\d{0,4}$/.test(value)) {
-                                        setCodigoConfirmacion(value);
-                                    }
-                                }}
-                                placeholder="0000"
-                                maxLength="4"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-center text-lg font-mono focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                disabled={isProcessingPayment}
-                            />
+                            <div className="text-center p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
+                                <p className="text-sm text-gray-700">
+                                    El cobro será procesado por un empleado en el punto de venta. No se requiere código aquí.
+                                </p>
+                            </div>
                         </div>
 
                         {mensajeError && (
@@ -2232,7 +2198,7 @@ export default function MenuCliente() {
             />
 
             {modalProductosCanceladosOpen && (
-                <div className="fixed inset-0 backdrop-blur-sm bg-black/70 flex justify-center items-center z-[10001]">
+                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[10001]">
                     <div className="bg-white rounded-2xl p-8 w-11/12 md:w-2/3 lg:w-1/2 max-w-2xl shadow-2xl border border-red-200 max-h-[90vh] overflow-y-auto">
                         <div className="text-center mb-6">
                             <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -2250,7 +2216,7 @@ export default function MenuCliente() {
                         <div className="space-y-4 mb-8">
                             {productosCancelados.map((producto, index) => (
                                 <div key={index} className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6 border-2 border-red-200 shadow-lg">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-2">
                                                 <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
@@ -2380,7 +2346,7 @@ export default function MenuCliente() {
                                     
                                     <div className="flex gap-3">
                                         <button
-                                            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colores"
                                             onClick={() => {
                                                 setModalExitFullscreenOpen(false);
                                                 setCodigoExitFullscreen('');
@@ -2390,7 +2356,7 @@ export default function MenuCliente() {
                                             Cancelar
                                         </button>
                                         <button
-                                            className={`flex-1 py-2 px-4 rounded-lg transition-colors ${
+                                            className={`flex-1 py-2 px-4 rounded-lg transition-colores ${
                                                 codigoExitFullscreen.length === 4
                                                     ? 'bg-red-500 text-white hover:bg-red-600'
                                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'

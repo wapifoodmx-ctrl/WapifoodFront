@@ -21,7 +21,7 @@ export async function getGraficaFechas(fechaInicio, fechaFin) {
     }
 
     // Construir la URL con los parámetros de consulta
-    const url = new URL('http://201.137.184.207:8000/analytics/ventas_por_año');
+    const url = new URL('http://192.168.1.69:8000/analytics/ventas_por_año');
     url.searchParams.append('fecha_inicio', fechaInicio);
     url.searchParams.append('fecha_fin', fechaFin);
 
