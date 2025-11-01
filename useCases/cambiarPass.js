@@ -1,5 +1,5 @@
 export async function cambiarPass(token, newPassword) {
-    const endpoint = 'http://192.168.1.69:8000/user/password-reset/confirm';
+    const endpoint = 'http://201.137.143.34:8000/user/password-reset/confirm';
 
     try {
         const response = await fetch(endpoint, {

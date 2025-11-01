@@ -27,7 +27,7 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
         formData.append('unit', ingredientData.unit || '');
         formData.append('category', ingredientData.category || '');
 
-        const url = `http://192.168.1.69:8001/inventory/ingredients/${ingredientId}`;
+        const url = `https://4db7387f6d3c.ngrok-free.app/inventory/ingredients/${ingredientId}`;
         
         console.log('=== DEBUGGING PUT EDITAR INGREDIENTE ===');
         console.log('URL:', url);
@@ -86,7 +86,7 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
         
         // Verificar si es un error de red
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('Error de conexión. Verifica que el servidor esté ejecutándose en http://192.168.1.69:8000');
+            throw new Error('Error de conexión. Verifica que el servidor esté ejecutándose en http://201.137.143.34:8000');
         }
         
         throw error;
