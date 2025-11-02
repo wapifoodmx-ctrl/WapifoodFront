@@ -13,7 +13,7 @@ export const endOrder = async (orderUuid, metodoPago) => {
         }
 
         // Construir la URL con los parámetros de query
-        const endpoint = `http://201.137.143.34:8000/orders/orders/${orderUuid}/cambio_estatus?order_status=Finalizado&metodo_pago=${metodoPago}`;
+        const endpoint = `http://192.168.1.69:8000/orders/orders/${orderUuid}/cambio_estatus?order_status=Finalizado&metodo_pago=${metodoPago}`;
 
         const response = await fetch(endpoint, {
             method: 'PUT',

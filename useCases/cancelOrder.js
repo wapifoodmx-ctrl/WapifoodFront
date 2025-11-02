@@ -9,7 +9,7 @@ export const cancelOrder = async (orderUuid) => {
     }
 
     // Construir la URL con los parámetros de query
-    const endpoint = `http://201.137.143.34:8000/orders/orders/${orderUuid}/cambio_estatus?order_status=Cancelado&metodo_pago=efectivo`;
+    const endpoint = `http://192.168.1.69:8000/orders/orders/${orderUuid}/cambio_estatus?order_status=Cancelado&metodo_pago=efectivo`;
 
     // console.log('Cancelando orden:', endpoint);
 

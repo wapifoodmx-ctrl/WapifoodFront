@@ -1,5 +1,5 @@
 export async function getAnalitics() {
-    const endpoint = 'http://201.137.143.34:8000/analytics/dashboard';
+    const endpoint = 'http://192.168.1.69:8000/analytics/dashboard';
 
     try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');

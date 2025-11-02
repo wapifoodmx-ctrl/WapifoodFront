@@ -11,7 +11,7 @@ async function getIngredienteById(ingredientId) {
         }
 
         // Usar la misma URL base que en otros archivos
-        const url = `https://4db7387f6d3c.ngrok-free.app/inventory/ingredients/${ingredientId}`;
+        const url = `http://192.168.1.69:8001/inventory/ingredients/${ingredientId}`;
         console.log('URL de la petición:', url);
 
         const response = await fetch(url, {
