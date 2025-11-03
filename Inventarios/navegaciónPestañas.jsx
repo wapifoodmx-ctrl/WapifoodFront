@@ -18,32 +18,40 @@ const NavegacionPestañas = ({
 
   // Función para convertir desde la API a unidades de visualización
   const convertirDesdeAPI = (stock, unit) => {
+    // Normalizar a número
+    const stockNum = Number(stock);
+
+    const formatDivided = (value) => {
+      const divided = value / 1000;
+      return parseFloat(divided.toFixed(3));
+    };
+
     switch (unit) {
       case "Gramos":
-        if (stock >= 1000 && stock % 1000 === 0) {
+        if (!isNaN(stockNum) && stockNum >= 1000) {
           return {
-            cantidad: stock / 1000,
+            cantidad: formatDivided(stockNum),
             unidad: "Kilos"
           };
         }
         return {
-          cantidad: stock,
+          cantidad: stockNum,
           unidad: "Gramos"
         };
       case "Mililitros":
-        if (stock >= 1000 && stock % 1000 === 0) {
+        if (!isNaN(stockNum) && stockNum >= 1000) {
           return {
-            cantidad: stock / 1000,
+            cantidad: formatDivided(stockNum),
             unidad: "Litros"
           };
         }
         return {
-          cantidad: stock,
+          cantidad: stockNum,
           unidad: "Mililitros"
         };
       default:
         return {
-          cantidad: stock,
+          cantidad: stockNum,
           unidad: unit
         };
     }

@@ -178,32 +178,44 @@ export default function Inventario() {
 
   // Función para convertir desde la API a unidades de visualización
   const convertirDesdeAPI = (stock, unit) => {
+    // Asegurarse de trabajar con números
+    const stockNum = Number(stock);
+
+    const formatDivided = (value) => {
+      // Dividir entre 1000 y dejar hasta 3 decimales, eliminando ceros innecesarios
+      const divided = value / 1000;
+      // toFixed(3) para asegurar precisión hasta 3 decimales, luego parseFloat quita ceros sobrantes
+      return parseFloat(divided.toFixed(3));
+    };
+
     switch (unit) {
       case "Gramos":
-        if (stock >= 1000 && stock % 1000 === 0) {
+        // Si hay al menos 1000 gramos, mostrar en kilos con decimales (ej. 49850 -> 49.85)
+        if (!isNaN(stockNum) && stockNum >= 1000) {
           return {
-            cantidad: stock / 1000,
+            cantidad: formatDivided(stockNum),
             unidad: "Kilos"
           };
         }
         return {
-          cantidad: stock,
+          cantidad: stockNum,
           unidad: "Gramos"
         };
       case "Mililitros":
-        if (stock >= 1000 && stock % 1000 === 0) {
+        // Si hay al menos 1000 mililitros, mostrar en litros con decimales
+        if (!isNaN(stockNum) && stockNum >= 1000) {
           return {
-            cantidad: stock / 1000,
+            cantidad: formatDivided(stockNum),
             unidad: "Litros"
           };
         }
         return {
-          cantidad: stock,
+          cantidad: stockNum,
           unidad: "Mililitros"
         };
       default:
         return {
-          cantidad: stock,
+          cantidad: stockNum,
           unidad: unit
         };
     }
@@ -454,7 +466,7 @@ export default function Inventario() {
 
       // Verificar conectividad antes de enviar
       try {
-        const testResponse = await fetch('http://192.168.1.69:8000/health', { method: 'GET' });
+        const testResponse = await fetch('http://201.137.143.34:8000/health', { method: 'GET' });
         console.log('Test de conectividad:', testResponse.status);
       } catch (testError) {
         console.error('Error de conectividad:', testError);

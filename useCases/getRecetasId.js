@@ -16,7 +16,7 @@ export const getRecetaById = async (recipeId) => {
             throw new Error('ID de receta es requerido');
         }
 
-        const response = await fetch(`http://192.168.1.69:8001/inventory/recipes/${recipeId}`, {
+        const response = await fetch(`https://bc95be6e78e9.ngrok-free.app/inventory/recipes/${recipeId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
