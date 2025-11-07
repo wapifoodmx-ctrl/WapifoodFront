@@ -8,7 +8,7 @@ export async function checkPayment() {
         }
 
         // Realizar la petición GET
-        const response = await fetch('http://201.137.143.34:8000/payments/check-payment', {
+        const response = await fetch('http://192.168.1.69:8000/payments/check-payment', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

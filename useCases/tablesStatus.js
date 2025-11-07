@@ -42,7 +42,7 @@ export const updateTableStatus = async (tableId, status) => {
         
         // console.log('Parámetros a enviar:', params.toString());
 
-        const response = await fetch('http://201.137.143.34:8000/tables/status', {
+        const response = await fetch('http://192.168.1.69:8000/tables/status', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
