@@ -1,6 +1,6 @@
 
 export async function getUserInfo() {
-    const endpoint = 'http://192.168.1.69:8000/user/me/info';
+    const endpoint = 'http://201.137.212.172:8000/user/me/info';
 
     try {
         // Obtener el token del localStorage o sessionStorage

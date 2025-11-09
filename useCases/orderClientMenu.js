@@ -5,12 +5,12 @@
  * @param {Array<number>} orderData.quantities - Array de cantidades correspondientes
  * @param {number} orderData.table_number - Número de mesa (dinámico)
  * @param {string} [orderData.order_uuid] - UUID opcional de la orden (para pedidos adicionales)
- * @param {string} [orderData.discounts_products] - String con descuentos por producto separados por coma (ej: "10%,0,5.50")
- * @param {string} [orderData.discount_order] - Descuento general de la orden (ej: "15%" o "10.00")
+ * @param {string} [orderData.descuento_details] - String con descuentos por producto separados por coma (ej: "10%,0,5.50")
+ * @param {string} [orderData.descuento] - Descuento general de la orden (ej: "15%" o "10.00")
  * @returns {Promise<Object>} - Respuesta de la API
  */
 export async function createClientOrder(orderData) {
-    const endpoint = 'http://192.168.1.69:8000/orders';
+    const endpoint = 'http://201.137.212.172:8000/orders';
     
     // Validaciones básicas
     if (!orderData.product_ids || !Array.isArray(orderData.product_ids) || orderData.product_ids.length === 0) {
@@ -50,14 +50,14 @@ export async function createClientOrder(orderData) {
             formData.append('order_uuid', orderData.order_uuid.trim());
         }
 
-        // Agregar descuentos por producto si se proporcionan
-        if (orderData.discounts_products) {
-            formData.append('discounts_products', orderData.discounts_products);
+        // Agregar descuentos por producto si se proporcionan (descuento_details)
+        if (orderData.descuento_details) {
+            formData.append('descuento_details', orderData.descuento_details);
         }
 
-        // Agregar descuento general si se proporciona
-        if (orderData.discount_order) {
-            formData.append('discount_order', orderData.discount_order);
+        // Agregar descuento general si se proporciona (descuento)
+        if (orderData.descuento) {
+            formData.append('descuento', orderData.descuento);
         }
 
         const response = await fetch(endpoint, {
@@ -114,8 +114,8 @@ export async function createSimpleClientOrder(productos, tableNumber, orderUuid 
     const product_ids = productos.map(producto => producto.id.toString());
     const quantities = productos.map(producto => producto.cantidad);
 
-    // Generar string de descuentos por producto
-    const discounts_products = productos.map(producto => {
+    // Generar string de descuentos por producto (descuento_details)
+    const descuento_details = productos.map(producto => {
         if (!producto.descuento || producto.descuento.valor === '' || producto.descuento.valor === '0') {
             return '0';
         }
@@ -124,10 +124,10 @@ export async function createSimpleClientOrder(productos, tableNumber, orderUuid 
             : producto.descuento.valor;
     }).join(',');
 
-    // Generar string de descuento de orden
-    let discount_order = '0';
+    // Generar string de descuento de orden (descuento)
+    let descuento = '0';
     if (descuentoOrden && descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0') {
-        discount_order = descuentoOrden.tipo === 'porcentaje' 
+        descuento = descuentoOrden.tipo === 'porcentaje' 
             ? `${descuentoOrden.valor}%` 
             : descuentoOrden.valor;
     }
@@ -137,8 +137,8 @@ export async function createSimpleClientOrder(productos, tableNumber, orderUuid 
         quantities,
         table_number: tableNumber,
         order_uuid: orderUuid,
-        discounts_products,
-        discount_order
+        descuento_details,
+        descuento
     });
 }
 

@@ -11,7 +11,7 @@ async function getOrdersDia() {
       throw new Error('No se encontró token de autenticación');
     }
 
-    const response = await fetch('http://192.168.1.69:8000/orders/orders/ordenes-ultimas-24-hrs', {
+    const response = await fetch('http://201.137.212.172:8000/orders/orders/ordenes-ultimas-24-hrs', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

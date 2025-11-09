@@ -87,8 +87,11 @@ export default function MenuCliente() {
     const [procesandoExitFullscreen, setProcesandoExitFullscreen] = useState(false);
     const [modalConfirmacionCodigoOpen, setModalConfirmacionCodigoOpen] = useState(false);
     const [codigoConfirmacionEsperado, setCodigoConfirmacionEsperado] = useState('');
-    const [isValidatingCode, setIsValidatingCode] = useState(false);
+    const [isValidandoCode, setIsValidandoCode] = useState(false);
     const [errorCodigoConfirmacion, setErrorCodigoConfirmacion] = useState('');
+    
+    // *** AGREGAR ESTE ESTADO AQUÍ ***
+    const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
 
     useEffect(() => {
         localStorage.setItem('tickets', 'true');
@@ -859,16 +862,16 @@ export default function MenuCliente() {
             const productosParaOrden = carrito.map(item => ({
                 id: item.id_products || item.id.split('-')[0],
                 cantidad: item.cantidad,
-                descuento: item.descuento // Incluir descuento del producto
+                descuento: item.descuento
             }));
 
-            // Preparar descuento de orden si existe
-            let descuentoOrden = null;
+            // Usar el descuento que viene de CartModal
+            let descuentoOrdenAPI = null;
             if (descuentos && descuentos.descuentoOrden && descuentos.descuentoOrden !== '0') {
-                const tipoDescuento = descuentos.descuentoOrden.includes('%') ? 'porcentaje' : 'pesos';
+                const esPorcentaje = descuentos.descuentoOrden.includes('%');
                 const valorDescuento = descuentos.descuentoOrden.replace('%', '');
-                descuentoOrden = {
-                    tipo: tipoDescuento,
+                descuentoOrdenAPI = {
+                    tipo: esPorcentaje ? 'porcentaje' : 'pesos',
                     valor: valorDescuento,
                     aplicado: true
                 };
@@ -879,7 +882,7 @@ export default function MenuCliente() {
                 productosParaOrden, 
                 parseInt(numeroMesa),
                 ordenUuid,
-                descuentoOrden // Pasar descuento de orden
+                descuentoOrdenAPI
             );
 
             if (!ordenActiva && numeroMesa) {
@@ -916,6 +919,7 @@ export default function MenuCliente() {
             ]);
 
             setCarrito([]);
+            setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
             await cargarTotalFinal(response.order_uuid);
             setMensajeError("¡Orden enviada exitosamente!");
             
@@ -1103,16 +1107,21 @@ export default function MenuCliente() {
     };
 
     const validarCodigoConfirmacion = async (codigoIngresado) => {
+        if (codigoIngresado !== codigoConfirmacionEsperado) {
+            setErrorCodigoConfirmacion("Código incorrecto. Por favor, intenta nuevamente.");
+            return;
+        }
+
         setIsValidandoCode(true);
         setErrorCodigoConfirmacion("");
 
-        // Validar que el código ingresado coincida con el esperado
-        if (codigoIngresado === codigoConfirmacionEsperado) {
-            // Si el código es correcto, proceder con el pago
+        try {
             await confirmarPago();
-        } else {
+        } catch (error) {
+            console.error('Error al confirmar el pago:', error);
+            setErrorCodigoConfirmacion("Error al procesar el pago. Intenta nuevamente.");
+        } finally {
             setIsValidandoCode(false);
-            setErrorCodigoConfirmacion("Código incorrecto. Por favor verifique e intente nuevamente.");
         }
     };
 
@@ -1490,6 +1499,8 @@ export default function MenuCliente() {
                 mensajeError={mensajeError}
                 isCreatingOrder={isCreatingOrder}
                 ordenActiva={ordenActiva}
+                descuentoOrden={descuentoOrden}
+                setDescuentoOrden={setDescuentoOrden}
                 onClose={() => setCarritoModalOpen(false)}
                 onUpdateQuantity={(id, incremento) => {
                     setCarrito((prevCarrito) =>
@@ -1507,7 +1518,8 @@ export default function MenuCliente() {
                 }}
                 onRealizarPedido={realizarPedido}
                 onTerminarOrden={terminarOrden}
-                onUpdateCart={handleUpdateCart} // ← AGREGAR ESTA LÍNEA
+                onUpdateCart={setCarrito}
+                getCodigoConfirmacion={getCodigoConfirmacion} // Agregar esta línea
             />
 
             <PaymentModal
@@ -1525,7 +1537,7 @@ export default function MenuCliente() {
             <ConfirmationCodeModal
                 isOpen={modalConfirmacionCodigoOpen}
                 codigoEsperado={codigoConfirmacionEsperado}
-                isValidando={isValidatingCode}
+                isValidando={isValidandoCode}
                 mensajeError={errorCodigoConfirmacion}
                 onClose={cerrarModalConfirmacionCodigo}
                 onConfirm={validarCodigoConfirmacion}

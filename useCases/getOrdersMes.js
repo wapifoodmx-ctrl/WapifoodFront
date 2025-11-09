@@ -7,7 +7,7 @@ async function getOrdersMes() {
       throw new Error('No se encontró el token de autenticación');
     }
 
-    const response = await fetch('http://192.168.1.69:8000/orders/orders/ultimo-mes', {
+    const response = await fetch('http://201.137.212.172:8000/orders/orders/ultimo-mes', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

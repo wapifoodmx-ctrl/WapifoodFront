@@ -1,6 +1,6 @@
 
 export async function getPopulares() {
-    const endpoint = 'http://192.168.1.69:8000/products/top';
+    const endpoint = 'http://201.137.212.172:8000/products/top';
 
     try {
         // Obtener el token del localStorage o sessionStorage

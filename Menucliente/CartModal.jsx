@@ -15,9 +15,10 @@ export default function CartModal({
     onRemoveItem, 
     onRealizarPedido,
     onTerminarOrden,
-    onUpdateCart // Nueva prop para actualizar el carrito con descuentos
+    onUpdateCart,
+    getCodigoConfirmacion // Necesitas pasar esta función desde menucliente.jsx
 }) {
-    // Estados para descuentos
+    // Estados existentes...
     const [modalDescuentoOpen, setModalDescuentoOpen] = useState(false);
     const [productoDescuento, setProductoDescuento] = useState(null);
     const [tipoDescuento, setTipoDescuento] = useState('porcentaje');
@@ -25,6 +26,14 @@ export default function CartModal({
     const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
     const [modalDescuentoOrdenOpen, setModalDescuentoOrdenOpen] = useState(false);
     const [errorDescuento, setErrorDescuento] = useState('');
+
+    // Nuevos estados para el modal de confirmación
+    const [modalConfirmacionDescuentoOpen, setModalConfirmacionDescuentoOpen] = useState(false);
+    const [codigoConfirmacionDescuento, setCodigoConfirmacionDescuento] = useState('');
+    const [codigoEsperadoDescuento, setCodigoEsperadoDescuento] = useState('');
+    const [errorCodigoDescuento, setErrorCodigoDescuento] = useState('');
+    const [isValidandoCodigoDescuento, setIsValidandoCodigoDescuento] = useState(false);
+    const [tipoDescuentoEnProceso, setTipoDescuentoEnProceso] = useState(null); // 'producto' o 'orden'
 
     if (!isOpen) return null;
 
@@ -74,7 +83,7 @@ export default function CartModal({
     };
 
     // Función para aplicar descuento a un producto
-    const aplicarDescuentoProducto = () => {
+    const aplicarDescuentoProducto = async () => {
         if (!productoDescuento || valorDescuento === '') return;
 
         const valor = parseFloat(valorDescuento);
@@ -94,38 +103,28 @@ export default function CartModal({
             return;
         }
 
-        // Actualizar carrito con descuento
-        const carritoActualizado = carrito.map(item =>
-            item.id === productoDescuento.id
-                ? {
-                    ...item,
-                    descuento: {
-                        tipo: tipoDescuento,
-                        valor: valorDescuento
-                    }
-                }
-                : item
-        );
-
-        onUpdateCart(carritoActualizado);
-        setModalDescuentoOpen(false);
-        setProductoDescuento(null);
-        setValorDescuento('');
-        setErrorDescuento('');
+        // Solicitar código de confirmación
+        try {
+            setIsValidandoCodigoDescuento(true);
+            const codigoData = await getCodigoConfirmacion();
+            
+            if (codigoData && codigoData.codigo_confirmacion) {
+                setCodigoEsperadoDescuento(codigoData.codigo_confirmacion.toString());
+                setTipoDescuentoEnProceso('producto');
+                setModalConfirmacionDescuentoOpen(true);
+            } else {
+                throw new Error("No se pudo obtener el código de confirmación");
+            }
+        } catch (error) {
+            console.error('Error al obtener código:', error);
+            setErrorDescuento("Error al obtener el código de confirmación. Intente nuevamente.");
+        } finally {
+            setIsValidandoCodigoDescuento(false);
+        }
     };
 
-    // Función para quitar descuento de un producto
-    const quitarDescuentoProducto = (productId) => {
-        const carritoActualizado = carrito.map(item =>
-            item.id === productId
-                ? { ...item, descuento: null }
-                : item
-        );
-        onUpdateCart(carritoActualizado);
-    };
-
-    // Función para aplicar descuento a toda la orden
-    const aplicarDescuentoOrden = () => {
+    // Función actualizada para aplicar descuento a toda la orden
+    const aplicarDescuentoOrden = async () => {
         if (descuentoOrden.valor === '') return;
 
         const valor = parseFloat(descuentoOrden.valor);
@@ -149,9 +148,76 @@ export default function CartModal({
             return;
         }
 
-        setDescuentoOrden(prev => ({ ...prev, aplicado: true }));
-        setModalDescuentoOrdenOpen(false);
+        // Solicitar código de confirmación
+        try {
+            setIsValidandoCodigoDescuento(true);
+            const codigoData = await getCodigoConfirmacion();
+            
+            if (codigoData && codigoData.codigo_confirmacion) {
+                setCodigoEsperadoDescuento(codigoData.codigo_confirmacion.toString());
+                setTipoDescuentoEnProceso('orden');
+                setModalConfirmacionDescuentoOpen(true);
+            } else {
+                throw new Error("No se pudo obtener el código de confirmación");
+            }
+        } catch (error) {
+            console.error('Error al obtener código:', error);
+            setErrorDescuento("Error al obtener el código de confirmación. Intente nuevamente.");
+        } finally {
+            setIsValidandoCodigoDescuento(false);
+        }
+    };
+
+    // Función para validar el código y aplicar el descuento
+    const validarCodigoYAplicarDescuento = () => {
+        if (codigoConfirmacionDescuento !== codigoEsperadoDescuento) {
+            setErrorCodigoDescuento('Código incorrecto. Intenta nuevamente.');
+            return;
+        }
+
+        setErrorCodigoDescuento('');
+
+        if (tipoDescuentoEnProceso === 'producto') {
+            // Aplicar descuento al producto
+            const carritoActualizado = carrito.map(item =>
+                item.id === productoDescuento.id
+                    ? {
+                        ...item,
+                        descuento: {
+                            tipo: tipoDescuento,
+                            valor: valorDescuento
+                        }
+                    }
+                    : item
+            );
+
+            onUpdateCart(carritoActualizado);
+            setModalDescuentoOpen(false);
+            setProductoDescuento(null);
+            setValorDescuento('');
+        } else if (tipoDescuentoEnProceso === 'orden') {
+            // Aplicar descuento a la orden
+            setDescuentoOrden(prev => ({ ...prev, aplicado: true }));
+            setModalDescuentoOrdenOpen(false);
+        }
+
+        // Cerrar modal de confirmación y limpiar estados
+        setModalConfirmacionDescuentoOpen(false);
+        setCodigoConfirmacionDescuento('');
+        setCodigoEsperadoDescuento('');
+        setTipoDescuentoEnProceso(null);
         setErrorDescuento('');
+    };
+
+    // Función para cerrar el modal de confirmación
+    const cerrarModalConfirmacionDescuento = () => {
+        if (isValidandoCodigoDescuento) return;
+        
+        setModalConfirmacionDescuentoOpen(false);
+        setCodigoConfirmacionDescuento('');
+        setCodigoEsperadoDescuento('');
+        setErrorCodigoDescuento('');
+        setTipoDescuentoEnProceso(null);
     };
 
     // Función para obtener descuentos para la API
@@ -171,6 +237,19 @@ export default function CartModal({
                     : descuentoOrden.valor)
                 : '0'
         };
+    };
+
+    // Agregar esta función después de validarCodigoYAplicarDescuento y antes del return
+    const quitarDescuentoProducto = (idProducto) => {
+        const carritoActualizado = carrito.map(item =>
+            item.id === idProducto
+                ? {
+                    ...item,
+                    descuento: null
+                }
+                : item
+        );
+        onUpdateCart(carritoActualizado);
     };
 
     return (
@@ -662,6 +741,98 @@ export default function CartModal({
                             >
                                 Cancelar
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de confirmación de código para descuentos */}
+            {modalConfirmacionDescuentoOpen && (
+                <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10002]" onClick={(e) => {
+                    if (e.target === e.currentTarget && !isValidandoCodigoDescuento) {
+                        cerrarModalConfirmacionDescuento();
+                    }
+                }}>
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 w-11/12 md:w-96 shadow-2xl border border-green-100" onClick={(e) => e.stopPropagation()}>
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Código de Autorización</h2>
+                            <p className="text-gray-600 mt-2">
+                                Ingresa el código de 4 dígitos para autorizar el descuento
+                            </p>
+                        </div>
+
+                        {errorCodigoDescuento && (
+                            <div className="bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    {errorCodigoDescuento}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                                Código de Seguridad
+                            </label>
+                            <input
+                                type="text"
+                                value={codigoConfirmacionDescuento}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (/^\d{0,4}$/.test(value)) {
+                                        setCodigoConfirmacionDescuento(value);
+                                        if (errorCodigoDescuento) {
+                                            setErrorCodigoDescuento('');
+                                        }
+                                    }
+                                }}
+                                placeholder="****"
+                                maxLength="4"
+                                className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all duration-200 text-center text-2xl font-mono tracking-widest"
+                                autoFocus
+                                disabled={isValidandoCodigoDescuento}
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <button 
+                                type="button"
+                                onClick={validarCodigoYAplicarDescuento}
+                                disabled={codigoConfirmacionDescuento.length !== 4 || isValidandoCodigoDescuento}
+                                className={`w-full px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                                    codigoConfirmacionDescuento.length === 4 && !isValidandoCodigoDescuento
+                                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
+                            >
+                                {isValidandoCodigoDescuento ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <svg className="animate-spin h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        Validando...
+                                    </span>
+                                ) : '✓ Confirmar y Aplicar'}
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={cerrarModalConfirmacionDescuento}
+                                disabled={isValidandoCodigoDescuento}
+                                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colores disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+
+                        <div className="mt-4 text-center text-xs text-gray-500">
+                            El código de autorización es necesario para aplicar descuentos
                         </div>
                     </div>
                 </div>
