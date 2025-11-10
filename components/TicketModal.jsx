@@ -18,9 +18,7 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
         setLoading(true);
         setError('');
         try {
-            // console.log('Fetching ticket data for UUID:', orderUuid);
             const data = await getTicket(orderUuid);
-            // console.log('Ticket data received:', data);
             setTicketData(data);
         } catch (err) {
             console.error('Error al obtener datos del ticket:', err);
@@ -30,7 +28,45 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
         }
     };
 
-    // Verificar si debe mostrar el modal basado en localStorage
+    // Calcular descuentos por producto
+    const calculateProductDiscount = (product) => {
+        const quantity = parseFloat(product.quantity);
+        const unitPrice = parseFloat(product.unit_price);
+        const subtotal = parseFloat(product.subtotal);
+        const expectedTotal = quantity * unitPrice;
+
+        if (subtotal < expectedTotal) {
+            return {
+                hasDiscount: true,
+                originalPrice: expectedTotal,
+                discount: expectedTotal - subtotal
+            };
+        }
+
+        return { hasDiscount: false };
+    };
+
+    // Calcular descuento en el total
+    const calculateTotalDiscount = () => {
+        if (!ticketData) return { hasDiscount: false };
+
+        const productsTotal = ticketData.products.reduce((sum, product) => {
+            return sum + parseFloat(product.subtotal);
+        }, 0);
+
+        const orderTotal = parseFloat(ticketData.total);
+
+        if (orderTotal < productsTotal) {
+            return {
+                hasDiscount: true,
+                originalTotal: productsTotal,
+                discount: productsTotal - orderTotal
+            };
+        }
+
+        return { hasDiscount: false };
+    };
+
     const shouldShowModal = () => {
         try {
             const ticketsEnabled = localStorage.getItem('tickets');
@@ -43,10 +79,11 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
 
     if (!isOpen || !shouldShowModal()) return null;
 
+    const totalDiscountInfo = ticketData ? calculateTotalDiscount() : { hasDiscount: false };
+
     return (
         <div className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000]">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto relative shadow-2xl">
-                {/* Botón de cerrar */}
                 <button
                     className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl z-10"
                     onClick={onClose}
@@ -54,7 +91,6 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                     <IoClose />
                 </button>
 
-                {/* Título */}
                 <h2 className="text-xl font-bold mb-6 text-center pr-8">
                     Ticket generado para imprimir
                 </h2>
@@ -75,16 +111,12 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                     </div>
                 ) : ticketData ? (
                     <>
-                        {/* Contenido del ticket */}
                         <div className="border-2 border-dashed border-gray-300 p-4 mb-6">
-                            {/* Información del restaurante */}
                             <div className="text-center mb-4 border-b pb-4">
                                 <h3 className="font-bold text-lg">{ticketData.restaurant_name || 'WapiFood'}</h3>
                             </div>
 
-                            {/* Información de la orden */}
                             <div className="mb-4">
-                                
                                 <div className="flex justify-between text-sm">
                                     <span>Ticket</span>
                                     <span className="font-mono text-sm">#{ticketData.ticket_number}</span>
@@ -106,21 +138,55 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                             {/* Productos */}
                             <div className="mb-4">
                                 <h4 className="font-bold mb-2 border-b pb-1">Productos:</h4>
-                                {ticketData.products?.map((product, index) => (
-                                    <div key={index} className="mb-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="flex-1">{product.quantity}x {product.product_name}</span>
-                                            <span className="font-semibold">${parseFloat(product.subtotal).toFixed(2)}</span>
+                                {ticketData.products?.map((product, index) => {
+                                    const discountInfo = calculateProductDiscount(product);
+                                    
+                                    return (
+                                        <div key={index} className="mb-3">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="flex-1">{product.quantity}x {product.product_name}</span>
+                                                <span className="font-semibold">${parseFloat(product.subtotal).toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs text-gray-500 ml-4">
+                                                {discountInfo.hasDiscount ? (
+                                                    <>
+                                                        <span>
+                                                            <span className="line-through text-red-500">
+                                                                ${discountInfo.originalPrice.toFixed(2)}
+                                                            </span>
+                                                            {' '}
+                                                            <span className="text-green-600 font-semibold">
+                                                                Descuento: ${discountInfo.discount.toFixed(2)}
+                                                            </span>
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <span>Precio unitario: ${parseFloat(product.unit_price).toFixed(2)}</span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between text-xs text-gray-500 ml-4">
-                                            <span>Precio unitario: ${parseFloat(product.unit_price).toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Total */}
                             <div className="border-t pt-2 mb-4">
+                                {totalDiscountInfo.hasDiscount && (
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span>Subtotal:</span>
+                                        <span className="line-through text-red-500">
+                                            ${totalDiscountInfo.originalTotal.toFixed(2)}
+                                        </span>
+                                    </div>
+                                )}
+                                {totalDiscountInfo.hasDiscount && (
+                                    <div className="flex justify-between text-sm mb-1 text-green-600">
+                                        <span className="font-semibold">Descuento aplicado:</span>
+                                        <span className="font-semibold">
+                                            -${totalDiscountInfo.discount.toFixed(2)}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between font-bold text-lg">
                                     <span>Total:</span>
                                     <span>${parseFloat(ticketData.total).toFixed(2)}</span>
@@ -147,14 +213,12 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                                 </p>
                             </div>
 
-                            {/* Pie del ticket */}
                             <div className="text-center mt-4 pt-2 border-t text-xs text-gray-500">
                                 <p>¡Gracias por su visita!</p>
                                 <p>Conserve este ticket como comprobante</p>
                             </div>
                         </div>
 
-                        {/* Botón para cerrar */}
                         <div className="text-center">
                             <button
                                 className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-6 rounded transition-colors"

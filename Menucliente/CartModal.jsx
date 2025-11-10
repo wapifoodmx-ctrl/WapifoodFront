@@ -370,7 +370,12 @@ export default function CartModal({
                             </div>
                             {/* Botón de descuento general */}
                             <div className="pt-2 border-t border-green-200">
-                                <button onClick={() => setModalDescuentoOrdenOpen(true)} className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colores">
+                                <button onClick={() => {
+    // Limpiar los campos del modal antes de abrirlo
+    setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
+    setErrorDescuento('');
+    setModalDescuentoOrdenOpen(true);
+}} className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colores">
                                     {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Aplicar Descuento General'}
                                 </button>
                                 {descuentoOrden.aplicado && (
