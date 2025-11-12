@@ -19,7 +19,7 @@ async function updateProductStatus(orderUuid, idOrdersDetails, orderDetailStatus
     throw new Error('Token de autenticación no encontrado');
   }
 
-  const url = `http://201.137.212.172:8000/orders/orders/${orderUuid}/cambio_details_status`;
+  const url = `http://192.168.1.69:8000/orders/orders/${orderUuid}/cambio_details_status`;
 
   // Convertir a string si es array (separado por comas)
   const idsString = Array.isArray(idOrdersDetails) 

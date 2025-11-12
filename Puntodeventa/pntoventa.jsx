@@ -1,5 +1,6 @@
 import { FaCreditCard } from "react-icons/fa";
 import { BsCashCoin } from "react-icons/bs";
+import { IoMdPhonePortrait } from "react-icons/io";
 import Navbar from "@/dashboardComponents/navbar";
 import { IoTrashOutline } from "react-icons/io5";
 import { BsTag } from "react-icons/bs";
@@ -1344,7 +1345,7 @@ export default function Pntoventa() {
                                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                    </svg>
+                                        </svg>
                                 </div>
                                 <h2 className="text-2xl font-bold text-gray-800">Confirmar Pago</h2>
                             </div>
@@ -1352,7 +1353,7 @@ export default function Pntoventa() {
                             {/* Métodos de pago */}
                             <div className="mb-6">
                                 <h3 className="text-lg font-semibold text-gray-700 mb-4">Seleccionar método de pago:</h3>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-3 gap-3">
                                     <button 
                                         className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
                                             metodoPago === 'efectivo' 
@@ -1377,6 +1378,18 @@ export default function Pntoventa() {
                                         <FaCreditCard className="text-3xl mb-2"/>
                                         <span className="font-medium">Tarjeta</span>
                                     </button>
+                                    <button 
+                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                                            metodoPago === 'pasarela' 
+                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
+                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
+                                        } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        onClick={() => !isProcessingPayment && setMetodoPago('pasarela')}
+                                        disabled={isProcessingPayment}
+                                    >
+                                        <IoMdPhonePortrait className="text-3xl mb-2"/>
+                                        <span className="font-medium">Aplicación</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1390,7 +1403,7 @@ export default function Pntoventa() {
                                         ${parseFloat(totalPedidos).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </p>
                                     <p className="text-sm text-green-700 mt-2">
-                                        Método: <span className="font-semibold capitalize">{metodoPago}</span>
+                                        Método: <span className="font-semibold capitalize">{metodoPago === 'pasarela' ? 'Aplicación' : metodoPago}</span>
                                     </p>
                                 </div>
                             </div>
@@ -1530,7 +1543,7 @@ export default function Pntoventa() {
                             >
                                 {/* Imagen del producto */}
                                 <div className="relative h-48 overflow-hidden">
-                                    <img
+                                                                       <img
                                         src={producto.image_url[0]}
                                         alt={`Imagen de ${producto.name}`}
                                         className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${producto.status !== "activo" ? "opacity-50" : ""}`}

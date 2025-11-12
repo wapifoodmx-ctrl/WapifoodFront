@@ -31,7 +31,7 @@ export const postInventarioIngredientes = async (ingredientData) => {
       formData.append('category', ingredientData.category);
     }
 
-    const response = await fetch('https://755a46a10dc5.ngrok-free.app/docs/inventory/ingredients/', {
+    const response = await fetch('http://192.168.1.69:8001/docs/inventory/ingredients/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

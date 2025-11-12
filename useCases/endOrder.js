@@ -8,12 +8,12 @@ export const endOrder = async (orderUuid, metodoPago) => {
         }
 
         // Validar método de pago
-        if (!['efectivo', 'tarjeta'].includes(metodoPago)) {
-            throw new Error('Método de pago no válido. Debe ser "efectivo" o "tarjeta"');
+        if (!['efectivo', 'tarjeta', 'pasarela'].includes(metodoPago)) {
+            throw new Error('Método de pago no válido. Debe ser "efectivo", "tarjeta" o "pasarela"');
         }
 
         // Construir la URL con los parámetros de query
-        const endpoint = `http://201.137.212.172:8000/orders/orders/${orderUuid}/cambio_estatus?order_status=Finalizado&metodo_pago=${metodoPago}`;
+        const endpoint = `http://192.168.1.69:8000/orders/orders/${orderUuid}/cambio_estatus?order_status=Finalizado&metodo_pago=${metodoPago}`;
 
         const response = await fetch(endpoint, {
             method: 'PUT',

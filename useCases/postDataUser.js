@@ -44,7 +44,7 @@ export async function postDataUser(userInfo, imageFile) {
         throw new Error("No se encontró un token de autenticación. Por favor, inicia sesión.");
     }
 
-    const url = "http://201.137.212.172:8000/user/me/info";
+    const url = "http://192.168.1.69:8000/user/me/info";
 
     // console.log("URL de la solicitud:", url);
     // console.log("Datos enviados (formData):", Object.fromEntries(formData.entries())); // Log form data

@@ -1,5 +1,5 @@
 export async function deleteProduct(productId) {
-    const endpoint = `http://201.137.212.172:8000/products/${productId}`;
+    const endpoint = `http://192.168.1.69:8000/products/${productId}`;
 
     try {
         // Obtener el token del localStorage o sessionStorage

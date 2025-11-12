@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCreditCard, FaMobileAlt } from "react-icons/fa";
+import { FaCreditCard } from "react-icons/fa";
 import { BsCashCoin } from "react-icons/bs";
 
 export default function PaymentModal({ 
@@ -37,7 +37,7 @@ export default function PaymentModal({
 
                 <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-700 mb-4">Seleccionar método de pago:</h3>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                         <button 
                             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
                                 metodoPago === 'efectivo' 
@@ -48,7 +48,7 @@ export default function PaymentModal({
                             disabled={isProcessingPayment}
                         >
                             <BsCashCoin className="text-3xl mb-2"/>
-                            <span className="font-medium text-sm">Efectivo</span>
+                            <span className="font-medium">Efectivo</span>
                         </button>
                         <button 
                             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
@@ -60,19 +60,7 @@ export default function PaymentModal({
                             disabled={isProcessingPayment}
                         >
                             <FaCreditCard className="text-3xl mb-2"/>
-                            <span className="font-medium text-sm">Tarjeta</span>
-                        </button>
-                        <button 
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                metodoPago === 'pasarela' 
-                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
-                                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                            } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            onClick={() => !isProcessingPayment && onSelectMetodoPago('pasarela')}
-                            disabled={isProcessingPayment}
-                        >
-                            <FaMobileAlt className="text-3xl mb-2"/>
-                            <span className="font-medium text-sm">Aplicación</span>
+                            <span className="font-medium">Tarjeta</span>
                         </button>
                     </div>
                 </div>
@@ -86,14 +74,10 @@ export default function PaymentModal({
                             ${parseFloat(totalPedidos).toFixed(2)}
                         </p>
                         <p className="text-sm text-green-700 mt-2">
-                            Método: <span className="font-semibold capitalize">
-                                {metodoPago === 'pasarela' ? 'Aplicación' : metodoPago}
-                            </span>
+                            Método: <span className="font-semibold capitalize">{metodoPago}</span>
                         </p>
                     </div>
                 </div>
-
-              
 
                 {mensajeError && (
                     <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${
@@ -138,7 +122,7 @@ export default function PaymentModal({
 
                     {mensajeError && !mensajeError.includes('exitosamente') && (
                         <button
-                            className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colores"
+                            className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
                             onClick={onClose}
                             disabled={isProcessingPayment}
                         >
