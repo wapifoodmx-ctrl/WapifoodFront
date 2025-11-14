@@ -14,6 +14,7 @@ import { checkPayment } from "../../useCases/checkPayment";
 // Importaciones para el selector de fecha
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import TicketModal from "../../components/TicketModal";
 
 export default function Ticketview() {
     const router = useRouter();
@@ -218,7 +219,7 @@ export default function Ticketview() {
                             nombre: product.product_name,
                             cantidad: product.quantity,
                             precio: parseFloat(product.unit_price),
-                            subtotal: parseFloat(product.subtotal),
+                            subtotal: parseFloat(order.subtotal),
                             status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase(),
                             // Formato para ticket
                             quantity: product.quantity,
@@ -912,165 +913,15 @@ export default function Ticketview() {
             )}
 
             {/* Modal principal del ticket */}
-            {isModalOpen && selectedTicket && (
-                <div
-                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[10000] p-4"
-                    onClick={() => setIsModalOpen(false)}
-                >
-                    <div
-                        className="bg-white rounded-lg w-full max-w-sm h-[70vh] overflow-hidden relative shadow-2xl flex flex-col"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Botón de cerrar (X) */}
-                        <button
-                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl z-10 p-1 bg-white rounded-full shadow-md"
-                            onClick={() => setIsModalOpen(false)}
-                        >
-                            <IoClose />
-                        </button>
-
-                        {/* Título */}
-                        <div className="p-3 pb-2 text-center border-b flex-shrink-0">
-                            <h2 className="text-base font-bold pr-8">
-                                Ticket de Venta
-                            </h2>
-                        </div>
-
-                        {/* Contenido del ticket - scrollable */}
-                        <div className="flex-1 overflow-y-auto p-3 min-h-0">
-                            <div className="border-2 border-dashed border-gray-300 p-3 bg-gray-50">
-                                {/* Información del restaurante */}
-                                <div className="text-center mb-3 pb-2 border-b border-gray-300">
-                                    <h3 className="font-bold text-sm leading-tight">
-                                        {selectedTicket.restaurant_name || selectedTicket.restaurante}
-                                    </h3>
-                                </div>
-
-                                {/* Información de la orden */}
-                                <div className="mb-3 space-y-1 text-xs">
-                                    <div className="flex justify-between">
-                                        <span className="font-medium">Ticket:</span>
-                                        <span className="font-mono text-xs">
-                                            #{selectedTicket.ticket_number || selectedTicket.id?.slice(0, 8) || 'N/A'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="font-medium">Mesa:</span>
-                                        <span>{selectedTicket.mesa}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="font-medium">Fecha:</span>
-                                        <span>{selectedTicket.fecha}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="font-medium">Hora:</span>
-                                        <span>{selectedTicket.hora}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="font-medium">Estado:</span>
-                                        <span className="font-semibold text-green-600">
-                                            {selectedTicket.order_status || selectedTicket.statusOrden}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Productos - Con scroll independiente */}
-                                <div className="mb-3">
-                                    <h4 className="font-bold text-xs mb-2 pb-1 border-b border-gray-300">
-                                        PRODUCTOS ({selectedTicket.productos?.length || 0})
-                                    </h4>
-                                    
-                                    {/* Contenedor de productos con altura fija y scroll */}
-                                    <div className="max-h-32 overflow-y-auto space-y-2 border border-gray-200 rounded p-2 bg-white">
-                                        {selectedTicket.productos?.map((product, index) => (
-                                            <div key={index} className="bg-gray-50 p-2 rounded border">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1 min-w-0 pr-2">
-                                                        <div className={`text-xs font-medium leading-tight ${
-                                                            product.status === "cancelado" ? "text-red-500 line-through" : ""
-                                                        }`}>
-                                                            {product.product_name || product.nombre}
-                                                        </div>
-                                                        <div className="text-xs text-gray-500 mt-0.5">
-                                                            {product.quantity || product.cantidad} × ${(parseFloat(product.unit_price) || product.precio).toFixed(2)}
-                                                        </div>
-                                                    </div>
-                                                    <div className={`text-xs font-bold flex-shrink-0 ${
-                                                        product.status === "cancelado" ? "text-red-500 line-through" : "text-green-600"
-                                                    }`}>
-                                                        ${(parseFloat(product.subtotal) || (product.cantidad * product.precio)).toFixed(2)}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    
-                                    {/* Indicador de scroll si hay muchos productos */}
-                                    {selectedTicket.productos?.length > 3 && (
-                                        <div className="text-center mt-1">
-                                            <span className="text-xs text-gray-500">
-                                                ↕ Desliza para ver todos los productos
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Total */}
-                                <div className="border-t border-gray-300 pt-2 mb-3">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="font-bold text-sm">TOTAL:</span>
-                                        <span className="font-bold text-lg text-green-600">
-                                            ${getTicketTotal(selectedTicket).toFixed(2)}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span>Método de pago:</span>
-                                        <span className="capitalize font-medium">
-                                            {selectedTicket.metodo_pago || selectedTicket.metodoPago}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Código QR */}
-                                <div className="text-center py-2 border-t border-gray-300">
-                                    <p className="text-xs text-gray-600 mb-2">Código QR para impresión</p>
-                                    <div className="flex justify-center mb-2">
-                                        <QRCodeCanvas
-                                            value={selectedTicket.order_uuid || selectedTicket.id}
-                                            size={80}
-                                            level="M"
-                                            includeMargin={true}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-gray-500 leading-tight">
-                                        Escanea con tu dispositivo móvil para imprimir
-                                    </p>
-                                </div>
-
-                                {/* Pie del ticket */}
-                                <div className="text-center mt-3 pt-2 border-t border-gray-300">
-                                    <div className="text-xs text-gray-600 space-y-0.5">
-                                        <p className="font-medium">¡Gracias por su visita!</p>
-                                        <p>Conserve este ticket como comprobante</p>
-                                        <p className="text-gray-500 mt-1">
-                                            {new Date().toLocaleString()}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Botón de cerrar - fijo en la parte inferior */}
-                        <div className="p-3 border-t bg-white flex-shrink-0">
-                            <button
-                                className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-3 rounded transition-colors text-sm font-medium"
-                                onClick={() => setIsModalOpen(false)}
-                            >
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            {isModalOpen && (
+                <TicketModal
+                    isOpen={isModalOpen}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedTicket(null);
+                    }}
+                    orderUuid={selectedTicket?.order_uuid || selectedTicket?.id}
+                />
             )}
         </div>
     );
