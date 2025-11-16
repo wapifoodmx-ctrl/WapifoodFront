@@ -136,7 +136,7 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                     </button>
 
                     <div className="flex items-center justify-between mb-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full mb-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full mb-0 mt-6">
                             {/* Reservar espacio a la derecha para el botón de cerrar */}
                             <h2 className="text-lg font-semibold text-gray-800">
                                 Ticket listo para imprimir

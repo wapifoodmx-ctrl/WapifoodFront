@@ -600,11 +600,11 @@ export default function Ticketview() {
                                                     >
                                                         <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col relative">
                                                             {/* Número de ticket en la esquina superior derecha */}
-                                                            <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded z-10">
+                                                            <div className="absolute top-2 right-4 sm:right-8 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded z-20">
                                                                 #{ticket.ticket_number || 'N/A'}
                                                             </div>
                                                             
-                                                            <div className="p-3 flex-grow flex flex-col overflow-hidden">
+                                                            <div className="p-3 pr-10 flex-grow flex flex-col overflow-hidden">
                                                                 {/* Header fijo */}
                                                                 <div className="flex items-center mb-2 flex-shrink-0">
                                                                     <p className="font-bold text-base truncate">{ticket.mesa}</p>
@@ -695,11 +695,11 @@ export default function Ticketview() {
                                 >
                                     <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col relative">
                                         {/* Número de ticket en la esquina superior derecha */}
-                                        <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded z-10">
+                                        <div className="absolute top-2 right-4 sm:right-8 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded z-20">
                                             #{ticket.ticket_number || 'N/A'}
                                         </div>
                                         
-                                        <div className="p-3 flex-grow flex flex-col overflow-hidden">
+                                        <div className="p-3 pr-10 flex-grow flex flex-col overflow-hidden">
                                             {/* Header fijo */}
                                             <div className="flex items-center mb-2 flex-shrink-0">
                                                 <p className="font-bold text-base truncate">{ticket.mesa}</p>
