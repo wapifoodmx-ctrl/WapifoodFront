@@ -1,20 +1,19 @@
-import { FaCreditCard } from "react-icons/fa";
-import { BsCashCoin } from "react-icons/bs";
-import { IoMdPhonePortrait } from "react-icons/io";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import Navbar from "@/dashboardComponents/navbar";
-import { IoTrashOutline } from "react-icons/io5";
 import { BsTag } from "react-icons/bs";
 import { FiFilter } from "react-icons/fi";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FaShoppingCart } from "react-icons/fa";
 import { FaPercent, FaDollarSign } from "react-icons/fa";
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/router";
 import { getProducts } from "@/useCases/getProducts";
 import { createSimpleOrder } from "@/useCases/OrderPntoVenta";
-import TicketModal from "@/components/TicketModal";
 import { endOrderPuntoDeVenta } from "@/useCases/endOrderPuntoDeVenta";
 import { checkPayment } from "@/useCases/checkPayment";
+import TicketModal from "@/components/TicketModal";
+import CarritoModal from "./CarritoModal";
+import { ModalConfirmarPago, ModalDescuentoProducto, ModalDescuentoOrden, ModalSuscripcion, ModalOrdenCancelada } from "./ModalsPago";
+import ProductoCard, { ModalProducto } from "./ProductoCard";
 
 export default function Pntoventa() {
     const router = useRouter();
@@ -34,30 +33,21 @@ export default function Pntoventa() {
     const [metodoPago, setMetodoPago] = useState('efectivo');
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-    // Estado para el contador
     const [countdown, setCountdown] = useState(10);
-    
-    // Estados para el TicketModal
     const [showTicketModal, setShowTicketModal] = useState(false);
     const [completedOrderUuid, setCompletedOrderUuid] = useState(null);
-
-    // Estado para pedidos pendientes (no enviados a cocina)
     const [pedidosPendientes, setPedidosPendientes] = useState([]);
     const [showCancelledOrderModal, setShowCancelledOrderModal] = useState(false);
-
-    // Nuevos estados para descuentos
     const [modalDescuentoOpen, setModalDescuentoOpen] = useState(false);
     const [productoDescuento, setProductoDescuento] = useState(null);
-    const [tipoDescuento, setTipoDescuento] = useState('porcentaje'); // 'porcentaje' o 'pesos'
+    const [tipoDescuento, setTipoDescuento] = useState('porcentaje');
     const [valorDescuento, setValorDescuento] = useState('');
     const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
     const [modalDescuentoOrdenOpen, setModalDescuentoOrdenOpen] = useState(false);
 
     // Mock para establecer permisos de ticket automáticamente
     useEffect(() => {
-        // Establecer permisos de ticket para testing
         localStorage.setItem('tickets', 'true');
-        // console.log('Permisos de ticket establecidos automáticamente');
     }, []);
 
     // Recuperar datos del localStorage al cargar la página
@@ -86,7 +76,6 @@ export default function Pntoventa() {
     useEffect(() => {
         const fetchProductos = async () => {
             try {
-                // Verificar suscripción primero
                 const subscriptionData = await checkPayment();
                 if (!subscriptionData.has_active_subscription) {
                     setShowSubscriptionModal(true);
@@ -109,7 +98,7 @@ export default function Pntoventa() {
     // Función para ir a la página de pagos
     const handleGoToPayments = () => {
         setShowSubscriptionModal(false);
-        setCountdown(10); // Resetear contador
+        setCountdown(10);
         router.push('/payments');
     };
 
@@ -254,33 +243,11 @@ export default function Pntoventa() {
         setMensajeError('');
     };
 
-    // Función para generar string de descuentos por producto para la API
-    const generarDescuentosProductos = (productos) => {
-        return productos.map(producto => {
-            if (!producto.descuento || producto.descuento.valor === '' || producto.descuento.valor === '0') {
-                return '0';
-            }
-            return producto.descuento.tipo === 'porcentaje' 
-                ? `${producto.descuento.valor}%` 
-                : producto.descuento.valor;
-        }).join(',');
-    };
-
-    // Función para generar string de descuento de orden para la API
-    const generarDescuentoOrden = () => {
-        if (!descuentoOrden.aplicado || descuentoOrden.valor === '' || descuentoOrden.valor === '0') {
-            return '0';
-        }
-        return descuentoOrden.tipo === 'porcentaje' 
-            ? `${descuentoOrden.valor}%` 
-            : descuentoOrden.valor;
-    };
-
     const agregarAlCarrito = (producto) => {
         const productoConPersonalizacion = {
             ...producto,
             id: producto.id_products,
-            descuento: null, // Inicializar sin descuento
+            descuento: null,
         };
 
         setCarrito((prevCarrito) => {
@@ -307,15 +274,14 @@ export default function Pntoventa() {
         setMensajeError("");
 
         try {
-            // Mover productos del carrito a pedidos pendientes con descuentos
             setPedidosPendientes((prevPendientes) => [
                 ...prevPendientes,
                 ...carrito.map((item) => ({
                     id_products: item.id_products,
                     name: item.name,
                     cantidad: item.cantidad,
-                    price: item.price, // Precio original
-                    descuento: item.descuento, // Información del descuento
+                    price: item.price,
+                    descuento: item.descuento,
                     fechaAgregado: new Date().toISOString()
                 })),
             ]);
@@ -335,20 +301,18 @@ export default function Pntoventa() {
         }
     };
 
-    // Función para abrir modal de pago (Finalizar Orden - botón morado/amarillo)
+    // Función para abrir modal de pago (Finalizar Orden)
     const finalizarTodasOrdenes = async () => {
         if (pedidosPendientes.length === 0) {
             setMensajeError("No hay pedidos para finalizar. Realiza al menos un pedido primero.");
             return;
         }
 
-        // Calcular total con descuentos de productos
         const subtotalConDescuentos = pedidosPendientes.reduce((total, item) => {
             const precioConDescuento = calcularPrecioConDescuento(item);
             return total + (precioConDescuento * item.cantidad);
         }, 0);
 
-        // Aplicar descuento de orden si existe
         let totalFinal = subtotalConDescuentos;
         if (descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0') {
             const valorDesc = parseFloat(descuentoOrden.valor);
@@ -379,9 +343,6 @@ export default function Pntoventa() {
         setMensajeError("");
 
         try {
-            // console.log(`Procesando pago con ${metodoPago} por $${totalPedidos}`);
-            
-            // Crear la orden en el sistema usando pedidosPendientes, NO carrito
             const response = await createSimpleOrder(
                 pedidosPendientes.map(item => ({
                     id: item.id_products,
@@ -392,16 +353,12 @@ export default function Pntoventa() {
                 descuentoOrden.aplicado ? descuentoOrden : null,
                 metodoPago
             );
-            // console.log('Orden creada en cocina:', response);
 
-            // Obtener el estado del switch de cocina
             const cocinaEnabled = localStorage.getItem('cocinaSwitch');
             const switchEnabled = cocinaEnabled ? JSON.parse(cocinaEnabled) : false;
             
             const orderStatus = switchEnabled ? 'PuntoDeVenta' : 'Finalizado';
-            // console.log(`Estado de la orden será: ${orderStatus} (Switch cocina: ${switchEnabled ? 'ON' : 'OFF'})`);
 
-            // Finalizar con el pago
             const pagoResponse = await endOrderPuntoDeVenta(
                 response.order_uuid, 
                 metodoPago, 
@@ -415,14 +372,10 @@ export default function Pntoventa() {
             );
             
             if (pagoResponse && (pagoResponse.success !== false)) {
-                // console.log('Pago procesado exitosamente:', pagoResponse);
-                
-                // Limpiar todo después del éxito
                 setPedidosPendientes([]);
                 localStorage.removeItem("pedidosPendientes");
                 localStorage.removeItem("carrito");
                 
-                // Resetear descuentos
                 setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
                 
                 setModalTotalOpen(false);
@@ -434,7 +387,6 @@ export default function Pntoventa() {
                 
                 setMensajeError(mensajeExito);
                 
-                // *** MOSTRAR TICKET SIEMPRE SI ESTÁ HABILITADO ***
                 const ticketsEnabled = localStorage.getItem('tickets');
                 if (ticketsEnabled === 'true') {
                     setCompletedOrderUuid(response.order_uuid);
@@ -524,7 +476,6 @@ export default function Pntoventa() {
                 setCountdown(prev => prev - 1);
             }, 1000);
         } else if (showSubscriptionModal && countdown === 0) {
-            // Cuando llegue a 0, redirigir automáticamente
             handleGoToPayments();
         }
 
@@ -535,7 +486,6 @@ export default function Pntoventa() {
         };
     }, [showSubscriptionModal, countdown]);
 
-    // Función para resetear el contador cuando se abre la modal
     useEffect(() => {
         if (showSubscriptionModal) {
             setCountdown(10);
@@ -555,342 +505,54 @@ export default function Pntoventa() {
             </div>
 
             <section className="relative z-10 pt-4 pb-8">
-                {/* Modal de orden cancelada */}
-                {showCancelledOrderModal && (
-                    <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10000]">
-                        <div className="bg-white rounded-2xl p-8 w-11/12 md:w-1/3 shadow-2xl border border-red-100">
-                            <div className="text-center">
-                                <div className="mb-6">
-                                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center">
-                                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <h2 className="text-2xl font-bold mb-4 text-red-600">Orden Cancelada</h2>
-                                <p className="text-gray-700 mb-8 leading-relaxed">
-                                    La orden ha sido cancelada desde cocina. No es posible procesar el pago.
-                                    Se limpiarán todos los datos relacionados con esta orden.
-                                </p>
-                                <button
-                                    onClick={limpiarOrdenCancelada}
-                                    className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
-                                >
-                                    Entendido
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Modales */}
+                <ModalOrdenCancelada
+                    isOpen={showCancelledOrderModal}
+                    onLimpiar={limpiarOrdenCancelada}
+                />
 
-                {/* Modal de suscripción con contador */}
-                {showSubscriptionModal && (
-                    <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl border border-green-100">
-                            {/* Contador circular en la parte superior */}
-                            <div className="flex justify-center mb-4">
-                                <div className="relative w-16 h-16">
-                                    <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
-                                        {/* Círculo de fondo */}
-                                        <circle
-                                            cx="32"
-                                            cy="32"
-                                            r="28"
-                                            fill="none"
-                                            stroke="#e5e7eb"
-                                            strokeWidth="4"
-                                        />
-                                        {/* Círculo de progreso */}
-                                        <circle
-                                            cx="32"
-                                            cy="32"
-                                            r="28"
-                                            fill="none"
-                                            stroke="#059669"
-                                            strokeWidth="4"
-                                            strokeLinecap="round"
-                                            strokeDasharray={`${(countdown / 10) * 175.93} 175.93`}
-                                            className="transition-all duration-1000 ease-linear"
-                                        />
-                                    </svg>
-                                    {/* Número del contador */}
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-2xl font-bold text-green-600">
-                                            {countdown}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                <ModalSuscripcion
+                    isOpen={showSubscriptionModal}
+                    countdown={countdown}
+                    onGoToPayments={handleGoToPayments}
+                />
 
-                            <div className="text-center">
-                                <div className="mb-6">
-                                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center">
-                                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                
-                                <h2 className="text-2xl font-bold mb-4 text-green-600">Suscripción Requerida</h2>
-                                
-                                <p className="text-gray-700 mb-4 leading-relaxed">
-                                    Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad. 
-                                    Por favor, renueva tu suscripción para continuar.
-                                </p>
+                <ModalDescuentoProducto
+                    isOpen={modalDescuentoOpen}
+                    onClose={() => {
+                        setModalDescuentoOpen(false);
+                        setProductoDescuento(null);
+                        setValorDescuento('');
+                        setMensajeError('');
+                    }}
+                    productoDescuento={productoDescuento}
+                    tipoDescuento={tipoDescuento}
+                    setTipoDescuento={setTipoDescuento}
+                    valorDescuento={valorDescuento}
+                    setValorDescuento={setValorDescuento}
+                    mensajeError={mensajeError}
+                    setMensajeError={setMensajeError}
+                    aplicarDescuentoProducto={aplicarDescuentoProducto}
+                />
 
-                                {/* Mensaje del contador */}
-                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
-                                    <p className="text-green-700 text-sm text-center">
-                                        <span className="font-semibold">Redirección automática en {countdown} segundo{countdown !== 1 ? 's' : ''}</span>
-                                        <br />
-                                        Serás redirigido a la página de pagos automáticamente
-                                    </p>
-                                </div>
+                <ModalDescuentoOrden
+                    isOpen={modalDescuentoOrdenOpen}
+                    onClose={() => {
+                        setModalDescuentoOrdenOpen(false);
+                        setMensajeError('');
+                    }}
+                    descuentoOrden={descuentoOrden}
+                    setDescuentoOrden={setDescuentoOrden}
+                    mensajeError={mensajeError}
+                    setMensajeError={setMensajeError}
+                    aplicarDescuentoOrden={aplicarDescuentoOrden}
+                    calcularTotalCarrito={calcularTotalCarrito}
+                />
 
-                                <button
-                                    onClick={handleGoToPayments}
-                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
-                                >
-                                    Ir a Pagos Ahora
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Modal de descuento por producto */}
-                {modalDescuentoOpen && (
-                    <div 
-                        className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10001]"
-                        onClick={(e) => {
-                            if (e.target === e.currentTarget) {
-                                setModalDescuentoOpen(false);
-                                setProductoDescuento(null);
-                                setValorDescuento('');
-                                setMensajeError('');
-                            }
-                        }}
-                    >
-                        <div className="bg-white rounded-2xl p-8 w-11/12 md:w-96 shadow-2xl border border-green-100">
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <FaPercent className="w-8 h-8 text-white" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-gray-800">Aplicar Descuento</h2>
-                                <p className="text-gray-600">{productoDescuento?.name}</p>
-                                <p className="text-sm text-gray-500">
-                                    Precio: ${parseFloat(productoDescuento?.price || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                            </div>
-
-                            {/* Mensaje de error */}
-                            {mensajeError && (
-                                <div className="bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-4 text-sm">
-                                    {mensajeError}
-                                </div>
-                            )}
-
-                            {/* Tipo de descuento */}
-                            <div className="mb-6">
-                                <h3 className="text-lg font-semibold text-gray-700 mb-4">Tipo de descuento:</h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button 
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                            tipoDescuento === 'porcentaje' 
-                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                                        }`}
-                                        onClick={() => {
-                                            setTipoDescuento('porcentaje');
-                                            setValorDescuento('');
-                                            setMensajeError('');
-                                        }}
-                                    >
-                                        <FaPercent className="text-2xl mb-2"/>
-                                        <span className="font-medium">Porcentaje</span>
-                                        <span className="text-xs text-gray-500 mt-1">Máx: 99%</span>
-                                    </button>
-                                    <button 
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                            tipoDescuento === 'pesos' 
-                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                                        }`}
-                                        onClick={() => {
-                                            setTipoDescuento('pesos');
-                                            setValorDescuento('');
-                                            setMensajeError('');
-                                        }}
-                                    >
-                                        <FaDollarSign className="text-2xl mb-2"/>
-                                        <span className="font-medium">Pesos</span>
-                                        <span className="text-xs text-gray-500 mt-1">
-                                            Máx: ${(parseFloat(productoDescuento?.price || 0) - 0.01).toFixed(2)}
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Valor del descuento */}
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Valor del descuento {tipoDescuento === 'porcentaje' ? '(%)' : '($)'}:
-                                </label>
-                                <input
-                                    type="number"
-                                    step={tipoDescuento === 'pesos' ? "0.01" : "1"}
-                                    min="0"
-                                    max={tipoDescuento === 'porcentaje' ? "99" : (parseFloat(productoDescuento?.price || 0) - 0.01).toString()}
-                                    value={valorDescuento}
-                                    onChange={(e) => {
-                                        setValorDescuento(e.target.value);
-                                        setMensajeError('');
-                                    }}
-                                    className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all duration-200"
-                                    placeholder={tipoDescuento === 'porcentaje' ? "Ej: 10 (máx 99)" : `Ej: 5.00 (máx ${(parseFloat(productoDescuento?.price || 0) - 0.01).toFixed(2)})`}
-                                />
-                            </div>
-
-                            {/* Botones */}
-                            <div className="space-y-3">
-                                <button
-                                    onClick={aplicarDescuentoProducto}
-                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
-                                >
-                                    Aplicar Descuento
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setModalDescuentoOpen(false);
-                                        setProductoDescuento(null);
-                                        setValorDescuento('');
-                                        setMensajeError('');
-                                    }}
-                                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Modal de descuento para toda la orden */}
-                {modalDescuentoOrdenOpen && (
-                    <div 
-                        className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10001]"
-                        onClick={(e) => {
-                            if (e.target === e.currentTarget) {
-                                setModalDescuentoOrdenOpen(false);
-                                setMensajeError('');
-                            }
-                        }}
-                    >
-                        <div className="bg-white rounded-2xl p-8 w-11/12 md:w-96 shadow-2xl border border-green-100">
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <FaPercent className="w-8 h-8 text-white" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-gray-800">Descuento General</h2>
-                                <p className="text-gray-600">Aplicar a toda la orden</p>
-                                <p className="text-sm text-gray-500">
-                                    Total actual: ${calcularTotalCarrito().toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                            </div>
-
-                            {/* Mensaje de error */}
-                            {mensajeError && (
-                                <div className="bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-4 text-sm">
-                                    {mensajeError}
-                                </div>
-                            )}
-
-                            {/* Tipo de descuento */}
-                            <div className="mb-6">
-                                <h3 className="text-lg font-semibold text-gray-700 mb-4">Tipo de descuento:</h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button 
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                            descuentoOrden.tipo === 'porcentaje' 
-                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                                        }`}
-                                        onClick={() => {
-                                            setDescuentoOrden(prev => ({ ...prev, tipo: 'porcentaje', valor: '' }));
-                                            setMensajeError('');
-                                        }}
-                                    >
-                                        <FaPercent className="text-2xl mb-2"/>
-                                        <span className="font-medium">Porcentaje</span>
-                                        <span className="text-xs text-gray-500 mt-1">Máx: 99%</span>
-                                    </button>
-                                    <button 
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                            descuentoOrden.tipo === 'pesos' 
-                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                                        }`}
-                                        onClick={() => {
-                                            setDescuentoOrden(prev => ({ ...prev, tipo: 'pesos', valor: '' }));
-                                            setMensajeError('');
-                                        }}
-                                    >
-                                        <FaDollarSign className="text-2xl mb-2"/>
-                                        <span className="font-medium">Pesos</span>
-                                        <span className="text-xs text-gray-500 mt-1">
-                                            Máx: ${(calcularTotalCarrito() - 0.01).toFixed(2)}
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Valor del descuento */}
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Valor del descuento {descuentoOrden.tipo === 'porcentaje' ? '(%)' : '($)'}:
-                                </label>
-                                <input
-                                    type="number"
-                                    step={descuentoOrden.tipo === 'pesos' ? "0.01" : "1"}
-                                    min="0"
-                                    max={descuentoOrden.tipo === 'porcentaje' ? "99" : (calcularTotalCarrito() - 0.01).toString()}
-                                    value={descuentoOrden.valor}
-                                    onChange={(e) => {
-                                        setDescuentoOrden(prev => ({ ...prev, valor: e.target.value }));
-                                        setMensajeError('');
-                                    }}
-                                    className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all duration-200"
-                                    placeholder={descuentoOrden.tipo === 'porcentaje' ? "Ej: 10 (máx 99)" : `Ej: 5.00 (máx ${(calcularTotalCarrito() - 0.01).toFixed(2)})`}
-                                />
-                            </div>
-
-                            {/* Botones */}
-                            <div className="space-y-3">
-                                <button
-                                    onClick={aplicarDescuentoOrden}
-                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
-                                >
-                                    Aplicar Descuento
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setModalDescuentoOrdenOpen(false);
-                                        setMensajeError('');
-                                    }}
-                                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Barra de búsqueda y filtros mejorada */}
+                {/* Barra de búsqueda y filtros */}
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-6">
                         <div className="flex flex-col lg:flex-row gap-4">
-                            {/* Barra de búsqueda mejorada */}
                             <div className="flex-1">
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -906,9 +568,7 @@ export default function Pntoventa() {
                                 </div>
                             </div>
 
-                            {/* Filtros mejorados */}
                             <div className="flex flex-col sm:flex-row gap-4">
-                                {/* Dropdown de categorías */}
                                 <div className="relative min-w-[200px]">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <BsTag className="text-green-500 text-lg" />
@@ -927,7 +587,6 @@ export default function Pntoventa() {
                                     </select>
                                 </div>
 
-                                {/* Dropdown de disponibilidad */}
                                 <div className="relative min-w-[180px]">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <FiFilter className="text-green-500 text-lg" />
@@ -947,10 +606,10 @@ export default function Pntoventa() {
                     </div>
                 </div>
 
-                {/* Botón flotante del carrito mejorado */}
+                {/* Botón flotante del carrito */}
                 <button
                     className="fixed bottom-8 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
-                    onClick={() => setCarritoModalOpen(!carritoModalOpen)} // Cambiar aquí para que sea toggle
+                    onClick={() => setCarritoModalOpen(!carritoModalOpen)}
                 >
                     <FaShoppingCart className="text-xl" />
                     {carrito.length > 0 && (
@@ -960,706 +619,61 @@ export default function Pntoventa() {
                     )}
                 </button>
 
-                {/* Modal del carrito mejorado con descuentos */}
-                {carritoModalOpen && (
-                    <div
-                        className="fixed inset-0 backdrop-blur-sm bg-black/50 z-[9998] flex justify-end"
-                        onClick={(e) => {
-                            if (e.target === e.currentTarget) {
-                                setCarritoModalOpen(false);
-                            }
-                        }}
-                    >
-                        <div className="bg-white w-96 h-full shadow-2xl overflow-y-auto border-l border-gray-200">
-                            {/* Header del carrito con botón de cerrar mejorado */}
-                            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-2xl font-bold flex items-center gap-3">
-                                        <FaShoppingCart className="text-xl" />
-                                        Tu Pedido
-                                    </h2>
-                                    {/* Botón de cerrar mejorado */}
-                                    <button
-                                        onClick={() => setCarritoModalOpen(false)}
-                                        className="text-white hover:text-gray-200 transition-all duration-200 p-2 hover:bg-white/20 rounded-lg transform hover:scale-110"
-                                        title="Cerrar carrito"
-                                    >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
+                {/* Modal del carrito */}
+                <CarritoModal
+                    isOpen={carritoModalOpen}
+                    onClose={() => setCarritoModalOpen(false)}
+                    carrito={carrito}
+                    setCarrito={setCarrito}
+                    pedidosPendientes={pedidosPendientes}
+                    setPedidosPendientes={setPedidosPendientes}
+                    mensajeError={mensajeError}
+                    isCreatingOrder={isCreatingOrder}
+                    terminarOrden={terminarOrden}
+                    finalizarTodasOrdenes={finalizarTodasOrdenes}
+                    calcularPrecioConDescuento={calcularPrecioConDescuento}
+                    calcularTotalCarrito={calcularTotalCarrito}
+                    abrirModalDescuento={abrirModalDescuento}
+                    quitarDescuentoProducto={quitarDescuentoProducto}
+                    descuentoOrden={descuentoOrden}
+                    setDescuentoOrden={setDescuentoOrden}
+                    setModalDescuentoOrdenOpen={setModalDescuentoOrdenOpen}
+                    setMensajeError={setMensajeError}
+                />
 
-                            <div className="p-6">
-                                {/* Carrito actual con descuentos */}
-                                {carrito.length > 0 ? (
-                                    <div className="mb-6">
-                                        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                            Productos en carrito
-                                        </h3>
-                                        <div className="max-h-64 overflow-y-auto space-y-3">
-                                            {carrito.map((item) => {
-                                                const precioOriginal = parseFloat(item.price);
-                                                const precioConDescuento = calcularPrecioConDescuento(item);
-                                                const tieneDescuento = item.descuento && item.descuento.valor !== '' && item.descuento.valor !== '0';
+                {/* Modal de confirmación de pago */}
+                <ModalConfirmarPago
+                    isOpen={modalTotalOpen}
+                    onClose={() => !isProcessingPayment && setModalTotalOpen(false)}
+                    totalPedidos={totalPedidos}
+                    metodoPago={metodoPago}
+                    setMetodoPago={setMetodoPago}
+                    mensajeError={mensajeError}
+                    isProcessingPayment={isProcessingPayment}
+                    confirmarPago={confirmarPago}
+                />
 
-                                                return (
-                                                    <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100 shadow-sm">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <div className="flex-1">
-                                                                <p className="font-bold text-green-800">{item.name}</p>
-                                                                <div className="flex items-center gap-2">
-                                                                    {tieneDescuento ? (
-                                                                        <>
-                                                                            <span className="text-sm text-gray-500 line-through">
-                                                                                ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                                            </span>
-                                                                            <span className="text-sm text-green-600 font-bold">
-                                                                                ${precioConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                                                            </span>
-                                                                            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
-                                                                                -{item.descuento.tipo === 'porcentaje' ? `${item.descuento.valor}%` : `$${item.descuento.valor}`}
-                                                                            </span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <span className="text-sm text-green-600">
-                                                                            ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                className="text-red-500 hover:text-red-700 transition-colors ml-2"
-                                                                onClick={() => {
-                                                                    setCarrito((prevCarrito) =>
-                                                                        prevCarrito.filter((producto) => producto.id !== item.id)
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <IoTrashOutline className="text-lg" />
-                                                            </button>
-                                                        </div>
-                                                        <div className="flex items-center gap-3 mb-3">
-                                                            <button
-                                                                className="bg-green-200 hover:bg-green-300 text-green-800 w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors"
-                                                                onClick={() => {
-                                                                    setCarrito((prevCarrito) =>
-                                                                        prevCarrito.map((producto) =>
-                                                                            producto.id === item.id
-                                                                                ? { ...producto, cantidad: Math.max(producto.cantidad - 1, 1) }
-                                                                                : producto
-                                                                        )
-                                                                    );
-                                                                }}
-                                                            >
-                                                                -
-                                                            </button>
-                                                            <span className="text-lg font-bold text-green-800 min-w-[2rem] text-center">{item.cantidad}</span>
-                                                            <button
-                                                                className="bg-green-200 hover:bg-green-300 text-green-800 w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors"
-                                                                onClick={() => {
-                                                                    setCarrito((prevCarrito) =>
-                                                                        prevCarrito.map((producto) =>
-                                                                            producto.id === item.id
-                                                                                ? { ...producto, cantidad: producto.cantidad + 1 }
-                                                                                : producto
-                                                                        )
-                                                                    );
-                                                                }}
-                                                            >
-                                                                +
-                                                            </button>
-                                                        </div>
-                                                        {/* Botones de descuento */}
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => abrirModalDescuento(item)}
-                                                                className="flex-1 bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                                                            >
-                                                                {tieneDescuento ? 'Editar Descuento' : 'Aplicar Descuento'}
-                                                            </button>
-                                                            {tieneDescuento && (
-                                                                <button
-                                                                    onClick={() => quitarDescuentoProducto(item.id)}
-                                                                    className="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                                                                >
-                                                                    Quitar
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-8">
-                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <FaShoppingCart className="text-gray-400 text-xl" />
-                                        </div>
-                                        <p className="text-gray-500">Tu carrito está vacío</p>
-                                    </div>
-                                )}
+                {/* Modal de detalles del producto */}
+                <ModalProducto
+                    isOpen={modalProductoOpen}
+                    onClose={closeModal}
+                    producto={productoSeleccionado}
+                    onAgregarAlCarrito={agregarAlCarrito}
+                />
 
-                                {/* Total del carrito con descuentos */}
-                                {carrito.length > 0 && (
-                                    <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-4 mb-6 border border-green-200">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-lg font-bold text-green-800">Total del carrito:</span>
-                                            <span className="text-xl font-bold text-green-600">
-                                                ${calcularTotalCarrito().toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </span>
-                                        </div>
-                                        {/* Botón de descuento general */}
-                                        <div className="mt-3 pt-3 border-t border-green-200">
-                                            <button
-                                                onClick={() => setModalDescuentoOrdenOpen(true)}
-                                                className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                            >
-                                                {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Aplicar Descuento General'}
-                                            </button>
-                                            {descuentoOrden.aplicado && (
-                                                <div className="mt-2 flex justify-between items-center">
-                                                    <span className="text-sm text-green-700">
-                                                        Descuento aplicado: {descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}
-                                                    </span>
-                                                    <button
-                                                        onClick={() => {
-                                                            setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
-                                                            setMensajeError('');
-                                                        }}
-                                                        className="text-red-600 hover:text-red-800 text-sm"
-                                                    >
-                                                        Quitar
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Mensajes de estado */}
-                                {mensajeError && (
-                                    <div className={`p-4 rounded-xl mb-4 text-sm font-medium ${
-                                        mensajeError.includes('exitosamente') 
-                                            ? 'bg-green-100 text-green-800 border border-green-200' 
-                                            : 'bg-red-100 text-red-800 border border-red-200'
-                                    }`}>
-                                        {mensajeError}
-                                    </div>
-                                )}
-
-                                {/* Botón enviar a cocina */}
-                                <button
-                                    className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${
-                                        isCreatingOrder 
-                                            ? 'bg-gray-300 cursor-not-allowed text-gray-500' 
-                                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
-                                    }`}
-                                    onClick={terminarOrden}
-                                    disabled={isCreatingOrder}
-                                >
-                                    {isCreatingOrder ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <svg className="animate-spin h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                            </svg>
-                                            Enviando...
-                                        </span>
-                                    ) : '🍳 Enviar a Cocina'}
-                                </button>
-
-                                {/* Pedidos pendientes */}
-                                {pedidosPendientes.length > 0 && (
-                                    <div className="mt-8">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                                                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                                                Pedidos Pendientes de Pago
-                                            </h3>
-                                            <button
-                                                onClick={() => {
-                                                    setPedidosPendientes([]);
-                                                    localStorage.removeItem("pedidosPendientes");
-                                                    setMensajeError("Pedidos pendientes eliminados.");
-                                                    setTimeout(() => {
-                                                        setMensajeError("");
-                                                    }, 2000);
-                                                }}
-                                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200 transform hover:scale-110"
-                                                title="Eliminar todos los pedidos pendientes"
-                                            >
-                                                <IoTrashOutline className="text-lg" />
-                                            </button>
-                                        </div>
-                                        <div className="max-h-64 overflow-y-auto space-y-3">
-                                            {pedidosPendientes.map((item, index) => {
-                                                const precioOriginal = parseFloat(item.price);
-                                                const precioConDescuento = calcularPrecioConDescuento(item);
-                                                const tieneDescuento = item.descuento && item.descuento.valor !== '' && item.descuento.valor !== '0';
-                                                const subtotalOriginal = precioOriginal * item.cantidad;
-                                                const subtotalConDescuento = precioConDescuento * item.cantidad;
-
-                                                return (
-                                                    <div key={index} className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200 shadow-sm">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <div className="flex-1">
-                                                                <p className="font-bold text-yellow-800">{item.cantidad} x {item.name}</p>
-                                                                <div className="flex items-center gap-2 flex-wrap">
-                                                                    {tieneDescuento ? (
-                                                                        <>
-                                                                            <span className="text-sm text-gray-500 line-through">
-                                                                                ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                                                            </span>
-                                                                            <span className="text-sm text-yellow-600 font-bold">
-                                                                                ${precioConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                                                            </span>
-                                                                            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
-                                                                                -{item.descuento.tipo === 'porcentaje' ? `${item.descuento.valor}%` : `$${item.descuento.valor}`}
-                                                                            </span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <span className="text-sm text-yellow-600">
-                                                                            ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                {tieneDescuento && (
-                                                                    <div className="mt-1">
-                                                                        <div className="flex justify-between text-sm">
-                                                                            <span className="text-gray-500 line-through">
-                                                                                Subtotal: ${subtotalOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                                            </span>
-                                                                            <span className="text-yellow-600 font-bold">
-                                                                                ${subtotalConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <p className="text-xs text-yellow-700 font-medium">⏳ Pendiente</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        
-                                        {/* Total pendiente con descuentos */}
-                                        <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-4 mt-4 border border-yellow-200">
-                                            <div className="space-y-2">
-                                                {/* Subtotal sin descuentos de orden */}
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm text-yellow-700">Subtotal con descuentos por producto:</span>
-                                                    <span className="text-sm text-yellow-600 font-medium">
-                                                        ${pedidosPendientes.reduce((total, item) => {
-                                                            const precioConDescuento = calcularPrecioConDescuento(item);
-                                                            return total + (precioConDescuento * item.cantidad);
-                                                        }, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                                
-                                                {/* Descuento de orden si aplica */}
-                                                {descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0' && (
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-sm text-yellow-700">
-                                                            Descuento general ({descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}):
-                                                        </span>
-                                                        <span className="text-sm text-red-600 font-medium">
-                                                            -${(() => {
-                                                                const subtotalConDescuentos = pedidosPendientes.reduce((total, item) => {
-                                                                    const precioConDescuento = calcularPrecioConDescuento(item);
-                                                                    return total + (precioConDescuento * item.cantidad);
-                                                                }, 0);
-                                                                const valorDesc = parseFloat(descuentoOrden.valor);
-                                                                if (descuentoOrden.tipo === 'porcentaje') {
-                                                                    return (subtotalConDescuentos * valorDesc / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                                                } else {
-                                                                    return valorDesc.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                                                }
-                                                            })()}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                
-                                                {/* Total final */}
-                                                <div className="flex justify-between items-center pt-2 border-t border-yellow-300">
-                                                    <span className="font-semibold text-yellow-800">Total Pendiente:</span>
-                                                    <span className="text-lg font-bold text-yellow-600">
-                                                        ${(() => {
-                                                            // Calcular subtotal con descuentos por producto
-                                                            const subtotalConDescuentos = pedidosPendientes.reduce((total, item) => {
-                                                                const precioConDescuento = calcularPrecioConDescuento(item);
-                                                                return total + (precioConDescuento * item.cantidad);
-                                                            }, 0);
-
-                                                            // Aplicar descuento de orden si existe
-                                                            let totalFinal = subtotalConDescuentos;
-                                                            if (descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0') {
-                                                                const valorDesc = parseFloat(descuentoOrden.valor);
-                                                                if (descuentoOrden.tipo === 'porcentaje') {
-                                                                    totalFinal = subtotalConDescuentos - (subtotalConDescuentos * valorDesc / 100);
-                                                                } else {
-                                                                    totalFinal = Math.max(0, subtotalConDescuentos - valorDesc);
-                                                                }
-                                                            }
-                                                            
-                                                            return totalFinal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                                        })()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Botón para finalizar orden (Proceder al pago) */}
-                                        <button
-                                            className="w-full py-3 rounded-xl font-medium transition-all duration-200 mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg transform hover:scale-105 text-sm sm:text-base"
-                                            onClick={finalizarTodasOrdenes}
-                                        >
-                                            💳 Finalizar Orden
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Modal del total de pedidos mejorado */}
-                {modalTotalOpen && (
-                    <div
-                        className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[9999]"
-                        onClick={(e) => {
-                            if (isProcessingPayment) return;
-                            if (e.target === e.currentTarget) {
-                                setModalTotalOpen(false);
-                            }
-                        }}
-                    >
-                        <div className="bg-white rounded-2xl p-8 w-11/12 md:w-96 shadow-2xl border border-green-100 max-h-[90vh] overflow-y-auto">
-                            {/* Header */}
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                        </svg>
-                                </div>
-                                <h2 className="text-2xl font-bold text-gray-800">Confirmar Pago</h2>
-                            </div>
-
-                            {/* Métodos de pago */}
-                            <div className="mb-6">
-                                <h3 className="text-lg font-semibold text-gray-700 mb-4">Seleccionar método de pago:</h3>
-                                <div className="grid grid-cols-3 gap-3">
-                                    <button 
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                            metodoPago === 'efectivo' 
-                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                                        } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        onClick={() => !isProcessingPayment && setMetodoPago('efectivo')}
-                                        disabled={isProcessingPayment}
-                                    >
-                                        <BsCashCoin className="text-3xl mb-2"/>
-                                        <span className="font-medium">Efectivo</span>
-                                    </button>
-                                    <button 
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                            metodoPago === 'tarjeta' 
-                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                                        } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        onClick={() => !isProcessingPayment && setMetodoPago('tarjeta')}
-                                        disabled={isProcessingPayment}
-                                    >
-                                        <FaCreditCard className="text-3xl mb-2"/>
-                                        <span className="font-medium">Tarjeta</span>
-                                    </button>
-                                    <button 
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                            metodoPago === 'pasarela' 
-                                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                                        } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        onClick={() => !isProcessingPayment && setMetodoPago('pasarela')}
-                                        disabled={isProcessingPayment}
-                                    >
-                                        <IoMdPhonePortrait className="text-3xl mb-2"/>
-                                        <span className="font-medium">Aplicación</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Total */}
-                            <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-6 mb-6 border border-green-200">
-                                <div className="text-center">
-                                    <p className="text-lg text-green-800 mb-1">
-                                        Total a pagar:
-                                    </p>
-                                    <p className="text-3xl font-bold text-green-600">
-                                        ${parseFloat(totalPedidos).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </p>
-                                    <p className="text-sm text-green-700 mt-2">
-                                        Método: <span className="font-semibold capitalize">{metodoPago === 'pasarela' ? 'Aplicación' : metodoPago}</span>
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Mensajes de estado */}
-                            {mensajeError && (
-                                <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${
-                                    mensajeError.includes('exitosamente') 
-                                        ? 'bg-green-100 text-green-800 border border-green-200' 
-                                        : 'bg-red-100 text-red-800 border border-red-200'
-                                }`}>
-                                    <div className="flex items-center gap-2">
-                                        {mensajeError.includes('exitosamente') ? (
-                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                                            </svg>
-                                        ) : (
-                                            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                        )}
-                                        {mensajeError}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Botones de acción */}
-                            <div className="space-y-3">
-                                <button
-                                    className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${
-                                        isProcessingPayment 
-                                            ? 'bg-gray-300 cursor-not-allowed text-gray-500' 
-                                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
-                                    }`}
-                                    onClick={confirmarPago}
-                                    disabled={isProcessingPayment}
-                                >
-                                    {isProcessingPayment ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <svg className="animate-spin h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                            </svg>
-                                            Procesando...
-                                        </span>
-                                    ) : '💳 Confirmar Pago'}
-                                </button>
-
-                                {/* Botón de cancelar/cerrar */}
-                                {mensajeError && !mensajeError.includes('exitosamente') && (
-                                    <button
-                                        className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
-                                        onClick={() => setModalTotalOpen(false)}
-                                        disabled={isProcessingPayment}
-                                    >
-                                        Cerrar y reintentar más tarde
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Modal de detalles del producto mejorado */}
-                {modalProductoOpen && productoSeleccionado && (
-                    <div
-                        className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[9996]"
-                        onClick={(e) => {
-                            if (e.target === e.currentTarget) {
-                                closeModal();
-                            }
-                        }}
-                    >
-                        <div className="bg-white rounded-2xl w-11/12 md:w-96 shadow-2xl border border-green-100 max-h-[90vh] overflow-y-auto">
-                            {/* Header del modal */}
-                            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-2xl">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-xl font-bold text-white">{productoSeleccionado.name}</h2>
-                                    <button
-                                        onClick={closeModal}
-                                        className="text-white hover:text-gray-200 transition-colors"
-                                    >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="p-6">
-                                {/* Imagen del producto */}
-                                <div className="mb-6">
-                                    <img
-                                        src={productoSeleccionado.image_url[0]}
-                                        alt={`Imagen de ${productoSeleccionado.name}`}
-                                        className="w-full h-48 object-cover rounded-xl border border-green-100 shadow-sm"
-                                    />
-                                </div>
-
-                                {/* Descripción */}
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Descripción</h3>
-                                    <p className="text-gray-600 leading-relaxed">{productoSeleccionado.description}</p>
-                                </div>
-
-                                {/* Precio */}
-                                <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-4 mb-6 border border-green-200">
-                                    <div className="text-center">
-                                        <p className="text-lg text-green-800 mb-1">Precio:</p>
-                                        <p className="text-2xl font-bold text-green-600">
-                                            ${parseFloat(productoSeleccionado.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Botón agregar */}
-                                <button
-                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
-                                    onClick={() => {
-                                        agregarAlCarrito(productoSeleccionado);
-                                        closeModal();
-                                    }}
-                                >
-                                    🛒 Agregar al carrito
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
-                {/* Grid de productos mejorado */}
+                {/* Grid de productos */}
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {productosFiltrados.map((producto) => (
-                            <div
+                            <ProductoCard
                                 key={producto.id_products}
-                                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-100 overflow-hidden group"
-                            >
-                                {/* Imagen del producto */}
-                                <div className="relative h-48 overflow-hidden">
-                                                                       <img
-                                        src={producto.image_url[0]}
-                                        alt={`Imagen de ${producto.name}`}
-                                        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${producto.status !== "activo" ? "opacity-50" : ""}`}
-                                    />
-                                    
-                                    {/* Badge de estado */}
-                                    {producto.status === "activo" ? (
-                                        <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                                            Disponible
-                                        </div>
-                                    ) : (
-                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                            <div className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold">
-                                                No Disponible
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Precio flotante */}
-                                    <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg">
-                                        <span className="text-lg font-bold text-green-600">
-                                            ${parseFloat(producto.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Contenido del producto */}
-                                <div className="p-5">
-                                    {/* Nombre y categoría */}
-                                    <div className="mb-3">
-                                        <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-1">{producto.name}</h3>
-                                        <span className="inline-block bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-xs font-medium px-3 py-1 rounded-full border border-green-200">
-                                            {producto.category_name}
-                                        </span>
-                                    </div>
-
-                                    {/* Descripción */}
-                                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                                        {producto.description.length > 80
-                                            ? `${producto.description.slice(0, 80)}...`
-                                            : producto.description}
-                                    </p>
-
-                                    {/* Controles de cantidad */}
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                className="w-8 h-8 bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 rounded-lg flex items-center justify-center font-bold transition-colors border border-green-200"
-                                                onClick={() => {
-                                                    setProductosFiltrados((prevProductos) =>
-                                                        prevProductos.map((item) =>
-                                                            item.id_products === producto.id_products
-                                                                ? {
-                                                                    ...item,
-                                                                    cantidad: Math.max((item.cantidad || 1) - 1, 1),
-                                                                }
-                                                                : item
-                                                        )
-                                                    );
-                                                }}
-                                            >
-                                                -
-                                            </button>
-                                            <span className="text-lg font-bold text-gray-800 min-w-[2rem] text-center">
-                                                {producto.cantidad || 1}
-                                            </span>
-                                            <button
-                                                className="w-8 h-8 bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 rounded-lg flex items-center justify-center font-bold transition-colors border border-green-200"
-                                                onClick={() => {
-                                                    setProductosFiltrados((prevProductos) =>
-                                                        prevProductos.map((item) =>
-                                                            item.id_products === producto.id_products
-                                                                ? {
-                                                                    ...item,
-                                                                    cantidad: (item.cantidad || 1) + 1,
-                                                                }
-                                                                : item
-                                                        )
-                                                    );
-                                                }}
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                        
-                                        <button
-                                            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                                                producto.status === "activo"
-                                                    ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105"
-                                                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                            }`}
-                                            onClick={() => agregarAlCarrito(producto)}
-                                            disabled={producto.status !== "activo"}
-                                        >
-                                            {producto.status === "activo" ? "Agregar" : "No disponible"}
-                                        </button>
-                                    </div>
-
-                                    {/* Botón ver detalles */}
-                                    <button
-                                        className={`w-full py-2 rounded-lg font-medium transition-all duration-200 ${
-                                            producto.status === "activo"
-                                                ? "bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 border border-gray-300"
-                                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                        }`}
-                                        onClick={() => openModal(producto)}
-                                        disabled={producto.status !== "activo"}
-                                    >
-                                        👁️ Ver Detalles
-                                    </button>
-                                </div>
-                            </div>
+                                producto={producto}
+                                onAgregarAlCarrito={agregarAlCarrito}
+                                onOpenModal={openModal}
+                            />
                         ))}
                     </div>
 
-                    {/* Mensaje cuando no hay productos */}
                     {productosFiltrados.length === 0 && (
                         <div className="text-center py-16">
                             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

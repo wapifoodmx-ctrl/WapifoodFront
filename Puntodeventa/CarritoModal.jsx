@@ -1,0 +1,383 @@
+import { FaShoppingCart } from "react-icons/fa";
+import { IoTrashOutline } from "react-icons/io5";
+
+export default function CarritoModal({
+    isOpen,
+    onClose,
+    carrito,
+    setCarrito,
+    pedidosPendientes,
+    setPedidosPendientes,
+    mensajeError,
+    isCreatingOrder,
+    terminarOrden,
+    finalizarTodasOrdenes,
+    calcularPrecioConDescuento,
+    calcularTotalCarrito,
+    abrirModalDescuento,
+    quitarDescuentoProducto,
+    descuentoOrden,
+    setDescuentoOrden,
+    setModalDescuentoOrdenOpen,
+    setMensajeError
+}) {
+    if (!isOpen) return null;
+
+    return (
+        <div
+            className="fixed inset-0 backdrop-blur-sm bg-black/50 z-[9998] flex justify-end"
+            onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                    onClose();
+                }
+            }}
+        >
+            <div className="bg-white w-full sm:w-96 lg:w-1/2 xl:w-1/2 2xl:w-2/5 h-full shadow-2xl overflow-y-auto border-l border-gray-200">
+                {/* Header del carrito */}
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white sticky top-0 z-10 shadow-lg">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold flex items-center gap-3">
+                            <FaShoppingCart className="text-xl" />
+                            Tu Pedido
+                        </h2>
+                        <button
+                            onClick={onClose}
+                            className="text-white hover:text-gray-200 transition-all duration-200 p-2 hover:bg-white/20 rounded-lg transform hover:scale-110"
+                            title="Cerrar carrito"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-6 lg:p-8">
+                    {/* Carrito actual */}
+                    {carrito.length > 0 ? (
+                        <div className="mb-6">
+                            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 text-lg">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                Productos en carrito
+                            </h3>
+                            <div className="max-h-[400px] lg:max-h-[500px] overflow-y-auto space-y-3 pr-2">
+                                {carrito.map((item) => {
+                                    const precioOriginal = parseFloat(item.price);
+                                    const precioConDescuento = calcularPrecioConDescuento(item);
+                                    const tieneDescuento = item.descuento && item.descuento.valor !== '' && item.descuento.valor !== '0';
+
+                                    return (
+                                        <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 lg:p-5 border border-green-100 shadow-sm hover:shadow-md transition-shadow">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-green-800 text-base lg:text-lg">{item.name}</p>
+                                                    <div className="flex items-center gap-2 flex-wrap mt-1">
+                                                        {tieneDescuento ? (
+                                                            <>
+                                                                <span className="text-sm lg:text-base text-gray-500 line-through">
+                                                                    ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                </span>
+                                                                <span className="text-sm lg:text-base text-green-600 font-bold">
+                                                                    ${precioConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                                </span>
+                                                                <span className="text-xs lg:text-sm bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                                                                    -{item.descuento.tipo === 'porcentaje' ? `${item.descuento.valor}%` : `$${item.descuento.valor}`}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-sm lg:text-base text-green-600">
+                                                                ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all ml-2"
+                                                    onClick={() => {
+                                                        setCarrito((prevCarrito) =>
+                                                            prevCarrito.filter((producto) => producto.id !== item.id)
+                                                        );
+                                                    }}
+                                                >
+                                                    <IoTrashOutline className="text-lg lg:text-xl" />
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <button
+                                                    className="bg-green-200 hover:bg-green-300 text-green-800 w-9 h-9 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center font-bold transition-colors shadow-sm"
+                                                    onClick={() => {
+                                                        setCarrito((prevCarrito) =>
+                                                            prevCarrito.map((producto) =>
+                                                                producto.id === item.id
+                                                                    ? { ...producto, cantidad: Math.max(producto.cantidad - 1, 1) }
+                                                                    : producto
+                                                            )
+                                                        );
+                                                    }}
+                                                >
+                                                    -
+                                                </button>
+                                                <span className="text-lg lg:text-xl font-bold text-green-800 min-w-[2.5rem] text-center">{item.cantidad}</span>
+                                                <button
+                                                    className="bg-green-200 hover:bg-green-300 text-green-800 w-9 h-9 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center font-bold transition-colors shadow-sm"
+                                                    onClick={() => {
+                                                        setCarrito((prevCarrito) =>
+                                                            prevCarrito.map((producto) =>
+                                                                producto.id === item.id
+                                                                    ? { ...producto, cantidad: producto.cantidad + 1 }
+                                                                    : producto
+                                                            )
+                                                        );
+                                                    }}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => abrirModalDescuento(item)}
+                                                    className="flex-1 bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 lg:py-2.5 rounded-lg text-sm lg:text-base font-medium transition-colors"
+                                                >
+                                                    {tieneDescuento ? 'Editar Descuento' : 'Aplicar Descuento'}
+                                                </button>
+                                                {tieneDescuento && (
+                                                    <button
+                                                        onClick={() => quitarDescuentoProducto(item.id)}
+                                                        className="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 lg:py-2.5 rounded-lg text-sm lg:text-base font-medium transition-colors"
+                                                    >
+                                                        Quitar
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 lg:py-16">
+                            <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FaShoppingCart className="text-gray-400 text-2xl lg:text-3xl" />
+                            </div>
+                            <p className="text-gray-500 text-base lg:text-lg">Tu carrito está vacío</p>
+                        </div>
+                    )}
+
+                    {/* Total del carrito */}
+                    {carrito.length > 0 && (
+                        <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-5 lg:p-6 mb-6 border border-green-200 shadow-md">
+                            <div className="flex justify-between items-center">
+                                <span className="text-lg lg:text-xl font-bold text-green-800">Total del carrito:</span>
+                                <span className="text-xl lg:text-2xl font-bold text-green-600">
+                                    ${calcularTotalCarrito().toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-green-200">
+                                <button
+                                    onClick={() => setModalDescuentoOrdenOpen(true)}
+                                    className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-4 py-2.5 lg:py-3 rounded-lg text-sm lg:text-base font-medium transition-colors"
+                                >
+                                    {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Aplicar Descuento General'}
+                                </button>
+                                {descuentoOrden.aplicado && (
+                                    <div className="mt-3 flex justify-between items-center">
+                                        <span className="text-sm lg:text-base text-green-700">
+                                            Descuento aplicado: {descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
+                                                setMensajeError('');
+                                            }}
+                                            className="text-red-600 hover:text-red-800 text-sm lg:text-base font-medium"
+                                        >
+                                            Quitar
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Mensajes de estado */}
+                    {mensajeError && (
+                        <div className={`p-4 lg:p-5 rounded-xl mb-4 text-sm lg:text-base font-medium ${
+                            mensajeError.includes('exitosamente') 
+                                ? 'bg-green-100 text-green-800 border border-green-200' 
+                                : 'bg-red-100 text-red-800 border border-red-200'
+                        }`}>
+                            {mensajeError}
+                        </div>
+                    )}
+
+                    {/* Botón enviar a cocina */}
+                    <button
+                        className={`w-full py-3.5 lg:py-4 rounded-xl font-medium text-base lg:text-lg transition-all duration-200 ${
+                            isCreatingOrder 
+                                ? 'bg-gray-300 cursor-not-allowed text-gray-500' 
+                                : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
+                        }`}
+                        onClick={terminarOrden}
+                        disabled={isCreatingOrder}
+                    >
+                        {isCreatingOrder ? (
+                            <span className="flex items-center justify-center gap-2">
+                                <svg className="animate-spin h-5 w-5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                Enviando...
+                            </span>
+                        ) : '🍳 Enviar a Cocina'}
+                    </button>
+
+                    {/* Pedidos pendientes */}
+                    {pedidosPendientes.length > 0 && (
+                        <div className="mt-8">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-semibold text-gray-800 flex items-center gap-2 text-lg">
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                    Pedidos Pendientes de Pago
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        setPedidosPendientes([]);
+                                        localStorage.removeItem("pedidosPendientes");
+                                        setMensajeError("Pedidos pendientes eliminados.");
+                                        setTimeout(() => {
+                                            setMensajeError("");
+                                        }, 2000);
+                                    }}
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200 transform hover:scale-110"
+                                    title="Eliminar todos los pedidos pendientes"
+                                >
+                                    <IoTrashOutline className="text-lg lg:text-xl" />
+                                </button>
+                            </div>
+                            <div className="max-h-[400px] lg:max-h-[500px] overflow-y-auto space-y-3 pr-2">
+                                {pedidosPendientes.map((item, index) => {
+                                    const precioOriginal = parseFloat(item.price);
+                                    const precioConDescuento = calcularPrecioConDescuento(item);
+                                    const tieneDescuento = item.descuento && item.descuento.valor !== '' && item.descuento.valor !== '0';
+                                    const subtotalOriginal = precioOriginal * item.cantidad;
+                                    const subtotalConDescuento = precioConDescuento * item.cantidad;
+
+                                    return (
+                                        <div key={index} className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl p-4 lg:p-5 border border-emerald-200 shadow-sm hover:shadow-md transition-shadow">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-emerald-800 text-base lg:text-lg">{item.cantidad} x {item.name}</p>
+                                                    <div className="flex items-center gap-2 flex-wrap mt-1">
+                                                        {tieneDescuento ? (
+                                                            <>
+                                                                <span className="text-sm lg:text-base text-gray-500 line-through">
+                                                                    ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                                </span>
+                                                                <span className="text-sm lg:text-base text-emerald-600 font-bold">
+                                                                    ${precioConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                                </span>
+                                                                <span className="text-xs lg:text-sm bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                                                                    -{item.descuento.tipo === 'porcentaje' ? `${item.descuento.valor}%` : `$${item.descuento.valor}`}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-sm lg:text-base text-emerald-600">
+                                                                ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {tieneDescuento && (
+                                                        <div className="mt-2">
+                                                            <div className="flex justify-between text-sm lg:text-base">
+                                                                <span className="text-gray-500 line-through">
+                                                                    Subtotal: ${subtotalOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                </span>
+                                                                <span className="text-emerald-600 font-bold">
+                                                                    ${subtotalConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs lg:text-sm text-emerald-700 font-medium">⏳ Pendiente</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            
+                            {/* Total pendiente */}
+                            <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-5 lg:p-6 mt-4 border border-green-200 shadow-md">
+                                <div className="space-y-2.5">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm lg:text-base text-green-700">Subtotal con descuentos por producto:</span>
+                                        <span className="text-sm lg:text-base text-green-600 font-medium">
+                                            ${pedidosPendientes.reduce((total, item) => {
+                                                const precioConDescuento = calcularPrecioConDescuento(item);
+                                                return total + (precioConDescuento * item.cantidad);
+                                            }, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                    
+                                    {descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0' && (
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm lg:text-base text-green-700">
+                                                Descuento general ({descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}):
+                                            </span>
+                                            <span className="text-sm lg:text-base text-red-600 font-medium">
+                                                -${(() => {
+                                                    const subtotalConDescuentos = pedidosPendientes.reduce((total, item) => {
+                                                        const precioConDescuento = calcularPrecioConDescuento(item);
+                                                        return total + (precioConDescuento * item.cantidad);
+                                                    }, 0);
+                                                    const valorDesc = parseFloat(descuentoOrden.valor);
+                                                    if (descuentoOrden.tipo === 'porcentaje') {
+                                                        return (subtotalConDescuentos * valorDesc / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                    } else {
+                                                        return valorDesc.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                    }
+                                                })()}
+                                            </span>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="flex justify-between items-center pt-3 border-t border-green-300">
+                                        <span className="font-semibold text-green-800 text-base lg:text-lg">Total Pendiente:</span>
+                                        <span className="text-xl lg:text-2xl font-bold text-green-600">
+                                            ${(() => {
+                                                const subtotalConDescuentos = pedidosPendientes.reduce((total, item) => {
+                                                    const precioConDescuento = calcularPrecioConDescuento(item);
+                                                    return total + (precioConDescuento * item.cantidad);
+                                                }, 0);
+
+                                                let totalFinal = subtotalConDescuentos;
+                                                if (descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0') {
+                                                    const valorDesc = parseFloat(descuentoOrden.valor);
+                                                    if (descuentoOrden.tipo === 'porcentaje') {
+                                                        totalFinal = subtotalConDescuentos - (subtotalConDescuentos * valorDesc / 100);
+                                                    } else {
+                                                        totalFinal = Math.max(0, subtotalConDescuentos - valorDesc);
+                                                    }
+                                                }
+                                                
+                                                return totalFinal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                            })()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                className="w-full py-3.5 lg:py-4 rounded-xl font-medium text-base lg:text-lg transition-all duration-200 mt-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105"
+                                onClick={finalizarTodasOrdenes}
+                            >
+                                💳 Finalizar Orden
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+} 
