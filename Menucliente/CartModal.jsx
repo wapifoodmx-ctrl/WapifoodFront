@@ -16,7 +16,7 @@ export default function CartModal({
     onRealizarPedido,
     onTerminarOrden,
     onUpdateCart,
-    getCodigoConfirmacion // Necesitas pasar esta función desde menucliente.jsx
+    getCodigoConfirmacion
 }) {
     // Estados existentes...
     const [modalDescuentoOpen, setModalDescuentoOpen] = useState(false);
@@ -33,7 +33,7 @@ export default function CartModal({
     const [codigoEsperadoDescuento, setCodigoEsperadoDescuento] = useState('');
     const [errorCodigoDescuento, setErrorCodigoDescuento] = useState('');
     const [isValidandoCodigoDescuento, setIsValidandoCodigoDescuento] = useState(false);
-    const [tipoDescuentoEnProceso, setTipoDescuentoEnProceso] = useState(null); // 'producto' o 'orden'
+    const [tipoDescuentoEnProceso, setTipoDescuentoEnProceso] = useState(null);
 
     if (!isOpen) return null;
 
@@ -82,6 +82,85 @@ export default function CartModal({
         setErrorDescuento('');
     };
 
+    // Función para manejar cambios en el input de descuento de producto
+    const handleInputChangeProducto = (e) => {
+        const value = e.target.value;
+        
+        if (tipoDescuento === 'porcentaje') {
+            // Solo permitir hasta 2 dígitos para porcentaje
+            if (value === '' || (/^\d{0,2}$/.test(value) && parseInt(value) <= 99)) {
+                setValorDescuento(value);
+                setErrorDescuento('');
+            }
+        } else {
+            // Para pesos, validar según el precio del producto
+            if (productoDescuento) {
+                const precioProducto = parseFloat(productoDescuento.precio || productoDescuento.price);
+                
+                // Calcular el número máximo de dígitos basado en el precio menos 0.01
+                const precioMaxDescuento = precioProducto - 0.01;
+                const maxDigitos = Math.floor(precioMaxDescuento).toString().length;
+                
+                // Regex que permite: punto opcional al inicio, números (máximo maxDigitos), punto opcional, hasta 2 decimales
+                const regex = new RegExp(`^(\\.\\d{0,2}|\\d{0,${maxDigitos}}(\\.\\d{0,2})?)$`);
+                
+                if (value === '' || regex.test(value)) {
+                    // Validar que el valor no sea mayor o igual al precio
+                    if (value === '' || value === '.') {
+                        setValorDescuento(value);
+                        setErrorDescuento('');
+                    } else {
+                        const valorNumerico = parseFloat(value);
+                        if (!isNaN(valorNumerico) && valorNumerico < precioProducto) {
+                            setValorDescuento(value);
+                            setErrorDescuento('');
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    // Función para manejar cambios en el input de descuento de orden
+    const handleInputChangeOrden = (e) => {
+        const value = e.target.value;
+        
+        if (descuentoOrden.tipo === 'porcentaje') {
+            // Solo permitir hasta 2 dígitos para porcentaje
+            if (value === '' || (/^\d{0,2}$/.test(value) && parseInt(value) <= 99)) {
+                setDescuentoOrden({ ...descuentoOrden, valor: value });
+                setErrorDescuento('');
+            }
+        } else {
+            // Para pesos, validar según el total del carrito
+            const totalCarrito = carrito.reduce((total, item) => {
+                const precioConDescuento = calcularPrecioConDescuento(item);
+                return total + (precioConDescuento * item.cantidad);
+            }, 0);
+            
+            // Calcular el número máximo de dígitos basado en el total menos 0.01
+            const totalMaxDescuento = totalCarrito - 0.01;
+            const maxDigitos = Math.floor(totalMaxDescuento).toString().length;
+            
+            // Regex que permite: punto opcional al inicio, números (máximo maxDigitos), punto opcional, hasta 2 decimales
+            const regex = new RegExp(`^(\\.\\d{0,2}|\\d{0,${maxDigitos}}(\\.\\d{0,2})?)$`);
+            
+            if (value === '' || regex.test(value)) {
+                // Validar que el valor no sea mayor o igual al total
+                if (value === '' || value === '.') {
+                    setDescuentoOrden({ ...descuentoOrden, valor: value });
+                    setErrorDescuento('');
+                } else {
+                    const valorNumerico = parseFloat(value);
+                    if (!isNaN(valorNumerico) && valorNumerico < totalCarrito) {
+                        setDescuentoOrden({ ...descuentoOrden, valor: value });
+                        setErrorDescuento('');
+                    }
+                }
+            }
+        }
+    };
+
     // Función para aplicar descuento a un producto
     const aplicarDescuentoProducto = async () => {
         if (!productoDescuento || valorDescuento === '') return;
@@ -103,7 +182,6 @@ export default function CartModal({
             return;
         }
 
-        // Solicitar código de confirmación
         try {
             setIsValidandoCodigoDescuento(true);
             const codigoData = await getCodigoConfirmacion();
@@ -148,7 +226,6 @@ export default function CartModal({
             return;
         }
 
-        // Solicitar código de confirmación
         try {
             setIsValidandoCodigoDescuento(true);
             const codigoData = await getCodigoConfirmacion();
@@ -178,7 +255,6 @@ export default function CartModal({
         setErrorCodigoDescuento('');
 
         if (tipoDescuentoEnProceso === 'producto') {
-            // Aplicar descuento al producto
             const carritoActualizado = carrito.map(item =>
                 item.id === productoDescuento.id
                     ? {
@@ -196,12 +272,10 @@ export default function CartModal({
             setProductoDescuento(null);
             setValorDescuento('');
         } else if (tipoDescuentoEnProceso === 'orden') {
-            // Aplicar descuento a la orden
             setDescuentoOrden(prev => ({ ...prev, aplicado: true }));
             setModalDescuentoOrdenOpen(false);
         }
 
-        // Cerrar modal de confirmación y limpiar estados
         setModalConfirmacionDescuentoOpen(false);
         setCodigoConfirmacionDescuento('');
         setCodigoEsperadoDescuento('');
@@ -239,7 +313,6 @@ export default function CartModal({
         };
     };
 
-    // Agregar esta función después de validarCodigoYAplicarDescuento y antes del return
     const quitarDescuentoProducto = (idProducto) => {
         const carritoActualizado = carrito.map(item =>
             item.id === idProducto
@@ -254,9 +327,9 @@ export default function CartModal({
 
     return (
         <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-end items-center z-[9998]" onClick={onClose}>
-            <div className="bg-white w-3/4 h-full sm:w-96 sm:h-screen flex flex-col shadow-2xl border border-gray-200 rounded-l-2xl sm:rounded-none sm:border-l overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white w-full sm:w-96 lg:w-1/2 xl:w-1/2 2xl:w-2/5 h-full flex flex-col shadow-2xl border-l border-gray-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6 text-white rounded-tl-2xl sm:rounded-none">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6 text-white">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
                             <FaShoppingCart className="text-base sm:text-xl" />
@@ -271,24 +344,24 @@ export default function CartModal({
                 </div>
 
                 {/* Contenido del carrito */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8">
                     {carrito.length > 0 ? (
                         <div className="mb-4 sm:mb-6">
-                            <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                            <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base lg:text-lg">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                 Productos en carrito
                             </h3>
-                            <div className="max-h-36 sm:max-h-48 overflow-y-auto space-y-2 sm:space-y-3">
+                            <div className="max-h-36 sm:max-h-48 lg:max-h-[400px] xl:max-h-[500px] overflow-y-auto space-y-2 sm:space-y-3 pr-2">
                                 {carrito.map((item) => {
                                     const precioOriginal = parseFloat(item.precio || item.price);
                                     const precioConDescuento = calcularPrecioConDescuento(item);
                                     const tieneDescuento = item.descuento && item.descuento.valor !== '' && item.descuento.valor !== '0';
 
                                     return (
-                                        <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-2 sm:p-4 border border-green-100 shadow-sm">
+                                        <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-2 sm:p-4 lg:p-5 border border-green-100 shadow-sm">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-green-800 text-xs sm:text-base truncate">
+                                                    <p className="font-bold text-green-800 text-xs sm:text-base lg:text-lg truncate">
                                                         {item.nombre || item.name}
                                                     </p>
                                                     {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
@@ -304,43 +377,43 @@ export default function CartModal({
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                         {tieneDescuento ? (
                                                             <>
-                                                                <span className="text-xs text-gray-500 line-through">
+                                                                <span className="text-xs lg:text-base text-gray-500 line-through">
                                                                     ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                                 </span>
-                                                                <span className="text-xs sm:text-sm text-green-600 font-bold">
+                                                                <span className="text-xs sm:text-sm lg:text-base text-green-600 font-bold">
                                                                     ${precioConDescuento.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
                                                                 </span>
-                                                                <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                                                                <span className="text-xs lg:text-sm bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
                                                                     -{item.descuento.tipo === 'porcentaje' ? `${item.descuento.valor}%` : `$${item.descuento.valor}`}
                                                                 </span>
                                                             </>
                                                         ) : (
-                                                            <span className="text-xs sm:text-sm text-green-600">
+                                                            <span className="text-xs sm:text-sm lg:text-base text-green-600">
                                                                 ${precioOriginal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
                                                             </span>
                                                         )}
                                                     </div>
                                                 </div>
                                                 <button className="text-red-500 hover:text-red-700 transition-colores ml-2 flex-shrink-0 p-1" onClick={() => onRemoveItem(item.id)}>
-                                                    <IoTrashOutline className="text-base sm:text-lg" />
+                                                    <IoTrashOutline className="text-base sm:text-lg lg:text-xl" />
                                                 </button>
                                             </div>
                                             <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                                                <button className="bg-green-200 hover:bg-green-300 text-green-800 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold transition-colores text-sm" onClick={() => onUpdateQuantity(item.id, -1)}>
+                                                <button className="bg-green-200 hover:bg-green-300 text-green-800 w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center font-bold transition-colores text-sm" onClick={() => onUpdateQuantity(item.id, -1)}>
                                                     -
                                                 </button>
-                                                <span className="text-base sm:text-lg font-bold text-green-800 min-w-[1.5rem] sm:min-w-[2rem] text-center">{item.cantidad}</span>
-                                                <button className="bg-green-200 hover:bg-green-300 text-green-800 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold transition-colores text-sm" onClick={() => onUpdateQuantity(item.id, 1)}>
+                                                <span className="text-base sm:text-lg lg:text-xl font-bold text-green-800 min-w-[1.5rem] sm:min-w-[2rem] lg:min-w-[2.5rem] text-center">{item.cantidad}</span>
+                                                <button className="bg-green-200 hover:bg-green-300 text-green-800 w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center font-bold transition-colores text-sm" onClick={() => onUpdateQuantity(item.id, 1)}>
                                                     +
                                                 </button>
                                             </div>
                                             {/* Botones de descuento */}
                                             <div className="flex gap-2">
-                                                <button onClick={() => abrirModalDescuento(item)} className="flex-1 bg-green-100 hover:bg-green-200 text-green-800 px-2 py-1 rounded-lg text-xs font-medium transition-colores">
+                                                <button onClick={() => abrirModalDescuento(item)} className="flex-1 bg-green-100 hover:bg-green-200 text-green-800 px-2 py-1 lg:py-2.5 rounded-lg text-xs lg:text-base font-medium transition-colores">
                                                     {tieneDescuento ? 'Editar Dto.' : 'Aplicar Dto.'}
                                                 </button>
                                                 {tieneDescuento && (
-                                                    <button onClick={() => quitarDescuentoProducto(item.id)} className="bg-red-100 hover:bg-red-200 text-red-800 px-2 py-1 rounded-lg text-xs font-medium transition-colores">
+                                                    <button onClick={() => quitarDescuentoProducto(item.id)} className="bg-red-100 hover:bg-red-200 text-red-800 px-2 py-1 lg:py-2.5 rounded-lg text-xs lg:text-base font-medium transition-colores">
                                                         Quitar
                                                     </button>
                                                 )}
@@ -351,35 +424,34 @@ export default function CartModal({
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center py-6 sm:py-8">
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                                <FaShoppingCart className="text-gray-400 text-lg sm:text-xl" />
+                        <div className="text-center py-6 sm:py-8 lg:py-16">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-24 lg:h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                                <FaShoppingCart className="text-gray-400 text-lg sm:text-xl lg:text-3xl" />
                             </div>
-                            <p className="text-gray-500 text-sm sm:text-base">Tu carrito está vacío</p>
+                            <p className="text-gray-500 text-sm sm:text-base lg:text-lg">Tu carrito está vacío</p>
                         </div>
                     )}
 
                     {/* Total con descuentos */}
                     {carrito.length > 0 && (
-                        <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 border border-green-200">
+                        <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 border border-green-200">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm sm:text-lg font-bold text-green-800">Total del carrito:</span>
-                                <span className="text-base sm:text-xl font-bold text-green-600">
+                                <span className="text-sm sm:text-lg lg:text-xl font-bold text-green-800">Total del carrito:</span>
+                                <span className="text-base sm:text-xl lg:text-2xl font-bold text-green-600">
                                     ${calcularTotal()}
                                 </span>
                             </div>
                             {/* Botón de descuento general */}
                             <div className="pt-2 border-t border-green-200">
                                 <button onClick={() => {
-    // Limpiar los campos del modal antes de abrirlo
-    setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
-    setErrorDescuento('');
-    setModalDescuentoOrdenOpen(true);
-}} className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colores">
+                                    setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
+                                    setErrorDescuento('');
+                                    setModalDescuentoOrdenOpen(true);
+                                }} className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 lg:py-3 rounded-lg text-xs sm:text-sm lg:text-base font-medium transition-colores">
                                     {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Aplicar Descuento General'}
                                 </button>
                                 {descuentoOrden.aplicado && (
-                                    <div className="mt-2 flex justify-between items-center text-xs sm:text-sm">
+                                    <div className="mt-2 flex justify-between items-center text-xs sm:text-sm lg:text-base">
                                         <span className="text-green-700">
                                             Dto. aplicado: {descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}
                                         </span>
@@ -392,28 +464,28 @@ export default function CartModal({
                         </div>
                     )}
 
-                    {/* Historial de pedidos (sin cambios) */}
+                    {/* Historial de pedidos */}
                     {historialPedidos.length > 0 && (
                         <div className="mt-6 sm:mt-8">
-                            <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                            <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base lg:text-lg">
                                 <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
                                 Historial de Pedidos
                             </h3>
-                            <div className="max-h-36 sm:max-h-48 overflow-y-auto space-y-2 sm:space-y-3">
+                            <div className="max-h-36 sm:max-h-48 lg:max-h-[400px] xl:max-h-[500px] overflow-y-auto space-y-2 sm:space-y-3 pr-2">
                                 {historialPedidos.map((item, index) => {
                                     const nombreCorto = (item.nombre || item.name).length > 16 
                                         ? `${(item.nombre || item.name).substring(0, 16)}...` 
                                         : (item.nombre || item.name);
                                     
                                     return (
-                                        <div key={index} className={`rounded-xl p-2 sm:p-4 border shadow-sm ${
+                                        <div key={index} className={`rounded-xl p-2 sm:p-4 lg:p-5 border shadow-sm ${
                                             item.estado === 'Preparado' ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' :
                                             item.estado === 'Cancelado' ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200' :
                                             'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'
                                         }`}>
                                             <div className="flex justify-between items-start mb-1 sm:mb-2">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className={`font-bold text-xs sm:text-base ${
+                                                    <p className={`font-bold text-xs sm:text-base lg:text-lg ${
                                                         item.estado === 'Preparado' ? 'text-green-800' :
                                                         item.estado === 'Cancelado' ? 'text-red-800' :
                                                         'text-yellow-800'
@@ -438,7 +510,7 @@ export default function CartModal({
                                                             Nota: {item.comentario}
                                                         </p>
                                                     )}
-                                                    <p className={`text-xs ${
+                                                    <p className={`text-xs lg:text-sm ${
                                                         item.estado === 'Preparado' ? 'text-green-600' :
                                                         item.estado === 'Cancelado' ? 'text-red-600 line-through' :
                                                         'text-yellow-600'
@@ -447,7 +519,7 @@ export default function CartModal({
                                                     </p>
                                                 </div>
                                                 <div className="ml-2 flex-shrink-0">
-                                                    <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${
+                                                    <span className={`text-xs lg:text-sm font-semibold px-2 py-1 rounded-full whitespace-nowrap ${
                                                         item.estado === 'Preparado' ? 'bg-green-500 text-white' :
                                                         item.estado === 'Cancelado' ? 'bg-red-500 text-white' :
                                                         'bg-yellow-500 text-white'
@@ -466,10 +538,10 @@ export default function CartModal({
                     )}
 
                     {totalFinal > 0 && (
-                        <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-3 sm:p-4 mt-3 sm:mt-4 border border-yellow-200">
+                        <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-3 sm:p-4 lg:p-6 mt-3 sm:mt-4 border border-yellow-200">
                             <div className="flex justify-between items-center">
-                                <span className="font-semibold text-yellow-800 text-sm sm:text-base">Total Final:</span>
-                                <span className="text-sm sm:text-lg font-bold text-yellow-600">
+                                <span className="font-semibold text-yellow-800 text-sm sm:text-base lg:text-lg">Total Final:</span>
+                                <span className="text-sm sm:text-lg lg:text-2xl font-bold text-yellow-600">
                                     ${totalFinal.toFixed(2)}
                                 </span>
                             </div>
@@ -478,9 +550,9 @@ export default function CartModal({
                 </div>
 
                 {/* Botones de acción */}
-                <div className="p-3 sm:p-6 bg-white border-t border-gray-200 rounded-bl-2xl sm:rounded-none">
+                <div className="p-3 sm:p-6 lg:p-8 bg-white border-t border-gray-200">
                     {mensajeError && (
-                        <div className={`p-2 sm:p-4 rounded-xl mb-3 sm:mb-4 text-xs sm:text-sm font-medium ${
+                        <div className={`p-2 sm:p-4 lg:p-5 rounded-xl mb-3 sm:mb-4 text-xs sm:text-sm lg:text-base font-medium ${
                             mensajeError.includes('exitosamente') 
                                 ? 'bg-green-100 text-green-800 border border-green-200' 
                                 : 'bg-green-100 text-green-800 border border-green-200'
@@ -490,7 +562,7 @@ export default function CartModal({
                     )}
 
                     <button
-                        className={`w-full py-2 sm:py-3 rounded-xl font-medium transition-all duration-200 text-xs sm:text-base ${
+                        className={`w-full py-2 sm:py-3 lg:py-4 rounded-xl font-medium transition-all duration-200 text-xs sm:text-base lg:text-lg ${
                             isCreatingOrder 
                                 ? 'bg-gray-300 cursor-not-allowed text-gray-500' 
                                 : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
@@ -500,7 +572,7 @@ export default function CartModal({
                     >
                         {isCreatingOrder ? (
                             <span className="flex items-center justify-center gap-2">
-                                <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                 </svg>
                                 Enviando...
@@ -509,7 +581,7 @@ export default function CartModal({
                     </button>
 
                     {(historialPedidos.length > 0 || ordenActiva) && (
-                        <button className="w-full py-2 sm:py-3 rounded-xl font-medium transition-all duration-200 mt-2 sm:mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg transform hover:scale-105 text-xs sm:text-base" onClick={onTerminarOrden}>
+                        <button className="w-full py-2 sm:py-3 lg:py-4 rounded-xl font-medium transition-all duration-200 mt-2 sm:mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg transform hover:scale-105 text-xs sm:text-base lg:text-lg" onClick={onTerminarOrden}>
                             💳 Terminar Orden
                         </button>
                     )}
@@ -595,12 +667,10 @@ export default function CartModal({
                                 Valor del descuento {tipoDescuento === 'porcentaje' ? '(%)' : '($)'}:
                             </label>
                             <input
-                                type="number"
-                                step={tipoDescuento === 'pesos' ? "0.01" : "1"}
-                                min="0"
-                                max={tipoDescuento === 'porcentaje' ? "99" : (parseFloat(productoDescuento?.precio || productoDescuento?.price || 0) - 0.01).toString()}
+                                type="text"
+                                inputMode="decimal"
                                 value={valorDescuento}
-                                onChange={(e) => { setValorDescuento(e.target.value); setErrorDescuento(''); }}
+                                onChange={handleInputChangeProducto}
                                 className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all duration-200"
                                 placeholder={tipoDescuento === 'porcentaje' ? "Ej: 10 (máx 99)" : `Ej: 5.00`}
                             />
@@ -712,11 +782,10 @@ export default function CartModal({
                                 Valor del descuento {descuentoOrden.tipo === 'porcentaje' ? '(%)' : '($)'}:
                             </label>
                             <input
-                                type="number"
-                                step={descuentoOrden.tipo === 'pesos' ? "0.01" : "1"}
-                                min="0"
+                                type="text"
+                                inputMode="decimal"
                                 value={descuentoOrden.valor}
-                                onChange={(e) => { setDescuentoOrden(prev => ({ ...prev, valor: e.target.value })); setErrorDescuento(''); }}
+                                onChange={handleInputChangeOrden}
                                 className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all duration-200"
                                 placeholder={descuentoOrden.tipo === 'porcentaje' ? "Ej: 10 (máx 99)" : "Ej: 5.00"}
                             />
