@@ -9,10 +9,11 @@ import { MdOutlineWatchLater } from "react-icons/md";
 import { GoChecklist } from "react-icons/go";
 import { IoHomeOutline } from "react-icons/io5";
 import Profile from "@/pages/assets/images/Profile.jpg";
+import { getMenuStyle } from '@/styles/menuStyles';
 
 export default function MenuWebDinamico() {
     const router = useRouter();
-    const { uuid } = router.query;
+    const { uuid, style } = router.query;
     
     const [categorias, setCategorias] = useState([]);
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos los platillos");
@@ -24,8 +25,15 @@ export default function MenuWebDinamico() {
     const [modalOpen, setModalOpen] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [restauranteInfo, setRestauranteInfo] = useState(null);
+    const [currentStyle, setCurrentStyle] = useState(getMenuStyle('default'));
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://wapifood.com';
+
+    // Aplicar estilo cuando cambie el parámetro
+    useEffect(() => {
+        const selectedStyle = getMenuStyle(style || 'default');
+        setCurrentStyle(selectedStyle);
+    }, [style]);
 
     // Función para validar si un valor es válido (no null ni "string")
     const esValorValido = (valor) => {
@@ -144,30 +152,38 @@ export default function MenuWebDinamico() {
         : "WapiFood"}</title>
         <meta name="description" content="Menú digital del restaurante - Descubre nuestros deliciosos platillos" />
         {/* Canónico y Open Graph dinámicos por restaurante/UUID */}
-        <link rel="canonical" href={`${baseUrl}/webmenu/${uuid || ''}`} />
+        <link rel="canonical" href={`${baseUrl}/webmenu/${uuid || ''}${style ? `?style=${style}` : ''}`} />
         <meta property="og:title" content={`Menú - ${restauranteInfo?.nombre_restaurante || 'WapiFood'}`} />
         <meta property="og:description" content="Menú digital del restaurante - Descubre nuestros deliciosos platillos" />
-        <meta property="og:url" content={`${baseUrl}/webmenu/${uuid || ''}`} />
+        <meta property="og:url" content={`${baseUrl}/webmenu/${uuid || ''}${style ? `?style=${style}` : ''}`} />
         <meta property="og:type" content="website" />
       </Head>
-        <section className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 relative">
+        <section className={`min-h-screen bg-gradient-to-br ${currentStyle.colors.background} relative pb-16 ${
+            style === 'tokyo' ? currentStyle.colors.backgroundPattern : ''
+        }`}>
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-20 left-10 w-32 h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>
-                <div className="absolute top-40 right-20 w-40 h-40 bg-emerald-100 rounded-full opacity-25 blur-xl animate-pulse delay-1000"></div>
-                <div className="absolute bottom-32 left-1/4 w-24 h-24 bg-teal-100 rounded-full opacity-20 blur-lg animate-pulse delay-500"></div>
-                <div className="absolute bottom-20 right-10 w-36 h-36 bg-green-200 rounded-full opacity-15 blur-2xl animate-pulse delay-1500"></div>
+                <div className={`absolute top-20 left-10 w-32 h-32 ${currentStyle.colors.decorativeCircles[0]} rounded-full opacity-30 blur-xl animate-pulse`}></div>
+                <div className={`absolute top-40 right-20 w-40 h-40 ${currentStyle.colors.decorativeCircles[1]} rounded-full opacity-25 blur-xl animate-pulse delay-1000`}></div>
+                <div className={`absolute bottom-32 left-1/4 w-24 h-24 ${currentStyle.colors.decorativeCircles[2]} rounded-full opacity-20 blur-lg animate-pulse delay-500`}></div>
+                <div className={`absolute bottom-20 right-10 w-36 h-36 ${currentStyle.colors.decorativeCircles[3]} rounded-full opacity-15 blur-2xl animate-pulse delay-1500`}></div>
             </div>
 
             {/* Header */}
             <header className="relative z-10">
-                <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
+                <nav className={`w-full bg-gradient-to-r ${currentStyle.colors.headerGradient} text-white p-4 shadow-lg ${
+                    style === 'tokyo' ? currentStyle.colors.neonGlow : ''
+                }`}>
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
                         <div className="flex items-center">
-                            <GoChecklist size={36} className="text-yellow-300 drop-shadow-lg" />
+                            <GoChecklist size={36} className={`${
+                                style === 'tokyo' ? 'text-cyan-300' : 'text-yellow-300'
+                            } drop-shadow-lg ${style === 'tokyo' ? currentStyle.colors.textGlow : ''}`} />
                             <button
                                 onClick={() => router.push('/')}
-                                className="text-3xl font-bold ml-2 text-white hover:text-yellow-200 transition-colors duration-200 cursor-pointer"
+                                className={`text-3xl font-bold ml-2 text-white hover:text-yellow-200 transition-colors duration-200 cursor-pointer ${
+                                    style === 'tokyo' ? currentStyle.colors.textGlow : ''
+                                }`}
                             >
                                 WapiFood
                             </button>
@@ -188,24 +204,30 @@ export default function MenuWebDinamico() {
             {/* Menú lateral remodelado */}
             <div
                 className={`
-                    fixed top-0 left-0 h-full w-64 bg-gradient-to-br from-green-100 to-emerald-100 shadow-2xl border-r border-green-200
+                    fixed top-0 left-0 h-full w-64 bg-gradient-to-br ${currentStyle.colors.sidebarBg} shadow-2xl ${
+                        style === 'tokyo' 
+                            ? 'border-r border-pink-500/30' 
+                            : `border-r border-${currentStyle.colors.primary}-200`
+                    }
                     transition-transform duration-300 ease-in-out menu-container z-50
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
             >
                 <ul className="flex flex-col mt-16 p-4 text-xl">
-                    <p className="text-green-700 font-bold mb-2">Menú principal</p>
+                    <p className={`${currentStyle.colors.textPrimary} font-bold mb-2 ${
+                        style === 'tokyo' ? currentStyle.colors.textGlow : ''
+                    }`}>Menú principal</p>
                     {obtenerCategorias().map((categoria, index) => (
                         <li
                             key={index}
-                            className="flex hover:bg-green-200 p-2 rounded-xl cursor-pointer gap-2 transition-all duration-200"
+                            className={`flex ${currentStyle.colors.sidebarHover} p-2 rounded-xl cursor-pointer gap-2 transition-all duration-200`}
                             onClick={() => {
                                 setCategoriaSeleccionada(categoria);
                                 setIsOpen(false);
                             }}
                         >
-                            {categoria === "Todos los platillos" && <IoHomeOutline className="self-center text-green-600" />}
-                            <span className="font-semibold text-green-800">{categoria}</span>
+                            {categoria === "Todos los platillos" && <IoHomeOutline className={`self-center ${currentStyle.colors.textSecondary}`} />}
+                            <span className={`font-semibold ${currentStyle.colors.sidebarText}`}>{categoria}</span>
                         </li>
                     ))}
                 </ul>
@@ -214,14 +236,19 @@ export default function MenuWebDinamico() {
             {/* Overlay para cerrar el menú al hacer clic fuera */}
             {isOpen && (
                 <div 
-                    className="fixed inset-0 z-40 backdrop-brightness-50"
+                    className={`fixed inset-0 z-40 ${currentStyle.colors.overlayBg}`}
                     onClick={() => setIsOpen(false)}
                 />
             )}
 
             {/* Header del restaurante remodelado */}
-            <div className={`w-full shadow-md bg-white/80 backdrop-blur-sm flex px-4 py-6 rounded-2xl border border-green-100 relative z-10 ${
-                restauranteInfo?.image && esValorValido(restauranteInfo.image) 
+            <div className={`w-full shadow-md ${
+                style === 'tokyo' 
+                    ? 'bg-slate-800/80 border-pink-500/30' 
+                    : 'bg-white/80'
+            } backdrop-blur-sm flex px-4 py-6 rounded-2xl border ${currentStyle.colors.cardBorder} relative z-10 ${
+                style === 'tokyo' ? currentStyle.colors.cardGlow : ''
+            } ${restauranteInfo?.image && esValorValido(restauranteInfo.image) 
                     ? 'h-70' 
                     : 'h-30'
             }`}> 
@@ -230,24 +257,32 @@ export default function MenuWebDinamico() {
                         <Image
                             src={restauranteInfo.image}
                             alt="Perfil"
-                            className="rounded-full w-20 h-20 mr-4 object-contain border-4 border-green-200 shadow-lg"
+                            className={`rounded-full w-20 h-20 mr-4 object-contain border-4 ${
+                                style === 'tokyo' 
+                                    ? 'border-pink-500' 
+                                    : `border-${currentStyle.colors.primary}-200`
+                            } shadow-lg ${style === 'tokyo' ? currentStyle.colors.neonGlow : ''}`}
                             width={80}
                             height={80}
                         />
                     )}
-                    <p className="font-bold text-2xl  drop-shadow">{restauranteInfo?.nombre_restaurante && esValorValido(restauranteInfo.nombre_restaurante) 
+                    <p className={`font-bold text-2xl drop-shadow ${
+                        style === 'tokyo' 
+                            ? `text-cyan-300 ${currentStyle.colors.textGlow}` 
+                            : currentStyle.colors.restaurantNameText
+                    }`}>{restauranteInfo?.nombre_restaurante && esValorValido(restauranteInfo.nombre_restaurante) 
                         ? restauranteInfo.nombre_restaurante 
                         : "Las flautas de pepe"}
                     </p>
                     {restauranteInfo?.direccion && esValorValido(restauranteInfo.direccion) && (
-                        <p className="text-sm pt-2 ">| {restauranteInfo.direccion} |</p>
+                        <p className={`text-sm pt-2 ${currentStyle.colors.restaurantInfoText}`}>| {restauranteInfo.direccion} |</p>
                     )}
                     {(
                         (restauranteInfo?.ciudad && esValorValido(restauranteInfo.ciudad)) ||
                         (restauranteInfo?.alcaldia && esValorValido(restauranteInfo.alcaldia)) ||
                         (restauranteInfo?.codigo_postal && esValorValido(restauranteInfo.codigo_postal))
                     ) && (
-                        <p className="text-sm ">
+                        <p className={`text-sm ${currentStyle.colors.restaurantInfoText}`}>
                             |
                             {restauranteInfo?.ciudad && esValorValido(restauranteInfo.ciudad) && ` ${restauranteInfo.ciudad}`}
                             {restauranteInfo?.alcaldia && esValorValido(restauranteInfo.alcaldia) && `, ${restauranteInfo.alcaldia}`}
@@ -257,11 +292,11 @@ export default function MenuWebDinamico() {
                     )}
                     {restauranteInfo?.horario && esValorValido(restauranteInfo.horario) && (
                         <div className="flex items-center gap-2">
-                            <p className="text-sm flex py-2 ">| <span className="px-2 self-center"><MdOutlineWatchLater className="text-green-600" /></span> {restauranteInfo.horario} |</p>
+                            <p className={`text-sm flex py-2 ${currentStyle.colors.restaurantInfoText}`}>| <span className="px-2 self-center"><MdOutlineWatchLater className={currentStyle.colors.textSecondary} /></span> {restauranteInfo.horario} |</p>
                         </div>
                     )}
                     {restauranteInfo?.telefono && esValorValido(restauranteInfo.telefono) && (
-                        <p className="text-sm flex ">| <span className="px-2 self-center"> <FaPhoneAlt className="text-green-600"/> </span>{restauranteInfo.telefono} |</p>
+                        <p className={`text-sm flex ${currentStyle.colors.restaurantInfoText}`}>| <span className="px-2 self-center"> <FaPhoneAlt className={currentStyle.colors.textSecondary}/> </span>{restauranteInfo.telefono} |</p>
                     )}
                     {restauranteInfo?.whatsapp && esValorValido(restauranteInfo.whatsapp) && (
                         <button 
@@ -269,7 +304,7 @@ export default function MenuWebDinamico() {
                             onClick={() => window.open(`${restauranteInfo.whatsapp}`, '_blank')}
                             title="Contactar por WhatsApp"
                         >
-                            <FaWhatsapp className="text-xl text-green-600 hover:text-green-700 transition-colors" />
+                            <FaWhatsapp className={`text-xl ${currentStyle.colors.textSecondary} hover:${currentStyle.colors.textPrimary} transition-colors`} />
                         </button>
                     )}
                 </div>
@@ -283,17 +318,27 @@ export default function MenuWebDinamico() {
                         placeholder="Buscar productos..."
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
-                        className="w-full px-4 py-3 pl-12 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white/80 backdrop-blur-sm shadow-lg transition-all duration-200 hover:border-green-300 text-green-800"
+                        className={`w-full px-4 py-3 pl-12 border-2 ${currentStyle.colors.inputBorder} rounded-xl focus:outline-none focus:ring-2 ${
+                            currentStyle.colors.inputBg
+                        } backdrop-blur-sm shadow-lg transition-all duration-200 hover:border-${currentStyle.colors.primary}-300 ${
+                            style === 'tokyo' 
+                                ? `text-cyan-300 ${currentStyle.colors.inputPlaceholder} ${currentStyle.colors.neonGlow}` 
+                                : `${currentStyle.colors.inputText} ${currentStyle.colors.inputPlaceholder}`
+                        }`}
                     />
                     <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                        <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`h-5 w-5 ${currentStyle.colors.textSecondary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                     {busqueda && (
                         <button
                             onClick={() => setBusqueda("")}
-                            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-green-400 hover:text-green-600"
+                            className={`absolute right-4 top-1/2 transform -translate-y-1/2 ${
+                                style === 'tokyo' 
+                                    ? 'text-pink-400 hover:text-cyan-400' 
+                                    : `text-${currentStyle.colors.primary}-400 hover:text-${currentStyle.colors.primary}-600`
+                            }`}
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -302,7 +347,9 @@ export default function MenuWebDinamico() {
                     )}
                 </div>
                 {busqueda && (
-                    <p className="mt-2 text-sm text-green-700">
+                    <p className={`mt-2 text-sm ${
+                        style === 'tokyo' ? 'text-cyan-400' : currentStyle.colors.textPrimary
+                    }`}>
                         {productosFiltrados.length} resultado(s) encontrado(s) para {busqueda}
                     </p>
                 )}
@@ -318,9 +365,19 @@ export default function MenuWebDinamico() {
                         }
                     }}
                 >
-                    <div className="bg-white rounded-3xl shadow-2xl w-11/12 md:w-[420px] border border-green-100 max-h-[90vh] overflow-y-auto relative p-6 animate-slideUp">
+                    <div className={`${
+                        style === 'tokyo' 
+                            ? 'bg-slate-800 border-pink-500/30' 
+                            : 'bg-white'
+                    } rounded-3xl shadow-2xl w-11/12 md:w-[420px] border ${currentStyle.colors.cardBorder} max-h-[90vh] overflow-y-auto relative p-6 animate-slideUp ${
+                        style === 'tokyo' ? currentStyle.colors.cardGlow : ''
+                    }`}>
                         <button
-                            className="absolute top-4 right-4 text-green-500 hover:text-green-700 transition-colors text-2xl"
+                            className={`absolute top-4 right-4 ${
+                                style === 'tokyo' 
+                                    ? 'text-pink-400 hover:text-cyan-400' 
+                                    : `text-${currentStyle.colors.primary}-500 hover:text-${currentStyle.colors.primary}-700`
+                            } transition-colors text-2xl`}
                             onClick={closeModal}
                             aria-label="Cerrar"
                         >
@@ -336,15 +393,33 @@ export default function MenuWebDinamico() {
                                     height={300}
                                 />
                             </div>
-                            <h2 className="text-2xl font-bold mb-2 text-green-700 text-center drop-shadow">{productoSeleccionado.nombre}</h2>
-                            <p className="bg-green-100 text-green-800 rounded-full px-4 py-1 text-sm font-semibold mb-2">{productoSeleccionado.categoria}</p>
-                            <p className="text-lg font-bold text-green-600 mb-4">${productoSeleccionado.precio.toFixed(2)}</p>
-                            <p className="text-gray-700 text-center text-md leading-relaxed mb-4">
+                            <h2 className={`text-2xl font-bold mb-2 text-center drop-shadow ${
+                                style === 'tokyo' 
+                                    ? `text-cyan-300 ${currentStyle.colors.textGlow}` 
+                                    : currentStyle.colors.textPrimary
+                            }`}>{productoSeleccionado.nombre}</h2>
+                            <p className={`${
+                                style === 'tokyo' 
+                                    ? `${currentStyle.colors.badge} ${currentStyle.colors.neonGlow}` 
+                                    : `${currentStyle.colors.badgeBg} ${currentStyle.colors.badgeText}`
+                            } rounded-full px-4 py-1 text-sm font-semibold mb-2`}>{productoSeleccionado.categoria}</p>
+                            <p className={`text-lg font-bold mb-4 ${
+                                style === 'tokyo' 
+                                    ? `text-cyan-300 ${currentStyle.colors.textGlow}` 
+                                    : currentStyle.colors.textSecondary
+                            }`}>${productoSeleccionado.precio.toFixed(2)}</p>
+                            <p className={`text-center text-md leading-relaxed mb-4 ${
+                                style === 'tokyo' ? 'text-pink-300' : 'text-gray-700'
+                            }`}>
                                 {productoSeleccionado.descripcion}
                             </p>
                             <div className="flex gap-2 mt-2">
                                 {productoSeleccionado.status === "activo" ? (
-                                    <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow">Disponible</span>
+                                    <span className={`${
+                                        style === 'tokyo' 
+                                            ? `${currentStyle.colors.badge} ${currentStyle.colors.neonGlow}` 
+                                            : `${currentStyle.colors.badge}`
+                                    } text-white px-3 py-1 rounded-full text-xs font-medium shadow`}>Disponible</span>
                                 ) : (
                                     <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow">No disponible</span>
                                 )}
@@ -362,7 +437,9 @@ export default function MenuWebDinamico() {
                         .map((producto) => (
                             <div
                                 key={producto.id}
-                                className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-green-100 overflow-hidden group"
+                                className={`${currentStyle.colors.cardBg} rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border ${currentStyle.colors.cardBorder} overflow-hidden group ${
+                                    style === 'tokyo' ? currentStyle.colors.cardGlow : ''
+                                }`}
                             >
                                 {/* Imagen del producto */}
                                 <div className="relative h-48 overflow-hidden">
@@ -375,7 +452,11 @@ export default function MenuWebDinamico() {
                                     />
                                     {/* Badge de estado */}
                                     {producto.status === "activo" ? (
-                                        <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow">
+                                        <div className={`absolute top-3 right-3 ${
+                                            style === 'tokyo' 
+                                                ? `${currentStyle.colors.badge} text-white ${currentStyle.colors.neonGlow}` 
+                                                : `${currentStyle.colors.badge} text-white`
+                                        } px-2 py-1 rounded-full text-xs font-medium shadow`}>
                                             Disponible
                                         </div>
                                     ) : (
@@ -386,8 +467,16 @@ export default function MenuWebDinamico() {
                                         </div>
                                     )}
                                     {/* Precio flotante */}
-                                    <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg">
-                                        <span className="text-lg font-bold text-green-600">
+                                    <div className={`absolute bottom-3 left-3 ${
+                                        style === 'tokyo' 
+                                            ? 'bg-slate-900/90 border border-cyan-500/50' 
+                                            : 'bg-white/90'
+                                    } backdrop-blur-sm px-3 py-1 rounded-full shadow-lg`}>
+                                        <span className={`text-lg font-bold ${
+                                            style === 'tokyo' 
+                                                ? `text-cyan-300 ${currentStyle.colors.textGlow}` 
+                                                : currentStyle.colors.textSecondary
+                                        }`}>
                                             ${producto.precio.toFixed(2)}
                                         </span>
                                     </div>
@@ -395,21 +484,23 @@ export default function MenuWebDinamico() {
                                 {/* Info del producto */}
                                 <div className="p-4 flex flex-col flex-1">
                                     <div className="flex justify-between items-center mb-2">
-                                        <h3 className="font-bold text-xl text-green-700">{producto.nombre}</h3>
+                                        <h3 className={`font-bold text-xl ${style === 'tokyo' ? `text-cyan-300 ${currentStyle.colors.textGlow}` : currentStyle.colors.textCard}`}>
+                                            {producto.nombre}
+                                        </h3>
                                     </div>
-                                    <p className="text-gray-500 mb-4 line-clamp-2 min-h-[3rem]">
+                                    <p className={`mb-4 line-clamp-2 min-h-[3rem] ${style === 'tokyo' ? 'text-pink-300' : 'text-gray-500'}`}>
                                         {producto.descripcion.length > 80
                                             ? `${producto.descripcion.slice(0, 80)}...`
                                             : producto.descripcion}
                                     </p>
                                     <div className="flex justify-between items-center">
-                                        <p className="bg-green-300 text-green-800 rounded-full px-4 py-1 text-sm font-semibold">
+                                        <p className={`${style === 'tokyo' ? `${currentStyle.colors.badge} text-white ${currentStyle.colors.neonGlow}` : `${currentStyle.colors.badgeBg} ${currentStyle.colors.badgeText}`} rounded-full px-4 py-1 text-sm font-semibold`}>
                                             {producto.categoria}
                                         </p>
                                     </div>
                                     <div className="mt-4">
                                         <button
-                                            className="flex gap-4 items-center justify-center bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full shadow-lg font-semibold transition-all duration-200"
+                                            className={`flex gap-4 items-center justify-center bg-gradient-to-r ${currentStyle.colors.buttonGradient} text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full shadow-lg font-semibold transition-all duration-200 ${style === 'tokyo' ? currentStyle.colors.neonGlow : ''}`}
                                             onClick={() => openModal(producto)}
                                         >
                                             <FaRegEye className="h-[20px] w-[20px]" />Detalles
@@ -420,7 +511,9 @@ export default function MenuWebDinamico() {
                         ))
                 ) : (
                     <div className="col-span-full text-center py-8">
-                        <p className="text-gray-500 text-lg">No se encontraron productos.</p>
+                        <p className={`text-lg ${style === 'tokyo' ? 'text-pink-300' : 'text-gray-500'}`}>
+                            No se encontraron productos.
+                        </p>
                     </div>
                 )}
             </section>
