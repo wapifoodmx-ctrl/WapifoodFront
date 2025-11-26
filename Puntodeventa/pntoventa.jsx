@@ -14,6 +14,7 @@ import TicketModal from "@/components/TicketModal";
 import CarritoModal from "./CarritoModal";
 import { ModalConfirmarPago, ModalDescuentoProducto, ModalDescuentoOrden, ModalSuscripcion, ModalOrdenCancelada } from "./ModalsPago";
 import ProductoCard, { ModalProducto } from "./ProductoCard";
+import descontarInventario from "@/useCases/inventarioDescontar";
 
 export default function Pntoventa() {
     const router = useRouter();
@@ -372,6 +373,29 @@ export default function Pntoventa() {
             );
             
             if (pagoResponse && (pagoResponse.success !== false)) {
+                // Descontar inventario después de confirmar el pago
+                try {
+                    // Construir el array de productos para descontar inventario
+                    const productosParaDescontar = response.order_details.map(detail => ({
+                        product_id: detail.product_id,
+                        quantity: detail.quantity
+                    }));
+
+                    console.log('Descontando inventario:', productosParaDescontar);
+
+                    const inventarioResponse = await descontarInventario(productosParaDescontar);
+                    
+                    if (inventarioResponse.success) {
+                        console.log('Inventario descontado exitosamente:', inventarioResponse.data);
+                    } else {
+                        console.error('Error al descontar inventario:', inventarioResponse.error);
+                        // No detenemos el flujo, solo registramos el error
+                    }
+                } catch (inventarioError) {
+                    console.error('Error al procesar descuento de inventario:', inventarioError);
+                    // No detenemos el flujo principal si falla el inventario
+                }
+
                 setPedidosPendientes([]);
                 localStorage.removeItem("pedidosPendientes");
                 localStorage.removeItem("carrito");
