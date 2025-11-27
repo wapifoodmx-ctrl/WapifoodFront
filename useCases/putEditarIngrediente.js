@@ -2,6 +2,13 @@
  * Función para editar un ingrediente existente
  * @param {number} ingredientId - ID del ingrediente a editar
  * @param {Object} ingredientData - Datos del ingrediente a actualizar
+ * @param {string} ingredientData.name - Nombre del ingrediente
+ * @param {string} ingredientData.description - Descripción del ingrediente
+ * @param {string|number} ingredientData.cost - Costo del ingrediente
+ * @param {string|number} ingredientData.stock - Stock del ingrediente
+ * @param {string} ingredientData.unit - Unidad de medida
+ * @param {string} ingredientData.category - Categoría del ingrediente
+ * @param {string} ingredientData.confirmation_code - Código de confirmación (4 caracteres, requerido)
  * @returns {Promise<Object>} - Respuesta de la API
  */
 async function putEditarIngrediente(ingredientId, ingredientData) {
@@ -18,6 +25,16 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
             throw new Error('ID de ingrediente inválido');
         }
 
+        // Validar el código de confirmación (requerido, 4 caracteres)
+        if (!ingredientData.confirmation_code) {
+            throw new Error('Código de confirmación es requerido');
+        }
+        
+        const confirmationCode = ingredientData.confirmation_code.toString().trim();
+        if (confirmationCode.length !== 4) {
+            throw new Error('El código de confirmación debe tener exactamente 4 caracteres');
+        }
+
         // Crear FormData para envío form-urlencoded
         const formData = new URLSearchParams();
         formData.append('name', ingredientData.name || '');
@@ -26,6 +43,7 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
         formData.append('stock', ingredientData.stock?.toString() || '');
         formData.append('unit', ingredientData.unit || '');
         formData.append('category', ingredientData.category || '');
+        formData.append('confirmation_code', confirmationCode);
 
         const url = `http://192.168.1.69:8001/inventory/ingredients/${ingredientId}`;
         
@@ -39,7 +57,8 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
             cost: ingredientData.cost,
             stock: ingredientData.stock,
             unit: ingredientData.unit,
-            category: ingredientData.category
+            category: ingredientData.category,
+            confirmation_code: confirmationCode
         });
         console.log('FormData entries:', Object.fromEntries(formData.entries()));
 

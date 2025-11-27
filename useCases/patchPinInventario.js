@@ -24,29 +24,45 @@ async function actualizarPinInventario(newPin) {
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        new_pin: newPin
+        pin_code: newPin  // Cambiado de "new_pin" a "pin_code"
       })
     });
 
     if (!response.ok) {
-      let errorData = {};
+      let errorMessage = `Error al actualizar el PIN. Código de estado: ${response.status}`;
+      
       try {
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
-          errorData = await response.json();
+          const errorData = await response.json();
+          
+          // Asegurarse de que errorMessage sea un string
+          if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          } else if (errorData.detail) {
+            errorMessage = typeof errorData.detail === 'string' 
+              ? errorData.detail 
+              : JSON.stringify(errorData.detail);
+          } else if (errorData.message) {
+            errorMessage = typeof errorData.message === 'string' 
+              ? errorData.message 
+              : JSON.stringify(errorData.message);
+          } else if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' 
+              ? errorData.error 
+              : JSON.stringify(errorData.error);
+          } else {
+            errorMessage = JSON.stringify(errorData);
+          }
         } else {
-          errorData = { message: await response.text() };
+          const textError = await response.text();
+          errorMessage = textError || errorMessage;
         }
       } catch (e) {
-        errorData = { message: `Error ${response.status}: ${response.statusText}` };
+        console.error('Error al parsear respuesta de error:', e);
       }
 
-      throw new Error(
-        errorData.detail || 
-        errorData.message || 
-        errorData.error || 
-        `Error al actualizar el PIN. Código de estado: ${response.status}`
-      );
+      throw new Error(String(errorMessage));
     }
 
     const data = await response.json();

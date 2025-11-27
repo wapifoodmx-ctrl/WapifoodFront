@@ -7,7 +7,10 @@ async function getIngredienteById(ingredientId) {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         
         if (!token) {
-            throw new Error('Token de autenticación no encontrado');
+            return {
+                success: false,
+                error: 'Token de autenticación no encontrado'
+            };
         }
 
         // Usar la misma URL base que en otros archivos
@@ -28,7 +31,10 @@ async function getIngredienteById(ingredientId) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Error de respuesta:', errorText);
-            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+            return {
+                success: false,
+                error: `Error HTTP: ${response.status} - ${response.statusText}`
+            };
         }
 
         const data = await response.json();
@@ -36,9 +42,15 @@ async function getIngredienteById(ingredientId) {
         
         // Verificar estructura de la respuesta
         if (data && (data.id_ingredient || data.id)) {
-            return data;
+            return {
+                success: true,
+                data: data
+            };
         } else {
-            throw new Error('Estructura de respuesta inesperada');
+            return {
+                success: false,
+                error: 'Estructura de respuesta inesperada'
+            };
         }
 
     } catch (error) {
@@ -46,10 +58,16 @@ async function getIngredienteById(ingredientId) {
         
         // Mejorar el mensaje de error
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('No se puede conectar con el servidor. Verifica que esté ejecutándose.');
+            return {
+                success: false,
+                error: 'No se puede conectar con el servidor. Verifica que esté ejecutándose.'
+            };
         }
         
-        throw error;
+        return {
+            success: false,
+            error: error.message
+        };
     }
 }
 

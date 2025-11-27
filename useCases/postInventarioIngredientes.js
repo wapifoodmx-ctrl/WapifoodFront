@@ -7,6 +7,7 @@
  * @param {number} ingredientData.stock - Stock del ingrediente (requerido)
  * @param {string} ingredientData.unit - Unidad del ingrediente (requerido)
  * @param {string} [ingredientData.category] - Categoría del ingrediente (opcional)
+ * @param {string} ingredientData.confirmation_code - Código de confirmación de 4 caracteres (requerido)
  * @returns {Promise<Object>} - Respuesta de la API
  */
 export const postInventarioIngredientes = async (ingredientData) => {
@@ -16,6 +17,11 @@ export const postInventarioIngredientes = async (ingredientData) => {
     
     if (!token) {
       throw new Error('No se encontró token de autenticación');
+    }
+
+    // Validar confirmation_code
+    if (!ingredientData.confirmation_code || ingredientData.confirmation_code.length !== 4) {
+      throw new Error('El código de confirmación debe tener exactamente 4 caracteres');
     }
 
     // Crear FormData para envío como form-urlencoded
@@ -30,6 +36,7 @@ export const postInventarioIngredientes = async (ingredientData) => {
     if (ingredientData.category) {
       formData.append('category', ingredientData.category);
     }
+    formData.append('confirmation_code', ingredientData.confirmation_code);
 
     const response = await fetch('http://192.168.1.69:8001/inventory/ingredients/', {
       method: 'POST',

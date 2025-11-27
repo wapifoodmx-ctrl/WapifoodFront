@@ -40,6 +40,11 @@ export default function MenuWebDinamico() {
         return valor && valor !== "string" && typeof valor === 'string' && valor.trim() !== "";
     };
 
+    // Nueva función para validar números
+    const esNumeroValido = (valor) => {
+        return valor !== null && valor !== undefined && valor !== 0 && valor !== "0" && valor !== "";
+    };
+
     // Transformar los datos de la API al formato esperado
     const transformarDatosAPI = (datosAPI) => {
         const productosTransformados = [];
@@ -280,23 +285,37 @@ export default function MenuWebDinamico() {
                     {(
                         (restauranteInfo?.ciudad && esValorValido(restauranteInfo.ciudad)) ||
                         (restauranteInfo?.alcaldia && esValorValido(restauranteInfo.alcaldia)) ||
-                        (restauranteInfo?.codigo_postal && esValorValido(restauranteInfo.codigo_postal))
+                        (restauranteInfo?.codigo_postal && esNumeroValido(restauranteInfo.codigo_postal))
                     ) && (
                         <p className={`text-sm ${currentStyle.colors.restaurantInfoText}`}>
                             |
                             {restauranteInfo?.ciudad && esValorValido(restauranteInfo.ciudad) && ` ${restauranteInfo.ciudad}`}
                             {restauranteInfo?.alcaldia && esValorValido(restauranteInfo.alcaldia) && `, ${restauranteInfo.alcaldia}`}
-                            {restauranteInfo?.codigo_postal && esValorValido(restauranteInfo.codigo_postal) && ` CP: ${restauranteInfo.codigo_postal}`}
+                            {restauranteInfo?.codigo_postal && esNumeroValido(restauranteInfo.codigo_postal) && ` CP: ${restauranteInfo.codigo_postal}`}
                             |
                         </p>
                     )}
                     {restauranteInfo?.horario && esValorValido(restauranteInfo.horario) && (
                         <div className="flex items-center gap-2">
-                            <p className={`text-sm flex py-2 ${currentStyle.colors.restaurantInfoText}`}>| <span className="px-2 self-center"><MdOutlineWatchLater className={currentStyle.colors.textSecondary} /></span> {restauranteInfo.horario} |</p>
+                            <p className={`text-sm flex py-2 ${currentStyle.colors.restaurantInfoText}`}>
+                                | 
+                                <span className="px-2 self-center">
+                                    <MdOutlineWatchLater className={currentStyle.colors.textSecondary} />
+                                </span> 
+                                {restauranteInfo.horario} 
+                                |
+                            </p>
                         </div>
                     )}
                     {restauranteInfo?.telefono && esValorValido(restauranteInfo.telefono) && (
-                        <p className={`text-sm flex ${currentStyle.colors.restaurantInfoText}`}>| <span className="px-2 self-center"> <FaPhoneAlt className={currentStyle.colors.textSecondary}/> </span>{restauranteInfo.telefono} |</p>
+                        <p className={`text-sm flex ${currentStyle.colors.restaurantInfoText}`}>
+                            | 
+                            <span className="px-2 self-center"> 
+                                <FaPhoneAlt className={currentStyle.colors.textSecondary}/> 
+                            </span>
+                            {restauranteInfo.telefono} 
+                            |
+                        </p>
                     )}
                     {restauranteInfo?.whatsapp && esValorValido(restauranteInfo.whatsapp) && (
                         <button 
@@ -407,7 +426,9 @@ export default function MenuWebDinamico() {
                                 style === 'tokyo' 
                                     ? `text-cyan-300 ${currentStyle.colors.textGlow}` 
                                     : currentStyle.colors.textSecondary
-                            }`}>${productoSeleccionado.precio.toFixed(2)}</p>
+                            }`}>
+                                ${productoSeleccionado.precio.toFixed(2)} 
+                            </p>
                             <p className={`text-center text-md leading-relaxed mb-4 ${
                                 style === 'tokyo' ? 'text-pink-300' : 'text-gray-700'
                             }`}>

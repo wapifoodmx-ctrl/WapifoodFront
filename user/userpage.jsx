@@ -2,17 +2,20 @@ import { TbWorldShare } from "react-icons/tb";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { IoLocationOutline } from "react-icons/io5";
-import { FaPhoneAlt, FaCheckCircle, FaEdit, FaUser, FaClock, FaMapMarkerAlt } from "react-icons/fa";
+import { FaPhoneAlt, FaCheckCircle, FaEdit, FaUser, FaClock, FaMapMarkerAlt, FaLock } from "react-icons/fa";
 import { CiMail } from "react-icons/ci";
 import { BsWhatsapp } from "react-icons/bs";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getUserInfo } from "@/useCases/getUserInfo";
 import { patchUserInfo } from "@/useCases/patchUserInfo";
-import { checkPayment } from "@/useCases/checkPayment"; // Importar checkPayment
+import { checkPayment } from "@/useCases/checkPayment";
+import getPinInventario from "@/useCases/getPinInventario";
+import actualizarPinInventario from "@/useCases/patchPinInventario";
 import Profile from "@/pages/assets/images/Profile.jpg";
 import { useRouter } from 'next/router';
 import Navbar from "@/dashboardComponents/navbar";
+import { menuStyles } from "@/styles/menuStyles";
 
 // Esquema base sin profileImage
 const baseSchema = Yup.object().shape({
@@ -22,11 +25,12 @@ const baseSchema = Yup.object().shape({
   restaurantName: Yup.string().required("Nombre del restaurante es requerido"),
   confirmationCode: Yup.string()
     .required("Código de confirmación es requerido")
-    .matches(/^\d{4}$/, 'El código debe tener exactamente 4 números')
-    .test('positive-numbers', 'Solo se permiten números positivos (1-9)', function(value) {
-      if (!value) return true;
-      return /^[1-9]{4}$/.test(value);
-    }),
+    .matches(/^\d{4}$/, 'El código debe tener exactamente 4 números'),
+  pinInventory: Yup.string()
+    .required("PIN de inventario es requerido")
+    .matches(/^\d{4}$/, 'El PIN debe tener exactamente 4 números'),
+  postalCode: Yup.string()
+    .matches(/^\d{1,10}$/, 'El código postal debe contener solo números (máximo 10 dígitos)'),
 });
 
 // Crear un esquema dinámico que incluya la validación condicional de imagen
@@ -126,8 +130,11 @@ export default function UserPage() {
   const [editMode, setEditMode] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [processingImage, setProcessingImage] = useState(false);
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false); // Estado para suscripción
-  const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false); // Estado para popup
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
+  const [showColorModal, setShowColorModal] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState('default'); // Estado para el estilo seleccionado
+  const [pinInventario, setPinInventario] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -153,8 +160,20 @@ export default function UserPage() {
       }
     };
 
+    const fetchPinInventario = async () => {
+      try {
+        const response = await getPinInventario();
+        if (response.pin_code) {
+          setPinInventario(response.pin_code);
+        }
+      } catch (error) {
+        console.error('Error al obtener PIN de inventario:', error);
+      }
+    };
+
     fetchUserInfo();
     checkSubscriptionStatus();
+    fetchPinInventario();
   }, []);
 
   const handleImageChange = async (event, setFieldValue) => {
@@ -210,10 +229,23 @@ export default function UserPage() {
         updateData.image = values.profileImage;
       }
 
-      // console.log('Enviando datos:', updateData); // Para debug
-
+      // Actualizar información del usuario
       const updatedUser = await patchUserInfo(updateData);
       setUserInfo(updatedUser);
+
+      // Actualizar PIN de inventario si ha cambiado
+      if (values.pinInventory && values.pinInventory !== pinInventario) {
+        const pinResult = await actualizarPinInventario(values.pinInventory);
+        
+        if (!pinResult.success) {
+          throw new Error(pinResult.error || 'Error al actualizar el PIN de inventario');
+        }
+        
+        // Actualizar el estado local del PIN
+        setPinInventario(values.pinInventory);
+        console.log('PIN de inventario actualizado:', pinResult.data.message);
+      }
+
       setShowSuccessModal(true);
       setEditMode(false);
       setImagePreview(null);
@@ -225,6 +257,8 @@ export default function UserPage() {
         alert('La imagen es demasiado grande. Por favor, selecciona una imagen más pequeña.');
       } else if (error.message.includes('CORS')) {
         alert('Error de conexión. Por favor, inténtalo de nuevo.');
+      } else if (error.message.includes('PIN')) {
+        alert(`Error con el PIN: ${error.message}`);
       } else {
         alert('Error al actualizar la información. Inténtalo de nuevo.');
       }
@@ -267,8 +301,9 @@ export default function UserPage() {
   // Función para manejar el click en "Ver menú"
   const handleViewMenuClick = () => {
     if (hasActiveSubscription) {
-      // Si tiene suscripción activa, abrir el menú normalmente
-      window.open(`/webmenu/${userInfo?.user_uuid}`, '_blank');
+      // Generar URL con el estilo seleccionado
+      const styleParam = selectedStyle !== 'default' ? `?style=${selectedStyle}` : '';
+      window.open(`/webmenu/${userInfo?.user_uuid}${styleParam}`, '_blank');
     } else {
       // Si no tiene suscripción activa, mostrar popup
       setShowSubscriptionPopup(true);
@@ -347,6 +382,115 @@ export default function UserPage() {
           </div>
         )}
 
+        {/* Modal de Selección de Color - MODIFICADO */}
+        {showColorModal && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-3xl w-full mx-auto shadow-2xl transform animate-scale-in max-h-[90vh] overflow-y-auto">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  Selecciona el estilo de tu menú
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Elige el diseño que mejor represente tu restaurante
+                </p>
+              </div>
+              
+              {/* Grid de estilos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {Object.entries(menuStyles).map(([key, style]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedStyle(key)}
+                    className={`relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${
+                      selectedStyle === key
+                        ? 'border-green-500 bg-green-50 shadow-lg'
+                        : 'border-gray-200 bg-white hover:border-green-300'
+                    }`}
+                  >
+                    {/* Indicador de selección */}
+                    {selectedStyle === key && (
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <FaCheckCircle className="text-white text-sm" />
+                      </div>
+                    )}
+                    
+                    {/* Preview del gradiente del header */}
+                    <div className={`h-16 rounded-lg mb-3 bg-gradient-to-r ${style.colors.headerGradient}`}></div>
+                    
+                    {/* Nombre del estilo */}
+                    <h4 className="font-bold text-gray-800 mb-2">{style.name}</h4>
+                    
+                    {/* Muestra de colores */}
+                    <div className="flex gap-2 mb-2">
+                      <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${style.colors.buttonGradient}`}></div>
+                      <div className={`w-8 h-8 rounded-full ${style.colors.badge}`}></div>
+                      <div className={`w-8 h-8 rounded-full ${style.colors.decorativeCircles[0]}`}></div>
+                    </div>
+                    
+                    {/* Descripción rápida del tema */}
+                    <p className="text-xs text-gray-500">
+                      {key === 'default' && 'Estilo clásico y profesional'}
+                      {key === 'tokyo' && 'Moderno estilo neón'}
+                      {key === 'midnight' && 'Elegante y minimalista'}
+                      {key === 'sunset' && 'Cálido y acogedor'}
+                      {key === 'ocean' && 'Fresco y marino'}
+                      {key === 'luxury' && 'Premium y sofisticado'}
+                      {key === 'garden' && 'Natural y fresco'}
+                      {key === 'berry' && 'Dulce y moderno'}
+                      {key === 'espresso' && 'Tierra y café'}
+                      {key === 'aurora' && 'Colores boreales'}
+                      {key === 'latte' && 'Perfecto para cafés'}
+                      {key === 'mocha' && 'Cafetería moderna'}
+                      {key === 'cappuccino' && 'Elegancia cafetera'}
+                      {key === 'fiesta' && 'Vibrante mexicano'}
+                      {key === 'azteca' && 'Tradicional mexicano'}
+                      {key === 'mariachi' && 'Festivo mexicano'}
+                      {key === 'tequila' && 'Premium mexicano'}
+                    </p>
+                  </button>
+                ))}
+              </div>
+
+              {/* Vista previa del estilo seleccionado */}
+              {selectedStyle && (
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 mb-6">
+                  <p className="text-sm text-gray-700 mb-2">
+                    <strong>Vista previa:</strong> {menuStyles[selectedStyle].name}
+                  </p>
+                  <div className={`h-24 rounded-lg bg-gradient-to-r ${menuStyles[selectedStyle].colors.headerGradient} flex items-center justify-center`}>
+                    <span className="text-white font-bold text-xl">
+                      {userInfo?.nombre_restaurante || "Tu Restaurante"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Botones */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowColorModal(false);
+                    setSelectedStyle('default'); // Resetear a default al cerrar
+                  }}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowColorModal(false);
+                    // Aquí podrías guardar la preferencia del estilo en la base de datos
+                    console.log('Estilo seleccionado:', selectedStyle);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                >
+                  Aplicar Estilo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header del perfil */}
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -419,8 +563,16 @@ export default function UserPage() {
                   </p>
                 </div>
 
-                {/* Menú Digital - MODIFICADO */}
-                <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl p-4 text-center">
+                {/* Menú Digital - MODIFICADO with icono de editar */}
+                <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl p-4 text-center relative">
+                  {/* Icono de editar en esquina superior derecha */}
+                  <button
+                    onClick={() => setShowColorModal(true)}
+                    className="absolute top-2 right-2 w-8 h-8 bg-white rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors shadow-md"
+                  >
+                    <FaEdit className="text-green-600 text-sm" />
+                  </button>
+                  
                   <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <TbWorldShare className="text-white text-xl" />
                   </div>
@@ -486,13 +638,14 @@ export default function UserPage() {
                   postalCode: getCleanNumber(userInfo?.codigo_postal),
                   horario: getCleanValue(userInfo?.horario),
                   confirmationCode: getCleanNumber(userInfo?.codigo_confirmacion),
+                  pinInventory: pinInventario || "", // Usar el PIN obtenido de la API
                   profileImage: null,
                 }}
-                validationSchema={createValidationSchema(hasExistingImage)} // Usar el esquema dinámico
+                validationSchema={createValidationSchema(hasExistingImage)}
                 onSubmit={handleSubmit}
                 enableReinitialize={true}
               >
-                {({ setFieldValue, isSubmitting }) => (
+                {({ setFieldValue, isSubmitting, values }) => (
                   <Form className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Nombre del restaurante */}
@@ -565,9 +718,17 @@ export default function UserPage() {
                           id="postalCode" 
                           name="postalCode" 
                           placeholder="Ej: 06100"
+                          maxLength="10"
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" 
+                          onInput={(e) => {
+                            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                            if (e.target.value.length > 10) {
+                              e.target.value = e.target.value.slice(0, 10);
+                            }
+                          }}
                         />
                         <ErrorMessage name="postalCode" component="div" className="text-red-500 text-sm mt-1" />
+                        <p className="text-gray-500 text-xs mt-1">Solo números, máximo 10 dígitos</p>
                       </div>
 
                       {/* Teléfono */}
@@ -647,17 +808,58 @@ export default function UserPage() {
                           maxLength="4"
                           className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" 
                           onInput={(e) => {
-                            e.target.value = e.target.value.replace(/[^1-9]/g, '');
+                            e.target.value = e.target.value.replace(/[^0-9]/g, '');
                             if (e.target.value.length > 4) {
                               e.target.value = e.target.value.slice(0, 4);
                             }
                           }}
                         />
                         <ErrorMessage name="confirmationCode" component="div" className="text-red-500 text-sm mt-1" />
-                        <p className="text-gray-500 text-xs mt-1">4 números del 1 al 9 (requerido)</p>
+                        <p className="text-gray-500 text-xs mt-1">4 números del 0 al 9 (requerido)</p>
+                      </div>
+
+                      {/* PIN (Inventario) - MODIFICADO */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="pinInventory">
+                          PIN (Inventario) <span className="text-red-500">*</span>
+                          {pinInventario && (
+                            <span className="ml-2 text-xs text-green-600 font-normal">
+                              • PIN actual configurado
+                            </span>
+                          )}
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <FaLock className="text-purple-500 text-lg" />
+                          </div>
+                          <Field 
+                            type="text" 
+                            id="pinInventory" 
+                            name="pinInventory" 
+                            placeholder="Ej: 5678"
+                            maxLength="4"
+                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" 
+                            onInput={(e) => {
+                              e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                              if (e.target.value.length > 4) {
+                                e.target.value = e.target.value.slice(0, 4);
+                              }
+                            }}
+                          />
+                        </div>
+                        <ErrorMessage name="pinInventory" component="div" className="text-red-500 text-sm mt-1" />
+                        <p className="text-gray-500 text-xs mt-1">
+                          4 números del 0 al 9 (requerido)
+                        </p>
+                        {values.pinInventory && values.pinInventory !== pinInventario && (
+                          <p className="text-amber-600 text-xs mt-1 flex items-center gap-1">
+                            <span>⚠️</span>
+                            <span>Se actualizará el PIN de inventario</span>
+                          </p>
+                        )}
                       </div>
                       
-                      {/* Imagen de perfil MEJORADA con indicador de obligatoriedad */}
+                      {/* Imagen de perfil */}
                       <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="profileImage">
                           Imagen de perfil 

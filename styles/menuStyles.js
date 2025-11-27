@@ -26,8 +26,8 @@ export const menuStyles = {
             sidebarBg: "from-green-100 to-emerald-100",
             sidebarText: "text-green-800",
             sidebarHover: "hover:bg-green-200",
-            restaurantNameText: "text-gray-800",
-            restaurantInfoText: "text-gray-700",
+            restaurantNameText: "text-gray-900",
+            restaurantInfoText: "text-gray-800",
             decorativeCircles: [
                 "bg-green-100",
                 "bg-emerald-100",
@@ -64,8 +64,8 @@ export const menuStyles = {
             sidebarBg: "from-slate-900 via-purple-950 to-slate-900",
             sidebarText: "text-cyan-300",
             sidebarHover: "hover:bg-fuchsia-900/40",
-            restaurantNameText: "text-cyan-300",
-            restaurantInfoText: "text-purple-300",
+            restaurantNameText: "text-cyan-200",
+            restaurantInfoText: "text-purple-200",
             decorativeCircles: [
                 "bg-fuchsia-500/15",
                 "bg-purple-500/15",
@@ -73,7 +73,6 @@ export const menuStyles = {
                 "bg-violet-500/15"
             ],
             overlayBg: "backdrop-brightness-30",
-            // Efectos especiales para Tokyo
             neonGlow: "shadow-[0_0_20px_rgba(217,70,239,0.6),0_0_40px_rgba(217,70,239,0.3)]",
             cardGlow: "shadow-[0_0_30px_rgba(168,85,247,0.5)]",
             textGlow: "drop-shadow-[0_0_10px_rgba(34,211,238,0.9)]",
@@ -107,8 +106,8 @@ export const menuStyles = {
             sidebarBg: "from-zinc-950 to-slate-950",
             sidebarText: "text-slate-200",
             sidebarHover: "hover:bg-zinc-800/50",
-            restaurantNameText: "text-slate-100",
-            restaurantInfoText: "text-slate-400",
+            restaurantNameText: "text-slate-50",
+            restaurantInfoText: "text-slate-300",
             decorativeCircles: [
                 "bg-indigo-500/10",
                 "bg-violet-500/10",
@@ -186,8 +185,8 @@ export const menuStyles = {
             sidebarBg: "from-blue-950 to-cyan-950",
             sidebarText: "text-cyan-200",
             sidebarHover: "hover:bg-cyan-900/40",
-            restaurantNameText: "text-cyan-200",
-            restaurantInfoText: "text-teal-300",
+            restaurantNameText: "text-cyan-100",
+            restaurantInfoText: "text-cyan-200",
             decorativeCircles: [
                 "bg-blue-500/20",
                 "bg-cyan-500/20",
@@ -226,8 +225,8 @@ export const menuStyles = {
             sidebarBg: "from-slate-900 to-amber-950",
             sidebarText: "text-amber-200",
             sidebarHover: "hover:bg-amber-900/40",
-            restaurantNameText: "text-amber-300",
-            restaurantInfoText: "text-yellow-400",
+            restaurantNameText: "text-amber-200",
+            restaurantInfoText: "text-amber-300",
             decorativeCircles: [
                 "bg-amber-500/15",
                 "bg-yellow-500/15",
@@ -383,8 +382,8 @@ export const menuStyles = {
             sidebarBg: "from-indigo-950 to-violet-950",
             sidebarText: "text-violet-200",
             sidebarHover: "hover:bg-violet-900/40",
-            restaurantNameText: "text-violet-200",
-            restaurantInfoText: "text-indigo-300",
+            restaurantNameText: "text-violet-100",
+            restaurantInfoText: "text-indigo-200",
             decorativeCircles: [
                 "bg-violet-500/15",
                 "bg-indigo-500/15",
@@ -501,8 +500,8 @@ export const menuStyles = {
             sidebarBg: "from-stone-950 to-amber-950",
             sidebarText: "text-amber-200",
             sidebarHover: "hover:bg-amber-900/40",
-            restaurantNameText: "text-amber-300",
-            restaurantInfoText: "text-orange-400",
+            restaurantNameText: "text-amber-200",
+            restaurantInfoText: "text-orange-300",
             decorativeCircles: [
                 "bg-amber-600/20",
                 "bg-stone-600/20",
@@ -580,8 +579,8 @@ export const menuStyles = {
             sidebarBg: "from-orange-950 to-red-950",
             sidebarText: "text-orange-200",
             sidebarHover: "hover:bg-orange-900/40",
-            restaurantNameText: "text-orange-300",
-            restaurantInfoText: "text-amber-400",
+            restaurantNameText: "text-orange-200",
+            restaurantInfoText: "text-amber-300",
             decorativeCircles: [
                 "bg-orange-600/20",
                 "bg-red-600/20",
@@ -620,8 +619,8 @@ export const menuStyles = {
             sidebarBg: "from-slate-900 via-red-950 to-slate-900",
             sidebarText: "text-yellow-300",
             sidebarHover: "hover:bg-red-900/40",
-            restaurantNameText: "text-yellow-300",
-            restaurantInfoText: "text-red-400",
+            restaurantNameText: "text-yellow-200",
+            restaurantInfoText: "text-red-300",
             decorativeCircles: [
                 "bg-yellow-500/20",
                 "bg-red-500/20",

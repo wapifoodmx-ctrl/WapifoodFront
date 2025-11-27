@@ -9,21 +9,34 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        console.log('=== DEBUG MODAL ===');
+        console.log('Modal abierto:', isOpen);
+        console.log('Order UUID recibido:', orderUuid);
+        console.log('Tipo de orderUuid:', typeof orderUuid);
+        
         if (isOpen && orderUuid) {
+            console.log('Iniciando fetchTicketData...');
             fetchTicketData();
+        } else {
+            console.log('No se cumplen condiciones para fetch:', { isOpen, orderUuid });
         }
     }, [isOpen, orderUuid]);
 
     const fetchTicketData = async () => {
+        console.log('=== INICIANDO FETCH ===');
         setLoading(true);
         setError('');
         try {
+            console.log('Llamando a getTicket con UUID:', orderUuid);
             const data = await getTicket(orderUuid);
+            console.log('Datos recibidos de la API:', data);
             setTicketData(data);
         } catch (err) {
             console.error('Error al obtener datos del ticket:', err);
+            console.error('Detalles del error:', err.message, err.stack);
             setError('Error al cargar los datos del ticket');
         } finally {
+            console.log('Fetch finalizado');
             setLoading(false);
         }
     };
@@ -68,13 +81,18 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
     };
 
     const shouldShowModal = () => {
-        try {
-            const ticketsEnabled = localStorage.getItem('tickets');
-            return ticketsEnabled === 'true';
-        } catch (error) {
-            console.error('Error checking tickets permission:', error);
-            return false;
-        }
+        // Comentar o eliminar esta verificación si no es necesaria
+        // try {
+        //     const ticketsEnabled = localStorage.getItem('tickets');
+        //     console.log('Permisos de tickets en localStorage:', ticketsEnabled);
+        //     return ticketsEnabled === 'true';
+        // } catch (error) {
+        //     console.error('Error checking tickets permission:', error);
+        //     return false;
+        // }
+        
+        // Permitir siempre mostrar el modal
+        return true;
     };
 
     // Nuevo: presentación amigable del método de pago (no modifica ticketData)
@@ -84,7 +102,24 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
         return String(method).charAt(0).toUpperCase() + String(method).slice(1);
     };
 
-    if (!isOpen || !shouldShowModal()) return null;
+    console.log('=== RENDER MODAL ===');
+    console.log('isOpen:', isOpen);
+    console.log('shouldShowModal():', shouldShowModal());
+    console.log('loading:', loading);
+    console.log('error:', error);
+    console.log('ticketData:', ticketData);
+
+    if (!isOpen) {
+        console.log('Modal no abierto - retornando null');
+        return null;
+    }
+
+    if (!shouldShowModal()) {
+        console.log('Permisos de tickets no habilitados - retornando null');
+        return null;
+    }
+
+    console.log('Renderizando modal completo');
 
     const totalDiscountInfo = ticketData ? calculateTotalDiscount() : { hasDiscount: false };
 
@@ -125,8 +160,14 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                 }
             `}</style>
 
-            <div className="fixed inset-0 cm-modal-backdrop flex items-center justify-center z-[10000] px-4">
-                <div className="bg-white cm-card p-6 max-w-lg w-full mx-auto max-h-[75vh] overflow-y-auto relative">
+            <div 
+                className="fixed inset-0 cm-modal-backdrop flex items-center justify-center z-[10000] px-4"
+                onClick={onClose}
+            >
+                <div 
+                    className="bg-white cm-card p-6 max-w-lg w-full mx-auto max-h-[75vh] overflow-y-auto relative"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     <button
                         className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl z-20 cm-close bg-white p-1 rounded-full shadow"
                         onClick={onClose}
@@ -256,7 +297,7 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                                 {/* QR */}
                                 <div className="mt-4 text-center">
                                     <p className="text-sm text-gray-500 mb-2">Código QR del ticket</p>
-                                    <div className="flex justify-center cm-qr inline-block">
+                                    <div className="justify-center cm-qr inline-block">
                                         <QRCodeCanvas
                                             value={ticketData.order_uuid}
                                             size={150}

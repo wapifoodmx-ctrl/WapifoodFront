@@ -317,6 +317,8 @@ export default function Ticketview() {
     }, [activeTab]);
 
     const handleCardClick = (ticket) => {
+        console.log('Ticket seleccionado:', ticket); // Debug
+        console.log('Order UUID:', ticket.order_uuid); // Debug
         setSelectedTicket(ticket);
         setIsModalOpen(true);
     };
@@ -913,14 +915,14 @@ export default function Ticketview() {
             )}
 
             {/* Modal principal del ticket */}
-            {isModalOpen && (
+            {isModalOpen && selectedTicket && (
                 <TicketModal
                     isOpen={isModalOpen}
                     onClose={() => {
                         setIsModalOpen(false);
                         setSelectedTicket(null);
                     }}
-                    orderUuid={selectedTicket?.order_uuid || selectedTicket?.id}
+                    orderUuid={selectedTicket.order_uuid}
                 />
             )}
         </div>

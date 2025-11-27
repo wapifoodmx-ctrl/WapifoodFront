@@ -14,6 +14,11 @@ import { checkPayment } from "@/useCases/checkPayment";
 export default function Inventario() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
+  // NUEVO: Estados para modal de PIN
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinValue, setPinValue] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [pinModalType, setPinModalType] = useState(''); // 'create' o 'edit'
   // Modal de éxito (crear/editar)
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalMessage, setSuccessModalMessage] = useState("");
@@ -39,7 +44,6 @@ export default function Inventario() {
     categoriaAdicional: "No"
   });
 
-  // Nuevo estado para manejar la unidad de edición
   const [unidadEdit, setUnidadEdit] = useState("Gramos");
 
   // Cargar ingredientes al montar el componente
@@ -256,169 +260,128 @@ export default function Inventario() {
     }
   };
 
+  // NUEVA FUNCIÓN: Abrir modal de PIN
+  const abrirModalPin = (tipo) => {
+    setPinModalType(tipo);
+    setPinValue('');
+    setPinError('');
+    setIsPinModalOpen(true);
+  };
+
+  // NUEVA FUNCIÓN: Cerrar modal de PIN
+  const cerrarModalPin = () => {
+    setIsPinModalOpen(false);
+    setPinValue('');
+    setPinError('');
+    setPinModalType('');
+  };
+
+  // NUEVA FUNCIÓN: Manejar cambio de PIN (solo números, máximo 4)
+  const handlePinChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ''); // Solo dígitos
+    if (value.length <= 4) {
+      setPinValue(value);
+      setPinError('');
+    }
+  };
+
+  // NUEVA FUNCIÓN: Confirmar PIN
+  const confirmarPin = async () => {
+    if (pinValue.length !== 4) {
+      setPinError('El PIN debe tener exactamente 4 dígitos');
+      return;
+    }
+
+    if (pinModalType === 'create') {
+      await ejecutarCrearInsumo(pinValue);
+    } else if (pinModalType === 'edit') {
+      await ejecutarEditarInsumo(pinValue);
+    }
+  };
+
+  // MODIFICAR: handleSubmit ahora solo abre el modal de PIN
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar que los campos obligatorios estén completos
+    if (!formData.nombreProducto || !formData.cantidad || !formData.costo) {
+      alert('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    // Abrir modal de PIN en lugar de enviar directamente
+    abrirModalPin('create');
+  };
+
+  // NUEVA FUNCIÓN: Ejecutar creación de insumo con PIN
+  const ejecutarCrearInsumo = async (confirmationCode) => {
     setIsLoading(true);
 
     try {
-      // Convertir unidades para la API
       const { stock, unit } = convertirUnidadParaAPI(formData.cantidad, formData.medida);
 
-      // Mapear los datos del formulario al formato de la API
       const ingredientData = {
         name: formData.nombreProducto,
         description: formData.comentarios || `${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Otro'}: ${formData.nombreProducto}`,
         cost: parseFloat(formData.costo),
-        stock: stock, // Usar stock convertido
-        unit: pestañaActiva === 'insumos' ? unit : "Pieza", // Usar unidad convertida para insumos
-        category: pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros'
+        stock: stock,
+        unit: pestañaActiva === 'insumos' ? unit : "Pieza",
+        category: pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros',
+        confirmation_code: confirmationCode
       };
 
-      console.log('Datos originales:', { cantidad: formData.cantidad, medida: formData.medida });
-      console.log('Datos convertidos:', { stock, unit });
-
-      // Llamar a la API usando la misma función para todas las pestañas
       const result = await postInventarioIngredientes(ingredientData);
       
+      if (!result.success) {
+        throw new Error(result.error || 'Error al crear ingrediente');
+      }
+
       console.log(`${pestañaActiva.charAt(0).toUpperCase() + pestañaActiva.slice(1, -1)} creado exitosamente:`, result);
-      // Mostrar modal de éxito en vez de alert
+      
       setSuccessModalMessage(`${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'} "${ingredientData.name}" agregado exitosamente`);
       setShowSuccessModal(true);
       
-      // Recargar la lista de ingredientes para mostrar el nuevo
       await cargarIngredientes();
-
-      // Cerrar modal usando la función que limpia
       cerrarModalAgregar();
-
-      // Mostrar modal de éxito
-      setSuccessModalMessage(`${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'} agregado exitosamente`);
-      setShowSuccessModal(true);
+      cerrarModalPin();
 
     } catch (error) {
       console.error(`Error al crear ${pestañaActiva.slice(0, -1)}:`, error);
-      alert(`Error al agregar ${pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'elemento'}: ${error.message}`);
+      
+      // Verificar si el error es por PIN incorrecto
+      if (error.message.includes('confirmation') || error.message.includes('PIN') || error.message.includes('código')) {
+        setPinError('PIN incorrecto. Intenta nuevamente.');
+      } else {
+        cerrarModalPin();
+        alert(`Error al agregar ${pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'elemento'}: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleModificarInsumo = async () => {
-    // Verificar suscripción antes de permitir edición
-    if (!hasActiveSubscription) {
-      setShowSubscriptionModal(true);
-      return;
-    }
-    // Verificar que hay exactamente un insumo seleccionado
-    if (insumosSeleccionados.length !== 1) {
-      if (insumosSeleccionados.length === 0) {
-        alert('Por favor selecciona un elemento para modificar');
-      }
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const ingredienteId = insumosSeleccionados[0];
-      console.log("=== INICIANDO MODIFICAR INSUMO ===");
-      console.log("ID seleccionado:", ingredienteId);
-      
-      // Verificar que el ID existe en los insumos locales
-      const insumoLocal = insumos.find(i => i.id === ingredienteId);
-      console.log("Insumo local encontrado:", insumoLocal);
-      
-      if (!insumoLocal) {
-        throw new Error('Insumo no encontrado en la lista local');
-      }
-      
-      console.log("Llamando a la API con ID:", ingredienteId);
-      const response = await getIngredienteById(ingredienteId);
-      console.log("Respuesta completa de la API:", response);
-      
-      // Manejar diferentes estructuras de respuesta
-      let ingrediente = null;
-      
-      if (response.data) {
-        ingrediente = response.data;
-      } else if (response.id_ingredient || response.id) {
-        ingrediente = response;
-      } else {
-        throw new Error('Estructura de respuesta no reconocida');
-      }
-      
-      console.log("Ingrediente procesado:", ingrediente);
-      
-      if (ingrediente) {
-        setInsumoAEditar(ingrediente);
-        
-        // Convertir unidades desde la API para la visualización
-        const { cantidad, unidad } = convertirDesdeAPI(ingrediente.stock, ingrediente.unit);
-        
-        // Llenar el formulario con los datos del ingrediente
-        setFormData({
-          nombreProducto: ingrediente.name || "",
-          medida: ingrediente.unit || "Gramos",
-          cantidad: cantidad.toString(),
-          costo: ingrediente.cost?.toString() || "",
-          comentarios: ingrediente.description || "",
-          categoriaAdicional: "No",
-          total_cost: ingrediente.total_cost || 0
-        });
-
-        // Establecer la unidad de edición basada en la conversión
-        setUnidadEdit(unidad);
-        
-        console.log("Formulario llenado con datos:", {
-          nombreProducto: ingrediente.name || "",
-          medida: ingrediente.unit || "Gramos",
-          cantidad: cantidad.toString(),
-          costo: ingrediente.cost?.toString() || "",
-          unidadEdit: unidad,
-          total_cost: ingrediente.total_cost || 0
-        });
-        
-        setIsEditProductModalOpen(true);
-      } else {
-        throw new Error('No se pudieron procesar los datos del ingrediente');
-      }
-    } catch (error) {
-      console.error("=== ERROR EN HANDLE MODIFICAR INSUMO ===");
-      console.error("Error completo:", error);
-      console.error("Tipo de error:", error.name);
-      console.error("Mensaje:", error.message);
-      
-      let mensajeError = 'Error desconocido';
-      
-      if (error.message.includes('conectar') || error.message.includes('fetch')) {
-        mensajeError = 'No se puede conectar con el servidor. Verifica la conexión.';
-      } else if (error.message.includes('Token')) {
-        mensajeError = 'Error de autenticación. Inicia sesión nuevamente.';
-      } else {
-        mensajeError = `Error al cargar el ingrediente: ${error.message}`;
-      }
-      
-      alert(mensajeError);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // MODIFICAR: handleSubmitEdit ahora solo abre el modal de PIN
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.nombreProducto || !formData.cantidad || !formData.costo) {
+      alert('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    // Abrir modal de PIN en lugar de enviar directamente
+    abrirModalPin('edit');
+  };
+
+  // NUEVA FUNCIÓN: Ejecutar edición de insumo con PIN
+  const ejecutarEditarInsumo = async (confirmationCode) => {
     setIsLoading(true);
 
     try {
-      console.log('=== INICIANDO EDIT SUBMIT ===');
-      
       if (!insumoAEditar) {
         throw new Error('No hay insumo seleccionado para editar');
       }
 
-      console.log('Insumo a editar:', insumoAEditar);
-      console.log('Form data actual:', formData);
-      console.log('Unidad de edición actual:', unidadEdit);
-
-      // Validar que los campos numéricos sean válidos
       const cost = parseFloat(formData.costo);
       const cantidadInput = parseFloat(formData.cantidad);
 
@@ -430,17 +393,13 @@ export default function Inventario() {
         throw new Error('La cantidad debe ser un número válido mayor o igual a 0');
       }
 
-      // Convertir la cantidad desde la unidad de edición a la unidad base de la API
       let stockFinal = cantidadInput;
       let unitFinal = unidadEdit;
 
-      // Si estamos editando en kilos, convertir a gramos para la API
       if (unidadEdit === "Kilos") {
         stockFinal = cantidadInput * 1000;
         unitFinal = "Gramos";
-      } 
-      // Si estamos editando en litros, convertir a mililitros para la API
-      else if (unidadEdit === "Litros") {
+      } else if (unidadEdit === "Litros") {
         stockFinal = cantidadInput * 1000;
         unitFinal = "Mililitros";
       }
@@ -449,48 +408,23 @@ export default function Inventario() {
         name: formData.nombreProducto.trim(),
         description: formData.comentarios.trim() || `${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'}: ${formData.nombreProducto.trim()}`,
         cost: cost,
-        stock: stockFinal, // Usar stock convertido
-        unit: pestañaActiva === 'insumos' ? unitFinal : 'Pieza', // Usar unidad convertida
-        category: insumoAEditar.category || (pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros')
+        stock: stockFinal,
+        unit: pestañaActiva === 'insumos' ? unitFinal : 'Pieza',
+        category: insumoAEditar.category || (pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros'),
+        confirmation_code: confirmationCode
       };
 
-      console.log('=== DATOS PREPARADOS PARA ENVIAR ===');
-      console.log('ID del ingrediente:', insumoAEditar.id_ingredient);
-      console.log('Datos del ingrediente:', ingredientData);
-      console.log('Conversión realizada:', {
-        cantidadOriginal: cantidadInput,
-        unidadOriginal: unidadEdit,
-        stockFinal: stockFinal,
-        unitFinal: unitFinal
-      });
-
-      // Verificar conectividad antes de enviar
-      try {
-        const testResponse = await fetch('http://192.168.1.69:8000/health', { method: 'GET' });
-        console.log('Test de conectividad:', testResponse.status);
-      } catch (testError) {
-        console.error('Error de conectividad:', testError);
-        throw new Error('No se puede conectar con el servidor. Verifica que esté ejecutándose.');
-      }
-
-      console.log('=== LLAMANDO A LA API ===');
       const result = await putEditarIngrediente(insumoAEditar.id_ingredient, ingredientData);
       
-      console.log('=== RESULTADO EXITOSO ===');
-      console.log('Resultado:', result);
-      
-      // Mostrar modal de éxito en vez de alert
       setSuccessModalMessage(`Insumo "${ingredientData.name}" modificado exitosamente`);
       setShowSuccessModal(true);
       
-      // Recargar la lista de ingredientes
       await cargarIngredientes();
       
-      // Cerrar modal y resetear
       setIsEditProductModalOpen(false);
       setInsumoAEditar(null);
       setInsumosSeleccionados([]);
-      setUnidadEdit("Gramos"); // Resetear unidad de edición
+      setUnidadEdit("Gramos");
       setFormData({
         nombreProducto: "",
         medida: "Gramos",
@@ -499,26 +433,71 @@ export default function Inventario() {
         comentarios: "",
         categoriaAdicional: "No"
       });
-
-      // Mostrar modal de éxito
-      setSuccessModalMessage(`Insumo "${ingredientData.name}" modificado exitosamente`);
-      setShowSuccessModal(true);
+      cerrarModalPin();
 
     } catch (error) {
-      console.error('=== ERROR EN HANDLE SUBMIT EDIT ===');
-      console.error('Error completo:', error);
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
+      console.error('Error al modificar insumo:', error);
       
-      let errorMessage = 'Error desconocido al modificar insumo';
-      
-      if (error.message.includes('conectar') || error.message.includes('fetch') || error.message.includes('NetworkError')) {
-        errorMessage = `Error de conexión: ${error.message}. Verifica que el servidor esté ejecutándose`;
+      // Verificar si el error es por PIN incorrecto
+      if (error.message.includes('confirmation') || error.message.includes('PIN') || error.message.includes('código')) {
+        setPinError('PIN incorrecto. Intenta nuevamente.');
       } else {
-        errorMessage = `Error al modificar insumo: ${error.message}`;
+        cerrarModalPin();
+        alert(`Error al modificar insumo: ${error.message}`);
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función para manejar la edición de un insumo
+  const handleModificarInsumo = async () => {
+    if (insumosSeleccionados.length !== 1) {
+      alert('Por favor selecciona exactamente un elemento para editar');
+      return;
+    }
+
+    // Verificar suscripción antes de editar
+    if (!hasActiveSubscription) {
+      setShowSubscriptionModal(true);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const insumoId = insumosSeleccionados[0];
+      console.log('Cargando datos del ingrediente con ID:', insumoId);
       
-      alert(errorMessage);
+      const response = await getIngredienteById(insumoId);
+      
+      if (!response.success || !response.data) {
+        throw new Error('No se pudieron cargar los datos del ingrediente');
+      }
+
+      const ingrediente = response.data;
+      console.log('Datos del ingrediente cargados:', ingrediente);
+      
+      setInsumoAEditar(ingrediente);
+
+      // Convertir las unidades para mostrar en el formulario
+      const { cantidad, unidad } = convertirDesdeAPI(ingrediente.stock, ingrediente.unit);
+      
+      setFormData({
+        nombreProducto: ingrediente.name || '',
+        medida: ingrediente.unit || 'Gramos',
+        cantidad: cantidad.toString(),
+        costo: ingrediente.cost?.toString() || '0',
+        comentarios: ingrediente.description || '',
+        categoriaAdicional: "No",
+        total_cost: ingrediente.total_cost || 0
+      });
+
+      setUnidadEdit(unidad);
+      setIsEditProductModalOpen(true);
+
+    } catch (error) {
+      console.error('Error al cargar el ingrediente para editar:', error);
+      alert(`Error al cargar los datos del ingrediente: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -1086,6 +1065,108 @@ export default function Inventario() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* NUEVO: Modal de PIN */}
+      {isPinModalOpen && (
+        <div 
+          className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[60] p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              cerrarModalPin();
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl w-full max-w-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Ingresa PIN de Inventario</h2>
+              <button
+                onClick={cerrarModalPin}
+                disabled={isLoading}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              >
+                <IoClose className="text-2xl" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <p className="text-gray-600 text-center mb-4">
+                Ingresa tu PIN de 4 dígitos para confirmar la operación
+              </p>
+
+              {/* Input PIN */}
+              <div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength="4"
+                  value={pinValue}
+                  onChange={handlePinChange}
+                  placeholder="••••"
+                  disabled={isLoading}
+                  className={`w-full border ${pinError ? 'border-red-500' : 'border-gray-300'} rounded-lg p-3 text-center text-2xl font-bold tracking-widest focus:outline-none focus:ring-2 ${pinError ? 'focus:ring-red-500' : 'focus:ring-green-500'} focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                  autoFocus
+                />
+                
+                {/* Indicador de dígitos */}
+                <div className="flex justify-center gap-2 mt-3">
+                  {[1, 2, 3, 4].map((index) => (
+                    <div
+                      key={index}
+                      className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                        pinValue.length >= index
+                          ? 'bg-green-500 scale-110'
+                          : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {/* Error message */}
+                {pinError && (
+                  <p className="text-red-500 text-sm mt-2 text-center">{pinError}</p>
+                )}
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={cerrarModalPin}
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmarPin}
+                  disabled={pinValue.length !== 4 || isLoading}
+                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                    pinValue.length === 4 && !isLoading
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Procesando...
+                    </div>
+                  ) : (
+                    'Confirmar'
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
