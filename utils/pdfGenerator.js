@@ -133,10 +133,23 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         pdf.setFontSize(sizeConfig.fontSize.normal);
         pdf.setFont('helvetica', 'bold');
         
-        // Calcular posiciones relativas al ancho
+        // Calcular posiciones relativas al ancho según el tamaño del ticket
         const colProducto = leftMargin;
-        const colCantidad = pageWidth - rightMargin - 24; // 24mm desde el borde derecho
-        const colPrecio = pageWidth - rightMargin - 12; // 12mm desde el borde derecho
+        let colCantidad, colPrecio;
+        
+        if (pageWidth >= 110) {
+            // Ticket grande (110mm) - más espacio entre columnas
+            colCantidad = pageWidth - rightMargin - 35; // 35mm desde el borde derecho
+            colPrecio = pageWidth - rightMargin - 15; // 15mm desde el borde derecho
+        } else if (pageWidth >= 80) {
+            // Ticket estándar (80mm)
+            colCantidad = pageWidth - rightMargin - 24; // 24mm desde el borde derecho
+            colPrecio = pageWidth - rightMargin - 12; // 12mm desde el borde derecho
+        } else {
+            // Ticket pequeño (58mm)
+            colCantidad = pageWidth - rightMargin - 20; // 20mm desde el borde derecho
+            colPrecio = pageWidth - rightMargin - 10; // 10mm desde el borde derecho
+        }
         
         pdf.text('Producto', colProducto, yPos);
         pdf.text('Cant', colCantidad, yPos, { align: 'center' });

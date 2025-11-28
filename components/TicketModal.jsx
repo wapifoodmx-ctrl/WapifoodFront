@@ -105,6 +105,45 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
         return String(method).charAt(0).toUpperCase() + String(method).slice(1);
     };
 
+    // Función para generar PDF automáticamente al cambiar el tamaño
+    const handleSizeChange = (sizeKey) => {
+        setSelectedSize(sizeKey);
+        
+        if (!ticketData) return;
+
+        // Calcular descuento total
+        const totalDiscountInfo = calculateTotalDiscount();
+        
+        // Preparar datos para el PDF
+        const pdfData = {
+            id_pedidos: ticketData.order_id,
+            ticket_number: ticketData.ticket_number,
+            fecha: new Date(ticketData.date_time).toLocaleDateString('es-MX'),
+            hora: new Date(ticketData.date_time).toLocaleTimeString('es-MX'),
+            numero_mesa: ticketData.mesa_number,
+            estado: ticketData.order_status,
+            productos: ticketData.products.map(p => {
+                const discountInfo = calculateProductDiscount(p);
+                return {
+                    nombre: p.product_name,
+                    cantidad: p.quantity,
+                    precio: p.unit_price,
+                    subtotal: p.subtotal,
+                    notas: p.notes,
+                    tieneDescuento: discountInfo.hasDiscount,
+                    precioOriginal: discountInfo.originalPrice,
+                    descuento: discountInfo.discount
+                };
+            }),
+            subtotal: totalDiscountInfo.hasDiscount ? totalDiscountInfo.originalTotal : null,
+            descuento_total: totalDiscountInfo.hasDiscount ? totalDiscountInfo.discount : null,
+            total: ticketData.total,
+            metodo_pago: displayPaymentMethod(ticketData.metodo_pago)
+        };
+        
+        generateTicketPDF(pdfData, sizeKey);
+    };
+
     console.log('=== RENDER MODAL ===');
     console.log('isOpen:', isOpen);
     console.log('shouldShowModal():', shouldShowModal());
@@ -161,6 +200,26 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                 .cm-loader {
                     border-top-color: #10b981;
                 }
+                
+                /* Nuevo: Estilos para layout fijo */
+                .cm-modal-content {
+                    display: flex;
+                    flex-direction: column;
+                    max-height: 85vh;
+                }
+                .cm-scrollable-content {
+                    flex: 1;
+                    overflow-y: auto;
+                    margin-bottom: 1rem;
+                }
+                .cm-fixed-footer {
+                    position: sticky;
+                    bottom: 0;
+                    background: white;
+                    padding-top: 1rem;
+                    border-top: 2px solid #e5e7eb;
+                    z-index: 10;
+                }
             `}</style>
 
             <div 
@@ -168,7 +227,7 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                 onClick={onClose}
             >
                 <div 
-                    className="bg-white cm-card p-6 max-w-lg w-full mx-auto max-h-[75vh] overflow-y-auto relative"
+                    className="bg-white cm-card p-6 max-w-lg w-full mx-auto cm-modal-content"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <button
@@ -181,7 +240,6 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
 
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full mb-0 mt-6">
-                            {/* Reservar espacio a la derecha para el botón de cerrar */}
                             <h2 className="text-lg font-semibold text-gray-800">
                                 Ticket listo para imprimir
                             </h2>
@@ -210,186 +268,157 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                         </div>
                     ) : ticketData ? (
                         <>
-                            <div className="border border-gray-100 p-4 rounded-lg mb-6">
-                                <div className="text-center mb-3">
-                                    <h3 className="font-extrabold text-xl tracking-tight text-gray-800">{ticketData.restaurant_name || 'WapiFood'}</h3>
-                                    <p className="text-xs text-gray-500 mt-1">Ticket #{ticketData.ticket_number}</p>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
-                                    <div className="flex flex-col">
-                                        <span className="text-xs">Fecha</span>
-                                        <span className="font-medium">{new Date(ticketData.date_time).toLocaleDateString()}</span>
-                                    </div>
-                                    <div className="flex flex-col text-right">
-                                        <span className="text-xs">Hora</span>
-                                        <span className="font-medium">{new Date(ticketData.date_time).toLocaleTimeString()}</span>
+                            {/* Contenido scrolleable */}
+                            <div className="cm-scrollable-content">
+                                <div className="border border-gray-100 p-4 rounded-lg mb-4">
+                                    <div className="text-center mb-3">
+                                        <h3 className="font-extrabold text-xl tracking-tight text-gray-800">{ticketData.restaurant_name || 'WapiFood'}</h3>
+                                        <p className="text-xs text-gray-500 mt-1">Ticket #{ticketData.ticket_number}</p>
                                     </div>
 
-                                    <div className="flex flex-col">
-                                        <span className="text-xs">Estado</span>
-                                        <span className="text-sm font-semibold text-green-600">{ticketData.order_status}</span>
-                                    </div>
-                                    <div className="flex flex-col text-right">
-                                        <span className="text-xs">Pago</span>
-                                        <span className="text-sm font-semibold">{displayPaymentMethod(ticketData.metodo_pago)}</span>
-                                    </div>
-                                </div>
+                                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs">Fecha</span>
+                                            <span className="font-medium">{new Date(ticketData.date_time).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="flex flex-col text-right">
+                                            <span className="text-xs">Hora</span>
+                                            <span className="font-medium">{new Date(ticketData.date_time).toLocaleTimeString()}</span>
+                                        </div>
 
-                                {/* Productos */}
-                                <div className="mb-3">
-                                    <h4 className="font-semibold text-gray-700 mb-2">Productos</h4>
-                                    <div className="space-y-2">
-                                        {ticketData.products?.map((product, index) => {
-                                            const discountInfo = calculateProductDiscount(product);
-                                            
-                                            return (
-                                                <div key={index} className="cm-product p-2 flex items-start justify-between bg-white border border-gray-50">
-                                                    <div className="flex-1 pr-3">
-                                                        <div className="text-sm text-gray-800 font-medium">
-                                                            {product.quantity}× {product.product_name}
+                                        <div className="flex flex-col">
+                                            <span className="text-xs">Estado</span>
+                                            <span className="text-sm font-semibold text-green-600">{ticketData.order_status}</span>
+                                        </div>
+                                        <div className="flex flex-col text-right">
+                                            <span className="text-xs">Pago</span>
+                                            <span className="text-sm font-semibold">{displayPaymentMethod(ticketData.metodo_pago)}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Productos */}
+                                    <div className="mb-3">
+                                        <h4 className="font-semibold text-gray-700 mb-2">Productos</h4>
+                                        <div className="space-y-2">
+                                            {ticketData.products?.map((product, index) => {
+                                                const discountInfo = calculateProductDiscount(product);
+                                                
+                                                return (
+                                                    <div key={index} className="cm-product p-2 flex items-start justify-between bg-white border border-gray-50">
+                                                        <div className="flex-1 pr-3">
+                                                            <div className="text-sm text-gray-800 font-medium">
+                                                                {product.quantity}× {product.product_name}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500 mt-1">
+                                                                {discountInfo.hasDiscount ? (
+                                                                    <>
+                                                                        <span className="line-through text-red-500 mr-2">
+                                                                            ${discountInfo.originalPrice.toFixed(2)}
+                                                                        </span>
+                                                                        <span className="text-green-600 font-semibold">
+                                                                            -${discountInfo.discount.toFixed(2)}
+                                                                        </span>
+                                                                    </>
+                                                                ) : (
+                                                                    <span>Unit: ${parseFloat(product.unit_price).toFixed(2)}</span>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <div className="text-xs text-gray-500 mt-1">
-                                                            {discountInfo.hasDiscount ? (
-                                                                <>
-                                                                    <span className="line-through text-red-500 mr-2">
-                                                                        ${discountInfo.originalPrice.toFixed(2)}
-                                                                    </span>
-                                                                    <span className="text-green-600 font-semibold">
-                                                                        -${discountInfo.discount.toFixed(2)}
-                                                                    </span>
-                                                                </>
-                                                            ) : (
-                                                                <span>Unit: ${parseFloat(product.unit_price).toFixed(2)}</span>
-                                                            )}
+                                                        <div className="text-sm font-semibold text-gray-800">
+                                                            ${parseFloat(product.subtotal).toFixed(2)}
                                                         </div>
                                                     </div>
-                                                    <div className="text-sm font-semibold text-gray-800">
-                                                        ${parseFloat(product.subtotal).toFixed(2)}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* Total */}
-                                <div className="mt-4 border-t pt-3">
-                                    {totalDiscountInfo.hasDiscount && (
-                                        <div className="flex justify-between text-sm mb-1">
-                                            <span className="text-gray-600">Subtotal:</span>
-                                            <span className="line-through text-red-500">
-                                                ${totalDiscountInfo.originalTotal.toFixed(2)}
-                                            </span>
+                                                );
+                                            })}
                                         </div>
-                                    )}
-                                    {totalDiscountInfo.hasDiscount && (
-                                        <div className="flex justify-between text-sm mb-1 text-green-600">
-                                            <span className="font-semibold">Descuento aplicado:</span>
-                                            <span className="font-semibold">
-                                                -${totalDiscountInfo.discount.toFixed(2)}
-                                            </span>
+                                    </div>
+
+                                    {/* Total */}
+                                    <div className="mt-4 border-t pt-3">
+                                        {totalDiscountInfo.hasDiscount && (
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-gray-600">Subtotal:</span>
+                                                <span className="line-through text-red-500">
+                                                    ${totalDiscountInfo.originalTotal.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {totalDiscountInfo.hasDiscount && (
+                                            <div className="flex justify-between text-sm mb-1 text-green-600">
+                                                <span className="font-semibold">Descuento aplicado:</span>
+                                                <span className="font-semibold">
+                                                    -${totalDiscountInfo.discount.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between items-end font-bold text-lg">
+                                            <span>Total:</span>
+                                            <span>${parseFloat(ticketData.total).toFixed(2)}</span>
                                         </div>
-                                    )}
-                                    <div className="flex justify-between items-end font-bold text-lg">
-                                        <span>Total:</span>
-                                        <span>${parseFloat(ticketData.total).toFixed(2)}</span>
                                     </div>
-                                </div>
 
-                                {/* QR */}
-                                <div className="mt-4 text-center">
-                                    <p className="text-sm text-gray-500 mb-2">Código QR del ticket</p>
-                                    <div className="justify-center cm-qr inline-block">
-                                        <QRCodeCanvas
-                                            value={ticketData.order_uuid}
-                                            size={150}
-                                            level="M"
-                                            includeMargin={true}
-                                        />
+                                    {/* QR */}
+                                    <div className="mt-4 text-center">
+                                        <p className="text-sm text-gray-500 mb-2">Código QR del ticket</p>
+                                        <div className="justify-center cm-qr inline-block">
+                                            <QRCodeCanvas
+                                                value={`http://192.168.1.71:3000/tickets/externalTicketView?uuid=${ticketData.order_uuid}`}
+                                                size={150}
+                                                level="M"
+                                                includeMargin={true}
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-2">
+                                            Escanea para ver el ticket en tu móvil
+                                        </p>
                                     </div>
-                                    <p className="text-xs text-gray-400 mt-2">
-                                        Escanea con la app móvil para imprimir
-                                    </p>
-                                </div>
 
-                                <div className="text-center mt-4 pt-3 border-t text-xs text-gray-400">
-                                    <p>¡Gracias por su visita!</p>
-                                    <p>Conserve este ticket como comprobante</p>
+                                    <div className="text-center mt-4 pt-3 border-t text-xs text-gray-400">
+                                        <p>¡Gracias por su visita!</p>
+                                        <p>Conserve este ticket como comprobante</p>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Selector de tamaño de ticket */}
-                            <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    🖨️ Tamaño de Impresora:
-                                </label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {Object.entries(TICKET_SIZES).map(([key, config]) => (
-                                        <button
-                                            key={key}
-                                            onClick={() => setSelectedSize(key)}
-                                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                                                selectedSize === key
-                                                    ? 'bg-red-600 text-white shadow-md'
-                                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            {config.name}
-                                        </button>
-                                    ))}
+                            {/* Footer fijo con selector de impresora y botón cerrar */}
+                            <div className="cm-fixed-footer">
+                                {/* Selector de tamaño de ticket - Versión compacta */}
+                                <div className="mb-2 p-2.5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200 shadow-sm">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
+                                            <FaFilePdf className="text-red-600 text-sm" />
+                                            Tamaño
+                                        </label>
+                                        <span className="text-[10px] text-gray-500 bg-white px-1.5 py-0.5 rounded-full">
+                                            Auto-descarga
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        {Object.entries(TICKET_SIZES).map(([key, config]) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => handleSizeChange(key)}
+                                                className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                                    selectedSize === key
+                                                        ? 'bg-gradient-to-br from-red-600 to-red-700 text-white shadow-md'
+                                                        : 'bg-white text-gray-700 border border-gray-300 hover:border-red-400 hover:bg-red-50'
+                                                }`}
+                                            >
+                                                {config.name.split(' ')[0]}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Selecciona el tamaño según tu impresora térmica
-                                </p>
-                            </div>
 
-                            <div className="flex justify-center gap-3">
-                                <button
-                                    className="bg-red-600 hover:bg-red-700 py-2 px-6 rounded cm-button flex items-center gap-2 text-white transition-colors"
-                                    onClick={() => {
-                                        // Calcular descuento total
-                                        const totalDiscountInfo = calculateTotalDiscount();
-                                        
-                                        // Preparar datos para el PDF
-                                        const pdfData = {
-                                            id_pedidos: ticketData.order_id,
-                                            ticket_number: ticketData.ticket_number,
-                                            fecha: new Date(ticketData.date_time).toLocaleDateString('es-MX'),
-                                            hora: new Date(ticketData.date_time).toLocaleTimeString('es-MX'),
-                                            numero_mesa: ticketData.mesa_number,
-                                            estado: ticketData.order_status,
-                                            productos: ticketData.products.map(p => {
-                                                const discountInfo = calculateProductDiscount(p);
-                                                return {
-                                                    nombre: p.product_name,
-                                                    cantidad: p.quantity,
-                                                    precio: p.unit_price,
-                                                    subtotal: p.subtotal,
-                                                    notas: p.notes,
-                                                    tieneDescuento: discountInfo.hasDiscount,
-                                                    precioOriginal: discountInfo.originalPrice,
-                                                    descuento: discountInfo.discount
-                                                };
-                                            }),
-                                            subtotal: totalDiscountInfo.hasDiscount ? totalDiscountInfo.originalTotal : null,
-                                            descuento_total: totalDiscountInfo.hasDiscount ? totalDiscountInfo.discount : null,
-                                            total: ticketData.total,
-                                            metodo_pago: displayPaymentMethod(ticketData.metodo_pago)
-                                        };
-                                        
-                                        generateTicketPDF(pdfData, selectedSize);
-                                    }}
-                                >
-                                    <FaFilePdf className="text-lg" />
-                                    Descargar PDF
-                                </button>
-                                <button
-                                    className="bg-gray-700 hover:bg-gray-800 py-2 px-6 rounded cm-button border-gray-700 hover:border-gray-800 text-white"
-                                    onClick={onClose}
-                                >
-                                    Cerrar
-                                </button>
+                                {/* Botón Cerrar */}
+                                <div className="flex justify-center">
+                                    <button
+                                        className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 py-2 px-4 rounded-lg cm-button text-white text-sm font-semibold shadow-md"
+                                        onClick={onClose}
+                                    >
+                                        Cerrar
+                                    </button>
+                                </div>
                             </div>
                         </>
                     ) : (
