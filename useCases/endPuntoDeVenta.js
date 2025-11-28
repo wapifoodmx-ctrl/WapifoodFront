@@ -8,7 +8,7 @@ export const endPuntoDeVenta = async (orderUuid, metodoPago) => {
         }
 
         // Validar método de pago
-        if (!['efectivo', 'tarjeta'].includes(metodoPago)) {
+        if (!['efectivo', 'tarjeta', 'pasarela'].includes(metodoPago)) {
             throw new Error('Método de pago no válido. Debe ser "efectivo" o "tarjeta"');
         }
 

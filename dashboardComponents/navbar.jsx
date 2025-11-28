@@ -26,6 +26,10 @@ export default function Navbar() {
     const [daysUntilExpiration, setDaysUntilExpiration] = useState(0);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const menuRef = useRef(null);
+    const menuContentRef = useRef(null); // Nuevo ref para el contenido del menú
+    const [isDragging, setIsDragging] = useState(false);
+    const [startY, setStartY] = useState(0);
+    const [scrollTop, setScrollTop] = useState(0);
 
     // Función para calcular días entre dos fechas
     const calculateDaysDifference = (date1, date2) => {
@@ -88,7 +92,6 @@ export default function Navbar() {
     const payments = () => router.push('/payments');
     const puntoDeVenta = () => router.push('/puntodeventa');
     const cocina = () => router.push('/cocina');
-    // Agregar funciones para las nuevas páginas
     const recetas = () => router.push('/recetas');
     const inventarios = () => router.push('/inventarios');
 
@@ -307,6 +310,42 @@ export default function Navbar() {
         };
     }, [isOpen]);
 
+    // Funciones para el drag-to-scroll
+    const handleMouseDown = (e) => {
+        if (!menuContentRef.current) return;
+        setIsDragging(true);
+        setStartY(e.pageY - menuContentRef.current.offsetTop);
+        setScrollTop(menuContentRef.current.scrollTop);
+        menuContentRef.current.style.cursor = 'grabbing';
+        menuContentRef.current.style.userSelect = 'none';
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDragging || !menuContentRef.current) return;
+        e.preventDefault();
+        const y = e.pageY - menuContentRef.current.offsetTop;
+        const walk = (y - startY) * 2; // Multiplicador para la velocidad del scroll
+        menuContentRef.current.scrollTop = scrollTop - walk;
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+        if (menuContentRef.current) {
+            menuContentRef.current.style.cursor = 'grab';
+            menuContentRef.current.style.userSelect = 'auto';
+        }
+    };
+
+    const handleMouseLeave = () => {
+        if (isDragging) {
+            setIsDragging(false);
+            if (menuContentRef.current) {
+                menuContentRef.current.style.cursor = 'grab';
+                menuContentRef.current.style.userSelect = 'auto';
+            }
+        }
+    };
+
     // Función para obtener las clases CSS según el estado de suscripción
     const getMenuItemClasses = (item) => {
         if (menu[item].requiresSubscription && !hasActiveSubscription) {
@@ -425,12 +464,27 @@ export default function Navbar() {
                         fixed top-16 right-0 h-[calc(100dvh-4rem)] w-72 bg-gradient-to-br from-green-50 via-white to-emerald-50 z-40
                         transition-transform duration-300 ease-in-out
                         ${isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}
-                        overflow-y-auto overflow-x-hidden border-l-4 border-green-200 rounded-l-3xl
+                        border-l-4 border-green-200 rounded-l-3xl
+                        flex flex-col
                     `}
                     >
-                        <div className="min-h-full pb-8">
-                            <ul className="flex flex-col mt-4 p-4 text-xl pb-8">
-                                <p className="text-green-700 font-bold mb-2">Menú principal</p>
+                        <div className="p-4 flex-shrink-0">
+                            <p className="text-green-700 font-bold mb-2">Menú principal</p>
+                        </div>
+                        
+                        <div 
+                            ref={menuContentRef}
+                            className="flex-1 overflow-y-auto overflow-x-hidden cursor-grab active:cursor-grabbing px-4"
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseLeave}
+                            style={{
+                                scrollbarWidth: 'thin',
+                                scrollbarColor: '#10b981 #f0fdf4'
+                            }}
+                        >
+                            <ul className="flex flex-col text-xl">
                                 {Object.keys(menu).map((item, index) => (
                                     <li key={index} className="cursor-pointer my-4">
                                         {item === "Dashboard" ? (
@@ -443,7 +497,7 @@ export default function Navbar() {
                                         ) : item === "Register" ? (
                                             <button
                                                 className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
-                                                onClick={() => handleRestrictedClick(productos)} // Cambiar de productos a handleRestrictedClick(productos)
+                                                onClick={() => handleRestrictedClick(productos)}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
@@ -499,8 +553,12 @@ export default function Navbar() {
                                         )}
                                     </li>
                                 ))}
+                            </ul>
+                        </div>
 
-                                <p className="text-green-700 font-bold mt-6">Configuración</p>
+                        <div className="p-4 border-t border-green-200 flex-shrink-0">
+                            <p className="text-green-700 font-bold mt-2">Configuración</p>
+                            <ul className="flex flex-col text-xl">
                                 {Object.keys(config).map((item, index) => (
                                     <li key={index} className="cursor-pointer my-4">
                                         {item === "Profile" ? (

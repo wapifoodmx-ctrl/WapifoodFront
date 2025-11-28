@@ -37,8 +37,10 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             setModalMessage("Producto actualizado con éxito.");
             closeModals();
             if (onRefresh) {
-                onRefresh();
+                await onRefresh(); // Asegurarse de esperar el refresh
             }
+            // Hacer refresh completo de la página
+            window.location.reload();
         } catch (err) {
             console.error("Error al actualizar el producto:", err.message);
             setModalMessage(err.message || "Hubo un error al actualizar el producto.");

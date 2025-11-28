@@ -299,7 +299,7 @@ export default function Inventario() {
     }
   };
 
-  // MODIFICAR: handleSubmit ahora solo abre el modal de PIN
+  // MODIFICAR: handleSubmit ahora envía directamente sin PIN
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -309,11 +309,11 @@ export default function Inventario() {
       return;
     }
 
-    // Abrir modal de PIN en lugar de enviar directamente
-    abrirModalPin('create');
+    // Ejecutar creación directamente sin PIN
+    await ejecutarCrearInsumo(null);
   };
 
-  // NUEVA FUNCIÓN: Ejecutar creación de insumo con PIN
+  // MODIFICAR: ejecutarCrearInsumo ahora acepta PIN nulo para crear
   const ejecutarCrearInsumo = async (confirmationCode) => {
     setIsLoading(true);
 
@@ -326,9 +326,13 @@ export default function Inventario() {
         cost: parseFloat(formData.costo),
         stock: stock,
         unit: pestañaActiva === 'insumos' ? unit : "Pieza",
-        category: pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros',
-        confirmation_code: confirmationCode
+        category: pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros'
       };
+
+      // Solo agregar confirmation_code si no es null
+      if (confirmationCode) {
+        ingredientData.confirmation_code = confirmationCode;
+      }
 
       const result = await postInventarioIngredientes(ingredientData);
       
@@ -343,18 +347,10 @@ export default function Inventario() {
       
       await cargarIngredientes();
       cerrarModalAgregar();
-      cerrarModalPin();
 
     } catch (error) {
       console.error(`Error al crear ${pestañaActiva.slice(0, -1)}:`, error);
-      
-      // Verificar si el error es por PIN incorrecto
-      if (error.message.includes('confirmation') || error.message.includes('PIN') || error.message.includes('código')) {
-        setPinError('PIN incorrecto. Intenta nuevamente.');
-      } else {
-        cerrarModalPin();
-        alert(`Error al agregar ${pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'elemento'}: ${error.message}`);
-      }
+      alert(`Error al agregar ${pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'elemento'}: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -803,24 +799,6 @@ export default function Inventario() {
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 resize-none"
                 />
               </div>
-
-              {/* Categoría Adicional - Solo para insumos */}
-              {pestañaActiva === 'insumos' && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Categoría Adicional
-                  </label>
-                  <select
-                    name="categoriaAdicional"
-                    value={formData.categoriaAdicional}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                  >
-                    <option value="No">No</option>
-                    <option value="Si">Sí</option>
-                  </select>
-                </div>
-              )}
 
               {/* Botón Guardar */}
               <div className="pt-4">

@@ -288,7 +288,6 @@ export default function Pntoventa() {
             ]);
 
             setCarrito([]);
-            setMensajeError("¡Productos agregados al pedido! Presiona 'Finalizar Orden' para proceder al pago.");
             
             setTimeout(() => {
                 setMensajeError("");
