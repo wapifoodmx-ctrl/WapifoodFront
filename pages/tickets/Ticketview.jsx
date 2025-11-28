@@ -3,6 +3,8 @@ import { BsClock } from "react-icons/bs";
 import { IoClose } from "react-icons/io5";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { IoChevronDown, IoChevronUp } from "react-icons/io5";
+import { HiDocumentDownload } from "react-icons/hi";
+import { FaFilePdf } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { QRCodeCanvas } from 'qrcode.react';
@@ -15,6 +17,8 @@ import { checkPayment } from "../../useCases/checkPayment";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import TicketModal from "../../components/TicketModal";
+// Importar generadores de PDF
+import { generateTicketPDF, generateTicketsReportPDF } from "../../utils/pdfGenerator";
 
 export default function Ticketview() {
     const router = useRouter();
@@ -530,17 +534,38 @@ export default function Ticketview() {
 
             {/* Contenido principal */}
             <div className="py-5 px-5">
-                {/* Título dinámico */}
-                <div className="mb-4">
-                    <h2 className="text-lg font-bold">
-                        {activeTab === "hoy" && "Tickets de Hoy"}
-                        {activeTab === "semana" && "Tickets de esta Semana"}
-                        {activeTab === "mes" && "Tickets del Mes"}
-                        {activeTab === "Seleccionar Fecha" && "Tickets por Rango de Fecha"}
-                    </h2>
-                    <p className="text-gray-600 text-sm">
-                        {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''} encontrado{filteredTickets.length !== 1 ? 's' : ''}
-                    </p>
+                {/* Barra de acciones con título dinámico y botón de reporte */}
+                <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <h2 className="text-lg font-bold">
+                            {activeTab === "hoy" && "Tickets de Hoy"}
+                            {activeTab === "semana" && "Tickets de esta Semana"}
+                            {activeTab === "mes" && "Tickets del Mes"}
+                            {activeTab === "Seleccionar Fecha" && "Tickets por Rango de Fecha"}
+                        </h2>
+                        <p className="text-gray-600 text-sm">
+                            {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''} encontrado{filteredTickets.length !== 1 ? 's' : ''}
+                        </p>
+                    </div>
+                    
+                    {/* Botón para descargar reporte PDF */}
+                    {filteredTickets.length > 0 && (
+                        <button
+                            onClick={() => {
+                                const periodName = activeTab === "hoy" ? "Hoy" :
+                                                 activeTab === "semana" ? "Semana" :
+                                                 activeTab === "mes" ? "Mes" :
+                                                 `${formatDate(startDate)} al ${formatDate(endDate)}`;
+                                // Determinar si debe agrupar por fecha
+                                const shouldGroup = activeTab === "semana" || activeTab === "mes" || activeTab === "Seleccionar Fecha";
+                                generateTicketsReportPDF(filteredTickets, periodName, shouldGroup);
+                            }}
+                            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors duration-200 font-semibold text-sm"
+                        >
+                            <HiDocumentDownload className="text-xl" />
+                            Descargar Reporte PDF
+                        </button>
+                    )}
                 </div>
 
                 {/* Contenido condicional según el tipo de vista */}

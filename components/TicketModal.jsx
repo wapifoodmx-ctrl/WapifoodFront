@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { IoClose } from 'react-icons/io5';
+import { FaFilePdf } from 'react-icons/fa';
 import { QRCodeCanvas } from 'qrcode.react';
 import { getTicket } from '@/useCases/getTicket';
+import { generateTicketPDF, TICKET_SIZES } from '@/utils/pdfGenerator';
 
 export default function TicketModal({ isOpen, onClose, orderUuid }) {
     const [ticketData, setTicketData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [selectedSize, setSelectedSize] = useState('STANDARD_80');
 
     useEffect(() => {
         console.log('=== DEBUG MODAL ===');
@@ -316,7 +319,71 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                                 </div>
                             </div>
 
+                            {/* Selector de tamaño de ticket */}
+                            <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    🖨️ Tamaño de Impresora:
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {Object.entries(TICKET_SIZES).map(([key, config]) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => setSelectedSize(key)}
+                                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                                selectedSize === key
+                                                    ? 'bg-red-600 text-white shadow-md'
+                                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {config.name}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Selecciona el tamaño según tu impresora térmica
+                                </p>
+                            </div>
+
                             <div className="flex justify-center gap-3">
+                                <button
+                                    className="bg-red-600 hover:bg-red-700 py-2 px-6 rounded cm-button flex items-center gap-2 text-white transition-colors"
+                                    onClick={() => {
+                                        // Calcular descuento total
+                                        const totalDiscountInfo = calculateTotalDiscount();
+                                        
+                                        // Preparar datos para el PDF
+                                        const pdfData = {
+                                            id_pedidos: ticketData.order_id,
+                                            ticket_number: ticketData.ticket_number,
+                                            fecha: new Date(ticketData.date_time).toLocaleDateString('es-MX'),
+                                            hora: new Date(ticketData.date_time).toLocaleTimeString('es-MX'),
+                                            numero_mesa: ticketData.mesa_number,
+                                            estado: ticketData.order_status,
+                                            productos: ticketData.products.map(p => {
+                                                const discountInfo = calculateProductDiscount(p);
+                                                return {
+                                                    nombre: p.product_name,
+                                                    cantidad: p.quantity,
+                                                    precio: p.unit_price,
+                                                    subtotal: p.subtotal,
+                                                    notas: p.notes,
+                                                    tieneDescuento: discountInfo.hasDiscount,
+                                                    precioOriginal: discountInfo.originalPrice,
+                                                    descuento: discountInfo.discount
+                                                };
+                                            }),
+                                            subtotal: totalDiscountInfo.hasDiscount ? totalDiscountInfo.originalTotal : null,
+                                            descuento_total: totalDiscountInfo.hasDiscount ? totalDiscountInfo.discount : null,
+                                            total: ticketData.total,
+                                            metodo_pago: displayPaymentMethod(ticketData.metodo_pago)
+                                        };
+                                        
+                                        generateTicketPDF(pdfData, selectedSize);
+                                    }}
+                                >
+                                    <FaFilePdf className="text-lg" />
+                                    Descargar PDF
+                                </button>
                                 <button
                                     className="bg-gray-700 hover:bg-gray-800 py-2 px-6 rounded cm-button border-gray-700 hover:border-gray-800 text-white"
                                     onClick={onClose}
