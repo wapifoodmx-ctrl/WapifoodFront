@@ -7,7 +7,7 @@ async function getPinInventario() {
       throw new Error('No se encontró token de autenticación');
     }
 
-    const response = await fetch('http://192.168.1.69:8001/inventory/security/pin', {
+    const response = await fetch('https://b880858e3aa6.ngrok-free.app/inventory/security/pin', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

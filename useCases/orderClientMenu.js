@@ -10,7 +10,7 @@
  * @returns {Promise<Object>} - Respuesta de la API
  */
 export async function createClientOrder(orderData) {
-    const endpoint = 'http://192.168.1.69:8000/orders';
+    const endpoint = 'http://201.137.169.6:8000/orders';
     
     // Validaciones básicas
     if (!orderData.product_ids || !Array.isArray(orderData.product_ids) || orderData.product_ids.length === 0) {

@@ -3,7 +3,7 @@ export async function getUserUUID(userUuid) {
         throw new Error('User UUID es requerido');
     }
 
-    const endpoint = `http://192.168.1.69:8000/user/info/${userUuid}`;
+    const endpoint = `http://201.137.169.6:8000/user/info/${userUuid}`;
     
     // Debug: Ver qué UUID y endpoint estamos usando
     // console.log('User UUID recibido:', userUuid);

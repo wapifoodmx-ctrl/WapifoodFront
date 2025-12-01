@@ -16,6 +16,9 @@ import Profile from "@/pages/assets/images/Profile.jpg";
 import { useRouter } from 'next/router';
 import Navbar from "@/dashboardComponents/navbar";
 import { menuStyles } from "@/styles/menuStyles";
+import { getColorMenu } from "@/useCases/getColorMenu";
+import { postColorMenu } from "@/useCases/postColorMenu";
+import { patchColorMenu } from "@/useCases/patchColorMenu"; // NUEVO IMPORT
 
 // Esquema base sin profileImage
 const baseSchema = Yup.object().shape({
@@ -133,8 +136,14 @@ export default function UserPage() {
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
   const [showColorModal, setShowColorModal] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState('default'); // Estado para el estilo seleccionado
+  const [selectedStyle, setSelectedStyle] = useState('default');
   const [pinInventario, setPinInventario] = useState("");
+  const [savingStyle, setSavingStyle] = useState(false);
+  const [hasExistingStyle, setHasExistingStyle] = useState(false);
+  // NUEVOS ESTADOS PARA MODALES DE ESTILO
+  const [showStyleSuccessModal, setShowStyleSuccessModal] = useState(false);
+  const [showStyleErrorModal, setShowStyleErrorModal] = useState(false);
+  const [styleModalMessage, setStyleModalMessage] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -171,9 +180,29 @@ export default function UserPage() {
       }
     };
 
+    // FUNCIÓN MODIFICADA para detectar si ya existe un estilo guardado
+    const fetchColorMenu = async () => {
+      try {
+        const response = await getColorMenu();
+        if (response && response.color) {
+          setSelectedStyle(response.color);
+          setHasExistingStyle(true); // Marcar que ya existe un estilo
+          console.log('Estilo existente cargado:', response.color);
+        }
+      } catch (error) {
+        console.error('Error al obtener el estilo del menú:', error);
+        // Si hay error 404, significa que no existe aún
+        if (error.message.includes('404')) {
+          setHasExistingStyle(false);
+          console.log('No se encontró estilo guardado, se usará POST al guardar');
+        }
+      }
+    };
+
     fetchUserInfo();
     checkSubscriptionStatus();
     fetchPinInventario();
+    fetchColorMenu();
   }, []);
 
   const handleImageChange = async (event, setFieldValue) => {
@@ -314,6 +343,60 @@ export default function UserPage() {
     }
   };
 
+  // FUNCIÓN MODIFICADA para usar POST o PATCH según corresponda
+  const handleSaveStyle = async () => {
+    setSavingStyle(true);
+    try {
+      let response;
+      
+      if (hasExistingStyle) {
+        // Si ya existe un estilo, usar PATCH para actualizar
+        console.log('Actualizando estilo existente con PATCH:', selectedStyle);
+        response = await patchColorMenu(selectedStyle);
+        console.log('Estilo actualizado exitosamente');
+        setStyleModalMessage('Estilo actualizado correctamente');
+      } else {
+        // Si no existe, usar POST para crear
+        console.log('Creando nuevo estilo con POST:', selectedStyle);
+        response = await postColorMenu(selectedStyle);
+        setHasExistingStyle(true); // Marcar que ahora ya existe
+        console.log('Estilo creado exitosamente');
+        setStyleModalMessage('Estilo guardado correctamente');
+      }
+      
+      // Cerrar el modal de selección
+      setShowColorModal(false);
+      
+      // Mostrar modal de éxito
+      setShowStyleSuccessModal(true);
+      
+      console.log('Respuesta del servidor:', response);
+    } catch (error) {
+      console.error('Error al guardar el estilo:', error);
+      
+      // Mejorar el manejo de errores
+      if (error.message.includes('404') && hasExistingStyle) {
+        // Si falló PATCH por 404, intentar con POST
+        console.log('Reintentando con POST...');
+        try {
+          await postColorMenu(selectedStyle);
+          setHasExistingStyle(true);
+          setShowColorModal(false);
+          setStyleModalMessage('Estilo guardado correctamente');
+          setShowStyleSuccessModal(true);
+        } catch (retryError) {
+          setStyleModalMessage('Error al guardar el estilo. Por favor, inténtalo de nuevo.');
+          setShowStyleErrorModal(true);
+        }
+      } else {
+        setStyleModalMessage('Error al guardar el estilo. Por favor, inténtalo de nuevo.');
+        setShowStyleErrorModal(true);
+      }
+    } finally {
+      setSavingStyle(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       {/* Navbar */}
@@ -342,6 +425,79 @@ export default function UserPage() {
               >
                 Continuar
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* NUEVA MODAL DE ÉXITO PARA ESTILOS */}
+        {showStyleSuccessModal && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-md mx-auto text-center shadow-2xl transform animate-scale-in">
+              <div className="mb-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                  <FaCheckCircle className="text-green-500 text-3xl" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  ¡Excelente!
+                </h3>
+                <p className="text-gray-600">
+                  {styleModalMessage}
+                </p>
+                <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-700">
+                    Tu menú digital ahora luce con el estilo <strong>{menuStyles[selectedStyle]?.name}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowStyleSuccessModal(false)}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* NUEVA MODAL DE ERROR PARA ESTILOS */}
+        {showStyleErrorModal && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-md mx-auto text-center shadow-2xl transform animate-scale-in">
+              <div className="mb-6">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  Ups, algo salió mal
+                </h3>
+                <p className="text-gray-600">
+                  {styleModalMessage}
+                </p>
+                <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <p className="text-sm text-amber-700">
+                    💡 Verifica tu conexión a internet e inténtalo nuevamente
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowStyleErrorModal(false)}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all duration-200"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowStyleErrorModal(false);
+                    setShowColorModal(true);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                >
+                  Reintentar
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -382,78 +538,92 @@ export default function UserPage() {
           </div>
         )}
 
-        {/* Modal de Selección de Color - MODIFICADO */}
+        {/* Modal de Selección de Color - CON INDICADOR DE ESTADO */}
         {showColorModal && (
           <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-8 max-w-3xl w-full mx-auto shadow-2xl transform animate-scale-in max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl p-8 max-w-3xl w-full mx-auto shadow-2xl transform animate-scale-in max-h-[90vh] flex flex-col">
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                  Selecciona el estilo de tu menú
-                </h3>
-                <p className="text-gray-600 text-sm">
-                  Elige el diseño que mejor represente tu restaurante
-                </p>
-              </div>
-              
-              {/* Grid de estilos */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                {Object.entries(menuStyles).map(([key, style]) => (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedStyle(key)}
-                    className={`relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${
-                      selectedStyle === key
-                        ? 'border-green-500 bg-green-50 shadow-lg'
-                        : 'border-gray-200 bg-white hover:border-green-300'
-                    }`}
-                  >
-                    {/* Indicador de selección */}
-                    {selectedStyle === key && (
-                      <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                        <FaCheckCircle className="text-white text-sm" />
-                      </div>
-                    )}
-                    
-                    {/* Preview del gradiente del header */}
-                    <div className={`h-16 rounded-lg mb-3 bg-gradient-to-r ${style.colors.headerGradient}`}></div>
-                    
-                    {/* Nombre del estilo */}
-                    <h4 className="font-bold text-gray-800 mb-2">{style.name}</h4>
-                    
-                    {/* Muestra de colores */}
-                    <div className="flex gap-2 mb-2">
-                      <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${style.colors.buttonGradient}`}></div>
-                      <div className={`w-8 h-8 rounded-full ${style.colors.badge}`}></div>
-                      <div className={`w-8 h-8 rounded-full ${style.colors.decorativeCircles[0]}`}></div>
-                    </div>
-                    
-                    {/* Descripción rápida del tema */}
-                    <p className="text-xs text-gray-500">
-                      {key === 'default' && 'Estilo clásico y profesional'}
-                      {key === 'tokyo' && 'Moderno estilo neón'}
-                      {key === 'midnight' && 'Elegante y minimalista'}
-                      {key === 'sunset' && 'Cálido y acogedor'}
-                      {key === 'ocean' && 'Fresco y marino'}
-                      {key === 'luxury' && 'Premium y sofisticado'}
-                      {key === 'garden' && 'Natural y fresco'}
-                      {key === 'berry' && 'Dulce y moderno'}
-                      {key === 'espresso' && 'Tierra y café'}
-                      {key === 'aurora' && 'Colores boreales'}
-                      {key === 'latte' && 'Perfecto para cafés'}
-                      {key === 'mocha' && 'Cafetería moderna'}
-                      {key === 'cappuccino' && 'Elegancia cafetera'}
-                      {key === 'fiesta' && 'Vibrante mexicano'}
-                      {key === 'azteca' && 'Tradicional mexicano'}
-                      {key === 'mariachi' && 'Festivo mexicano'}
-                      {key === 'tequila' && 'Premium mexicano'}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                      Selecciona el estilo de tu menú
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      Elige el diseño que mejor represente tu restaurante
                     </p>
-                  </button>
-                ))}
+                  </div>
+                  {/* INDICADOR DE ESTADO */}
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    hasExistingStyle 
+                      ? 'bg-blue-100 text-blue-700' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {hasExistingStyle ? '🔄 Actualizar' : '✨ Nuevo'}
+                  </div>
+                </div>
               </div>
 
-              {/* Vista previa del estilo seleccionado */}
+              {/* Área scrollable: solo aquí estará el grid de estilos */}
+              <div className="overflow-y-auto flex-1 pr-2 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(menuStyles).map(([key, style]) => (
+                    <button
+                      key={key}
+                      onClick={() => setSelectedStyle(key)}
+                      className={`relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${
+                        selectedStyle === key
+                          ? 'border-green-500 bg-green-50 shadow-lg'
+                          : 'border-gray-200 bg-white hover:border-green-300'
+                      }`}
+                    >
+                      {/* Indicador de selección */}
+                      {selectedStyle === key && (
+                        <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                          <FaCheckCircle className="text-white text-sm" />
+                        </div>
+                      )}
+
+                      {/* Preview del gradiente del header */}
+                      <div className={`h-16 rounded-lg mb-3 bg-gradient-to-r ${style.colors.headerGradient}`}></div>
+
+                      {/* Nombre del estilo */}
+                      <h4 className="font-bold text-gray-800 mb-2">{style.name}</h4>
+
+                      {/* Muestra de colores */}
+                      <div className="flex gap-2 mb-2">
+                        <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${style.colors.buttonGradient}`}></div>
+                        <div className={`w-8 h-8 rounded-full ${style.colors.badge}`}></div>
+                        <div className={`w-8 h-8 rounded-full ${style.colors.decorativeCircles[0]}`}></div>
+                      </div>
+
+                      {/* Descripción rápida del tema */}
+                      <p className="text-xs text-gray-500">
+                        {key === 'default' && 'Estilo clásico y profesional'}
+                        {key === 'tokyo' && 'Moderno estilo neón'}
+                        {key === 'midnight' && 'Elegante y minimalista'}
+                        {key === 'sunset' && 'Cálido y acogedor'}
+                        {key === 'ocean' && 'Fresco y marino'}
+                        {key === 'luxury' && 'Premium y sofisticado'}
+                        {key === 'garden' && 'Natural y fresco'}
+                        {key === 'berry' && 'Dulce y moderno'}
+                        {key === 'espresso' && 'Tierra y café'}
+                        {key === 'aurora' && 'Colores boreales'}
+                        {key === 'latte' && 'Perfecto para cafés'}
+                        {key === 'mocha' && 'Cafetería moderna'}
+                        {key === 'cappuccino' && 'Elegancia cafetera'}
+                        {key === 'fiesta' && 'Vibrante mexicano'}
+                        {key === 'azteca' && 'Tradicional mexicano'}
+                        {key === 'mariachi' && 'Festivo mexicano'}
+                        {key === 'tequila' && 'Premium mexicano'}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Vista previa del estilo seleccionado (estática) */}
               {selectedStyle && (
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 mb-6">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 mb-4">
                   <p className="text-sm text-gray-700 mb-2">
                     <strong>Vista previa:</strong> {menuStyles[selectedStyle].name}
                   </p>
@@ -465,26 +635,30 @@ export default function UserPage() {
                 </div>
               )}
 
-              {/* Botones */}
-              <div className="flex gap-3">
+              {/* Botones (estáticos) */}
+              <div className="flex gap-3 mt-auto pt-2">
                 <button
                   onClick={() => {
                     setShowColorModal(false);
-                    setSelectedStyle('default'); // Resetear a default al cerrar
                   }}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all duration-200"
+                  disabled={savingStyle}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={() => {
-                    setShowColorModal(false);
-                    // Aquí podrías guardar la preferencia del estilo en la base de datos
-                    console.log('Estilo seleccionado:', selectedStyle);
-                  }}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                  onClick={handleSaveStyle}
+                  disabled={savingStyle}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  Aplicar Estilo
+                  {savingStyle ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      {hasExistingStyle ? 'Actualizando...' : 'Guardando...'}
+                    </div>
+                  ) : (
+                    hasExistingStyle ? '🔄 Actualizar Estilo' : '✨ Aplicar Estilo'
+                  )}
                 </button>
               </div>
             </div>
