@@ -85,7 +85,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
 
         pdf.setFontSize(sizeConfig.fontSize.small);
         pdf.setFont('helvetica', 'normal');
-        pdf.text('Sistema de Gestión', pageWidth / 2, yPos, { align: 'center' });
+        pdf.text('Sistema para restaurantes', pageWidth / 2, yPos, { align: 'center' });
         yPos += 8;
 
         // Línea separadora
@@ -291,7 +291,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
 
         pdf.setFontSize(sizeConfig.fontSize.small);
         pdf.setFont('helvetica', 'normal');
-        pdf.text('WapiFood - Sistema de Gestion', pageWidth / 2, yPos, { align: 'center' });
+        pdf.text('wapifoodmx@gmail.com', pageWidth / 2, yPos, { align: 'center' });
         yPos += 4;
         pdf.text('www.wapifood.com', pageWidth / 2, yPos, { align: 'center' });
         yPos += 8; // Más espacio al final para que no se corte
