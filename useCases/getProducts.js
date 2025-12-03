@@ -1,5 +1,5 @@
 export async function getProducts() {
-    const endpoint = 'http://201.137.169.6:8000/categoria/productos'; // Cambia esto a la URL de tu API
+    const endpoint = 'http://192.168.1.69:8000/categoria/productos'; // Cambia esto a la URL de tu API
 
     try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');

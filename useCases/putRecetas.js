@@ -13,7 +13,7 @@ export const putReceta = async (recipeId, recipeData) => {
             throw new Error('No se encontró token de autenticación');
         }
 
-        const response = await fetch(`https://b880858e3aa6.ngrok-free.app/inventory/recipes/${recipeId}`, {
+        const response = await fetch(`http://192.168.1.69:8001/inventory/recipes/${recipeId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

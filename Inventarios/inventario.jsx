@@ -415,8 +415,10 @@ export default function Inventario() {
       setSuccessModalMessage(`Insumo "${ingredientData.name}" modificado exitosamente`);
       setShowSuccessModal(true);
       
-      await cargarIngredientes();
+      // Cerrar modal de PIN primero
+      cerrarModalPin();
       
+      // Cerrar modal de edición
       setIsEditProductModalOpen(false);
       setInsumoAEditar(null);
       setInsumosSeleccionados([]);
@@ -429,7 +431,11 @@ export default function Inventario() {
         comentarios: "",
         categoriaAdicional: "No"
       });
-      cerrarModalPin();
+      
+      // Recargar la página después de un breve delay para que se vea el modal de éxito
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
 
     } catch (error) {
       console.error('Error al modificar insumo:', error);
@@ -697,7 +703,7 @@ export default function Inventario() {
               <h2 className="text-xl font-bold text-gray-800">{textos.titulo}</h2>
               <button
                 onClick={cerrarModalAgregar}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+                className="text-gray-400 hover:text-gray-600 transition-colores p-1 rounded-lg hover:bg-gray-100"
               >
                 <IoClose className="text-2xl" />
               </button>
@@ -752,14 +758,14 @@ export default function Inventario() {
               {/* Cantidad */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Cantidad a Añadir
+                  {pestañaActiva === 'insumos' ? 'Cantidad a Añadir' : 'Piezas a Añadir'}
                 </label>
                 <input
                   type="number"
                   name="cantidad"
                   value={formData.cantidad}
                   onChange={handleInputChange}
-                  placeholder="Cantidad"
+                  placeholder={pestañaActiva === 'insumos' ? "Cantidad" : "Piezas"}
                   min="0.01"
                   step="0.01"
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
@@ -855,7 +861,7 @@ export default function Inventario() {
                   setInsumoAEditar(null);
                   setUnidadEdit("Gramos");
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+                className="text-gray-400 hover:text-gray-600 transition-colores p-1 rounded-lg hover:bg-gray-100"
               >
                 <IoClose className="text-2xl" />
               </button>
@@ -1067,7 +1073,7 @@ export default function Inventario() {
               <button
                 onClick={cerrarModalPin}
                 disabled={isLoading}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                className="text-gray-400 hover:text-gray-600 transition-colores p-1 rounded-lg hover:bg-gray-100 disabled:opacity-50"
               >
                 <IoClose className="text-2xl" />
               </button>
