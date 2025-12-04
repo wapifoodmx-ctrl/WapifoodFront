@@ -8,7 +8,7 @@ async function getCodigoConfirmacion() {
         }
 
         // Realizar la petición GET
-        const response = await fetch('http://201.137.169.6:8000/user/me/confirmation-code', {
+        const response = await fetch('http://192.168.1.69:8000/user/me/confirmation-code', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

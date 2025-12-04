@@ -1,5 +1,5 @@
 export async function getFinalOrder(UUID) {
-    const endpoint = `http://201.137.169.6:8000/orders/final/${UUID}`;
+    const endpoint = `http://192.168.1.69:8000/orders/final/${UUID}`;
 
     try {
         // Obtener el token del localStorage o sessionStorage

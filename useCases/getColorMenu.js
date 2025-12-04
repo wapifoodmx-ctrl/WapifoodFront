@@ -12,7 +12,7 @@
  * @returns {Promise<Object>} Objeto con la configuración del color del menú
  */
 export async function getColorMenu() {
-    const endpoint = 'http://201.137.169.6:8000/menucolors/';
+    const endpoint = 'http://192.168.1.69:8000/menucolors/';
 
     try {
         // Obtener el token del localStorage o sessionStorage
