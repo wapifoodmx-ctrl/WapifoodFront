@@ -13,11 +13,14 @@ export default function ProductoCard({ producto, onAgregarAlCarrito, onOpenModal
         setCantidad(1);
     };
 
+    // Obtener la URL de la imagen correctamente
+    const imageUrl = producto.image_url?.[0] || producto.image || "/placeholder-food.jpg";
+
     return (
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-green-100 hover:border-green-300 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
             <div className="relative">
                 <img
-                    src={producto.image || "/placeholder-food.jpg"}
+                    src={imageUrl}
                     alt={producto.name}
                     className="w-full h-48 object-cover"
                 />
@@ -102,6 +105,9 @@ export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito })
         onClose();
     };
 
+    // Obtener la URL de la imagen correctamente
+    const imageUrl = producto.image_url?.[0] || producto.image || "/placeholder-food.jpg";
+
     return (
         <div 
             className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10000] p-4"
@@ -114,7 +120,7 @@ export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito })
             <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border-2 border-green-100 max-h-[90vh] overflow-y-auto">
                 <div className="relative">
                     <img
-                        src={producto.image || "/placeholder-food.jpg"}
+                        src={imageUrl}
                         alt={producto.name}
                         className="w-full h-72 object-cover rounded-t-2xl"
                     />
@@ -143,10 +149,10 @@ export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito })
                         </p>
                     </div>
 
-                    {producto.category && (
+                    {producto.category_name && (
                         <div className="mb-6">
                             <span className="inline-block bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
-                                {producto.category}
+                                {producto.category_name}
                             </span>
                         </div>
                     )}

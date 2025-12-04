@@ -238,14 +238,14 @@ export default function Recipes() {
     try {
       const recipeData = {
         name: selectedProduct.name,
-        product_id: selectedProductId,
+        product_id: parseInt(selectedProductId),
         ingredients: insumosSeleccionados.map(insumoId => ({
-          ingredient_id: insumoId,
+          ingredient_id: parseInt(insumoId),
           quantity: parseFloat(cantidadesInsumos[insumoId])
         }))
       };
 
-      console.log('Enviando receta:', recipeData);
+      console.log('Enviando receta:', JSON.stringify(recipeData, null, 2));
       
       const response = await postRecetas(recipeData);
       console.log('Receta creada exitosamente:', response);
@@ -268,7 +268,12 @@ export default function Recipes() {
       
     } catch (error) {
       console.error('Error al crear la receta:', error);
-      setErrorMessage(error.message || "Error al guardar la receta");
+      const errorMsg = error.response?.data?.detail 
+        ? (Array.isArray(error.response.data.detail) 
+            ? error.response.data.detail.map(err => `${err.loc?.join('.')}: ${err.msg}`).join(', ')
+            : error.response.data.detail)
+        : error.message || "Error al guardar la receta";
+      setErrorMessage(errorMsg);
     } finally {
       setIsSubmittingRecipe(false);
     }
@@ -358,14 +363,14 @@ export default function Recipes() {
     try {
       const updateData = {
         name: recipeName.trim(),
-        product_id: editingRecipe.product_id,
+        product_id: parseInt(editingRecipe.product_id),
         ingredients: insumosSeleccionados.map(ingredientId => ({
-          ingredient_id: ingredientId,
+          ingredient_id: parseInt(ingredientId),
           quantity: parseFloat(cantidadesInsumos[ingredientId])
         }))
       };
 
-      console.log('Actualizando receta:', updateData);
+      console.log('Actualizando receta:', JSON.stringify(updateData, null, 2));
       
       const response = await putReceta(editingRecipe.id_recipe, updateData);
       console.log('Receta actualizada exitosamente:', response);
@@ -386,7 +391,12 @@ export default function Recipes() {
       
     } catch (error) {
       console.error('Error al actualizar la receta:', error);
-      setErrorMessage(error.message || "Error al actualizar la receta");
+      const errorMsg = error.response?.data?.detail 
+        ? (Array.isArray(error.response.data.detail) 
+            ? error.response.data.detail.map(err => `${err.loc?.join('.')}: ${err.msg}`).join(', ')
+            : error.response.data.detail)
+        : error.message || "Error al actualizar la receta";
+      setErrorMessage(errorMsg);
     } finally {
       setIsSubmittingRecipe(false);
     }
@@ -524,36 +534,6 @@ export default function Recipes() {
                   />
                 ))}
               </div>
-
-              {/* Información de selección */}
-              {selectedRecipeId && (
-                <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-green-800">
-                          {recetasFiltradas.find(r => r.id_recipe === selectedRecipeId)?.name}
-                        </p>
-                        <p className="text-sm text-green-600">Receta seleccionada para modificar</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedRecipeId(null);
-                      }}
-                      className="text-green-600 hover:text-green-800 transition-colors"
-                    >
-                      <IoClose className="text-xl" />
-                    </button>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>
