@@ -37,6 +37,8 @@ export default function Ticketview() {
     const [expandedDates, setExpandedDates] = useState(new Set());
     // Estado para el switch de filtro de órdenes (true = exitosas, false = canceladas)
     const [showSuccessfulOrders, setShowSuccessfulOrders] = useState(true);
+    // Estado para el filtro de tickets: 'todos', 'finalizados', 'cancelados'
+    const [ticketFilter, setTicketFilter] = useState('todos');
 
     // Función para formatear fecha a YYYY-MM-DD
     const formatDateToAPI = (date) => {
@@ -375,25 +377,30 @@ export default function Ticketview() {
 
     // Función para filtrar tickets por fecha
     const filterTicketsByDate = (tickets, filter) => {
-        switch (filter) {
-            case "hoy":
-            case "semana":
-            case "mes":
-                // Los datos ya vienen filtrados de la API - solo mostrar finalizados
-                return tickets.filter(ticket => ticket.statusOrden === 'Finalizado');
-            case "Seleccionar Fecha":
-                // Filtrar según el estado del switch
-                if (showSuccessfulOrders) {
-                    // Mostrar órdenes exitosas (PuntoDeVenta y Finalizado)
-                    return tickets.filter(ticket => 
-                        ticket.statusOrden === 'Finalizado' || ticket.statusOrden === 'PuntoDeVenta'
-                    );
-                } else {
-                    // Mostrar órdenes canceladas
-                    return tickets.filter(ticket => ticket.statusOrden === 'Cancelado');
-                }
+        let filteredByTab = tickets;
+        
+        // Para "Seleccionar Fecha" mantener el filtro antiguo
+        if (filter === "Seleccionar Fecha") {
+            if (showSuccessfulOrders) {
+                filteredByTab = tickets.filter(ticket => 
+                    ticket.statusOrden === 'Finalizado' || ticket.statusOrden === 'PuntoDeVenta'
+                );
+            } else {
+                filteredByTab = tickets.filter(ticket => ticket.statusOrden === 'Cancelado');
+            }
+        }
+        
+        // Aplicar filtro de estado para todas las pestañas
+        switch (ticketFilter) {
+            case 'finalizados':
+                return filteredByTab.filter(ticket => 
+                    ticket.statusOrden === 'Finalizado' || ticket.statusOrden === 'PuntoDeVenta'
+                );
+            case 'cancelados':
+                return filteredByTab.filter(ticket => ticket.statusOrden === 'Cancelado');
+            case 'todos':
             default:
-                return tickets;
+                return filteredByTab;
         }
     };
 
@@ -548,24 +555,60 @@ export default function Ticketview() {
                         </p>
                     </div>
                     
-                    {/* Botón para descargar reporte PDF */}
-                    {filteredTickets.length > 0 && (
-                        <button
-                            onClick={() => {
-                                const periodName = activeTab === "hoy" ? "Hoy" :
-                                                 activeTab === "semana" ? "Semana" :
-                                                 activeTab === "mes" ? "Mes" :
-                                                 `${formatDate(startDate)} al ${formatDate(endDate)}`;
-                                // Determinar si debe agrupar por fecha
-                                const shouldGroup = activeTab === "semana" || activeTab === "mes" || activeTab === "Seleccionar Fecha";
-                                generateTicketsReportPDF(filteredTickets, periodName, shouldGroup);
-                            }}
-                            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors duration-200 font-semibold text-sm"
-                        >
-                            <HiDocumentDownload className="text-xl" />
-                            Descargar Reporte PDF
-                        </button>
-                    )}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                        {/* Switch Button de 3 posiciones */}
+                        <div className="flex bg-gray-100 rounded-lg p-1 shadow-inner">
+                            <button
+                                onClick={() => setTicketFilter('todos')}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                                    ticketFilter === 'todos'
+                                        ? 'bg-white text-green-600 shadow-md'
+                                        : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                Todos
+                            </button>
+                            <button
+                                onClick={() => setTicketFilter('finalizados')}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                                    ticketFilter === 'finalizados'
+                                        ? 'bg-white text-green-600 shadow-md'
+                                        : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                Finalizados
+                            </button>
+                            <button
+                                onClick={() => setTicketFilter('cancelados')}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                                    ticketFilter === 'cancelados'
+                                        ? 'bg-white text-red-600 shadow-md'
+                                        : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                Cancelados
+                            </button>
+                        </div>
+                        
+                        {/* Botón para descargar reporte PDF */}
+                        {filteredTickets.length > 0 && (
+                            <button
+                                onClick={() => {
+                                    const periodName = activeTab === "hoy" ? "Hoy" :
+                                                     activeTab === "semana" ? "Semana" :
+                                                     activeTab === "mes" ? "Mes" :
+                                                     `${formatDate(startDate)} al ${formatDate(endDate)}`;
+                                    // Determinar si debe agrupar por fecha
+                                    const shouldGroup = activeTab === "semana" || activeTab === "mes" || activeTab === "Seleccionar Fecha";
+                                    generateTicketsReportPDF(filteredTickets, periodName, shouldGroup);
+                                }}
+                                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors duration-200 font-semibold text-sm"
+                            >
+                                <HiDocumentDownload className="text-xl" />
+                                Descargar Reporte PDF
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Contenido condicional según el tipo de vista */}

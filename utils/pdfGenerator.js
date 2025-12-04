@@ -470,7 +470,7 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
 
                 // Preparar datos para la tabla del día
                 const tableDayData = tickets.map(ticket => [
-                    ticket.ticket_number ? `#${ticket.ticket_number}` : `#${ticket.id?.substring(0, 8) || 'N/A'}`,
+                    ticket.ticket_number ? `#${ticket.ticket_number}` : 'N/A',
                     ticket.hora || '-',
                     ticket.mesa || '-',
                     `$${parseFloat(ticket.total || 0).toFixed(2)}`,
@@ -520,7 +520,7 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
             // ==== VISTA NORMAL (HOY) - TABLA ÚNICA ====
             // Preparar datos para la tabla
             const tableData = ticketsData.map(ticket => [
-                ticket.ticket_number ? `#${ticket.ticket_number}` : `#${ticket.id?.substring(0, 8) || 'N/A'}`,
+                ticket.ticket_number ? `#${ticket.ticket_number}` : 'N/A',
                 ticket.fecha || '-',
                 ticket.hora || '-',
                 ticket.mesa || '-',
