@@ -25,7 +25,7 @@ export async function updateProduct(id_products, productData, imageFile) {
     if (productData.category_id) queryParams.append("category_id", productData.category_id);
 
     // Construir la URL con los parámetros de consulta
-    const url = `http://192.168.1.69:8000/products/${id_products}?${queryParams.toString()}`;
+    const url = `https://api.wapifood.com/products/${id_products}?${queryParams.toString()}`;
 
     // Crear el FormData para el archivo
     const formData = new FormData();

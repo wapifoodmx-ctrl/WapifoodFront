@@ -1,5 +1,5 @@
 export async function getCategoria() {
-    const endpoint = 'http://192.168.1.69:8000/categoria';
+    const endpoint = 'https://api.wapifood.com/categoria';
 
     try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');

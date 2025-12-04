@@ -13,7 +13,7 @@ async function getOrdersFecha(fechaInicio, fechaFin) {
     }
 
     // Construir la URL con los query parameters
-    const baseUrl = 'http://192.168.1.69:8000/orders/orders/entre-fechas';
+    const baseUrl = 'https://api.wapifood.com/orders/orders/entre-fechas';
     const url = new URL(baseUrl);
     url.searchParams.append('fecha_inicio', fechaInicio);
     url.searchParams.append('fecha_fin', fechaFin);

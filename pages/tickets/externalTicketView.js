@@ -23,7 +23,7 @@ export default function ExternalTicketView() {
                 setError(null);
 
                 // Llamar al endpoint público (sin autenticación)
-                const endpoint = `http://192.168.1.69:8000/orders/${uuid}`;
+                const endpoint = `https://api.wapifood.com/orders/${uuid}`;
                 
                 const response = await fetch(endpoint, {
                     method: 'GET',

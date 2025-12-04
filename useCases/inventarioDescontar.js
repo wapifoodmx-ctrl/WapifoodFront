@@ -7,7 +7,7 @@ async function descontarInventario(productos) {
       throw new Error('No se encontró el token de autenticación');
     }
 
-    const response = await fetch('http://192.168.1.69:8001/inventory/record-loss-multiple/', {
+    const response = await fetch('https://api-micro.wapifood.com/inventory/record-loss-multiple/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

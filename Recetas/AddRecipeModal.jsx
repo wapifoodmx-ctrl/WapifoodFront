@@ -1,5 +1,108 @@
 import { IoClose, IoAddOutline } from "react-icons/io5";
-import { useState } from "react";
+import { useState, useCallback, useRef, useMemo, memo } from "react";
+
+// Mover QuantityInput fuera del componente principal y usar memo
+const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCantidadChange, toggleUnit, className = "" }) => {
+  const inputRef = useRef(null);
+  const isKg = unitsInKg[ingredientId];
+  const currentValue = cantidadesInsumos[ingredientId] || '';
+  
+  const handleChange = (e) => {
+    let value = e.target.value;
+
+    if (value === '') {
+      onCantidadChange(ingredientId, '');
+      return;
+    }
+
+    // Soporte para coma como separador decimal
+    value = value.replace(',', '.');
+
+    // Permitir números con decimales
+    if (/^\d*\.?\d*$/.test(value)) {
+      const isKg = unitsInKg[ingredientId];
+
+      // Validar decimales según la unidad
+      if (value.includes('.')) {
+        const [, decimals = ''] = value.split('.');
+        const maxDecimals = isKg ? 3 : 2;
+        if (decimals.length > maxDecimals) return;
+      }
+
+      onCantidadChange(ingredientId, value);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 
+      'Home', 'End', 'Tab', 'Enter', 'Escape'
+    ];
+    
+    if (allowedKeys.includes(e.key)) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.target.blur();
+      }
+      return;
+    }
+
+    if (!/[\d.,]/.test(e.key)) {
+      e.preventDefault();
+      return;
+    }
+
+    if ((e.key === '.' || e.key === ',') && e.target.value.includes('.')) {
+      e.preventDefault();
+      return;
+    }
+  };
+
+  const handleToggleUnit = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    toggleUnit(ingredientId);
+    
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 0);
+  };
+  
+  return (
+    <div className="flex items-center gap-1">
+      <div className="relative flex-1">
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="decimal"
+          placeholder="0"
+          value={currentValue}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          className={`w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 pr-6 ${className}`}
+          autoComplete="off"
+          maxLength="10"
+        />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-600 pointer-events-none select-none">
+          {isKg ? 'kg' : 'g'}
+        </span>
+      </div>
+      <button
+        onClick={handleToggleUnit}
+        type="button"
+        className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs font-semibold transition-colors flex-shrink-0"
+        title={isKg ? "Convertir a gramos" : "Convertir a kilos"}
+      >
+        {isKg ? 'g' : 'kg'}
+      </button>
+    </div>
+  );
+});
+
+QuantityInput.displayName = 'QuantityInput';
 
 export default function AddRecipeModal({
   isOpen,
@@ -17,28 +120,16 @@ export default function AddRecipeModal({
   onCantidadChange,
   onRemoveIngredient
 }) {
-  // Estado para controlar qué insumos están en modo kg
   const [unitsInKg, setUnitsInKg] = useState({});
 
-  if (!isOpen) return null;
-
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  // Función para alternar entre gramos y kilos
-  const toggleUnit = (ingredientId) => {
+  const toggleUnit = useCallback((ingredientId) => {
     const currentValue = parseFloat(cantidadesInsumos[ingredientId]) || 0;
     const isCurrentlyKg = unitsInKg[ingredientId];
 
     if (isCurrentlyKg) {
-      // Convertir de kg a gramos
       const gramos = currentValue * 1000;
       onCantidadChange(ingredientId, gramos.toString());
     } else {
-      // Convertir de gramos a kg
       const kilos = currentValue / 1000;
       onCantidadChange(ingredientId, kilos.toFixed(3));
     }
@@ -47,49 +138,15 @@ export default function AddRecipeModal({
       ...prev,
       [ingredientId]: !isCurrentlyKg
     }));
+  }, [cantidadesInsumos, unitsInKg, onCantidadChange]);
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
-  // Componente de input con conversor
-  const QuantityInput = ({ ingredientId, className = "" }) => {
-    const isKg = unitsInKg[ingredientId];
-    const currentValue = cantidadesInsumos[ingredientId] || '';
-    
-    return (
-      <div className="flex items-center gap-1">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder="0"
-            value={currentValue}
-            onChange={(e) => {
-              const value = e.target.value;
-              // Permitir solo números y un punto decimal
-              if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                onCantidadChange(ingredientId, value);
-              }
-            }}
-            className={`w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 pr-6 ${className}`}
-            style={{
-              // Ocultar las flechas del input number en todos los navegadores
-              WebkitAppearance: 'none',
-              MozAppearance: 'textfield',
-            }}
-          />
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-600">
-            {isKg ? 'kg' : 'g'}
-          </span>
-        </div>
-        <button
-          onClick={() => toggleUnit(ingredientId)}
-          className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs font-semibold transition-colors"
-          title={isKg ? "Convertir a gramos" : "Convertir a kilos"}
-        >
-          {isKg ? 'g' : 'kg'}
-        </button>
-      </div>
-    );
-  };
+  if (!isOpen) return null;
 
   return (
     <div 
@@ -211,7 +268,13 @@ export default function AddRecipeModal({
                           </p>
                         </div>
                         <div className="w-28">
-                          <QuantityInput ingredientId={ingredientId} />
+                          <QuantityInput 
+                            ingredientId={ingredientId}
+                            cantidadesInsumos={cantidadesInsumos}
+                            unitsInKg={unitsInKg}
+                            onCantidadChange={onCantidadChange}
+                            toggleUnit={toggleUnit}
+                          />
                         </div>
                         <button
                           onClick={() => onRemoveIngredient(ingredientId)}
@@ -315,7 +378,14 @@ export default function AddRecipeModal({
                         </p>
                       </div>
                       <div className="w-24">
-                        <QuantityInput ingredientId={ingredientId} className="text-xs py-1.5" />
+                        <QuantityInput 
+                          ingredientId={ingredientId}
+                          cantidadesInsumos={cantidadesInsumos}
+                          unitsInKg={unitsInKg}
+                          onCantidadChange={onCantidadChange}
+                          toggleUnit={toggleUnit}
+                          className="text-xs py-1.5"
+                        />
                       </div>
                       <button
                         onClick={() => onRemoveIngredient(ingredientId)}

@@ -1,5 +1,5 @@
 export default async function postCategoria(categoriaData) {
-    const endpoint = 'http://192.168.1.69:8000/categoria';
+    const endpoint = 'https://api.wapifood.com/categoria';
 
     try {
         // Obtener el token del localStorage

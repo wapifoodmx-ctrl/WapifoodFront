@@ -8,7 +8,7 @@ async function getOrdersSemana() {
         }
 
         // Realizar la petición GET
-        const response = await fetch('http://192.168.1.69:8000/orders/orders/ultima-semana', {
+        const response = await fetch('https://api.wapifood.com/orders/orders/ultima-semana', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

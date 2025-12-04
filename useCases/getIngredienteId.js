@@ -14,7 +14,7 @@ async function getIngredienteById(ingredientId) {
         }
 
         // Usar la misma URL base que en otros archivos
-        const url = `http://192.168.1.69:8001/inventory/ingredients/${ingredientId}`;
+        const url = `https://api-micro.wapifood.com/inventory/ingredients/${ingredientId}`;
         console.log('URL de la petición:', url);
 
         const response = await fetch(url, {

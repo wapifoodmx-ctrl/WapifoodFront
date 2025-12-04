@@ -34,7 +34,7 @@ function getAuthToken() {
  * @returns {Promise<Object>} - Respuesta del servidor.
  */
 export async function patchColorMenu(colorValue) {
-    const url = "http://192.168.1.69:8000/menucolors/";
+    const url = "https://api.wapifood.com/menucolors/";
 
     // Obtener el token desde localStorage o sessionStorage
     const token = getAuthToken();

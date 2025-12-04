@@ -1,5 +1,5 @@
 export async function getAnalitics() {
-    const endpoint = 'http://192.168.1.69:8000/analytics/dashboard';
+    const endpoint = 'https://api.wapifood.com/analytics/dashboard';
 
     try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');

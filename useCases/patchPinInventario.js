@@ -17,7 +17,7 @@ async function actualizarPinInventario(newPin) {
       throw new Error('No se encontró el token de autenticación');
     }
 
-    const response = await fetch('http://192.168.1.69:8001/inventory/security/pin', {
+    const response = await fetch('https://api-micro.wapifood.com/inventory/security/pin', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
