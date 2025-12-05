@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import kime from "@/pages/assets/img/kime.jpeg";
 import { FiEdit, FiEye } from "react-icons/fi";
@@ -7,14 +7,23 @@ import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 import { Formik, Form, Field } from "formik";
 import { updateProduct } from "../useCases/updateProduct";
 import { deleteProduct } from "../useCases/deleteProduct";
+import { postInventarioIngredientes } from "@/useCases/postInventarioIngredientes";
 import ModalMessage from "../components/ModalMessage";
 
 export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh, availabilityFilter }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [modalMessage, setModalMessage] = useState(null);
+    const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+    const [inventoryFormData, setInventoryFormData] = useState({
+        cantidad: "",
+        costo: "",
+        comentarios: ""
+    });
+    const editFormikRef = useRef(null);
 
     useEffect(() => {
         const timeout = setTimeout(() => setLoading(false), 1000);
@@ -28,13 +37,59 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     const closeModals = () => {
         setIsEditModalOpen(false);
         setIsDeleteModalOpen(false);
+        setIsInventoryModalOpen(false);
         setSelectedProduct(null);
+        editFormikRef.current = null;
+    };
+
+    const closeInventoryModalAndUncheck = () => {
+        setIsInventoryModalOpen(false);
+        if (editFormikRef.current) {
+            editFormikRef.current.setFieldValue('agregarInventario', false);
+        }
+        setInventoryFormData({
+            cantidad: "",
+            costo: "",
+            comentarios: ""
+        });
     };
 
     const handleUpdateProduct = async (values, imageFile) => {
         try {
             await updateProduct(values.id_products, values, imageFile);
-            setModalMessage("Producto actualizado con éxito.");
+
+            // Si checkbox de inventario está marcado, agregar al inventario
+            if (values.agregarInventario) {
+                const ingredientData = {
+                    name: values.name,
+                    description: `Producto: ${values.name}`,
+                    cost: parseFloat(values.price),
+                    stock: 1,
+                    unit: "Pieza",
+                    category: 'producto'
+                };
+
+                const result = await postInventarioIngredientes(ingredientData);
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Error al agregar al inventario');
+                }
+            }
+
+            // Si se marca "Agregar receta"
+            if (values.agregarReceta) {
+                console.log("Agregar receta funcionalidad pendiente");
+            }
+
+            const successMessage = values.agregarInventario && values.agregarReceta
+                ? "Producto actualizado y agregado al inventario y receta"
+                : values.agregarInventario
+                ? "Producto actualizado y agregado al inventario"
+                : values.agregarReceta
+                ? "Producto actualizado y agregado a receta"
+                : "Producto actualizado exitosamente";
+
+            setModalMessage(successMessage);
             closeModals();
             if (onRefresh) {
                 await onRefresh(); // Asegurarse de esperar el refresh
@@ -61,6 +116,67 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             console.error("Error al eliminar el producto:", err.message);
             setModalMessage(err.message || "Hubo un error al eliminar el producto.");
         }
+    };
+
+    const handleInventoryInputChange = (e) => {
+        const { name, value } = e.target;
+        setInventoryFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleAddToInventory = async (e) => {
+        e.preventDefault();
+        
+        if (!selectedProduct || !inventoryFormData.cantidad || !inventoryFormData.costo) {
+            setModalMessage("Por favor completa todos los campos obligatorios");
+            return;
+        }
+
+        setIsLoadingInventory(true);
+
+        try {
+            const ingredientData = {
+                name: selectedProduct.name,
+                description: inventoryFormData.comentarios || `Producto: ${selectedProduct.name}`,
+                cost: parseFloat(inventoryFormData.costo),
+                stock: parseFloat(inventoryFormData.cantidad),
+                unit: "Pieza",
+                category: 'producto'
+            };
+
+            const result = await postInventarioIngredientes(ingredientData);
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Error al agregar al inventario');
+            }
+
+            setModalMessage(`Producto "${selectedProduct.name}" agregado al inventario exitosamente`);
+            setIsInventoryModalOpen(false);
+            setInventoryFormData({
+                cantidad: "",
+                costo: "",
+                comentarios: ""
+            });
+            setSelectedProduct(null);
+
+        } catch (error) {
+            console.error('Error al agregar al inventario:', error);
+            setModalMessage(`Error al agregar al inventario: ${error.message}`);
+        } finally {
+            setIsLoadingInventory(false);
+        }
+    };
+
+    const openInventoryModal = (product) => {
+        setSelectedProduct(product);
+        setInventoryFormData({
+            cantidad: "",
+            costo: "",
+            comentarios: ""
+        });
+        setIsInventoryModalOpen(true);
     };
 
     const filteredProducts = products.filter((product) => {
@@ -199,9 +315,9 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                         setIsEditModalOpen(true);
                                     }}
                                     title="Editar producto"
-                                >
-                                    <FiEdit size={16} />
-                                </button>
+                            >
+                                <FiEdit size={16} />
+                            </button>
                             </div>
                         </div>
                     </div>
@@ -290,16 +406,67 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                     category_id: selectedProduct.category_id,
                                     image: null,
                                     status: selectedProduct.status,
+                                    agregarInventario: false,
+                                    agregarReceta: false,
                                 }}
-                                onSubmit={(values, { setSubmitting }) => {
-                                    handleUpdateProduct(values, values.image);
-                                    setSubmitting(false);
+                                onSubmit={async (values, { setSubmitting }) => {
+                                    try {
+                                        // Actualizar el producto
+                                        await handleUpdateProduct(values, values.image);
+
+                                        // Si checkbox de inventario está marcado, agregar al inventario
+                                        if (values.agregarInventario) {
+                                            const ingredientData = {
+                                                name: values.name,
+                                                description: `Producto: ${values.name}`,
+                                                cost: parseFloat(values.price),
+                                                stock: 1,
+                                                unit: "Pieza",
+                                                category: 'producto'
+                                            };
+
+                                            const result = await postInventarioIngredientes(ingredientData);
+                                            
+                                            if (!result.success) {
+                                                throw new Error(result.error || 'Error al agregar al inventario');
+                                            }
+                                        }
+
+                                        // Si se marca "Agregar receta"
+                                        if (values.agregarReceta) {
+                                            console.log("Agregar receta funcionalidad pendiente");
+                                        }
+
+                                        const successMessage = values.agregarInventario && values.agregarReceta
+                                            ? "Producto actualizado y agregado al inventario y receta"
+                                            : values.agregarInventario
+                                            ? "Producto actualizado y agregado al inventario"
+                                            : values.agregarReceta
+                                            ? "Producto actualizado y agregado a receta"
+                                            : "Producto actualizado exitosamente";
+
+                                        setModalMessage(successMessage);
+                                        closeModals();
+                                        if (onRefresh) {
+                                            await onRefresh(); // Asegurarse de esperar el refresh
+                                        }
+                                        // Hacer refresh completo de la página
+                                        window.location.reload();
+                                    } catch (error) {
+                                        console.error("Error:", error);
+                                        setModalMessage(error.message || "Error al procesar la operación");
+                                    } finally {
+                                        setSubmitting(false);
+                                    }
                                 }}
                             >
                                 {({ setFieldValue, values }) => {
                                     const isDescriptionTooLong = values.description && values.description.length > 500;
                                     const isCategoryNotSelected = !values.category_id || values.category_id === "";
                                     const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
+
+                                    // Guardar referencia de Formik usando useRef
+                                    editFormikRef.current = { setFieldValue, values };
 
                                     return (
                                         <Form className="space-y-4">
@@ -343,6 +510,46 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                         {values.description?.length || 0}/500
                                                     </span>
                                                 </div>
+                                            </div>
+
+                                            {/* Checkboxes de Inventario y Receta */}
+                                            <div className="flex gap-4">
+                                                <label 
+                                                    className="flex items-center gap-2 cursor-pointer group"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        const newValue = !values.agregarInventario;
+                                                        setFieldValue("agregarInventario", newValue);
+                                                        
+                                                        if (newValue) {
+                                                            setIsInventoryModalOpen(true);
+                                                        }
+                                                    }}
+                                                >
+                                                    <div className="relative">
+                                                        <Field
+                                                            type="checkbox"
+                                                            name="agregarInventario"
+                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-blue-500 checked:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 pointer-events-none"
+                                                        />
+                                                    </div>
+                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                                                        Agregar a inventario
+                                                    </span>
+                                                </label>
+
+                                                <label className="flex items-center gap-2 cursor-pointer group">
+                                                    <div className="relative">
+                                                        <Field
+                                                            type="checkbox"
+                                                            name="agregarReceta"
+                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200"
+                                                        />
+                                                    </div>
+                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colors">
+                                                        Agregar receta
+                                                    </span>
+                                                </label>
                                             </div>
 
                                             {/* Precio y Categoría en fila */}
@@ -466,6 +673,121 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                 }}
                             </Formik>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Inventario */}
+            {isInventoryModalOpen && selectedProduct && (
+                <div
+                    className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4"
+                    onClick={closeInventoryModalAndUncheck}
+                >
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto border border-green-100"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-t-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                    <IoCheckmarkCircle className="text-white text-lg" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white">Agregar al Inventario</h2>
+                                    <p className="text-blue-100 text-xs">Registra este producto en tu inventario</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleAddToInventory} className="p-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                    Producto
+                                </label>
+                                <input
+                                    type="text"
+                                    value={selectedProduct.name}
+                                    readOnly
+                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                    Cantidad (Piezas)
+                                </label>
+                                <input
+                                    type="number"
+                                    name="cantidad"
+                                    value={inventoryFormData.cantidad}
+                                    onChange={handleInventoryInputChange}
+                                    placeholder="Cantidad de piezas"
+                                    min="0.01"
+                                    step="0.01"
+                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                    Costo por pieza
+                                </label>
+                                <input
+                                    type="number"
+                                    name="costo"
+                                    value={inventoryFormData.costo}
+                                    onChange={handleInventoryInputChange}
+                                    placeholder="0.00"
+                                    step="0.01"
+                                    min="0"
+                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                    Comentarios (opcional)
+                                </label>
+                                <textarea
+                                    name="comentarios"
+                                    value={inventoryFormData.comentarios}
+                                    onChange={handleInventoryInputChange}
+                                    placeholder="Comentarios adicionales..."
+                                    rows="3"
+                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={isLoadingInventory}
+                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                                        isLoadingInventory
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                                    }`}
+                                >
+                                    {isLoadingInventory ? (
+                                        <div className="flex items-center justify-center gap-2">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            Agregando...
+                                        </div>
+                                    ) : (
+                                        'Agregar al Inventario'
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={closeInventoryModalAndUncheck}
+                                    className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

@@ -129,7 +129,14 @@ export default function Inventario() {
       setShowSubscriptionModal(true);
       return;
     }
-    // Limpiar completamente el formulario
+    
+    // Si está en la pestaña de productos, redirigir a la página de menú
+    if (pestañaActiva === 'productos') {
+      router.push('/menu');
+      return;
+    }
+    
+    // Para insumos y otros, abrir el modal normalmente
     setFormData({
       nombreProducto: "",
       medida: "Gramos",
@@ -156,26 +163,30 @@ export default function Inventario() {
   };
 
   // Función para convertir unidades al formato de la API
-  const convertirUnidadParaAPI = (cantidad, unidad) => {
+  const convertirUnidadParaAPI = (cantidad, unidad, costoUnitario) => {
     const cantidadNum = parseFloat(cantidad);
+    const costoNum = parseFloat(costoUnitario);
     
     switch (unidad) {
       case "Kilos":
         return {
           stock: cantidadNum * 1000, // Convertir kilos a gramos
-          unit: "Gramos"
+          unit: "Gramos",
+          cost: costoNum / 1000 // Ajustar costo: si puso $15 por kilo, guardamos $0.015 por gramo
         };
       case "Litros":
         return {
           stock: cantidadNum * 1000, // Convertir litros a mililitros
-          unit: "Mililitros"
+          unit: "Mililitros",
+          cost: costoNum / 1000 // Ajustar costo: si puso $15 por litro, guardamos $0.015 por mililitro
         };
       case "Gramos":
       case "Mililitros":
       default:
         return {
           stock: cantidadNum,
-          unit: unidad
+          unit: unidad,
+          cost: costoNum // El costo ya está por gramo/mililitro
         };
     }
   };
@@ -225,80 +236,6 @@ export default function Inventario() {
     }
   };
 
-  // Función para alternar entre unidades en la modal de edición
-  const toggleUnidadEdit = () => {
-    const cantidadActual = parseFloat(formData.cantidad);
-    
-    if (unidadEdit === "Gramos") {
-      // Convertir de gramos a kilos
-      setUnidadEdit("Kilos");
-      setFormData(prev => ({
-        ...prev,
-        cantidad: (cantidadActual / 1000).toString()
-      }));
-    } else if (unidadEdit === "Kilos") {
-      // Convertir de kilos a gramos
-      setUnidadEdit("Gramos");
-      setFormData(prev => ({
-        ...prev,
-        cantidad: (cantidadActual * 1000).toString()
-      }));
-    } else if (unidadEdit === "Mililitros") {
-      // Convertir de mililitros a litros
-      setUnidadEdit("Litros");
-      setFormData(prev => ({
-        ...prev,
-        cantidad: (cantidadActual / 1000).toString()
-      }));
-    } else if (unidadEdit === "Litros") {
-      // Convertir de litros a mililitros
-      setUnidadEdit("Mililitros");
-      setFormData(prev => ({
-        ...prev,
-        cantidad: (cantidadActual * 1000).toString()
-      }));
-    }
-  };
-
-  // NUEVA FUNCIÓN: Abrir modal de PIN
-  const abrirModalPin = (tipo) => {
-    setPinModalType(tipo);
-    setPinValue('');
-    setPinError('');
-    setIsPinModalOpen(true);
-  };
-
-  // NUEVA FUNCIÓN: Cerrar modal de PIN
-  const cerrarModalPin = () => {
-    setIsPinModalOpen(false);
-    setPinValue('');
-    setPinError('');
-    setPinModalType('');
-  };
-
-  // NUEVA FUNCIÓN: Manejar cambio de PIN (solo números, máximo 4)
-  const handlePinChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ''); // Solo dígitos
-    if (value.length <= 4) {
-      setPinValue(value);
-      setPinError('');
-    }
-  };
-
-  // NUEVA FUNCIÓN: Confirmar PIN
-  const confirmarPin = async () => {
-    if (pinValue.length !== 4) {
-      setPinError('El PIN debe tener exactamente 4 dígitos');
-      return;
-    }
-
-    if (pinModalType === 'create') {
-      await ejecutarCrearInsumo(pinValue);
-    } else if (pinModalType === 'edit') {
-      await ejecutarEditarInsumo(pinValue);
-    }
-  };
-
   // MODIFICAR: handleSubmit ahora envía directamente sin PIN
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -318,12 +255,16 @@ export default function Inventario() {
     setIsLoading(true);
 
     try {
-      const { stock, unit } = convertirUnidadParaAPI(formData.cantidad, formData.medida);
+      const { stock, unit, cost } = convertirUnidadParaAPI(
+        formData.cantidad, 
+        formData.medida,
+        formData.costo
+      );
 
       const ingredientData = {
         name: formData.nombreProducto,
         description: formData.comentarios || `${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Otro'}: ${formData.nombreProducto}`,
-        cost: parseFloat(formData.costo),
+        cost: cost,
         stock: stock,
         unit: pestañaActiva === 'insumos' ? unit : "Pieza",
         category: pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros'
@@ -353,6 +294,40 @@ export default function Inventario() {
       alert(`Error al agregar ${pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'elemento'}: ${error.message}`);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // NUEVO: Funciones para manejar el modal de PIN
+  const abrirModalPin = (tipo) => {
+    setPinModalType(tipo);
+    setPinValue('');
+    setPinError('');
+    setIsPinModalOpen(true);
+  };
+
+  const cerrarModalPin = () => {
+    setIsPinModalOpen(false);
+    setPinValue('');
+    setPinError('');
+    setPinModalType('');
+  };
+
+  const handlePinChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setPinValue(value);
+    if (pinError) {
+      setPinError('');
+    }
+  };
+
+  const confirmarPin = async () => {
+    if (pinValue.length !== 4) {
+      setPinError('El PIN debe tener 4 dígitos');
+      return;
+    }
+
+    if (pinModalType === 'edit') {
+      await ejecutarEditarInsumo(pinValue);
     }
   };
 
@@ -391,19 +366,22 @@ export default function Inventario() {
 
       let stockFinal = cantidadInput;
       let unitFinal = unidadEdit;
+      let costFinal = cost;
 
       if (unidadEdit === "Kilos") {
         stockFinal = cantidadInput * 1000;
         unitFinal = "Gramos";
+        costFinal = cost / 1000; // Ajustar costo por gramo
       } else if (unidadEdit === "Litros") {
         stockFinal = cantidadInput * 1000;
         unitFinal = "Mililitros";
+        costFinal = cost / 1000; // Ajustar costo por mililitro
       }
 
       const ingredientData = {
         name: formData.nombreProducto.trim(),
         description: formData.comentarios.trim() || `${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'}: ${formData.nombreProducto.trim()}`,
-        cost: cost,
+        cost: costFinal,
         stock: stockFinal,
         unit: pestañaActiva === 'insumos' ? unitFinal : 'Pieza',
         category: insumoAEditar.category || (pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'otros'),
@@ -484,11 +462,19 @@ export default function Inventario() {
       // Convertir las unidades para mostrar en el formulario
       const { cantidad, unidad } = convertirDesdeAPI(ingrediente.stock, ingrediente.unit);
       
+      // Ajustar el costo mostrado según la unidad
+      let costoMostrado = ingrediente.cost;
+      if (unidad === "Kilos") {
+        costoMostrado = ingrediente.cost * 1000; // Mostrar costo por kilo
+      } else if (unidad === "Litros") {
+        costoMostrado = ingrediente.cost * 1000; // Mostrar costo por litro
+      }
+      
       setFormData({
         nombreProducto: ingrediente.name || '',
         medida: ingrediente.unit || 'Gramos',
         cantidad: cantidad.toString(),
-        costo: ingrediente.cost?.toString() || '0',
+        costo: costoMostrado.toString(),
         comentarios: ingrediente.description || '',
         categoriaAdicional: "No",
         total_cost: ingrediente.total_cost || 0
@@ -502,6 +488,46 @@ export default function Inventario() {
       alert(`Error al cargar los datos del ingrediente: ${error.message}`);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Función para alternar entre unidades en la modal de edición
+  const toggleUnidadEdit = () => {
+    const cantidadActual = parseFloat(formData.cantidad);
+    const costoActual = parseFloat(formData.costo);
+    
+    if (unidadEdit === "Gramos") {
+      // Convertir de gramos a kilos
+      setUnidadEdit("Kilos");
+      setFormData(prev => ({
+        ...prev,
+        cantidad: (cantidadActual / 1000).toString(),
+        costo: (costoActual * 1000).toString() // Ajustar costo: de $/gramo a $/kilo
+      }));
+    } else if (unidadEdit === "Kilos") {
+      // Convertir de kilos a gramos
+      setUnidadEdit("Gramos");
+      setFormData(prev => ({
+        ...prev,
+        cantidad: (cantidadActual * 1000).toString(),
+        costo: (costoActual / 1000).toString() // Ajustar costo: de $/kilo a $/gramo
+      }));
+    } else if (unidadEdit === "Mililitros") {
+      // Convertir de mililitros a litros
+      setUnidadEdit("Litros");
+      setFormData(prev => ({
+        ...prev,
+        cantidad: (cantidadActual / 1000).toString(),
+        costo: (costoActual * 1000).toString() // Ajustar costo: de $/ml a $/litro
+      }));
+    } else if (unidadEdit === "Litros") {
+      // Convertir de litros a mililitros
+      setUnidadEdit("Mililitros");
+      setFormData(prev => ({
+        ...prev,
+        cantidad: (cantidadActual * 1000).toString(),
+        costo: (costoActual / 1000).toString() // Ajustar costo: de $/litro a $/ml
+      }));
     }
   };
 

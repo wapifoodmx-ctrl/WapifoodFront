@@ -191,12 +191,6 @@ export default function Navbar() {
             icon: <FcSalesPerformance className="h-full w-[24px]" />,
             requiresSubscription: true,
         },
-        Ventas: {
-            title: "Opciones de pago",
-            href: "#",
-            icon: <LuIdCard className="h-full w-[24px]" />,
-            alwaysShow: true,
-        }
     };
 
     const config = {
@@ -204,6 +198,12 @@ export default function Navbar() {
             title: "Mi perfil",
             href: '#',
             icon: <FaUser className="h-full w-[24px]" />,
+        },
+        Ventas: {
+            title: "Opciones de pago",
+            href: "#",
+            icon: <LuIdCard className="h-full w-[24px]" />,
+            alwaysShow: true,
         },
         Logout: {
             title: "Log-Out",
@@ -533,13 +533,6 @@ export default function Navbar() {
                                             <button
                                                 className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
                                                 onClick={() => handleRestrictedClick(puntoDeVenta)}
-                                            >
-                                                <span className="self-center">{menu[item].icon}</span> {menu[item].title}
-                                            </button>
-                                        ) : item === "Ventas" ? (
-                                            <button
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
-                                                onClick={payments}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
