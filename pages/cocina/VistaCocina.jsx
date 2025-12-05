@@ -423,18 +423,88 @@ export default function VistaCocina() {
             }
 
             const orderUuid = selectedTable.orderUuid;
+            const tableNumber = selectedTable.tableNumber;
 
             // console.log('Cancelando orden completa:', orderUuid);
 
             await cancelOrder(orderUuid);
 
-            setApiTables((prevTables) =>
-                prevTables.filter((table) => {
+            // Si la orden estaba en completedTables, moverla desde ahí
+            if (selectedTable.type === 'completed') {
+                setCompletedTables((prevCompleted) =>
+                    prevCompleted.filter((table) => {
+                        if (table.orderUuid === orderUuid) {
+                            setCancelledTables((prevCancelled) => [...prevCancelled, {
+                                ...table,
+                                type: 'cancelled',
+                                products: table.products.map(p => ({ ...p, status: 'Cancelado' }))
+                            }]);
+                            return false;
+                        }
+                        return true;
+                    })
+                );
+
+                // Si no es mesa 1, liberar la mesa
+                if (tableNumber !== 1 && tablesData) {
+                    await updateTableStatus(tableNumber, 'Libre');
+                }
+            } else {
+                // Si la orden estaba en apiTables (pendientes), moverla desde ahí
+                setApiTables((prevTables) =>
+                    prevTables.filter((table) => {
+                        if (table.orderUuid === orderUuid) {
+                            setCancelledTables((prevCancelled) => [...prevCancelled, {
+                                ...table,
+                                type: 'cancelled',
+                                products: table.products.map(p => ({ ...p, status: 'Cancelado' }))
+                            }]);
+                            return false;
+                        }
+                        return true;
+                    })
+                );
+            }
+
+            await fetchTablesData();
+
+            setActiveModal(null);
+            setIsTableDetailModalOpen(false);
+            // console.log('Orden cancelada exitosamente');
+        } catch (error) {
+            console.error('Error al cancelar la orden:', error);
+            alert('Error al cancelar la orden: ' + error.message);
+        }
+    };
+
+    // Nueva función para finalizar comandas completadas
+    const handleFinalizeCompletedOrder = async () => {
+        try {
+            if (!selectedTable || !selectedTable.orderUuid) {
+                console.error('No se encontró la orden para finalizar');
+                return;
+            }
+
+            const orderUuid = selectedTable.orderUuid;
+            const tableNumber = selectedTable.tableNumber;
+
+            // Finalizar la orden usando endPuntoDeVenta
+            const metodoPago = selectedTable.metodoPago || 'efectivo';
+            await endPuntoDeVenta(orderUuid, metodoPago);
+
+            // Si no es mesa 1, liberar la mesa
+            if (tableNumber !== 1 && tablesData) {
+                await updateTableStatus(tableNumber, 'Libre');
+            }
+
+            // Mover de completedTables a finishedTables
+            setCompletedTables((prevCompleted) =>
+                prevCompleted.filter((table) => {
                     if (table.orderUuid === orderUuid) {
-                        setCancelledTables((prevCancelled) => [...prevCancelled, {
+                        setFinishedTables((prevFinished) => [...prevFinished, {
                             ...table,
-                            type: 'cancelled',
-                            products: table.products.map(p => ({ ...p, status: 'Cancelado' }))
+                            type: 'finished',
+                            products: table.products.map(p => ({ ...p, status: 'Finalizado' }))
                         }]);
                         return false;
                     }
@@ -446,10 +516,11 @@ export default function VistaCocina() {
 
             setActiveModal(null);
             setIsTableDetailModalOpen(false);
-            // console.log('Orden cancelada exitosamente');
+
+            // console.log('Comanda completada finalizada exitosamente');
         } catch (error) {
-            console.error('Error al cancelar la orden:', error);
-            alert('Error al cancelar la orden: ' + error.message);
+            console.error('Error al finalizar la comanda completada:', error);
+            alert('Error al finalizar la comanda: ' + error.message);
         }
     };
 
@@ -584,6 +655,7 @@ export default function VistaCocina() {
                     isModalOpen={isModalOpen}
                     selectedProduct={selectedProduct}
                     handleCancelProduct={handleCancelProduct}
+                    handleFinalizeCompletedOrder={handleFinalizeCompletedOrder}
                 />
 
                 <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b bg-white/80 rounded-t-2xl">

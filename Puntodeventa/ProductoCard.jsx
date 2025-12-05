@@ -117,12 +117,12 @@ export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito })
                 }
             }}
         >
-            <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border-2 border-green-100 max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border-2 border-green-100 max-h-[85vh] overflow-y-auto">
                 <div className="relative">
                     <img
                         src={imageUrl}
                         alt={producto.name}
-                        className="w-full h-72 object-cover rounded-t-2xl"
+                        className="w-full h-40 sm:h-48 object-cover rounded-t-2xl"
                     />
                     <button
                         onClick={onClose}
@@ -132,56 +132,56 @@ export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito })
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
-                    <div className="absolute bottom-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2 rounded-full text-xl font-bold shadow-xl">
+                    <div className="absolute bottom-3 right-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1.5 rounded-full text-base sm:text-lg font-bold shadow-xl">
                         ${parseFloat(producto.price).toFixed(2)}
                     </div>
                 </div>
 
-                <div className="p-8">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-4">
+                <div className="p-4 sm:p-6">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">
                         {producto.name}
                     </h2>
 
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">Descripción</h3>
-                        <p className="text-gray-600 leading-relaxed">
+                    <div className="mb-4">
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-700 mb-1.5">Descripción</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-3">
                             {producto.description || "Delicioso platillo preparado con ingredientes frescos y de la mejor calidad. ¡Pruébalo y disfruta de una experiencia gastronómica única!"}
                         </p>
                     </div>
 
                     {producto.category_name && (
-                        <div className="mb-6">
-                            <span className="inline-block bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
+                        <div className="mb-4">
+                            <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
                                 {producto.category_name}
                             </span>
                         </div>
                     )}
 
-                    <div className="bg-green-50 rounded-xl p-6 mb-6 border-2 border-green-200">
-                        <div className="flex items-center justify-between mb-4">
-                            <span className="text-lg font-semibold text-gray-700">Cantidad:</span>
-                            <div className="flex items-center gap-4 bg-white rounded-lg p-2 shadow-md">
+                    <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-3 sm:p-4 mb-4 border border-green-200">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 mb-4">
+                            <span className="text-base sm:text-lg font-semibold text-gray-700">Cantidad:</span>
+                            <div className="flex items-center gap-2 bg-white rounded-lg p-1 shadow-md">
                                 <button
                                     onClick={decrementar}
-                                    className="bg-green-100 text-green-600 hover:bg-green-200 font-bold w-12 h-12 rounded-lg transition-all duration-200"
+                                    className="bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl transition-all duration-200 border border-green-200"
                                 >
                                     -
                                 </button>
-                                <span className="font-bold text-2xl text-green-800 min-w-[3rem] text-center">
+                                <span className="font-bold text-xl sm:text-2xl text-gray-800 min-w-[3rem] text-center px-2">
                                     {cantidad}
                                 </span>
                                 <button
                                     onClick={incrementar}
-                                    className="bg-green-100 text-green-600 hover:bg-green-200 font-bold w-12 h-12 rounded-lg transition-all duration-200"
+                                    className="bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl transition-all duration-200 border border-green-200"
                                 >
                                     +
                                 </button>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-4 border-t-2 border-green-200">
-                            <span className="text-lg font-semibold text-gray-700">Total:</span>
-                            <span className="text-3xl font-bold text-green-600">
+                        <div className="flex items-center justify-between pt-4 border-t border-green-300">
+                            <span className="text-base sm:text-lg font-bold text-green-700">Total:</span>
+                            <span className="text-2xl sm:text-3xl font-bold text-green-600">
                                 ${(parseFloat(producto.price) * cantidad).toFixed(2)}
                             </span>
                         </div>
@@ -189,7 +189,7 @@ export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito })
 
                     <button
                         onClick={handleAgregar}
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-4 rounded-xl font-medium text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 sm:py-4 rounded-xl font-medium text-base sm:text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
                     >
                         🛒 Agregar al Carrito
                     </button>

@@ -668,9 +668,17 @@ export default function Ticketview() {
                                                         className="cursor-pointer transition-opacity hover:opacity-80"
                                                         onClick={() => handleCardClick(ticket)}
                                                     >
-                                                        <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col relative">
+                                                        <div className={`border-l-5 shadow-md rounded-lg h-48 flex flex-col relative ${
+                                                            ticket.statusOrden === 'Cancelado' 
+                                                                ? 'border-l-red-500 bg-red-50' 
+                                                                : 'border-l-green-600 bg-white'
+                                                        }`}>
                                                             {/* Número de ticket en la esquina superior derecha */}
-                                                            <div className="absolute top-2 right-4 sm:right-8 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded z-20">
+                                                            <div className={`absolute top-2 right-4 sm:right-8 text-white text-xs font-bold px-2 py-1 rounded z-20 ${
+                                                                ticket.statusOrden === 'Cancelado' 
+                                                                    ? 'bg-red-500' 
+                                                                    : 'bg-green-600'
+                                                            }`}>
                                                                 #{ticket.ticket_number || 'N/A'}
                                                             </div>
                                                             
@@ -763,9 +771,17 @@ export default function Ticketview() {
                                     className="cursor-pointer transition-opacity hover:opacity-80"
                                     onClick={() => handleCardClick(ticket)}
                                 >
-                                    <div className="border-l-green-600 border-l-5 bg-white shadow-md rounded-lg h-48 flex flex-col relative">
+                                    <div className={`border-l-5 shadow-md rounded-lg h-48 flex flex-col relative ${
+                                        ticket.statusOrden === 'Cancelado' 
+                                            ? 'border-l-red-500 bg-red-50' 
+                                            : 'border-l-green-600 bg-white'
+                                    }`}>
                                         {/* Número de ticket en la esquina superior derecha */}
-                                        <div className="absolute top-2 right-4 sm:right-8 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded z-20">
+                                        <div className={`absolute top-2 right-4 sm:right-8 text-white text-xs font-bold px-2 py-1 rounded z-20 ${
+                                            ticket.statusOrden === 'Cancelado' 
+                                                ? 'bg-red-500' 
+                                                : 'bg-green-600'
+                                        }`}>
                                             #{ticket.ticket_number || 'N/A'}
                                         </div>
                                         

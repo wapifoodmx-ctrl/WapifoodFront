@@ -436,7 +436,7 @@ export default function Recipes() {
   return (
     <section>
       <Navbar />
-      <div className="pt-20">
+      <div className="pt-16">
         {/* Barra de búsqueda y botones */}
         <div className="px-4 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">

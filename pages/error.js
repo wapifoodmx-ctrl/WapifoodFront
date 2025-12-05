@@ -4,6 +4,8 @@ import { HiExclamationTriangle, HiArrowLeft, HiCreditCard } from "react-icons/hi
 export default function Error() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+      <Navbar />
+      
       {/* Fondo decorativo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 bg-red-100 rounded-full opacity-30 blur-xl animate-pulse"></div>
@@ -12,8 +14,7 @@ export default function Error() {
         <div className="absolute bottom-20 right-10 w-36 h-36 bg-green-100 rounded-full opacity-15 blur-2xl animate-pulse delay-1500"></div>
       </div>
 
-      <section className="min-h-screen flex flex-col w-full mt-16 relative z-10">
-        <Navbar />
+      <section className="min-h-screen flex flex-col w-full pt-16 relative z-10">
         
         {/* Contenido principal */}
         <div className="flex flex-col items-center justify-center flex-grow text-center p-8">

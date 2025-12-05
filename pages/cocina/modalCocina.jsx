@@ -19,7 +19,8 @@ export default function ModalCocina({
     handleCancelOrder,
     isModalOpen,
     selectedProduct,
-    handleCancelProduct
+    handleCancelProduct,
+    handleFinalizeCompletedOrder
 }) {
     const dropdownRef = useRef(null);
     const buttonRef = useRef(null);
@@ -168,12 +169,28 @@ export default function ModalCocina({
                                     </div>
                                 )}
 
-                                {/* Mostrar mensaje informativo para comandas completadas */}
+                                {/* Mostrar botones para comandas completadas */}
                                 {selectedTable.type === 'completed' && (
-                                    <div className="bg-green-100 rounded-lg p-4 text-center">
-                                        <p className="text-green-600 font-semibold">
-                                            Todos los productos de esta comanda están preparados
-                                        </p>
+                                    <div className="space-y-4">
+                                        <div className="bg-green-100 rounded-lg p-4 text-center">
+                                            <p className="text-green-600 font-semibold">
+                                                Todos los productos de esta comanda están preparados
+                                            </p>
+                                        </div>
+                                        <div className="flex justify-between space-x-4">
+                                            <button
+                                                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-bold cursor-pointer rounded-md py-3 px-6 flex-1 shadow-lg hover:scale-105 transition-all"
+                                                onClick={() => setActiveModal("finalizarCompletada")}
+                                            >
+                                                Finalizar Orden
+                                            </button>
+                                            <button
+                                                className="bg-gradient-to-r from-red-500 to-orange-600 text-white text-lg font-bold cursor-pointer rounded-md py-3 px-6 flex-1 shadow-lg hover:scale-105 transition-all"
+                                                onClick={() => setActiveModal("cancelarCompletada")}
+                                            >
+                                                Cancelar Orden
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
@@ -242,6 +259,81 @@ export default function ModalCocina({
                     </div>
                 </div>
             )}
+
+            {/* Modal de confirmación para finalizar comanda completada */}
+            {activeModal === "finalizarCompletada" && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={() => setActiveModal(null)}
+                >
+                    <div
+                        className="bg-white rounded-2xl p-8 modal shadow-2xl border border-green-100 max-w-md w-full relative"
+                        style={{
+                            background: "linear-gradient(135deg, #e6f9f0 0%, #f7fff7 100%)",
+                            boxShadow: "0 8px 32px 0 rgba(34,197,94,0.15), 0 1.5px 8px 0 rgba(16,185,129,0.10)"
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="text-lg font-bold mb-4 text-gray-800">
+                            ¿Finalizar orden completada?
+                        </p>
+                        <p className="text-sm text-gray-600 mb-6">
+                            La orden de la Mesa {selectedTable?.tableNumber} será marcada como finalizada y la mesa quedará libre.
+                        </p>
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md font-semibold transition-all"
+                                onClick={() => setActiveModal(null)}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-md font-bold shadow-lg hover:scale-105 transition-all"
+                                onClick={handleFinalizeCompletedOrder}
+                            >
+                                Finalizar Orden
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de confirmación para cancelar comanda completada */}
+            {activeModal === "cancelarCompletada" && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={() => setActiveModal(null)}
+                >
+                    <div
+                        className="bg-white rounded-2xl p-8 modal shadow-2xl border border-red-100 max-w-md w-full relative"
+                        style={{
+                            background: "linear-gradient(135deg, #fff5f5 0%, #fff7f7 100%)",
+                            boxShadow: "0 8px 32px 0 rgba(239,68,68,0.10), 0 1.5px 8px 0 rgba(251,191,36,0.10)"
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="text-lg font-bold mb-4 text-red-700">¿Estás seguro de cancelar la orden completada?</p>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Se cancelará toda la orden de la Mesa {selectedTable?.tableNumber} y la mesa quedará libre.
+                        </p>
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md font-semibold transition-all"
+                                onClick={() => setActiveModal(null)}
+                            >
+                                No
+                            </button>
+                            <button
+                                className="bg-gradient-to-r from-red-500 to-orange-600 text-white px-4 py-2 rounded-md font-bold shadow-lg hover:scale-105 transition-all"
+                                onClick={handleCancelOrder}
+                            >
+                                Sí, cancelar orden
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
             {activeModal === "cancelar" && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"

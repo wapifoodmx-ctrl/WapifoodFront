@@ -528,7 +528,7 @@ export default function Pntoventa() {
             </div>
 
             <section className="relative z-10 pt-4 pb-8">
-                {/* Modales */}
+                {/* Modales de información (sin conflicto z-index) */}
                 <ModalOrdenCancelada
                     isOpen={showCancelledOrderModal}
                     onLimpiar={limpiarOrdenCancelada}
@@ -538,38 +538,6 @@ export default function Pntoventa() {
                     isOpen={showSubscriptionModal}
                     countdown={countdown}
                     onGoToPayments={handleGoToPayments}
-                />
-
-                <ModalDescuentoProducto
-                    isOpen={modalDescuentoOpen}
-                    onClose={() => {
-                        setModalDescuentoOpen(false);
-                        setProductoDescuento(null);
-                        setValorDescuento('');
-                        setMensajeError('');
-                    }}
-                    productoDescuento={productoDescuento}
-                    tipoDescuento={tipoDescuento}
-                    setTipoDescuento={setTipoDescuento}
-                    valorDescuento={valorDescuento}
-                    setValorDescuento={setValorDescuento}
-                    mensajeError={mensajeError}
-                    setMensajeError={setMensajeError}
-                    aplicarDescuentoProducto={aplicarDescuentoProducto}
-                />
-
-                <ModalDescuentoOrden
-                    isOpen={modalDescuentoOrdenOpen}
-                    onClose={() => {
-                        setModalDescuentoOrdenOpen(false);
-                        setMensajeError('');
-                    }}
-                    descuentoOrden={descuentoOrden}
-                    setDescuentoOrden={setDescuentoOrden}
-                    mensajeError={mensajeError}
-                    setMensajeError={setMensajeError}
-                    aplicarDescuentoOrden={aplicarDescuentoOrden}
-                    calcularTotalCarrito={calcularTotalCarrito}
                 />
 
                 {/* Barra de búsqueda y filtros */}
@@ -642,28 +610,6 @@ export default function Pntoventa() {
                     )}
                 </button>
 
-                {/* Modal del carrito */}
-                <CarritoModal
-                    isOpen={carritoModalOpen}
-                    onClose={() => setCarritoModalOpen(false)}
-                    carrito={carrito}
-                    setCarrito={setCarrito}
-                    pedidosPendientes={pedidosPendientes}
-                    setPedidosPendientes={setPedidosPendientes}
-                    mensajeError={mensajeError}
-                    isCreatingOrder={isCreatingOrder}
-                    terminarOrden={terminarOrden}
-                    finalizarTodasOrdenes={finalizarTodasOrdenes}
-                    calcularPrecioConDescuento={calcularPrecioConDescuento}
-                    calcularTotalCarrito={calcularTotalCarrito}
-                    abrirModalDescuento={abrirModalDescuento}
-                    quitarDescuentoProducto={quitarDescuentoProducto}
-                    descuentoOrden={descuentoOrden}
-                    setDescuentoOrden={setDescuentoOrden}
-                    setModalDescuentoOrdenOpen={setModalDescuentoOrdenOpen}
-                    setMensajeError={setMensajeError}
-                />
-
                 {/* Modal de confirmación de pago */}
                 <ModalConfirmarPago
                     isOpen={modalTotalOpen}
@@ -710,6 +656,61 @@ export default function Pntoventa() {
                     )}
                 </div>
             </section>
+
+            {/* Modales de descuento - Fuera del contexto z-10 */}
+            <ModalDescuentoProducto
+                isOpen={modalDescuentoOpen}
+                onClose={() => {
+                    setModalDescuentoOpen(false);
+                    setProductoDescuento(null);
+                    setValorDescuento('');
+                    setMensajeError('');
+                }}
+                productoDescuento={productoDescuento}
+                tipoDescuento={tipoDescuento}
+                setTipoDescuento={setTipoDescuento}
+                valorDescuento={valorDescuento}
+                setValorDescuento={setValorDescuento}
+                mensajeError={mensajeError}
+                setMensajeError={setMensajeError}
+                aplicarDescuentoProducto={aplicarDescuentoProducto}
+            />
+
+            <ModalDescuentoOrden
+                isOpen={modalDescuentoOrdenOpen}
+                onClose={() => {
+                    setModalDescuentoOrdenOpen(false);
+                    setMensajeError('');
+                }}
+                descuentoOrden={descuentoOrden}
+                setDescuentoOrden={setDescuentoOrden}
+                mensajeError={mensajeError}
+                setMensajeError={setMensajeError}
+                aplicarDescuentoOrden={aplicarDescuentoOrden}
+                calcularTotalCarrito={calcularTotalCarrito}
+            />
+
+            {/* Modal del carrito - Fuera del contexto z-10 */}
+            <CarritoModal
+                isOpen={carritoModalOpen}
+                onClose={() => setCarritoModalOpen(false)}
+                carrito={carrito}
+                setCarrito={setCarrito}
+                pedidosPendientes={pedidosPendientes}
+                setPedidosPendientes={setPedidosPendientes}
+                mensajeError={mensajeError}
+                isCreatingOrder={isCreatingOrder}
+                terminarOrden={terminarOrden}
+                finalizarTodasOrdenes={finalizarTodasOrdenes}
+                calcularPrecioConDescuento={calcularPrecioConDescuento}
+                calcularTotalCarrito={calcularTotalCarrito}
+                abrirModalDescuento={abrirModalDescuento}
+                quitarDescuentoProducto={quitarDescuentoProducto}
+                descuentoOrden={descuentoOrden}
+                setDescuentoOrden={setDescuentoOrden}
+                setModalDescuentoOrdenOpen={setModalDescuentoOrdenOpen}
+                setMensajeError={setMensajeError}
+            />
 
             {/* Modal de Ticket */}
             <TicketModal

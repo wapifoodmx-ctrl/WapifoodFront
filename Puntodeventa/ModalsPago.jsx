@@ -16,7 +16,7 @@ export function ModalConfirmarPago({
 
     return (
         <div
-            className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[9999]"
+            className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[100000]"
             onClick={(e) => {
                 if (e.target === e.currentTarget) {
                     onClose();
@@ -199,7 +199,7 @@ export function ModalDescuentoProducto({
 
     return (
         <div
-            className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[9999]"
+            className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[100000]"
             onClick={(e) => {
                 if (e.target === e.currentTarget) {
                     onClose();
@@ -357,7 +357,7 @@ export function ModalDescuentoOrden({
 
     return (
         <div
-            className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[9999]"
+            className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[100000]"
             onClick={(e) => {
                 if (e.target === e.currentTarget) {
                     onClose();
@@ -478,7 +478,7 @@ export function ModalSuscripcion({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10001]">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[100001]">
             <div className="bg-white rounded-2xl p-8 w-11/12 md:w-96 shadow-2xl border border-red-200 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -512,7 +512,7 @@ export function ModalOrdenCancelada({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[10001]">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-center items-center z-[100001]">
             <div className="bg-white rounded-2xl p-8 w-11/12 md:w-96 shadow-2xl border border-orange-200 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
