@@ -1,13 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import kime from "@/pages/assets/img/kime.jpeg";
 import { FiEdit, FiEye } from "react-icons/fi";
 import { BsTrash3 } from "react-icons/bs";
 import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
+import { FaPlus } from "react-icons/fa6";
 import { Formik, Form, Field } from "formik";
 import { updateProduct } from "../useCases/updateProduct";
 import { deleteProduct } from "../useCases/deleteProduct";
-import { postInventarioIngredientes } from "@/useCases/postInventarioIngredientes";
+import { postInventarioIngredientes } from "../useCases/postInventarioIngredientes";
+import { postRecetas } from "../useCases/postRecetas";
+import { getRecetas } from "../useCases/getRecetas";
+import putEditarIngrediente from "../useCases/putEditarIngrediente";
 import ModalMessage from "../components/ModalMessage";
 
 export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh, availabilityFilter }) {
@@ -18,16 +22,33 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     const [loading, setLoading] = useState(true);
     const [modalMessage, setModalMessage] = useState(null);
     const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+    const [tempInventoryData, setTempInventoryData] = useState(null);
+    const [currentProductName, setCurrentProductName] = useState("");
     const [inventoryFormData, setInventoryFormData] = useState({
         cantidad: "",
         costo: "",
         comentarios: ""
     });
-    const editFormikRef = useRef(null);
+    const [existingRecipes, setExistingRecipes] = useState([]);
+    const [loadingRecipes, setLoadingRecipes] = useState(true);
 
     useEffect(() => {
         const timeout = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timeout);
+    }, []);
+
+    useEffect(() => {
+        const fetchRecipes = async () => {
+            try {
+                const recipes = await getRecetas();
+                setExistingRecipes(recipes);
+            } catch (error) {
+                console.error('Error al cargar recetas:', error);
+            } finally {
+                setLoadingRecipes(false);
+            }
+        };
+        fetchRecipes();
     }, []);
 
     const truncateText = (text, maxLength) => {
@@ -39,14 +60,8 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         setIsDeleteModalOpen(false);
         setIsInventoryModalOpen(false);
         setSelectedProduct(null);
-        editFormikRef.current = null;
-    };
-
-    const closeInventoryModalAndUncheck = () => {
-        setIsInventoryModalOpen(false);
-        if (editFormikRef.current) {
-            editFormikRef.current.setFieldValue('agregarInventario', false);
-        }
+        setTempInventoryData(null);
+        setCurrentProductName("");
         setInventoryFormData({
             cantidad: "",
             costo: "",
@@ -54,17 +69,109 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         });
     };
 
+    const handleInventoryInputChange = (e) => {
+        const { name, value } = e.target;
+        setInventoryFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleAddToInventory = (e) => {
+        e.preventDefault();
+        
+        if (!inventoryFormData.cantidad || !inventoryFormData.costo) {
+            setModalMessage("Por favor completa todos los campos obligatorios");
+            return;
+        }
+
+        // Guardar datos en estado temporal
+        setTempInventoryData({
+            cantidad: parseFloat(inventoryFormData.cantidad),
+            costo: parseFloat(inventoryFormData.costo),
+            comentarios: inventoryFormData.comentarios
+        });
+
+        setIsInventoryModalOpen(false);
+        setInventoryFormData({
+            cantidad: "",
+            costo: "",
+            comentarios: ""
+        });
+        
+        setModalMessage("Datos del inventario guardados. Presiona 'Guardar' para confirmar.");
+    };
+
+    const cancelInventoryModal = () => {
+        setIsInventoryModalOpen(false);
+        setInventoryFormData({
+            cantidad: "",
+            costo: "",
+            comentarios: ""
+        });
+        setTempInventoryData(null);
+    };
+
+    // Verificar si un producto tiene receta existente
+    const productHasRecipe = (productId) => {
+        return existingRecipes.some(recipe => 
+            recipe.product_id === productId && 
+            recipe.name.startsWith('recipeStatusNoDisplay.')
+        );
+    };
+
     const handleUpdateProduct = async (values, imageFile) => {
         try {
             await updateProduct(values.id_products, values, imageFile);
 
-            // Si checkbox de inventario está marcado, agregar al inventario
-            if (values.agregarInventario) {
+            const productId = values.id_products;
+            const productName = values.name;
+            let ingredientId = null;
+
+            // Buscar si el producto tiene una receta de inventario (recipeStatusNoDisplay)
+            const recetaInventario = existingRecipes.find(receta => 
+                receta.product_id === productId && 
+                receta.name.startsWith('recipeStatusNoDisplay.')
+            );
+
+            // Si existe una receta de inventario, actualizar el nombre del ingrediente
+            if (recetaInventario && recetaInventario.ingredients && recetaInventario.ingredients.length > 0) {
+                const ingrediente = recetaInventario.ingredients[0];
+                const ingredienteId = ingrediente.id_ingredient;
+                
+                try {
+                    // Obtener los datos completos del ingrediente primero
+                    const { getIngredienteById } = await import("../useCases/getIngredienteId");
+                    const ingredienteResult = await getIngredienteById(ingredienteId);
+                    
+                    if (ingredienteResult.success && ingredienteResult.data) {
+                        const ingredienteData = ingredienteResult.data;
+                        
+                        // Actualizar el nombre del ingrediente en el inventario manteniendo los demás datos
+                        await putEditarIngrediente(ingredienteId, {
+                            name: productName,
+                            description: ingredienteData.description || `Producto: ${productName}`,
+                            cost: ingredienteData.cost || 0,
+                            stock: ingredienteData.stock || 0,
+                            unit: ingredienteData.unit || "Pieza",
+                            category: ingredienteData.category || 'producto',
+                            confirmation_code: '0000' // Código por defecto para actualización automática
+                        });
+                        console.log('✅ Ingrediente actualizado con el nuevo nombre del producto');
+                    }
+                } catch (error) {
+                    console.error('❌ Error al actualizar ingrediente:', error);
+                    // No detener el flujo si falla la actualización del ingrediente
+                }
+            }
+
+            // Si hay datos temporales de inventario, crear el ingrediente
+            if (tempInventoryData && values.agregarInventario) {
                 const ingredientData = {
-                    name: values.name,
-                    description: `Producto: ${values.name}`,
-                    cost: parseFloat(values.price),
-                    stock: 1,
+                    name: productName,
+                    description: tempInventoryData.comentarios || `Producto: ${productName}`,
+                    cost: tempInventoryData.costo,
+                    stock: tempInventoryData.cantidad,
                     unit: "Pieza",
                     category: 'producto'
                 };
@@ -74,28 +181,43 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                 if (!result.success) {
                     throw new Error(result.error || 'Error al agregar al inventario');
                 }
+
+                ingredientId = result.data?.id_ingredient;
+
+                // Crear receta automática oculta si no existe
+                if (ingredientId && !productHasRecipe(productId)) {
+                    const recipeData = {
+                        name: `recipeStatusNoDisplay.${productName}`,
+                        product_id: productId,
+                        ingredients: [
+                            {
+                                ingredient_id: ingredientId,
+                                quantity: 1
+                            }
+                        ]
+                    };
+
+                    await postRecetas(recipeData);
+                }
             }
 
-            // Si se marca "Agregar receta"
-            if (values.agregarReceta) {
+            // Si se marca "Agregar receta" (sin inventario)
+            if (values.agregarReceta && !values.agregarInventario) {
                 console.log("Agregar receta funcionalidad pendiente");
             }
 
-            const successMessage = values.agregarInventario && values.agregarReceta
-                ? "Producto actualizado y agregado al inventario y receta"
-                : values.agregarInventario
-                ? "Producto actualizado y agregado al inventario"
+            const successMessage = tempInventoryData && values.agregarInventario
+                ? "Producto actualizado, agregado al inventario y receta automática creada exitosamente"
                 : values.agregarReceta
                 ? "Producto actualizado y agregado a receta"
                 : "Producto actualizado exitosamente";
 
             setModalMessage(successMessage);
+            
             closeModals();
             if (onRefresh) {
-                await onRefresh(); // Asegurarse de esperar el refresh
+                await onRefresh();
             }
-            // Hacer refresh completo de la página
-            window.location.reload();
         } catch (err) {
             console.error("Error al actualizar el producto:", err.message);
             setModalMessage(err.message || "Hubo un error al actualizar el producto.");
@@ -116,67 +238,6 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             console.error("Error al eliminar el producto:", err.message);
             setModalMessage(err.message || "Hubo un error al eliminar el producto.");
         }
-    };
-
-    const handleInventoryInputChange = (e) => {
-        const { name, value } = e.target;
-        setInventoryFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const handleAddToInventory = async (e) => {
-        e.preventDefault();
-        
-        if (!selectedProduct || !inventoryFormData.cantidad || !inventoryFormData.costo) {
-            setModalMessage("Por favor completa todos los campos obligatorios");
-            return;
-        }
-
-        setIsLoadingInventory(true);
-
-        try {
-            const ingredientData = {
-                name: selectedProduct.name,
-                description: inventoryFormData.comentarios || `Producto: ${selectedProduct.name}`,
-                cost: parseFloat(inventoryFormData.costo),
-                stock: parseFloat(inventoryFormData.cantidad),
-                unit: "Pieza",
-                category: 'producto'
-            };
-
-            const result = await postInventarioIngredientes(ingredientData);
-            
-            if (!result.success) {
-                throw new Error(result.error || 'Error al agregar al inventario');
-            }
-
-            setModalMessage(`Producto "${selectedProduct.name}" agregado al inventario exitosamente`);
-            setIsInventoryModalOpen(false);
-            setInventoryFormData({
-                cantidad: "",
-                costo: "",
-                comentarios: ""
-            });
-            setSelectedProduct(null);
-
-        } catch (error) {
-            console.error('Error al agregar al inventario:', error);
-            setModalMessage(`Error al agregar al inventario: ${error.message}`);
-        } finally {
-            setIsLoadingInventory(false);
-        }
-    };
-
-    const openInventoryModal = (product) => {
-        setSelectedProduct(product);
-        setInventoryFormData({
-            cantidad: "",
-            costo: "",
-            comentarios: ""
-        });
-        setIsInventoryModalOpen(true);
     };
 
     const filteredProducts = products.filter((product) => {
@@ -411,47 +472,8 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                 }}
                                 onSubmit={async (values, { setSubmitting }) => {
                                     try {
-                                        // Actualizar el producto
+                                        // Actualizar el producto usando la función que ya maneja el inventario
                                         await handleUpdateProduct(values, values.image);
-
-                                        // Si checkbox de inventario está marcado, agregar al inventario
-                                        if (values.agregarInventario) {
-                                            const ingredientData = {
-                                                name: values.name,
-                                                description: `Producto: ${values.name}`,
-                                                cost: parseFloat(values.price),
-                                                stock: 1,
-                                                unit: "Pieza",
-                                                category: 'producto'
-                                            };
-
-                                            const result = await postInventarioIngredientes(ingredientData);
-                                            
-                                            if (!result.success) {
-                                                throw new Error(result.error || 'Error al agregar al inventario');
-                                            }
-                                        }
-
-                                        // Si se marca "Agregar receta"
-                                        if (values.agregarReceta) {
-                                            console.log("Agregar receta funcionalidad pendiente");
-                                        }
-
-                                        const successMessage = values.agregarInventario && values.agregarReceta
-                                            ? "Producto actualizado y agregado al inventario y receta"
-                                            : values.agregarInventario
-                                            ? "Producto actualizado y agregado al inventario"
-                                            : values.agregarReceta
-                                            ? "Producto actualizado y agregado a receta"
-                                            : "Producto actualizado exitosamente";
-
-                                        setModalMessage(successMessage);
-                                        closeModals();
-                                        if (onRefresh) {
-                                            await onRefresh(); // Asegurarse de esperar el refresh
-                                        }
-                                        // Hacer refresh completo de la página
-                                        window.location.reload();
                                     } catch (error) {
                                         console.error("Error:", error);
                                         setModalMessage(error.message || "Error al procesar la operación");
@@ -464,9 +486,6 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                     const isDescriptionTooLong = values.description && values.description.length > 500;
                                     const isCategoryNotSelected = !values.category_id || values.category_id === "";
                                     const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
-
-                                    // Guardar referencia de Formik usando useRef
-                                    editFormikRef.current = { setFieldValue, values };
 
                                     return (
                                         <Form className="space-y-4">
@@ -512,44 +531,92 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                 </div>
                                             </div>
 
-                                            {/* Checkboxes de Inventario y Receta */}
-                                            <div className="flex gap-4">
-                                                <label 
-                                                    className="flex items-center gap-2 cursor-pointer group"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        const newValue = !values.agregarInventario;
-                                                        setFieldValue("agregarInventario", newValue);
-                                                        
-                                                        if (newValue) {
-                                                            setIsInventoryModalOpen(true);
-                                                        }
-                                                    }}
-                                                >
-                                                    <div className="relative">
-                                                        <Field
-                                                            type="checkbox"
-                                                            name="agregarInventario"
-                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-blue-500 checked:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 pointer-events-none"
-                                                        />
-                                                    </div>
-                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
-                                                        Agregar a inventario
-                                                    </span>
-                                                </label>
+                                            {/* Checkboxes condicionales de Inventario y Receta */}
+                                            <div>
+                                                {(() => {
+                                                    const hasRecipe = productHasRecipe(selectedProduct.id_products);
+                                                    
+                                                    if (hasRecipe) {
+                                                        // Producto YA tiene receta: solo mostrar checkbox de inventario bloqueado
+                                                        return (
+                                                            <label className="flex items-center gap-2 cursor-not-allowed group opacity-60">
+                                                                <div className="relative">
+                                                                    <Field
+                                                                        type="checkbox"
+                                                                        name="agregarInventario"
+                                                                        disabled={true}
+                                                                        checked={true}
+                                                                        className="w-5 h-5 border-2 border-gray-300 rounded cursor-not-allowed checked:bg-green-500 checked:border-green-500 transition-all duration-200"
+                                                                    />
+                                                                </div>
+                                                                <span className="text-sm font-medium text-gray-500">
+                                                                    Agregar a inventario (Ya existe en inventario)
+                                                                </span>
+                                                            </label>
+                                                        );
+                                                    } else {
+                                                        // Producto NO tiene receta: mostrar ambos checkboxes
+                                                        return (
+                                                            <div className="flex gap-4">
+                                                                <label 
+                                                                    className="flex items-center gap-2 cursor-pointer group"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        const newValue = !values.agregarInventario;
+                                                                        setFieldValue("agregarInventario", newValue);
+                                                                        
+                                                                        if (newValue) {
+                                                                            // Desmarcar receta si se marca inventario
+                                                                            setFieldValue("agregarReceta", false);
+                                                                            setCurrentProductName(selectedProduct.name);
+                                                                            setIsInventoryModalOpen(true);
+                                                                        } else {
+                                                                            // Si desmarca, limpiar datos temporales
+                                                                            setTempInventoryData(null);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <div className="relative">
+                                                                        <Field
+                                                                            type="checkbox"
+                                                                            name="agregarInventario"
+                                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 pointer-events-none"
+                                                                        />
+                                                                    </div>
+                                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colors">
+                                                                        Agregar a inventario
+                                                                    </span>
+                                                                </label>
 
-                                                <label className="flex items-center gap-2 cursor-pointer group">
-                                                    <div className="relative">
-                                                        <Field
-                                                            type="checkbox"
-                                                            name="agregarReceta"
-                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200"
-                                                        />
-                                                    </div>
-                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colors">
-                                                        Agregar receta
-                                                    </span>
-                                                </label>
+                                                                <label 
+                                                                    className="flex items-center gap-2 cursor-pointer group"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        const newValue = !values.agregarReceta;
+                                                                        setFieldValue("agregarReceta", newValue);
+                                                                        
+                                                                        if (newValue) {
+                                                                            // Desmarcar inventario si se marca receta
+                                                                            setFieldValue("agregarInventario", false);
+                                                                            setTempInventoryData(null);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <div className="relative">
+                                                                        <Field
+                                                                            type="checkbox"
+                                                                            name="agregarReceta"
+                                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200"
+                                                                        />
+                                                                    </div>
+                                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colors">
+                                                                        Agregar receta
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        );
+                                                    }
+                                                })()}
                                             </div>
 
                                             {/* Precio y Categoría en fila */}
@@ -678,23 +745,23 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             )}
 
             {/* Modal de Inventario */}
-            {isInventoryModalOpen && selectedProduct && (
+            {isInventoryModalOpen && (
                 <div
-                    className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4"
-                    onClick={closeInventoryModalAndUncheck}
+                    className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-[60] p-4"
+                    onClick={cancelInventoryModal}
                 >
                     <div
                         className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto border border-green-100"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-t-2xl">
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-t-2xl">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                                    <IoCheckmarkCircle className="text-white text-lg" />
+                                    <FaPlus className="text-white text-lg" />
                                 </div>
                                 <div>
                                     <h2 className="text-lg font-bold text-white">Agregar al Inventario</h2>
-                                    <p className="text-blue-100 text-xs">Registra este producto en tu inventario</p>
+                                    <p className="text-green-100 text-xs">Registra este producto en tu inventario</p>
                                 </div>
                             </div>
                         </div>
@@ -706,7 +773,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                 </label>
                                 <input
                                     type="text"
-                                    value={selectedProduct.name}
+                                    value={currentProductName}
                                     readOnly
                                     className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                                 />
@@ -724,7 +791,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                     placeholder="Cantidad de piezas"
                                     min="0.01"
                                     step="0.01"
-                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                                     required
                                 />
                             </div>
@@ -741,7 +808,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                     placeholder="0.00"
                                     step="0.01"
                                     min="0"
-                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                                     required
                                 />
                             </div>
@@ -756,7 +823,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                     onChange={handleInventoryInputChange}
                                     placeholder="Comentarios adicionales..."
                                     rows="3"
-                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none"
                                 />
                             </div>
 
@@ -767,13 +834,13 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                     className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
                                         isLoadingInventory
                                             ? 'bg-gray-400 cursor-not-allowed'
-                                            : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
                                     }`}
                                 >
                                     {isLoadingInventory ? (
                                         <div className="flex items-center justify-center gap-2">
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                            Agregando...
+                                            Guardando...
                                         </div>
                                     ) : (
                                         'Agregar al Inventario'
@@ -781,7 +848,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={closeInventoryModalAndUncheck}
+                                    onClick={cancelInventoryModal}
                                     className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95"
                                 >
                                     Cancelar
@@ -791,6 +858,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                     </div>
                 </div>
             )}
+
         </div>
     );
 }

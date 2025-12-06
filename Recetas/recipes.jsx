@@ -112,8 +112,10 @@ export default function Recipes() {
     setIsLoadingRecetas(true);
     try {
       const recetasData = await getRecetas();
+      // Guardar TODAS las recetas (incluyendo las ocultas)
+      // El filtro se aplicará solo en la UI para mostrar
       setRecetas(recetasData);
-      console.log('Recetas cargadas:', recetasData);
+      console.log('Todas las recetas cargadas:', recetasData);
     } catch (error) {
       console.error('Error al cargar recetas:', error);
     } finally {
@@ -156,10 +158,10 @@ export default function Recipes() {
     }
   };
 
-  // Filtrar recetas por búsqueda
-  const recetasFiltradas = recetas.filter(receta =>
-    receta.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrar recetas por búsqueda Y excluir las ocultas para mostrar en UI
+  const recetasFiltradas = recetas
+    .filter(receta => !receta.name.startsWith('recipeStatusNoDisplay.'))
+    .filter(receta => receta.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   // Manejar selección de insumos
   const toggleSeleccionInsumo = (insumoId) => {
@@ -437,8 +439,25 @@ export default function Recipes() {
     <section>
       <Navbar />
       <div className="pt-16">
+        {/* Header de Recetas */}
+        <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl shadow-lg">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">Mis Recetas</h1>
+                <p className="text-gray-600 mt-1">Crea y gestiona las recetas de tus platillos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Barra de búsqueda y botones */}
-        <div className="px-4 mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 mt-6">{/* Agregado max-w-7xl mx-auto para centrar */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
             {/* Barra de búsqueda */}
             <input
@@ -478,7 +497,8 @@ export default function Recipes() {
         </div>
 
         {/* Contenido principal - Cards de recetas */}
-        <div className="px-4">
+        {/* Contenedor centrado para las recetas */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {isLoadingRecetas ? (
             <div className="flex justify-center items-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>

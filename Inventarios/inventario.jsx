@@ -614,8 +614,25 @@ export default function Inventario() {
     <section>
       <Navbar />
       <div className="pt-16">
+        {/* Header de Inventarios */}
+        <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl shadow-lg">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">Mi Inventario</h1>
+                <p className="text-gray-600 mt-1">Controla y gestiona tus insumos y productos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Barra de búsqueda y botones */}
-        <div className="px-4 mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 mt-6">{/* Agregado max-w-7xl mx-auto para centrar */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
             {/* Barra de búsqueda */}
             <div className="relative w-full lg:w-1/2">
@@ -696,21 +713,19 @@ export default function Inventario() {
         </div>
 
         {/* Navegación de pestañas y contenido */}
-        <div className="px-4">
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            {/* Solo la navegación */}
-            <NavegacionPestañas 
-              pestañaActiva={pestañaActiva} 
-              cambiarPestaña={handleCambiarPestaña}
-              insumos={insumos}
-              isLoadingData={isLoadingData}
-              vistaActiva={vistaActiva}
-              insumosSeleccionados={insumosSeleccionados}
-              setInsumosSeleccionados={setInsumosSeleccionados}
-              terminoBusqueda={terminoBusqueda}
-              filtrarPorBusqueda={filtrarPorBusqueda}
-            />
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Quitado el contenedor con borde para verse más limpio */}
+          <NavegacionPestañas 
+            pestañaActiva={pestañaActiva} 
+            cambiarPestaña={handleCambiarPestaña}
+            insumos={insumos}
+            isLoadingData={isLoadingData}
+            vistaActiva={vistaActiva}
+            insumosSeleccionados={insumosSeleccionados}
+            setInsumosSeleccionados={setInsumosSeleccionados}
+            terminoBusqueda={terminoBusqueda}
+            filtrarPorBusqueda={filtrarPorBusqueda}
+          />
         </div>
       </div>
 

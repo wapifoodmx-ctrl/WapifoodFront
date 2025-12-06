@@ -175,8 +175,16 @@ export function SelectProductModal({
   };
 
   const productosDisponibles = products.filter(product => {
-    const tieneReceta = recetas.some(receta => receta.product_id === product.id_products);
-    return !tieneReceta;
+    // Verificar si tiene CUALQUIER receta (visible o de inventario)
+    // Si ya fue dado de alta en inventario O tiene receta visible, NO mostrarlo
+    const tieneAlgunaReceta = recetas.some(receta => receta.product_id === product.id_products);
+    
+    // Debug: ver qué está pasando con cada producto
+    console.log('Producto:', product.name, 'ID:', product.id_products);
+    console.log('  Tiene alguna receta (inventario o visible)?:', tieneAlgunaReceta);
+    console.log('  Se mostrará?:', !tieneAlgunaReceta);
+    
+    return !tieneAlgunaReceta;
   });
 
   const productosFiltrados = productosDisponibles.filter(product =>
