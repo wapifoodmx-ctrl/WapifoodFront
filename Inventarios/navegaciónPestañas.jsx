@@ -177,8 +177,8 @@ const NavegacionPestañas = ({
                       }`}>
                         {stockMostrado} {unidadMostrada}
                       </span>
-                      {/* Botón de conversión para unidades convertibles */}
-                      {(elemento.unit === "Gramos" || elemento.unit === "Mililitros") && (
+                      {/* Botón de conversión para unidades convertibles (excepto Piezas) */}
+                      {(elemento.unit === "Gramos" || elemento.unit === "Mililitros") && elemento.unit !== "Piezas" && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -323,8 +323,8 @@ const NavegacionPestañas = ({
                     }`}>
                       {stockMostrado} {unidadMostrada}
                     </span>
-                    {/* Botón de conversión para unidades convertibles en vista lista */}
-                    {(elemento.unit === "Gramos" || elemento.unit === "Mililitros") && (
+                    {/* Botón de conversión para unidades convertibles en vista lista (excepto Piezas) */}
+                    {(elemento.unit === "Gramos" || elemento.unit === "Mililitros") && elemento.unit !== "Piezas" && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

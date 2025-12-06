@@ -784,6 +784,7 @@ export default function Inventario() {
                     <option value="Kilos">Kilos</option>
                     <option value="Litros">Litros</option>
                     <option value="Mililitros">Mililitros</option>
+                    <option value="Piezas">Piezas</option>
                   </select>
                   {(formData.medida === "Kilos" || formData.medida === "Litros") && (
                     <p className="text-xs text-blue-600 mt-1">
@@ -966,8 +967,9 @@ export default function Inventario() {
                     className="flex-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                     required
                   />
-                  {/* Botón de conversión - Solo para insumos con unidades convertibles */}
+                  {/* Botón de conversión - Solo para insumos con unidades convertibles (excepto Piezas) */}
                   {pestañaActiva === 'insumos' && 
+                   formData.medida !== "Piezas" &&
                    (unidadEdit === "Gramos" || unidadEdit === "Kilos" || 
                     unidadEdit === "Mililitros" || unidadEdit === "Litros") && (
                     <button
@@ -987,7 +989,7 @@ export default function Inventario() {
                     </button>
                   )}
                 </div>
-                {pestañaActiva === 'insumos' && (
+                {pestañaActiva === 'insumos' && formData.medida !== "Piezas" && (
                   <p className="text-xs text-gray-500 mt-1">
                     {unidadEdit === "Kilos" && "1 kilo = 1000 gramos"}
                     {unidadEdit === "Litros" && "1 litro = 1000 mililitros"}
