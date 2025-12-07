@@ -489,22 +489,15 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                         </div>
                                                         <Field
                                                             name="precio"
-                                                            type="number"
-                                                            step="0.01"
-                                                            min="0"
+                                                            type="text"
                                                             className="w-full pl-8 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                                                             placeholder="0.00"
-                                                            onKeyDown={(e) => {
-                                                                // Prevenir números negativos y algunos caracteres
-                                                                if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
-                                                                    e.preventDefault();
-                                                                }
-                                                            }}
                                                             onChange={(e) => {
                                                                 const value = e.target.value;
-                                                                // Solo permitir números positivos
-                                                                if (value === '' || (parseFloat(value) >= 0 && !isNaN(parseFloat(value)))) {
-                                                                    setFieldValue("precio", value);
+                                                                // Permitir solo números y un punto decimal
+                                                                const regex = /^\d*\.?\d*$/;
+                                                                if (regex.test(value) || value === '') {
+                                                                    setFieldValue('precio', value);
                                                                 }
                                                             }}
                                                         />
@@ -584,7 +577,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                     <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                        </svg>
+                                                    </svg>
                                                         {errors.imagen}
                                                     </p>
                                                 )}
@@ -660,13 +653,17 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                     Cantidad (Piezas)
                                 </label>
                                 <input
-                                    type="number"
+                                    type="text"
                                     name="cantidad"
                                     value={inventoryFormData.cantidad}
-                                    onChange={handleInventoryInputChange}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const regex = /^\d*\.?\d*$/;
+                                        if (regex.test(value) || value === '') {
+                                            handleInventoryInputChange(e);
+                                        }
+                                    }}
                                     placeholder="Cantidad de piezas"
-                                    min="0.01"
-                                    step="0.01"
                                     className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                                     required
                                 />
@@ -677,13 +674,17 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                     Costo por pieza
                                 </label>
                                 <input
-                                    type="number"
+                                    type="text"
                                     name="costo"
                                     value={inventoryFormData.costo}
-                                    onChange={handleInventoryInputChange}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const regex = /^\d*\.?\d*$/;
+                                        if (regex.test(value) || value === '') {
+                                            handleInventoryInputChange(e);
+                                        }
+                                    }}
                                     placeholder="0.00"
-                                    step="0.01"
-                                    min="0"
                                     className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                                     required
                                 />

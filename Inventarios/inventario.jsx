@@ -812,6 +812,25 @@ export default function Inventario() {
                   step="0.01"
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   required
+                  onKeyDown={(e) => {
+                    // Prevenir letras y algunos caracteres, pero permitir teclas de control
+                    if (
+                      e.key === '-' || 
+                      e.key === 'e' || 
+                      e.key === 'E' || 
+                      e.key === '+' ||
+                      (e.key.length === 1 && /[a-zA-Z]/.test(e.key))
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onPaste={(e) => {
+                    // Prevenir pegar texto con letras
+                    const pastedText = e.clipboardData.getData('text');
+                    if (!/^[0-9.]*$/.test(pastedText)) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
 
@@ -830,6 +849,25 @@ export default function Inventario() {
                   min="0"
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   required
+                  onKeyDown={(e) => {
+                    // Prevenir letras y algunos caracteres, pero permitir teclas de control
+                    if (
+                      e.key === '-' || 
+                      e.key === 'e' || 
+                      e.key === 'E' || 
+                      e.key === '+' ||
+                      (e.key.length === 1 && /[a-zA-Z]/.test(e.key))
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onPaste={(e) => {
+                    // Prevenir pegar texto con letras
+                    const pastedText = e.clipboardData.getData('text');
+                    if (!/^[0-9.]*$/.test(pastedText)) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
 
@@ -947,7 +985,7 @@ export default function Inventario() {
                 </div>
               )}
 
-              {/* Cantidad con botón de conversión */}
+              {/* Cantidad con botón de conversión - En modal de editar */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Cantidad
@@ -966,6 +1004,25 @@ export default function Inventario() {
                     step="0.01"
                     className="flex-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                     required
+                    onKeyDown={(e) => {
+                      // Prevenir letras y algunos caracteres, pero permitir teclas de control
+                      if (
+                        e.key === '-' || 
+                        e.key === 'e' || 
+                        e.key === 'E' || 
+                        e.key === '+' ||
+                        (e.key.length === 1 && /[a-zA-Z]/.test(e.key))
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      // Prevenir pegar texto con letras
+                      const pastedText = e.clipboardData.getData('text');
+                      if (!/^[0-9.]*$/.test(pastedText)) {
+                        e.preventDefault();
+                      }
+                    }}
                   />
                   {/* Botón de conversión - Solo para insumos con unidades convertibles (excepto Piezas) */}
                   {pestañaActiva === 'insumos' && 
@@ -999,7 +1056,7 @@ export default function Inventario() {
                 )}
               </div>
 
-              {/* Costo por pieza */}
+              {/* Costo por pieza - En modal de editar */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Costo por pieza
@@ -1014,6 +1071,25 @@ export default function Inventario() {
                   min="0"
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   required
+                  onKeyDown={(e) => {
+                    // Prevenir letras y algunos caracteres, pero permitir teclas de control
+                    if (
+                      e.key === '-' || 
+                      e.key === 'e' || 
+                      e.key === 'E' || 
+                      e.key === '+' ||
+                      (e.key.length === 1 && /[a-zA-Z]/.test(e.key))
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onPaste={(e) => {
+                    // Prevenir pegar texto con letras
+                    const pastedText = e.clipboardData.getData('text');
+                    if (!/^[0-9.]*$/.test(pastedText)) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
 
