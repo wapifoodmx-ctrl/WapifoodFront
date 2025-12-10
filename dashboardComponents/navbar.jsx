@@ -115,6 +115,13 @@ export default function Navbar() {
 
     // Función para manejar clicks en elementos que requieren suscripción
     const handleRestrictedClick = (originalFunction) => {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+
         if (hasActiveSubscription) {
             originalFunction();
         } else {
@@ -237,10 +244,13 @@ export default function Navbar() {
     // useEffect principal - verifica token y estado inicial
     useEffect(() => {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        if (!token) {
-            router.push('/login');
-        } else {
+
+        // Solo verificar suscripción si hay token (evita errores en páginas públicas)
+        if (token) {
             checkSubscriptionStatus();
+        } else {
+            setSubscriptionLoading(false);
+            setHasActiveSubscription(false);
         }
 
         // Recuperar el estado del switch desde localStorage
@@ -249,25 +259,36 @@ export default function Navbar() {
             setSwitchEnabled(JSON.parse(savedSwitchState));
         }
 
-        // Configurar verificación cada 24 horas
-        const checkInterval = setInterval(() => {
-            checkSubscriptionStatus();
-        }, 24 * 60 * 60 * 1000);
+        // Configurar verificación cada 24 horas solo si hay token
+        let checkInterval = null;
+        if (token) {
+            checkInterval = setInterval(() => {
+                checkSubscriptionStatus();
+            }, 24 * 60 * 60 * 1000);
+        }
 
-        return () => clearInterval(checkInterval);
+        return () => {
+            if (checkInterval) clearInterval(checkInterval);
+        };
     }, [router]);
 
     // useEffect para detectar cuando el usuario regresa después del pago
     useEffect(() => {
         const handleFocus = () => {
-            //console.log('Window focused - Checking subscription status...');
-            checkSubscriptionStatus();
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (token) {
+                //console.log('Window focused - Checking subscription status...');
+                checkSubscriptionStatus();
+            }
         };
 
         const handleVisibilityChange = () => {
             if (!document.hidden) {
-                //console.log('Page visible - Checking subscription status...');
-                checkSubscriptionStatus();
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                if (token) {
+                    //console.log('Page visible - Checking subscription status...');
+                    checkSubscriptionStatus();
+                }
             }
         };
 
@@ -501,63 +522,63 @@ export default function Navbar() {
                                     <li key={index} className="cursor-pointer my-4">
                                         {item === "Dashboard" ? (
                                             <button
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 onClick={dasboard}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
                                         ) : item === "Register" ? (
                                             <button
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 onClick={() => handleRestrictedClick(productos)}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
                                         ) : item === "Tickets" ? (
                                             <button
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 onClick={() => handleRestrictedClick(tickets)}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
                                         ) : item === "Cocina" ? (
                                             <button
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 onClick={handleCocinaClick}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
                                         ) : item === "Recetas" ? (
                                             <button
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 onClick={handleRecetasClick}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
                                         ) : item === "Inventarios" ? (
                                             <button
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 onClick={handleInventariosClick}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
                                         ) : item === "Meseros" ? (
                                             <button
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 onClick={handleMeserosClick}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
                                         ) : item === "PuntoDeVenta" ? (
                                             <button
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 onClick={() => handleRestrictedClick(puntoDeVenta)}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
                                         ) : (
                                             <a
-                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 href={menu[item].href}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}

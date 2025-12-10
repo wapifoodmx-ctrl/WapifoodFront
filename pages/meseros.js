@@ -3,10 +3,18 @@ import Navbar from "@/dashboardComponents/navbar";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { checkPayment } from "@/useCases/checkPayment";
-import { IoAddOutline, IoClose, IoEyeOutline, IoSwapHorizontalOutline } from "react-icons/io5";
-import { FiEdit } from "react-icons/fi";
-import { BsTrash3 } from "react-icons/bs";
+import { getMeseros } from "@/useCases/getMeseros";
+import { postMeseros } from "@/useCases/postMeseros";
+import { updateMeseros } from "@/useCases/updateMeseros";
+import { deleteMeseros } from "@/useCases/deleteMeseros";
+import { IoAddOutline, IoSwapHorizontalOutline } from "react-icons/io5";
 import { FaUser } from "react-icons/fa";
+import MeseroCard from "@/Meseros/MeseroCard";
+import MeserosList from "@/Meseros/MeserosList";
+import AddMeseroModal from "@/Meseros/AddMeseroModal";
+import EditMeseroModal from "@/Meseros/EditMeseroModal";
+import DeleteMeseroModal from "@/Meseros/DeleteMeseroModal";
+import { toast } from "@/components/Toast";
 
 export default function Meseros() {
   const router = useRouter();
@@ -17,6 +25,8 @@ export default function Meseros() {
   const [vistaActiva, setVistaActiva] = useState('cards');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [meseroToDelete, setMeseroToDelete] = useState(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [formData, setFormData] = useState({
@@ -44,7 +54,6 @@ export default function Meseros() {
     };
 
     checkSubscription();
-    setLoading(false);
   }, []);
 
   // Contador para redirección
@@ -62,23 +71,29 @@ export default function Meseros() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [showSubscriptionModal, countdown]);
+  }, [showSubscriptionModal, countdown, router]);
 
-  // Cargar meseros (aquí integrarás tu API cuando esté lista)
+  // Cargar meseros desde API
+  const cargarMeseros = async () => {
+    try {
+      setLoading(true);
+      const data = await getMeseros();
+      setMeseros(data);
+    } catch (error) {
+      console.error("Error al cargar meseros:", error);
+      setMeseros([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // TODO: Implementar carga desde API
-    // Por ahora datos de ejemplo
-    const meserosMock = [
-      { id: 1, nombreCompleto: "Juan Pérez García", codigoSeguridad: "1234" },
-      { id: 2, nombreCompleto: "María López Rodríguez", codigoSeguridad: "5678" },
-      { id: 3, nombreCompleto: "Carlos Sánchez Martínez", codigoSeguridad: "9012" }
-    ];
-    setMeseros(meserosMock);
+    cargarMeseros();
   }, []);
 
   // Filtrar meseros
   const meserosFiltrados = meseros.filter(mesero =>
-    mesero.nombreCompleto.toLowerCase().includes(searchTerm.toLowerCase())
+    mesero.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Handlers de modales
@@ -90,16 +105,23 @@ export default function Meseros() {
   const handleOpenEditModal = (mesero) => {
     setSelectedMesero(mesero);
     setFormData({
-      nombreCompleto: mesero.nombreCompleto,
-      codigoSeguridad: "" // No mostramos el código real
+      nombreCompleto: mesero.name,
+      codigoSeguridad: ""
     });
     setIsEditModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (mesero) => {
+    setMeseroToDelete(mesero);
+    setIsDeleteModalOpen(true);
   };
 
   const handleCloseModals = () => {
     setIsAddModalOpen(false);
     setIsEditModalOpen(false);
+    setIsDeleteModalOpen(false);
     setSelectedMesero(null);
+    setMeseroToDelete(null);
     setFormData({ nombreCompleto: "", codigoSeguridad: "" });
   };
 
@@ -108,34 +130,76 @@ export default function Meseros() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddMesero = (e) => {
-    e.preventDefault();
-    // TODO: Implementar POST a API
-    console.log("Agregar mesero:", formData);
-    const newMesero = {
-      id: meseros.length + 1,
-      ...formData
-    };
-    setMeseros([...meseros, newMesero]);
-    handleCloseModals();
+  const handleAddMesero = async () => {
+    try {
+      setLoading(true);
+      await postMeseros({
+        name: formData.nombreCompleto,
+        access_code: formData.codigoSeguridad
+      });
+      await cargarMeseros();
+      handleCloseModals();
+      toast.success('Mesero agregado exitosamente');
+    } catch (error) {
+      console.error("Error al agregar mesero:", error);
+      
+      // Verificar si es un error de código duplicado
+      if (error.message && error.message.includes('Ya tienes un mesero registrado con el código')) {
+        toast.error('El código de seguridad ya está en uso. Por favor, elige otro código diferente.');
+      } else if (error.message && error.message.includes('400')) {
+        toast.error('El código de seguridad ya está registrado. Intenta con un código diferente.');
+      } else {
+        toast.error('Error al agregar el mesero. Por favor intenta de nuevo.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditMesero = (e) => {
-    e.preventDefault();
-    // TODO: Implementar PUT a API
-    console.log("Editar mesero:", formData);
-    setMeseros(meseros.map(m => 
-      m.id === selectedMesero.id 
-        ? { ...m, nombreCompleto: formData.nombreCompleto, codigoSeguridad: formData.codigoSeguridad || m.codigoSeguridad }
-        : m
-    ));
-    handleCloseModals();
+  const handleEditMesero = async () => {
+    try {
+      setLoading(true);
+      const updateData = {
+        name: formData.nombreCompleto
+      };
+      
+      // Solo incluir el código si se proporcionó uno nuevo
+      if (formData.codigoSeguridad) {
+        updateData.access_code = formData.codigoSeguridad;
+      }
+
+      await updateMeseros(selectedMesero.uuid, updateData);
+      await cargarMeseros();
+      handleCloseModals();
+      toast.success('Mesero actualizado exitosamente');
+    } catch (error) {
+      console.error("Error al editar mesero:", error);
+      
+      // Verificar si es un error de código duplicado
+      if (error.message && error.message.includes('Ya tienes un mesero registrado con el código')) {
+        toast.error('El código de seguridad ya está en uso. Por favor, elige otro código diferente.');
+      } else if (error.message && error.message.includes('400')) {
+        toast.error('El código de seguridad ya está registrado. Intenta con un código diferente.');
+      } else {
+        toast.error('Error al actualizar el mesero. Por favor intenta de nuevo.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteMesero = (id) => {
-    // TODO: Implementar DELETE a API
-    if (confirm("¿Estás seguro de eliminar este mesero?")) {
-      setMeseros(meseros.filter(m => m.id !== id));
+  const handleConfirmDelete = async () => {
+    try {
+      setLoading(true);
+      await deleteMeseros(meseroToDelete.uuid);
+      await cargarMeseros();
+      handleCloseModals();
+      toast.success('Mesero eliminado exitosamente');
+    } catch (error) {
+      console.error("Error al eliminar mesero:", error);
+      toast.error('Error al eliminar el mesero. Por favor intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -278,223 +342,48 @@ export default function Meseros() {
             ) : vistaActiva === 'cards' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
                 {meserosFiltrados.map((mesero) => (
-                  <div
-                    key={mesero.id}
-                    className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-200 overflow-hidden"
-                  >
-                    <div className="p-6">
-                      <div className="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full">
-                        <FaUser className="w-10 h-10 text-white" />
-                      </div>
-                      <h3 className="text-lg font-bold text-gray-800 text-center mb-4">{mesero.nombreCompleto}</h3>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleOpenEditModal(mesero)}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-                        >
-                          <FiEdit />
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMesero(mesero.id)}
-                          className="flex items-center justify-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors"
-                        >
-                          <BsTrash3 />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <MeseroCard
+                    key={mesero.uuid}
+                    mesero={mesero}
+                    onEdit={handleOpenEditModal}
+                    onDelete={handleOpenDeleteModal}
+                  />
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-green-50 to-emerald-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Mesero</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {meserosFiltrados.map((mesero) => (
-                      <tr key={mesero.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                              <FaUser className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{mesero.nombreCompleto}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleOpenEditModal(mesero)}
-                            className="text-blue-600 hover:text-blue-900 mr-4"
-                          >
-                            <FiEdit className="inline w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMesero(mesero.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <BsTrash3 className="inline w-5 h-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <MeserosList
+                meseros={meserosFiltrados}
+                onEdit={handleOpenEditModal}
+                onDelete={handleOpenDeleteModal}
+              />
             )}
           </div>
         </div>
 
-        {/* Modal Agregar Mesero */}
-        {isAddModalOpen && (
-          <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4" onClick={handleCloseModals}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-              <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-t-2xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                      <IoAddOutline className="text-white text-lg" />
-                    </div>
-                    <h2 className="text-lg font-bold text-white">Agregar Mesero</h2>
-                  </div>
-                  <button onClick={handleCloseModals} className="text-white/70 hover:text-white transition-colors">
-                    <IoClose className="text-2xl" />
-                  </button>
-                </div>
-              </div>
+        {/* Modales */}
+        <AddMeseroModal
+          isOpen={isAddModalOpen}
+          onClose={handleCloseModals}
+          onSubmit={handleAddMesero}
+          formData={formData}
+          onInputChange={handleInputChange}
+        />
 
-              <form onSubmit={handleAddMesero} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre Completo</label>
-                  <input
-                    type="text"
-                    name="nombreCompleto"
-                    value={formData.nombreCompleto}
-                    onChange={handleInputChange}
-                    placeholder="Ej: Juan Pérez García"
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    required
-                  />
-                </div>
+        <EditMeseroModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseModals}
+          onSubmit={handleEditMesero}
+          formData={formData}
+          onInputChange={handleInputChange}
+          mesero={selectedMesero}
+        />
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Código de Seguridad</label>
-                  <input
-                    type="password"
-                    name="codigoSeguridad"
-                    value={formData.codigoSeguridad}
-                    onChange={handleInputChange}
-                    placeholder="Ingresa un código de 4 dígitos"
-                    maxLength="4"
-                    pattern="[0-9]{4}"
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">El código debe tener 4 dígitos numéricos</p>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-semibold transition-all duration-200"
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseModals}
-                    className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-all duration-200"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Modal Editar Mesero */}
-        {isEditModalOpen && selectedMesero && (
-          <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4" onClick={handleCloseModals}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-t-2xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                      <FiEdit className="text-white text-lg" />
-                    </div>
-                    <h2 className="text-lg font-bold text-white">Editar Mesero</h2>
-                  </div>
-                  <button onClick={handleCloseModals} className="text-white/70 hover:text-white transition-colors">
-                    <IoClose className="text-2xl" />
-                  </button>
-                </div>
-              </div>
-
-              <form onSubmit={handleEditMesero} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre Completo</label>
-                  <input
-                    type="text"
-                    name="nombreCompleto"
-                    value={formData.nombreCompleto}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Código de Seguridad Actual</label>
-                  <input
-                    type="text"
-                    value="****"
-                    disabled
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Por seguridad, el código no se muestra</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nuevo Código de Seguridad (opcional)</label>
-                  <input
-                    type="password"
-                    name="codigoSeguridad"
-                    value={formData.codigoSeguridad}
-                    onChange={handleInputChange}
-                    placeholder="Dejar vacío para mantener el actual"
-                    maxLength="4"
-                    pattern="[0-9]{4}"
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Solo completa si deseas cambiar el código</p>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-semibold transition-all duration-200"
-                  >
-                    Actualizar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseModals}
-                    className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-all duration-200"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <DeleteMeseroModal
+          isOpen={isDeleteModalOpen}
+          onClose={handleCloseModals}
+          onConfirm={handleConfirmDelete}
+          mesero={meseroToDelete}
+        />
       </section>
     </>
   );
