@@ -5,7 +5,7 @@ import { MdSpaceDashboard } from "react-icons/md";
 import { LuPizza } from "react-icons/lu";
 import { FiShoppingBag } from "react-icons/fi";
 import { FcSalesPerformance } from "react-icons/fc";
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaUserTie } from "react-icons/fa";
 import { ImExit } from "react-icons/im";
 import { LuIdCard } from "react-icons/lu";
 import { FaKitchenSet } from "react-icons/fa6";
@@ -94,6 +94,7 @@ export default function Navbar() {
     const cocina = () => router.push('/cocina');
     const recetas = () => router.push('/recetas');
     const inventarios = () => router.push('/inventarios');
+    const meseros = () => router.push('/meseros');
 
     const checkSubscriptionStatus = async () => {
         try {
@@ -183,6 +184,13 @@ export default function Navbar() {
             title: "Inventarios",
             href: "#",
             icon: <MdInventory className="h-full w-[24px]" />,
+            requiresSubscription: true,
+        },
+        // Agregar Meseros
+        Meseros: {
+            title: "Meseros",
+            href: "#",
+            icon: <FaUserTie className="h-full w-[24px]" />,
             requiresSubscription: true,
         },
         PuntoDeVenta: {
@@ -368,6 +376,10 @@ export default function Navbar() {
         handleRestrictedClick(inventarios);
     };
 
+    const handleMeserosClick = () => {
+        handleRestrictedClick(meseros);
+    };
+
     // Verificar si estamos en la página del punto de venta
     const isPointOfSalePage = router.pathname === '/puntodeventa';
 
@@ -529,6 +541,13 @@ export default function Navbar() {
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
+                                        ) : item === "Meseros" ? (
+                                            <button
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
+                                                onClick={handleMeserosClick}
+                                            >
+                                                <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                            </button>
                                         ) : item === "PuntoDeVenta" ? (
                                             <button
                                                 className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:scale-105 transition-all duration-200"}
@@ -550,10 +569,10 @@ export default function Navbar() {
                         </div>
 
                         <div className="p-4 border-t border-green-200 flex-shrink-0">
-                            <p className="text-green-700 font-bold mt-2">Configuración</p>
-                            <ul className="flex flex-col text-xl">
+                            <p className="text-green-700 font-bold mt-2 text-sm sm:text-base">Configuración</p>
+                            <ul className="flex flex-col text-base sm:text-lg">
                                 {Object.keys(config).map((item, index) => (
-                                    <li key={index} className="cursor-pointer my-4">
+                                    <li key={index} className="cursor-pointer my-2">
                                         {item === "Profile" ? (
                                             <button
                                                 className="flex w-auto gap-2 cursor-pointer from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:text-green-600 hover:scale-105 transition-all duration-200"
@@ -570,7 +589,7 @@ export default function Navbar() {
                                             </button>
                                         ) : (
                                             <a
-                                                className="flex w-auto gap-2 cursor-pointer bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl px-4 py-2 shadow hover:text-green-600 hover:scale-105 transition-all duration-200"
+                                                className="flex w-auto gap-2 cursor-pointer rounded-xl px-4 py-2 hover:text-green-600 hover:scale-105 transition-all duration-200"
                                                 href={config[item].href}
                                             >
                                                 <span className="self-center">{config[item].icon}</span> {config[item].title}
