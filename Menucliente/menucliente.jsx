@@ -16,6 +16,7 @@ import { endOrder } from "@/useCases/endOrder";
 import getCodigoConfirmacion from "@/useCases/getCodogoConfirmacion";
 import TicketModal from "@/components/TicketModal";
 import { getTicket } from "@/useCases/getTicket";
+import descontarInventario from "@/useCases/inventarioDescontar"; // Agregar esta importación
 import ProductCard from "./ ProductCard";
 import CartModal from "./CartModal";
 import LoginModal from "./LoginModal";
@@ -1116,6 +1117,62 @@ export default function MenuCliente() {
         setErrorCodigoConfirmacion("");
 
         try {
+            // Intentar descontar inventario pero no bloquear el pago si falla
+            if (ordenActiva && ordenActiva.order_uuid) {
+                try {
+                    const ticketData = await getTicket(ordenActiva.order_uuid);
+                    
+                    console.log('DATOS COMPLETOS DEL TICKET:', JSON.stringify(ticketData, null, 2));
+                    
+                    if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
+                        // Ver cada producto individualmente
+                        ticketData.products.forEach((producto, index) => {
+                            console.log(`Producto ${index}:`, {
+                                id_products: producto.id_products,
+                                product_id: producto.product_id,
+                                id: producto.id,
+                                quantity: producto.quantity,
+                                status: producto.order_detail_status,
+                                todoElProducto: producto
+                            });
+                        });
+
+                        // Transformar los productos al formato requerido para descontar inventario
+                        const productosParaDescontar = ticketData.products
+                            .filter(producto => producto.order_detail_status !== "Cancelado")
+                            .map(producto => {
+                                // Intentar diferentes nombres de campo
+                                const productId = producto.product_id || producto.id_products || producto.id || producto.productId;
+                                
+                                return {
+                                    product_id: parseInt(productId),
+                                    quantity: parseInt(producto.quantity)
+                                };
+                            })
+                            .filter(producto => !isNaN(producto.product_id)); // Filtrar productos con ID inválido
+
+                        console.log('Productos transformados para descontar:', JSON.stringify(productosParaDescontar, null, 2));
+
+                        // Descontar inventario antes de confirmar el pago (no bloqueante)
+                        if (productosParaDescontar.length > 0) {
+                            const resultadoInventario = await descontarInventario(productosParaDescontar);
+                            
+                            if (!resultadoInventario.success) {
+                                console.error('Error al descontar inventario (continuando con el pago):', resultadoInventario.error);
+                            } else {
+                                console.log('Inventario descontado exitosamente:', resultadoInventario.data);
+                            }
+                        } else {
+                            console.warn('No hay productos válidos para descontar del inventario (continuando con el pago)');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al obtener datos del ticket para inventario (continuando con el pago):', error);
+                    // NO retornar aquí, continuar con el pago
+                }
+            }
+
+            // Proceder con la confirmación del pago SIEMPRE
             await confirmarPago();
         } catch (error) {
             console.error('Error al confirmar el pago:', error);
