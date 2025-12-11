@@ -18,6 +18,10 @@ export default function Main() {
         router.push('/clientmenu');
     }
 
+    const handleMeseroMenuClick = () => {
+        router.push('/meseroMenu');
+    }
+
     return (
         <main className="bg-gradient-to-br from-green-200 via-emerald-100 to-teal-100 min-h-screen flex items-center justify-center">
             <section className="flex flex-col md:flex-row items-center justify-center w-full px-4 md:gap-10 md:px-16 py-10 md:py-0 min-h-[80vh]" id='main'>
@@ -46,6 +50,12 @@ export default function Main() {
                             onClick={handleClientMenuClick}
                         >
                             Menú del Cliente
+                        </button>
+                        <button 
+                            className="rounded-xl bg-gradient-to-r from-orange-400 to-amber-400 text-white font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:from-orange-500 hover:to-amber-500 transition-all duration-200 border-2 border-orange-300"
+                            onClick={handleMeseroMenuClick}
+                        >
+                            Menú Mesero
                         </button>
                     </div>
                 </div>

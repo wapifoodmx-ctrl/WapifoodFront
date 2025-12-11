@@ -31,7 +31,7 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
                 <div className="p-6">
                     <div className="mb-6">
                         <Image
-                            src={producto.imagen}
+                            src={producto.image || producto.imagen || '/placeholder-food.png'}
                             alt={`Imagen de ${producto.nombre || producto.name}`}
                             className="w-full h-48 object-cover rounded-xl border border-green-100 shadow-sm"
                             width={400}
@@ -41,7 +41,7 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
 
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-800 mb-2">Descripción</h3>
-                        <p className="text-gray-600 leading-relaxed">{producto.descripcion}</p>
+                        <p className="text-gray-600 leading-relaxed">{producto.descripcion || producto.description}</p>
                     </div>
 
                     {producto.ingredientes && producto.ingredientes.length > 0 && (

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { FaTrashAlt, FaTimes, FaPlus } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
 import { MdTableBar } from "react-icons/md";
@@ -24,6 +24,7 @@ export default function ModalCocina({
 }) {
     const dropdownRef = useRef(null);
     const buttonRef = useRef(null);
+    const [metodoPago, setMetodoPago] = useState('efectivo');
 
     if (!isTableDetailModalOpen && !activeModal && !isModalOpen) return null;
 
@@ -277,19 +278,75 @@ export default function ModalCocina({
                         <p className="text-lg font-bold mb-4 text-gray-800">
                             ¿Finalizar orden completada?
                         </p>
-                        <p className="text-sm text-gray-600 mb-6">
-                            La orden de la Mesa {selectedTable?.tableNumber} será marcada como finalizada y la mesa quedará libre.
+                        <p className="text-sm text-gray-600 mb-4">
+                            La orden de la Mesa {selectedTable?.tableNumber} será marcada como finalizada y pagada.
                         </p>
+                        
+                        {/* Aviso importante */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                            <p className="text-xs text-blue-700 font-semibold mb-1">
+                                ⚠️ Importante
+                            </p>
+                            <p className="text-xs text-blue-600">
+                                Al finalizar desde cocina, también se finalizará en el menú del cliente, se va a liberar la mesa y se generará el ticket.
+                            </p>
+                        </div>
+
+                        {/* Selector de método de pago */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Método de Pago
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setMetodoPago('efectivo')}
+                                    className={`p-3 rounded-lg border-2 transition-all ${
+                                        metodoPago === 'efectivo'
+                                            ? 'border-green-500 bg-green-50 text-green-700'
+                                            : 'border-gray-200 bg-white text-gray-600 hover:border-green-300'
+                                    }`}
+                                >
+                                    <div className="text-center">
+                                        <div className="text-2xl mb-1">💵</div>
+                                        <div className="text-sm font-semibold">Efectivo</div>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => setMetodoPago('tarjeta')}
+                                    className={`p-3 rounded-lg border-2 transition-all ${
+                                        metodoPago === 'tarjeta'
+                                            ? 'border-green-500 bg-green-50 text-green-700'
+                                            : 'border-gray-200 bg-white text-gray-600 hover:border-green-300'
+                                    }`}
+                                >
+                                    <div className="text-center">
+                                        <div className="text-2xl mb-1">💳</div>
+                                        <div className="text-sm font-semibold">Tarjeta</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
                         <div className="flex justify-end space-x-4">
                             <button
                                 className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md font-semibold transition-all"
-                                onClick={() => setActiveModal(null)}
+                                onClick={() => {
+                                    setActiveModal(null);
+                                    setMetodoPago('efectivo');
+                                }}
                             >
                                 Cancelar
                             </button>
                             <button
                                 className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-md font-bold shadow-lg hover:scale-105 transition-all"
-                                onClick={handleFinalizeCompletedOrder}
+                                onClick={() => {
+                                    // Agregar método de pago al selectedTable antes de finalizar
+                                    if (selectedTable) {
+                                        selectedTable.metodoPago = metodoPago;
+                                    }
+                                    handleFinalizeCompletedOrder();
+                                    setMetodoPago('efectivo');
+                                }}
                             >
                                 Finalizar Orden
                             </button>

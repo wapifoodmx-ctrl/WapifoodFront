@@ -380,12 +380,10 @@ export default function Pntoventa() {
                         quantity: detail.quantity
                     }));
 
-                    console.log('Descontando inventario:', productosParaDescontar);
 
                     const inventarioResponse = await descontarInventario(productosParaDescontar);
                     
                     if (inventarioResponse.success) {
-                        console.log('Inventario descontado exitosamente:', inventarioResponse.data);
                     } else {
                         console.error('Error al descontar inventario:', inventarioResponse.error);
                         // No detenemos el flujo, solo registramos el error

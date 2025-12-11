@@ -7,7 +7,8 @@ export default function Inventarios() {
     <>
       <Head>
                 <title>Inventario - WapiFood</title>
-                <meta name="description" content="Vista de inventarios para organizar tu restaurante" />
+                <meta name="description" content="Gestión de inventarios y control de stock" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
       <Inventario />  
     </>

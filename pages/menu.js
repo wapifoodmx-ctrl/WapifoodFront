@@ -127,7 +127,8 @@ export default function Menu() {
     <>
       <Head>
         <title>Productos - WapiFood</title>
-        <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+        <meta name="description" content="Administra el menú y productos de tu restaurante" />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
 
       {/* Estado de carga mejorado */}

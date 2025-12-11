@@ -5,8 +5,9 @@ export default function ResetPass() {
   return (
     <>
     <Head>
-                    <title>Recuperción de link - WapiFood</title>
-                    <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+                    <title>Recuperación de Contraseña - WapiFood</title>
+                    <meta name="description" content="Recupera el acceso a tu cuenta" />
+                    <link rel="icon" href="/favicon.ico" />
                 </Head>
     
     <RecuperacionLink />

@@ -12,34 +12,25 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
     const [selectedSize, setSelectedSize] = useState('STANDARD_80');
 
     useEffect(() => {
-        console.log('=== DEBUG MODAL ===');
-        console.log('Modal abierto:', isOpen);
-        console.log('Order UUID recibido:', orderUuid);
-        console.log('Tipo de orderUuid:', typeof orderUuid);
+        
         
         if (isOpen && orderUuid) {
-            console.log('Iniciando fetchTicketData...');
             fetchTicketData();
         } else {
-            console.log('No se cumplen condiciones para fetch:', { isOpen, orderUuid });
         }
     }, [isOpen, orderUuid]);
 
     const fetchTicketData = async () => {
-        console.log('=== INICIANDO FETCH ===');
         setLoading(true);
         setError('');
         try {
-            console.log('Llamando a getTicket con UUID:', orderUuid);
             const data = await getTicket(orderUuid);
-            console.log('Datos recibidos de la API:', data);
             setTicketData(data);
         } catch (err) {
             console.error('Error al obtener datos del ticket:', err);
             console.error('Detalles del error:', err.message, err.stack);
             setError('Error al cargar los datos del ticket');
         } finally {
-            console.log('Fetch finalizado');
             setLoading(false);
         }
     };
@@ -144,24 +135,16 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
         generateTicketPDF(pdfData, sizeKey);
     };
 
-    console.log('=== RENDER MODAL ===');
-    console.log('isOpen:', isOpen);
-    console.log('shouldShowModal():', shouldShowModal());
-    console.log('loading:', loading);
-    console.log('error:', error);
-    console.log('ticketData:', ticketData);
+  
 
     if (!isOpen) {
-        console.log('Modal no abierto - retornando null');
         return null;
     }
 
     if (!shouldShowModal()) {
-        console.log('Permisos de tickets no habilitados - retornando null');
         return null;
     }
 
-    console.log('Renderizando modal completo');
 
     const totalDiscountInfo = ticketData ? calculateTotalDiscount() : { hasDiscount: false };
 

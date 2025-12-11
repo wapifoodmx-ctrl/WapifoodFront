@@ -1,9 +1,16 @@
+import Head from 'next/head';
 import Navbar from "@/dashboardComponents/navbar";
 import { HiExclamationTriangle, HiArrowLeft, HiCreditCard } from "react-icons/hi2";
 
 export default function Error() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+    <>
+      <Head>
+        <title>Error en el Pago - WapiFood</title>
+        <meta name="description" content="Hubo un problema al procesar tu pago" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       <Navbar />
       
       {/* Fondo decorativo */}
@@ -108,5 +115,6 @@ export default function Error() {
         }
       `}</style>
     </div>
+    </>
   );
 }

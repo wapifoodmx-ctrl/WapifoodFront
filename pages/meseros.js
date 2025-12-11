@@ -254,7 +254,8 @@ export default function Meseros() {
     <>
       <Head>
         <title>Meseros - WapiFood</title>
-        <meta name="description" content="Gestión de meseros" />
+        <meta name="description" content="Gestión de meseros y personal de servicio" />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
@@ -324,7 +325,7 @@ export default function Meseros() {
               <div className="text-center py-20">
                 <div className="text-gray-500 text-lg">
                   {searchTerm ? (
-                    <p className="mb-2">No se encontraron meseros con "{searchTerm}"</p>
+                    <p className="mb-2">No se encontraron meseros con &quot;{searchTerm}&quot;</p>
                   ) : (
                     <>
                       <p className="mb-4">No hay meseros registrados</p>

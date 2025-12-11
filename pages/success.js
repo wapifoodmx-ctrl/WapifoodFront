@@ -7,7 +7,8 @@ export default function Success() {
         <>
         <Head>
                 <title>Pago Exitoso - WapiFood</title>
-                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+                <meta name="description" content="Tu pago ha sido procesado exitosamente" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
         <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Fondo decorativo */}

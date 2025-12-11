@@ -6,7 +6,8 @@ export default function User() {
         <>
         <Head>
                 <title>Perfil - WapiFood</title>
-                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+                <meta name="description" content="Gestiona tu perfil y configuración del restaurante" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Fondo decorativo */}

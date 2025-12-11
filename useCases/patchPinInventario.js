@@ -66,7 +66,6 @@ async function actualizarPinInventario(newPin) {
     }
 
     const data = await response.json();
-    console.log('PIN actualizado exitosamente:', data);
     return { success: true, data };
 
   } catch (error) {

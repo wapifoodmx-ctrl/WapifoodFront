@@ -9,6 +9,7 @@ export default function Cocina() {
             <Head>
                 <title>Cocina - WapiFood</title>
                 <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
             
             <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">

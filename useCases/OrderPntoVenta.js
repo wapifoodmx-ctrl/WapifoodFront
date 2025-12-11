@@ -64,15 +64,6 @@ export async function createOrder(orderData) {
             : '';
         formData.append('order_uuid', orderUuid);
 
-        console.log('Enviando orden con descuentos:', {
-            product_ids: orderData.product_ids.join(','),
-            quantities: orderData.quantities.join(','),
-            table_number: 1,
-            descuento: descuentoGeneral || '(envío vacío)',
-            descuento_details: descuentoDetails || '(envío vacío)',
-            metodo_pago: metodoPago || '(envío vacío)',
-            order_uuid: orderUuid || '(envío vacío - se generará automáticamente)'
-        });
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -107,7 +98,6 @@ export async function createOrder(orderData) {
         }
 
         const data = await response.json();
-        console.log('Orden creada exitosamente:', data);
         return data;
 
     } catch (error) {

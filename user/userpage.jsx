@@ -187,14 +187,12 @@ export default function UserPage() {
         if (response && response.color) {
           setSelectedStyle(response.color);
           setHasExistingStyle(true); // Marcar que ya existe un estilo
-          console.log('Estilo existente cargado:', response.color);
         }
       } catch (error) {
         console.error('Error al obtener el estilo del menú:', error);
         // Si hay error 404, significa que no existe aún
         if (error.message.includes('404')) {
           setHasExistingStyle(false);
-          console.log('No se encontró estilo guardado, se usará POST al guardar');
         }
       }
     };
@@ -272,7 +270,6 @@ export default function UserPage() {
         
         // Actualizar el estado local del PIN
         setPinInventario(values.pinInventory);
-        console.log('PIN de inventario actualizado:', pinResult.data.message);
       }
 
       setShowSuccessModal(true);
@@ -351,16 +348,12 @@ export default function UserPage() {
       
       if (hasExistingStyle) {
         // Si ya existe un estilo, usar PATCH para actualizar
-        console.log('Actualizando estilo existente con PATCH:', selectedStyle);
         response = await patchColorMenu(selectedStyle);
-        console.log('Estilo actualizado exitosamente');
         setStyleModalMessage('Estilo actualizado correctamente');
       } else {
         // Si no existe, usar POST para crear
-        console.log('Creando nuevo estilo con POST:', selectedStyle);
         response = await postColorMenu(selectedStyle);
         setHasExistingStyle(true); // Marcar que ahora ya existe
-        console.log('Estilo creado exitosamente');
         setStyleModalMessage('Estilo guardado correctamente');
       }
       
@@ -370,14 +363,12 @@ export default function UserPage() {
       // Mostrar modal de éxito
       setShowStyleSuccessModal(true);
       
-      console.log('Respuesta del servidor:', response);
     } catch (error) {
       console.error('Error al guardar el estilo:', error);
       
       // Mejorar el manejo de errores
       if (error.message.includes('404') && hasExistingStyle) {
         // Si falló PATCH por 404, intentar con POST
-        console.log('Reintentando con POST...');
         try {
           await postColorMenu(selectedStyle);
           setHasExistingStyle(true);

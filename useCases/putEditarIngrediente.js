@@ -46,21 +46,7 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
         formData.append('confirmation_code', confirmationCode);
 
         const url = `https://api-micro.wapifood.com/inventory/ingredients/${ingredientId}`;
-        
-        console.log('=== DEBUGGING PUT EDITAR INGREDIENTE ===');
-        console.log('URL:', url);
-        console.log('Ingredient ID:', ingredientId);
-        console.log('Token:', token ? 'Token presente' : 'No token');
-        console.log('Datos a enviar:', {
-            name: ingredientData.name,
-            description: ingredientData.description,
-            cost: ingredientData.cost,
-            stock: ingredientData.stock,
-            unit: ingredientData.unit,
-            category: ingredientData.category,
-            confirmation_code: confirmationCode
-        });
-        console.log('FormData entries:', Object.fromEntries(formData.entries()));
+    
 
         // Realizar la petición PUT
         const response = await fetch(url, {
@@ -73,9 +59,6 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
             body: formData
         });
 
-        console.log('Response status:', response.status);
-        console.log('Response statusText:', response.statusText);
-        console.log('Response headers:', response.headers);
 
         // Verificar si la respuesta es exitosa
         if (!response.ok) {
@@ -94,7 +77,6 @@ async function putEditarIngrediente(ingredientId, ingredientData) {
 
         // Retornar los datos de la respuesta
         const data = await response.json();
-        console.log('Respuesta exitosa de la API:', data);
         return data;
 
     } catch (error) {

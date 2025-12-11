@@ -86,8 +86,9 @@ export default function ResetPass() {
     return (
       <>
       <Head>
-                <title>Reset de contraseña - WapiFood</title>
-                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+                <title>Reset de Contraseña - WapiFood</title>
+                <meta name="description" content="Establece una nueva contraseña para tu cuenta" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
         <Header />
         <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50">

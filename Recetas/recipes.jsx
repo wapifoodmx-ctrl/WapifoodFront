@@ -115,7 +115,6 @@ export default function Recipes() {
       // Guardar TODAS las recetas (incluyendo las ocultas)
       // El filtro se aplicará solo en la UI para mostrar
       setRecetas(recetasData);
-      console.log('Todas las recetas cargadas:', recetasData);
     } catch (error) {
       console.error('Error al cargar recetas:', error);
     } finally {
@@ -131,7 +130,6 @@ export default function Recipes() {
       if (response.success && response.data) {
         const soloInsumos = response.data.filter(item => item.category === "insumo");
         setInsumos(soloInsumos);
-        console.log('Insumos cargados:', soloInsumos);
       } else {
         console.error('Error al cargar insumos:', response.message);
         alert('Error al cargar los insumos: ' + response.message);
@@ -149,7 +147,6 @@ export default function Recipes() {
     try {
       const productosData = await getProducts();
       setProducts(productosData);
-      console.log('Productos cargados:', productosData);
     } catch (error) {
       console.error('Error al cargar productos:', error);
       setErrorMessage('Error al cargar los productos: ' + error.message);
@@ -247,10 +244,8 @@ export default function Recipes() {
         }))
       };
 
-      console.log('Enviando receta:', JSON.stringify(recipeData, null, 2));
       
       const response = await postRecetas(recipeData);
-      console.log('Receta creada exitosamente:', response);
       
       setSuccessMessage("Receta creada exitosamente");
       
@@ -302,7 +297,6 @@ export default function Recipes() {
     
     try {
       const recipeDetails = await getRecetaById(selectedRecipeId);
-      console.log('Detalles de la receta:', recipeDetails);
       
       setEditingRecipe(recipeDetails);
       setRecipeName(recipeDetails.name);
@@ -372,10 +366,8 @@ export default function Recipes() {
         }))
       };
 
-      console.log('Actualizando receta:', JSON.stringify(updateData, null, 2));
       
       const response = await putReceta(editingRecipe.id_recipe, updateData);
-      console.log('Receta actualizada exitosamente:', response);
       
       setSuccessMessage("Receta actualizada exitosamente");
       

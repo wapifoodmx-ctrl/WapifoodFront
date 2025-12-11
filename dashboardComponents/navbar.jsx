@@ -596,21 +596,21 @@ export default function Navbar() {
                                     <li key={index} className="cursor-pointer my-2">
                                         {item === "Profile" ? (
                                             <button
-                                                className="flex w-auto gap-2 cursor-pointer from-green-100 to-emerald-100 rounded-xl px-4 py-2 hover:text-green-600 hover:scale-105 transition-all duration-200"
+                                                className="flex w-auto gap-2 cursor-pointer from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:text-green-600 hover:scale-105 transition-all duration-200"
                                                 onClick={MiPerfil}
                                             >
                                                 <span className="self-center">{config[item].icon}</span> {config[item].title}
                                             </button>
                                         ) : item === "Logout" ? (
                                             <button
-                                                className="flex w-auto gap-2 cursor-pointer from-green-100 to-emerald-100 rounded-xl px-4 py-2  hover:text-green-600 hover:scale-105 transition-all duration-200"
+                                                className="flex w-auto gap-2 cursor-pointer from-green-100 to-emerald-100 rounded-xl px-4 py-1  hover:text-green-600 hover:scale-105 transition-all duration-200"
                                                 onClick={config[item].function}
                                             >
                                                 <span className="self-center">{config[item].icon}</span> {config[item].title}
                                             </button>
                                         ) : (
                                             <a
-                                                className="flex w-auto gap-2 cursor-pointer rounded-xl px-4 py-2 hover:text-green-600 hover:scale-105 transition-all duration-200"
+                                                className="flex w-auto gap-2 cursor-pointer rounded-xl px-4 py-1 hover:text-green-600 hover:scale-105 transition-all duration-200"
                                                 href={config[item].href}
                                             >
                                                 <span className="self-center">{config[item].icon}</span> {config[item].title}

@@ -156,6 +156,7 @@ export default function MenuWebDinamico() {
         ? restauranteInfo.nombre_restaurante 
         : "WapiFood"}</title>
         <meta name="description" content="Menú digital del restaurante - Descubre nuestros deliciosos platillos" />
+        <link rel="icon" href="/favicon.ico" />
         {/* Canónico y Open Graph dinámicos por restaurante/UUID */}
         <link rel="canonical" href={`${baseUrl}/webmenu/${uuid || ''}${style ? `?style=${style}` : ''}`} />
         <meta property="og:title" content={`Menú - ${restauranteInfo?.nombre_restaurante || 'WapiFood'}`} />

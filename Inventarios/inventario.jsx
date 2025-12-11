@@ -71,13 +71,10 @@ export default function Inventario() {
         }));
         
         setInsumos(ingredientesMapeados);
-        console.log("Ingredientes cargados:", ingredientesMapeados);
       } else {
-        console.error("Error al cargar ingredientes:", response.message);
         alert(`Error al cargar ingredientes: ${response.message}`);
       }
     } catch (error) {
-      console.error("Error al cargar ingredientes:", error);
       alert("Error al cargar los ingredientes del inventario");
     } finally {
       setIsLoadingData(false);
@@ -281,7 +278,6 @@ export default function Inventario() {
         throw new Error(result.error || 'Error al crear ingrediente');
       }
 
-      console.log(`${pestañaActiva.charAt(0).toUpperCase() + pestañaActiva.slice(1, -1)} creado exitosamente:`, result);
       
       setSuccessModalMessage(`${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'} "${ingredientData.name}" agregado exitosamente`);
       setShowSuccessModal(true);
@@ -446,7 +442,6 @@ export default function Inventario() {
     setIsLoading(true);
     try {
       const insumoId = insumosSeleccionados[0];
-      console.log('Cargando datos del ingrediente con ID:', insumoId);
       
       const response = await getIngredienteById(insumoId);
       
@@ -455,7 +450,6 @@ export default function Inventario() {
       }
 
       const ingrediente = response.data;
-      console.log('Datos del ingrediente cargados:', ingrediente);
       
       setInsumoAEditar(ingrediente);
 

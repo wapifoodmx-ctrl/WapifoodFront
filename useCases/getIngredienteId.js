@@ -1,7 +1,5 @@
 async function getIngredienteById(ingredientId) {
     try {
-        console.log('=== INICIANDO GET INGREDIENTE BY ID ===');
-        console.log('ID del ingrediente:', ingredientId);
 
         // Obtener token del localStorage o sessionStorage
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -15,7 +13,6 @@ async function getIngredienteById(ingredientId) {
 
         // Usar la misma URL base que en otros archivos
         const url = `https://api-micro.wapifood.com/inventory/ingredients/${ingredientId}`;
-        console.log('URL de la petición:', url);
 
         const response = await fetch(url, {
             method: 'GET',
@@ -25,8 +22,6 @@ async function getIngredienteById(ingredientId) {
                 'ngrok-skip-browser-warning': 'true' // Si usas ngrok
             }
         });
-
-        console.log('Respuesta HTTP:', response.status, response.statusText);
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -38,7 +33,6 @@ async function getIngredienteById(ingredientId) {
         }
 
         const data = await response.json();
-        console.log('Datos recibidos:', data);
         
         // Verificar estructura de la respuesta
         if (data && (data.id_ingredient || data.id)) {

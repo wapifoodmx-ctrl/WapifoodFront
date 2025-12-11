@@ -7,7 +7,7 @@ export default function ProductCard({ producto, onAddToCart, onViewDetails }) {
         <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-gray-100 overflow-hidden group">
             <div className="relative h-48 overflow-hidden">
                 <Image
-                    src={producto.imagen}
+                    src={producto.image || producto.imagen || '/placeholder-food.png'}
                     alt={`Imagen de ${producto.nombre}`}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     width={300}

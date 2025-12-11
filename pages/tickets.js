@@ -7,7 +7,8 @@ export default function Tickets() {
         <>
         <Head>
                 <title>Tickets - WapiFood</title>
-                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+                <meta name="description" content="Historial y gestión de tickets de venta" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Navbar fijo */}

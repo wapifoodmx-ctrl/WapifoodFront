@@ -157,7 +157,6 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                             category: ingredienteData.category || 'producto',
                             confirmation_code: '0000' // Código por defecto para actualización automática
                         });
-                        console.log('✅ Ingrediente actualizado con el nuevo nombre del producto');
                     }
                 } catch (error) {
                     console.error('❌ Error al actualizar ingrediente:', error);
@@ -203,7 +202,6 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
 
             // Si se marca "Agregar receta" (sin inventario)
             if (values.agregarReceta && !values.agregarInventario) {
-                console.log("Agregar receta funcionalidad pendiente");
             }
 
             const successMessage = tempInventoryData && values.agregarInventario

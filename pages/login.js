@@ -9,7 +9,8 @@ export default function Login() {
     <>
     <Head>
                 <title>Login - WapiFood</title>
-                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+                <meta name="description" content="Inicia sesión para acceder a tu restaurante" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
       <Header />
       <LoginForm />

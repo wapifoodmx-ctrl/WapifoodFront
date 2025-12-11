@@ -323,8 +323,7 @@ export default function Ticketview() {
     }, [activeTab]);
 
     const handleCardClick = (ticket) => {
-        console.log('Ticket seleccionado:', ticket); // Debug
-        console.log('Order UUID:', ticket.order_uuid); // Debug
+   
         setSelectedTicket(ticket);
         setIsModalOpen(true);
     };

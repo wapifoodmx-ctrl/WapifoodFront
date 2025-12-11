@@ -6,7 +6,8 @@ export default function PuntoDeVenta() {
     <>
     <Head>
                 <title>Punto de Venta - WapiFood</title>
-                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+                <meta name="description" content="Sistema de punto de venta para procesar órdenes rápidamente" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
     <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
       {/* Fondo decorativo */}
