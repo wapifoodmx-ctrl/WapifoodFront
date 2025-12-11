@@ -11,17 +11,21 @@ import postCategoria from "../useCases/postCategoria";
 import ModalMessage from "../components/ModalMessage";
 import { postInventarioIngredientes } from "../useCases/postInventarioIngredientes";
 import { postRecetas } from "../useCases/postRecetas";
+import RecipeModalForProduct from "../components/RecipeModalForProduct";
 
 export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh, categories, onAvailabilityChange }) {
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);
     const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
     const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
+    const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [modalMessage, setModalMessage] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingInventory, setIsLoadingInventory] = useState(false);
     const [tempInventoryData, setTempInventoryData] = useState(null);
     const [currentProductName, setCurrentProductName] = useState("");
+    const [recipeProductName, setRecipeProductName] = useState("");
+    const [pendingRecipeData, setPendingRecipeData] = useState(null);
     const [inventoryFormData, setInventoryFormData] = useState({
         cantidad: "",
         costo: "",
@@ -38,13 +42,23 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
         setIsProductoModalOpen(false);
         setIsCategoriaModalOpen(false);
         setIsInventoryModalOpen(false);
+        setIsRecipeModalOpen(false);
         setTempInventoryData(null);
         setCurrentProductName("");
+        setRecipeProductName("");
+        setPendingRecipeData(null);
         setInventoryFormData({
             cantidad: "",
             costo: "",
             comentarios: ""
         });
+    };
+
+    // Agregar esta función después de closeModals
+    const handleSaveRecipe = async (ingredients) => {
+        setPendingRecipeData(ingredients);
+        setIsRecipeModalOpen(false);
+        setModalMessage("Receta guardada. Presiona 'Guardar' para confirmar el producto con la receta.");
     };
 
     const handleSearchChange = (e) => {
@@ -281,7 +295,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
 
                                         let ingredientId = null;
 
-                                        // PASO 2: Si hay datos temporales de inventario, crear el ingrediente
+                                        // PASO 2: Si hay datos de inventario
                                         if (tempInventoryData && values.agregarInventario) {
                                             const ingredientData = {
                                                 name: productName,
@@ -298,10 +312,8 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                 throw new Error(result.error || 'Error al agregar al inventario');
                                             }
 
-                                            // Obtener el id_ingredient de la respuesta
                                             ingredientId = result.data?.id_ingredient;
 
-                                            // PASO 3: Crear receta automática oculta
                                             if (ingredientId) {
                                                 const recipeData = {
                                                     name: `recipeStatusNoDisplay.${productName}`,
@@ -318,16 +330,23 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                             }
                                         }
 
-                                        // Si se marca "Agregar receta" (sin inventario)
-                                        if (values.agregarReceta && !values.agregarInventario) {
-                                            console.log("Agregar receta funcionalidad pendiente");
+                                        // PASO 3: Si hay datos de receta personalizada
+                                        if (pendingRecipeData && values.agregarReceta) {
+                                            const recipeData = {
+                                                name: productName,
+                                                product_id: productId,
+                                                ingredients: pendingRecipeData
+                                            };
+
+                                            await postRecetas(recipeData);
                                         }
 
                                         const successMessage = tempInventoryData && values.agregarInventario
                                             ? "Producto creado, agregado al inventario y receta automática creada exitosamente"
-                                            : values.agregarReceta
-                                            ? "Producto creado y agregado a receta"
+                                            : pendingRecipeData && values.agregarReceta
+                                            ? "Producto creado con receta exitosamente"
                                             : "Producto creado exitosamente";
+                                            
                                         setModalMessage(successMessage);
                                         closeModals();
                                         await onRefresh();
@@ -460,6 +479,10 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                             // Desmarcar inventario si se marca receta
                                                             setFieldValue("agregarInventario", false);
                                                             setTempInventoryData(null);
+                                                            setRecipeProductName(values.nombre || "Producto");
+                                                            setIsRecipeModalOpen(true);
+                                                        } else {
+                                                            setPendingRecipeData(null);
                                                         }
                                                     }}
                                                 >
@@ -868,6 +891,17 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                     </div>
                 </div>
             )}
+
+            {/* Modal de Receta */}
+            <RecipeModalForProduct
+                isOpen={isRecipeModalOpen}
+                onClose={() => {
+                    setIsRecipeModalOpen(false);
+                    setPendingRecipeData(null);
+                }}
+                onSave={handleSaveRecipe}
+                productName={recipeProductName}
+            />
         </div>
     );
 }

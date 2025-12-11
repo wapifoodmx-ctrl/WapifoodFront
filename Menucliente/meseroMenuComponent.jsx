@@ -113,7 +113,7 @@ export default function MeseroMenuComponent() {
             const response = await loginMesero(values.email, values.access_code);
             
             // Guardar token y datos del mesero
-            localStorage.setItem('authToken', response.access_token);
+            localStorage.setItem('token', response.access_token);
             localStorage.setItem('meseroData', JSON.stringify({
                 name: response.mesero_name,
                 restaurant: response.restaurant_name,
@@ -268,7 +268,7 @@ export default function MeseroMenuComponent() {
     // Cerrar sesión del mesero
     const cerrarSesionMesero = () => {
         // Limpiar todos los datos
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('token');
         localStorage.removeItem('meseroData');
         localStorage.removeItem('numeroMesa_mesero');
         localStorage.removeItem('ordenActiva_mesero');

@@ -95,6 +95,8 @@ export default function Navbar() {
     const recetas = () => router.push('/recetas');
     const inventarios = () => router.push('/inventarios');
     const meseros = () => router.push('/meseros');
+    // Agregar la función para payments
+    const opcionesDePago = () => router.push('/payments');
 
     const checkSubscriptionStatus = async () => {
         try {
@@ -598,6 +600,13 @@ export default function Navbar() {
                                             <button
                                                 className="flex w-auto gap-2 cursor-pointer from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:text-green-600 hover:scale-105 transition-all duration-200"
                                                 onClick={MiPerfil}
+                                            >
+                                                <span className="self-center">{config[item].icon}</span> {config[item].title}
+                                            </button>
+                                        ) : item === "Ventas" ? (
+                                            <button
+                                                className="flex w-auto gap-2 cursor-pointer from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:text-green-600 hover:scale-105 transition-all duration-200"
+                                                onClick={opcionesDePago}
                                             >
                                                 <span className="self-center">{config[item].icon}</span> {config[item].title}
                                             </button>

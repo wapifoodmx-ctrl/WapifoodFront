@@ -13,11 +13,13 @@ import { postRecetas } from "../useCases/postRecetas";
 import { getRecetas } from "../useCases/getRecetas";
 import putEditarIngrediente from "../useCases/putEditarIngrediente";
 import ModalMessage from "../components/ModalMessage";
+import RecipeModalForProduct from "../components/RecipeModalForProduct";
 
 export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh, availabilityFilter }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
+    const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [modalMessage, setModalMessage] = useState(null);
@@ -31,6 +33,8 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     });
     const [existingRecipes, setExistingRecipes] = useState([]);
     const [loadingRecipes, setLoadingRecipes] = useState(true);
+    const [recipeProductName, setRecipeProductName] = useState("");
+    const [pendingRecipeData, setPendingRecipeData] = useState(null);
 
     useEffect(() => {
         const timeout = setTimeout(() => setLoading(false), 1000);
@@ -59,6 +63,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         setIsEditModalOpen(false);
         setIsDeleteModalOpen(false);
         setIsInventoryModalOpen(false);
+        setIsRecipeModalOpen(false);
         setSelectedProduct(null);
         setTempInventoryData(null);
         setCurrentProductName("");
@@ -67,6 +72,8 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             costo: "",
             comentarios: ""
         });
+        setRecipeProductName("");
+        setPendingRecipeData(null);
     };
 
     const handleInventoryInputChange = (e) => {
@@ -112,12 +119,31 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         setTempInventoryData(null);
     };
 
-    // Verificar si un producto tiene receta existente
+    // Modificar la función productHasRecipe para que sea más general
     const productHasRecipe = (productId) => {
+        return existingRecipes.some(recipe => recipe.product_id === productId);
+    };
+
+    // Verificar si un producto tiene receta de inventario específicamente
+    const productHasInventoryRecipe = (productId) => {
         return existingRecipes.some(recipe => 
             recipe.product_id === productId && 
             recipe.name.startsWith('recipeStatusNoDisplay.')
         );
+    };
+
+    // Verificar si un producto tiene receta personalizada
+    const productHasCustomRecipe = (productId) => {
+        return existingRecipes.some(recipe => 
+            recipe.product_id === productId && 
+            !recipe.name.startsWith('recipeStatusNoDisplay.')
+        );
+    };
+
+    const handleSaveRecipe = async (ingredients) => {
+        setPendingRecipeData(ingredients);
+        setIsRecipeModalOpen(false);
+        setModalMessage("Receta guardada. Presiona 'Guardar' para confirmar.");
     };
 
     const handleUpdateProduct = async (values, imageFile) => {
@@ -126,7 +152,6 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
 
             const productId = values.id_products;
             const productName = values.name;
-            let ingredientId = null;
 
             // Buscar si el producto tiene una receta de inventario (recipeStatusNoDisplay)
             const recetaInventario = existingRecipes.find(receta => 
@@ -200,18 +225,24 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                 }
             }
 
-            // Si se marca "Agregar receta" (sin inventario)
-            if (values.agregarReceta && !values.agregarInventario) {
+            // Si hay datos de receta personalizada
+            if (pendingRecipeData && values.agregarReceta) {
+                const recipeData = {
+                    name: productName,
+                    product_id: productId,
+                    ingredients: pendingRecipeData
+                };
+
+                await postRecetas(recipeData);
             }
 
             const successMessage = tempInventoryData && values.agregarInventario
                 ? "Producto actualizado, agregado al inventario y receta automática creada exitosamente"
-                : values.agregarReceta
-                ? "Producto actualizado y agregado a receta"
+                : pendingRecipeData && values.agregarReceta
+                ? "Producto actualizado con receta exitosamente"
                 : "Producto actualizado exitosamente";
 
             setModalMessage(successMessage);
-            
             closeModals();
             if (onRefresh) {
                 await onRefresh();
@@ -532,10 +563,30 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                             {/* Checkboxes condicionales de Inventario y Receta */}
                                             <div>
                                                 {(() => {
-                                                    const hasRecipe = productHasRecipe(selectedProduct.id_products);
+                                                    const hasAnyRecipe = productHasRecipe(selectedProduct.id_products);
+                                                    const hasInventoryRecipe = productHasInventoryRecipe(selectedProduct.id_products);
+                                                    const hasCustomRecipe = productHasCustomRecipe(selectedProduct.id_products);
                                                     
-                                                    if (hasRecipe) {
-                                                        // Producto YA tiene receta: solo mostrar checkbox de inventario bloqueado
+                                                    if (hasCustomRecipe) {
+                                                        // Producto tiene receta personalizada: solo mostrar checkbox de receta bloqueado
+                                                        return (
+                                                            <label className="flex items-center gap-2 cursor-not-allowed group opacity-60">
+                                                                <div className="relative">
+                                                                    <Field
+                                                                        type="checkbox"
+                                                                        name="agregarReceta"
+                                                                        disabled={true}
+                                                                        checked={true}
+                                                                        className="w-5 h-5 border-2 border-gray-300 rounded cursor-not-allowed checked:bg-green-500 checked:border-green-500 transition-all duration-200"
+                                                                    />
+                                                                </div>
+                                                                <span className="text-sm font-medium text-gray-500">
+                                                                    Agregado a Recetas
+                                                                </span>
+                                                            </label>
+                                                        );
+                                                    } else if (hasInventoryRecipe) {
+                                                        // Producto tiene receta de inventario: solo mostrar checkbox de inventario bloqueado
                                                         return (
                                                             <label className="flex items-center gap-2 cursor-not-allowed group opacity-60">
                                                                 <div className="relative">
@@ -581,7 +632,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                                             className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 pointer-events-none"
                                                                         />
                                                                     </div>
-                                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colors">
+                                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colores">
                                                                         Agregar a inventario
                                                                     </span>
                                                                 </label>
@@ -597,6 +648,10 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                                             // Desmarcar inventario si se marca receta
                                                                             setFieldValue("agregarInventario", false);
                                                                             setTempInventoryData(null);
+                                                                            setRecipeProductName(selectedProduct.name);
+                                                                            setIsRecipeModalOpen(true);
+                                                                        } else {
+                                                                            setPendingRecipeData(null);
                                                                         }
                                                                     }}
                                                                 >
@@ -604,10 +659,10 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                                         <Field
                                                                             type="checkbox"
                                                                             name="agregarReceta"
-                                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200"
+                                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 pointer-events-none"
                                                                         />
                                                                     </div>
-                                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colors">
+                                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colores">
                                                                         Agregar receta
                                                                     </span>
                                                                 </label>
@@ -871,6 +926,17 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                     </div>
                 </div>
             )}
+
+            {/* Modal de Receta */}
+            <RecipeModalForProduct
+                isOpen={isRecipeModalOpen}
+                onClose={() => {
+                    setIsRecipeModalOpen(false);
+                    setPendingRecipeData(null);
+                }}
+                onSave={handleSaveRecipe}
+                productName={recipeProductName}
+            />
 
         </div>
     );
