@@ -3,6 +3,7 @@ import { IoClose } from 'react-icons/io5';
 import { FaFilePdf } from 'react-icons/fa';
 import { QRCodeCanvas } from 'qrcode.react';
 import { getTicket } from '@/useCases/getTicket';
+import { getTicketMeserosDetails } from '@/useCases/getTicketMeserosDetails';
 import { generateTicketPDF, TICKET_SIZES } from '@/utils/pdfGenerator';
 
 export default function TicketModal({ isOpen, onClose, orderUuid }) {
@@ -10,12 +11,14 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [selectedSize, setSelectedSize] = useState('STANDARD_80');
+    const [meseroName, setMeseroName] = useState('');
 
     useEffect(() => {
         
         
         if (isOpen && orderUuid) {
             fetchTicketData();
+            fetchMeseroData();
         } else {
         }
     }, [isOpen, orderUuid]);
@@ -32,6 +35,24 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
             setError('Error al cargar los datos del ticket');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchMeseroData = async () => {
+        try {
+            const meserosData = await getTicketMeserosDetails();
+            
+            // Buscar la orden actual en los datos de meseros
+            const currentOrder = meserosData.find(order => order.order_uuid === orderUuid);
+            
+            if (currentOrder && currentOrder.waiters && currentOrder.waiters.length > 0) {
+                // Obtener el último mesero (quien finalizó la orden)
+                const lastWaiter = currentOrder.waiters[currentOrder.waiters.length - 1];
+                setMeseroName(lastWaiter.name);
+            }
+        } catch (err) {
+            console.error('Error al obtener datos del mesero:', err);
+            // No mostrar error al usuario, simplemente no mostrar mesero
         }
     };
 
@@ -105,6 +126,10 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
         // Calcular descuento total
         const totalDiscountInfo = calculateTotalDiscount();
         
+        // Determinar si debe mostrar mesero
+        // NO mostrar si: es mesa 1 (punto de venta) O si no hay meseros y no es mesa 1 (auto cobro)
+        const shouldShowWaiter = ticketData.mesa_number !== 1 && meseroName;
+        
         // Preparar datos para el PDF
         const pdfData = {
             id_pedidos: ticketData.order_id,
@@ -129,7 +154,8 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
             subtotal: totalDiscountInfo.hasDiscount ? totalDiscountInfo.originalTotal : null,
             descuento_total: totalDiscountInfo.hasDiscount ? totalDiscountInfo.discount : null,
             total: ticketData.total,
-            metodo_pago: displayPaymentMethod(ticketData.metodo_pago)
+            metodo_pago: displayPaymentMethod(ticketData.metodo_pago),
+            mesero: shouldShowWaiter ? meseroName : null
         };
         
         generateTicketPDF(pdfData, sizeKey);
@@ -339,6 +365,15 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                                             <span>${parseFloat(ticketData.total).toFixed(2)}</span>
                                         </div>
                                     </div>
+
+                                    {/* Mesero que atendió */}
+                                    {ticketData.mesa_number !== 1 && meseroName && (
+                                        <div className="mt-3 pt-3 border-t text-center">
+                                            <p className="text-sm text-gray-600">
+                                                Le atendió: <span className="font-semibold text-gray-800">{meseroName}</span>
+                                            </p>
+                                        </div>
+                                    )}
 
                                     {/* QR */}
                                     <div className="mt-4 text-center">

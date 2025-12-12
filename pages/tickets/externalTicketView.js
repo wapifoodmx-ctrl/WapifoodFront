@@ -5,6 +5,7 @@ import { FaCheckCircle, FaClock, FaUtensils, FaReceipt } from 'react-icons/fa';
 import { MdRestaurant } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { QRCodeCanvas } from 'qrcode.react';
+import { getTicketMeserosDetails } from '../../useCases/getTicketMeserosDetails';
 
 export default function ExternalTicketView() {
     const router = useRouter();
@@ -13,6 +14,7 @@ export default function ExternalTicketView() {
     const [ticketData, setTicketData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [meseroName, setMeseroName] = useState('');
 
     useEffect(() => {
         if (!uuid) return;
@@ -38,6 +40,27 @@ export default function ExternalTicketView() {
 
                 const data = await response.json();
                 setTicketData(data);
+                
+                // Cargar información del mesero (sin autenticación requerida)
+                try {
+                    const meserosData = await getTicketMeserosDetails();
+                    
+                    // Buscar la orden actual en los datos de meseros
+                    const currentOrder = meserosData.find(order => order.order_uuid === uuid);
+                    
+                    if (currentOrder && currentOrder.waiters && currentOrder.waiters.length > 0) {
+                        // Obtener el último mesero (quien finalizó la orden)
+                        const lastWaiter = currentOrder.waiters[currentOrder.waiters.length - 1];
+                        
+                        // Solo mostrar si no es mesa 1 (punto de venta)
+                        if (data.mesa_number !== 1) {
+                            setMeseroName(lastWaiter.name);
+                        }
+                    }
+                } catch (meseroError) {
+                    console.log('No se pudo cargar información del mesero:', meseroError);
+                    // No mostrar error al usuario, simplemente no mostrar mesero
+                }
             } catch (err) {
                 console.error('Error al cargar el ticket:', err);
                 setError('No se pudo cargar el ticket. Verifica el código QR.');
@@ -232,6 +255,16 @@ export default function ExternalTicketView() {
                                     {displayPaymentMethod(ticketData.metodo_pago)}
                                 </p>
                             </div>
+                            
+                            {/* Mostrar mesero si existe */}
+                            {meseroName && (
+                                <div className="bg-green-50 rounded-lg p-3 col-span-2 border border-green-200">
+                                    <p className="text-xs text-green-600 mb-1">Le atendió</p>
+                                    <p className="font-bold text-green-800 text-lg">
+                                        {meseroName}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 

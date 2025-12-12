@@ -445,10 +445,7 @@ export default function VistaCocina() {
                     })
                 );
 
-                // Si no es mesa 1, liberar la mesa
-                if (tableNumber !== 1 && tablesData) {
-                    await updateTableStatus(tableNumber, 'Libre');
-                }
+                // NO liberar la mesa al cancelar - solo al finalizar
             } else {
                 // Si la orden estaba en apiTables (pendientes), moverla desde ahí
                 setApiTables((prevTables) =>

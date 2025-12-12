@@ -19,6 +19,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import TicketModal from "../../components/TicketModal";
 // Importar generadores de PDF
 import { generateTicketPDF, generateTicketsReportPDF } from "../../utils/pdfGenerator";
+import { getMeseros } from "../../useCases/getMeseros";
+import { getTicketMeserosDetails } from "../../useCases/getTicketMeserosDetails";
 
 export default function Ticketview() {
     const router = useRouter();
@@ -39,6 +41,11 @@ export default function Ticketview() {
     const [showSuccessfulOrders, setShowSuccessfulOrders] = useState(true);
     // Estado para el filtro de tickets: 'todos', 'finalizados', 'cancelados'
     const [ticketFilter, setTicketFilter] = useState('todos');
+    // Estados para filtro de meseros
+    const [showMeseroModal, setShowMeseroModal] = useState(false);
+    const [meseros, setMeseros] = useState([]);
+    const [selectedMesero, setSelectedMesero] = useState(null);
+    const [meserosOrdersData, setMeserosOrdersData] = useState([]);
 
     // Función para formatear fecha a YYYY-MM-DD
     const formatDateToAPI = (date) => {
@@ -412,6 +419,95 @@ export default function Ticketview() {
         setEndDate(null);
     };
 
+    // Función para manejar el click en la pestaña "Meseros"
+    const handleMeserosTabClick = async () => {
+        setActiveTab("meseros");
+        setShowMeseroModal(true);
+        
+        try {
+            // Cargar lista de meseros
+            const meserosData = await getMeseros();
+            setMeseros(meserosData);
+            
+            // Cargar datos de órdenes con meseros
+            const ordersData = await getTicketMeserosDetails();
+            setMeserosOrdersData(ordersData);
+        } catch (error) {
+            console.error('Error al cargar datos de meseros:', error);
+        }
+    };
+
+    // Función para seleccionar un mesero y filtrar sus tickets
+    const handleSelectMesero = async (mesero) => {
+        setSelectedMesero(mesero);
+        setShowMeseroModal(false);
+        
+        try {
+            // Obtener todas las órdenes del día (puedes cambiar esto según el periodo deseado)
+            const response = await getOrdersDia();
+            
+            if (!response.success) {
+                console.error("Error fetching orders:", response.error);
+                return;
+            }
+
+            const allOrders = response.data;
+            
+            // Filtrar órdenes donde participó el mesero seleccionado
+            const meseroOrders = meserosOrdersData.filter(order => 
+                order.waiters.some(waiter => waiter.uuid === mesero.uuid)
+            );
+            
+            const meseroOrderUuids = meseroOrders.map(order => order.order_uuid);
+            
+            // Mapear y filtrar las órdenes
+            const filteredOrders = allOrders
+                .filter(order => meseroOrderUuids.includes(order.order_uuid))
+                .map(order => {
+                    const orderMeseroData = meserosOrdersData.find(o => o.order_uuid === order.order_uuid);
+                    const isFinalized = orderMeseroData && 
+                                       orderMeseroData.waiters.length > 0 && 
+                                       orderMeseroData.waiters[orderMeseroData.waiters.length - 1].uuid === mesero.uuid;
+                    
+                    return {
+                        id: order.order_uuid,
+                        mesa: `Mesa ${order.mesa_number}`,
+                        fecha: new Date(order.date_time).toLocaleDateString(),
+                        hora: new Date(order.date_time).toLocaleTimeString(),
+                        restaurante: order.restaurant_name,
+                        estado: order.state,
+                        statusOrden: order.order_status,
+                        metodoPago: order.metodo_pago,
+                        productos: order.products.map(product => ({
+                            nombre: product.product_name,
+                            cantidad: product.quantity,
+                            precio: parseFloat(product.unit_price),
+                            subtotal: parseFloat(product.subtotal),
+                            status: product.order_detail_status.toLowerCase() === "pendiente" ? null : product.order_detail_status.toLowerCase(),
+                            quantity: product.quantity,
+                            product_name: product.product_name,
+                            unit_price: product.unit_price
+                        })),
+                        total: parseFloat(order.total),
+                        date_time: order.date_time,
+                        order_uuid: order.order_uuid,
+                        restaurant_name: order.restaurant_name,
+                        order_status: order.order_status,
+                        metodo_pago: order.metodo_pago,
+                        ticket_number: order.ticket_number,
+                        finalizedByMesero: isFinalized, // Indicador para mostrar $
+                        meseros: orderMeseroData ? orderMeseroData.waiters : []
+                    };
+                });
+            
+            setTicketsData(filteredOrders.sort((a, b) => 
+                new Date(b.date_time) - new Date(a.date_time)
+            ));
+        } catch (error) {
+            console.error('Error al cargar tickets del mesero:', error);
+        }
+    };
+
     // Función para formatear fecha
     const formatDate = (date) => {
         if (!date) return '';
@@ -536,6 +632,14 @@ export default function Ticketview() {
                 >
                     Seleccionar Fecha
                 </button>
+                <button
+                    className={`px-4 py-2 cursor-pointer ${
+                        activeTab === "meseros" ? "border-b-2 border-green-600 font-bold" : ""
+                    }`}
+                    onClick={handleMeserosTabClick}
+                >
+                    Meseros
+                </button>
             </div>
 
             {/* Contenido principal */}
@@ -548,6 +652,7 @@ export default function Ticketview() {
                             {activeTab === "semana" && "Tickets de esta Semana"}
                             {activeTab === "mes" && "Tickets del Mes"}
                             {activeTab === "Seleccionar Fecha" && "Tickets por Rango de Fecha"}
+                            {activeTab === "meseros" && `Tickets atendidos por ${selectedMesero ? selectedMesero.name : 'Mesero'}`}
                         </h2>
                         <p className="text-gray-600 text-sm">
                             {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''} encontrado{filteredTickets.length !== 1 ? 's' : ''}
@@ -596,9 +701,10 @@ export default function Ticketview() {
                                     const periodName = activeTab === "hoy" ? "Hoy" :
                                                      activeTab === "semana" ? "Semana" :
                                                      activeTab === "mes" ? "Mes" :
+                                                     activeTab === "meseros" && selectedMesero ? `Mesero: ${selectedMesero.name}` :
                                                      `${formatDate(startDate)} al ${formatDate(endDate)}`;
                                     // Determinar si debe agrupar por fecha
-                                    const shouldGroup = activeTab === "semana" || activeTab === "mes" || activeTab === "Seleccionar Fecha";
+                                    const shouldGroup = activeTab === "semana" || activeTab === "mes" || activeTab === "Seleccionar Fecha" || activeTab === "meseros";
                                     generateTicketsReportPDF(filteredTickets, periodName, shouldGroup);
                                 }}
                                 className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition-colors duration-200 font-semibold text-sm"
@@ -679,6 +785,10 @@ export default function Ticketview() {
                                                                     : 'bg-green-600'
                                                             }`}>
                                                                 #{ticket.ticket_number || 'N/A'}
+                                                                {/* Mostrar $ si el ticket fue finalizado por el mesero seleccionado */}
+                                                                {ticket.finalizedByMesero && (
+                                                                    <span className="ml-1">$</span>
+                                                                )}
                                                             </div>
                                                             
                                                             <div className="p-3 pr-10 flex-grow flex flex-col overflow-hidden">
@@ -694,6 +804,16 @@ export default function Ticketview() {
                                                                         {ticket.statusOrden}
                                                                     </span>
                                                                 </div>
+                                                                
+                                                                {/* Mostrar meseros si están disponibles */}
+                                                                {ticket.meseros && ticket.meseros.length > 0 && activeTab === "meseros" && (
+                                                                    <div className="text-xs text-gray-600 mb-2 flex-shrink-0">
+                                                                        <span className="font-semibold">Meseros: </span>
+                                                                        <span className="text-gray-500">
+                                                                            {ticket.meseros.map(m => m.name).join(', ')}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                                 
                                                                 {/* Hora - fija (fecha ya está en el header) */}
                                                                 <div className="flex justify-center text-xs text-gray-500 mb-2 flex-shrink-0">
@@ -782,6 +902,10 @@ export default function Ticketview() {
                                                 : 'bg-green-600'
                                         }`}>
                                             #{ticket.ticket_number || 'N/A'}
+                                            {/* Mostrar $ si el ticket fue finalizado por el mesero seleccionado */}
+                                            {ticket.finalizedByMesero && (
+                                                <span className="ml-1">$</span>
+                                            )}
                                         </div>
                                         
                                         <div className="p-3 pr-10 flex-grow flex flex-col overflow-hidden">
@@ -797,6 +921,16 @@ export default function Ticketview() {
                                                     {ticket.statusOrden}
                                                 </span>
                                             </div>
+                                            
+                                            {/* Mostrar meseros si están disponibles */}
+                                            {ticket.meseros && ticket.meseros.length > 0 && activeTab === "meseros" && (
+                                                <div className="text-xs text-gray-600 mb-2 flex-shrink-0">
+                                                    <span className="font-semibold">Meseros: </span>
+                                                    <span className="text-gray-500">
+                                                        {ticket.meseros.map(m => m.name).join(', ')}
+                                                    </span>
+                                                </div>
+                                            )}
                                             
                                             {/* Fecha y hora - fija */}
                                             <div className="flex justify-between text-xs text-gray-500 mb-2 flex-shrink-0">
@@ -991,6 +1125,65 @@ export default function Ticketview() {
                                 disabled={!startDate || !endDate}
                             >
                                 Aplicar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de selección de meseros */}
+            {showMeseroModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-gray-800">Selecciona un Mesero</h3>
+                            <button
+                                onClick={() => {
+                                    setShowMeseroModal(false);
+                                    setActiveTab("hoy");
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <IoClose size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            {meseros.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>No hay meseros registrados</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    {meseros.map((mesero) => (
+                                        <button
+                                            key={mesero.uuid}
+                                            onClick={() => handleSelectMesero(mesero)}
+                                            className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-600 hover:bg-green-50 transition-all duration-200 text-left"
+                                        >
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-gray-800 text-lg">
+                                                    {mesero.name}
+                                                </span>
+                                                <span className="text-xs text-gray-500 mt-1">
+                                                    {mesero.email || 'Sin email'}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="sticky bottom-0 bg-gray-50 border-t p-4">
+                            <button
+                                onClick={() => {
+                                    setShowMeseroModal(false);
+                                    setActiveTab("hoy");
+                                }}
+                                className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                            >
+                                Cancelar
                             </button>
                         </div>
                     </div>

@@ -279,6 +279,14 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
             yPos += 5;
         }
 
+        // ==== MESERO QUE ATENDIÓ ====
+        if (ticketData.mesero) {
+            pdf.setFontSize(sizeConfig.fontSize.normal);
+            pdf.setFont('helvetica', 'italic');
+            pdf.text(`Le atendio: ${ticketData.mesero}`, pageWidth / 2, yPos, { align: 'center' });
+            yPos += 5;
+        }
+
         // ==== FOOTER ====
         pdf.setLineWidth(0.3);
         pdf.line(leftMargin, yPos, pageWidth - rightMargin, yPos);
