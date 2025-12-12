@@ -16,6 +16,7 @@ import TicketModal from "@/components/TicketModal";
 import { getTicket } from "@/useCases/getTicket";
 import descontarInventario from "@/useCases/inventarioDescontar"; 
 import { getLatestOrdersByPlan } from "@/useCases/getLatestOrdersByPlan";
+import { vincularMeseroOrden } from "@/useCases/vincularMeseroOrden";
 import ProductCard from "./ ProductCard";
 import CartModal from "./CartModal";
 import LoginMeseroModal from "./LoginMeseroModal";
@@ -117,13 +118,15 @@ export default function MeseroMenuComponent() {
             localStorage.setItem('meseroData', JSON.stringify({
                 name: response.mesero_name,
                 restaurant: response.restaurant_name,
-                email: values.email
+                email: values.email,
+                uuid: response.mesero_uuid
             }));
 
             setMeseroData({
                 name: response.mesero_name,
                 restaurant: response.restaurant_name,
-                email: values.email
+                email: values.email,
+                uuid: response.mesero_uuid
             });
 
             setIsAuthenticated(true);
@@ -268,7 +271,7 @@ export default function MeseroMenuComponent() {
     // Cerrar sesión del mesero
     const cerrarSesionMesero = () => {
         // Limpiar todos los datos
-        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
         localStorage.removeItem('meseroData');
         localStorage.removeItem('numeroMesa_mesero');
         localStorage.removeItem('ordenActiva_mesero');
@@ -286,6 +289,116 @@ export default function MeseroMenuComponent() {
         toast.info('Sesión cerrada exitosamente');
         router.push('/');
     };
+
+    // Monitorear estado de la mesa y orden
+    const monitorearEstadoMesaYOrden = async () => {
+        // Solo monitorear si hay una orden activa
+        if (!numeroMesa || !ordenActiva || !ordenActiva.order_uuid) return;
+
+        try {
+            // Verificar estado de la orden activa
+            const ticketData = await getTicket(ordenActiva.order_uuid);
+            
+            if (ticketData) {
+                // Detectar orden cancelada
+                if (ticketData.order_status === "Cancelado") {
+                    toast.warning('La orden fue cancelada desde otro dispositivo');
+                    
+                    // Limpiar SOLO datos de la orden (mantener número de mesa)
+                    localStorage.removeItem("ordenActiva_mesero");
+                    localStorage.removeItem("historialPedidos_mesero");
+                    localStorage.removeItem("carrito_mesero");
+                    
+                    setHistorialPedidos([]);
+                    setOrdenActiva(null);
+                    setTotalFinal(0);
+                    setCarrito([]);
+                    
+                    // Actualizar lista de mesas
+                    await cargarOrdenesActivas();
+                    
+                    return;
+                }
+                
+                // Detectar orden finalizada desde otro dispositivo
+                if (ticketData.order_status === "Finalizado") {
+                    // Mostrar ticket
+                    const ticketsEnabled = localStorage.getItem('tickets');
+                    if (ticketsEnabled === 'true') {
+                        setCompletedOrderUuid(ordenActiva.order_uuid);
+                        setShowTicketModal(true);
+                    }
+                    
+                    // Limpiar SOLO datos de la orden (mantener número de mesa)
+                    localStorage.removeItem("ordenActiva_mesero");
+                    localStorage.removeItem("historialPedidos_mesero");
+                    localStorage.removeItem("carrito_mesero");
+                    
+                    setHistorialPedidos([]);
+                    setOrdenActiva(null);
+                    setTotalFinal(0);
+                    setCarrito([]);
+                    
+                    toast.success("La orden fue finalizada desde otro dispositivo");
+                    
+                    // Actualizar lista de mesas
+                    await cargarOrdenesActivas();
+                    
+                    return;
+                }
+
+                // Actualizar total si cambió
+                if (ticketData.total && parseFloat(ticketData.total) !== totalFinal) {
+                    setTotalFinal(parseFloat(ticketData.total));
+                }
+
+                // Actualizar historial si cambió (por productos agregados desde otro dispositivo)
+                if (ticketData.products && Array.isArray(ticketData.products)) {
+                    const productosActualizados = ticketData.products.map(producto => ({
+                        id_products: producto.id_products || producto.product_id,
+                        nombre: producto.product_name,
+                        name: producto.product_name,
+                        cantidad: producto.quantity,
+                        precio: parseFloat(producto.unit_price),
+                        price: parseFloat(producto.unit_price),
+                        comentario: "",
+                        ingredientesExcluidos: [],
+                        order_id: ordenActiva.id_orders,
+                        fecha_orden: ordenActiva.date_time,
+                        estado: producto.order_detail_status
+                    }));
+
+                    // Solo actualizar si la cantidad de productos cambió
+                    if (productosActualizados.length !== historialPedidos.length) {
+                        setHistorialPedidos(productosActualizados);
+                        localStorage.setItem("historialPedidos_mesero", JSON.stringify(productosActualizados));
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error al monitorear estado de la orden:', error);
+        }
+    };
+
+    // useEffect para inicializar el monitoreo cuando hay una mesa seleccionada
+    useEffect(() => {
+        let intervalId;
+        
+        if (numeroMesa && isAuthenticated) {
+            // Ejecutar inmediatamente la primera vez
+            monitorearEstadoMesaYOrden();
+            
+            // Configurar intervalo de 45 segundos
+            intervalId = setInterval(monitorearEstadoMesaYOrden, 45000);
+        }
+        
+        // Limpiar intervalo cuando se desmonta o cambia la mesa
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [numeroMesa, isAuthenticated, ordenActiva?.order_uuid]);
 
     // Cargar productos
     useEffect(() => {
@@ -427,41 +540,47 @@ export default function MeseroMenuComponent() {
         setMensajeError("");
 
         try {
-            const productos = carrito.map((item, index) => {
-                const ingredientesBase = productos.find(p => p.id_products === item.id_products)?.ingredientes || [];
-                const ingredientesFinales = ingredientesBase.filter(
-                    ing => !item.ingredientesExcluidos.includes(ing)
-                );
-
+            const productosParaEnviar = carrito.map((item, index) => {
                 return {
-                    product_id: item.id_products,
-                    quantity: item.cantidad,
-                    unit_price: item.precio,
-                    ingredientes: ingredientesFinales.join(", "),
-                    comentario: item.comentario || ""
+                    id: item.id_products,
+                    id_products: item.id_products,
+                    cantidad: item.cantidad,
+                    precio: item.precio,
+                    descuento: { tipo: 'porcentaje', valor: '', aplicado: false }
                 };
             });
 
-            const orderData = {
-                mesa_number: parseInt(numeroMesa),
-                productos: productos,
-                descuento: descuentoOrden.aplicado 
-                    ? (descuentoOrden.tipo === 'porcentaje' 
-                        ? parseFloat(descuentoOrden.valor) 
-                        : 0)
-                    : 0,
-                orderscol: `Orden creada por mesero: ${meseroData.name}`
-            };
+            // Preparar UUID si existe orden activa
+            const orderUuid = (ordenActiva && ordenActiva.order_uuid) ? ordenActiva.order_uuid : null;
 
-            // Si hay una orden activa, agregar su UUID
-            if (ordenActiva && ordenActiva.order_uuid) {
-                orderData.order_uuid = ordenActiva.order_uuid;
-            }
-
-            const response = await createSimpleClientOrder(orderData);
+            const response = await createSimpleClientOrder(
+                productosParaEnviar, 
+                parseInt(numeroMesa), 
+                orderUuid,
+                descuentoOrden
+            );
 
             if (!response || !response.order_uuid) {
                 throw new Error('No se recibió un UUID de orden válido');
+            }
+
+            // Vincular mesero a la orden
+            if (meseroData && meseroData.uuid) {
+                try {
+                    console.log('Vinculando mesero a orden:', {
+                        order_uuid: response.order_uuid,
+                        waiter_uuid: meseroData.uuid
+                    });
+                    await vincularMeseroOrden(response.order_uuid, meseroData.uuid);
+                    console.log('Mesero vinculado exitosamente');
+                } catch (error) {
+                    console.warn('Error al vincular mesero (continuando):', error);
+                }
+            } else {
+                console.warn('No se puede vincular mesero - Datos faltantes:', {
+                    meseroData,
+                    uuid: meseroData?.uuid
+                });
             }
 
             // Actualizar o crear orden activa
@@ -474,21 +593,29 @@ export default function MeseroMenuComponent() {
                 date_time: response.date_time
             });
 
-            setHistorialPedidos((prevHistorial) => [
-                ...prevHistorial,
-                ...carrito.map((item) => ({
-                    id_products: item.id_products || item.id.split('-')[0],
-                    nombre: item.nombre || item.name,
-                    name: item.name || item.nombre,
-                    cantidad: item.cantidad,
-                    precio: item.precio || item.price,
-                    price: item.price || item.precio,
-                    comentario: item.comentario || "",
-                    ingredientesExcluidos: item.ingredientesExcluidos || [],
-                    order_id: response.id_orders,
-                    fecha_orden: response.date_time
-                })),
-            ]);
+            // Recargar historial completo desde el servidor
+            try {
+                const ticketData = await getTicket(response.order_uuid);
+                if (ticketData && ticketData.products) {
+                    const productosHistorial = ticketData.products.map(producto => ({
+                        id_products: producto.id_products || producto.product_id,
+                        nombre: producto.product_name,
+                        name: producto.product_name,
+                        cantidad: producto.quantity,
+                        precio: parseFloat(producto.unit_price),
+                        price: parseFloat(producto.unit_price),
+                        comentario: "",
+                        ingredientesExcluidos: [],
+                        order_id: response.id_orders,
+                        fecha_orden: response.date_time,
+                        estado: producto.order_detail_status
+                    }));
+                    setHistorialPedidos(productosHistorial);
+                    localStorage.setItem("historialPedidos_mesero", JSON.stringify(productosHistorial));
+                }
+            } catch (error) {
+                console.warn('Error al recargar historial desde servidor:', error);
+            }
 
             setCarrito([]);
             setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
@@ -551,6 +678,26 @@ export default function MeseroMenuComponent() {
 
         try {
             const currentOrderUuid = ordenActiva.order_uuid;
+            
+            // Vincular mesero a la orden antes de finalizar
+            if (meseroData && meseroData.uuid) {
+                try {
+                    console.log('Vinculando mesero a orden (confirmarPago):', {
+                        order_uuid: currentOrderUuid,
+                        waiter_uuid: meseroData.uuid
+                    });
+                    await vincularMeseroOrden(currentOrderUuid, meseroData.uuid);
+                    console.log('Mesero vinculado exitosamente (confirmarPago)');
+                } catch (error) {
+                    console.warn('Error al vincular mesero (continuando):', error);
+                }
+            } else {
+                console.warn('No se puede vincular mesero en confirmarPago - Datos faltantes:', {
+                    meseroData,
+                    uuid: meseroData?.uuid
+                });
+            }
+            
             const response = await endOrder(currentOrderUuid, metodoPago);
             
             if (response && (response.success !== false)) {
@@ -870,7 +1017,7 @@ export default function MeseroMenuComponent() {
                                         )
                                     );
                                 } else {
-                                    abrirModal(prod);
+                                    agregarAlCarrito(prod);
                                 }
                             }}
                             onViewDetails={abrirModal}
@@ -938,16 +1085,7 @@ export default function MeseroMenuComponent() {
                 onClose={() => setModalTotalOpen(false)}
                 onSelectMetodoPago={setMetodoPago}
                 onConfirmarPago={confirmarPago}
-                onRequestConfirmationCode={solicitarCodigoConfirmacion}
-            />
-
-            <ConfirmationCodeModal
-                isOpen={modalConfirmacionCodigoOpen}
-                codigoEsperado={codigoConfirmacionEsperado}
-                isValidando={isValidandoCode}
-                mensajeError={errorCodigoConfirmacion}
-                onClose={cerrarModalConfirmacionCodigo}
-                onConfirm={validarCodigoConfirmacion}
+                onRequestConfirmationCode={confirmarPago}
             />
 
             <ProductDetailModal
