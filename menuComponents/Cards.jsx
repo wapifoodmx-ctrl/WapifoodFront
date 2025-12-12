@@ -14,6 +14,7 @@ import { getRecetas } from "../useCases/getRecetas";
 import putEditarIngrediente from "../useCases/putEditarIngrediente";
 import ModalMessage from "../components/ModalMessage";
 import RecipeModalForProduct from "../components/RecipeModalForProduct";
+import getIngredientesInventario from "../useCases/getIngredientesInventario";
 
 export default function Cards({ products, searchTerm, selectedCategory, categories, onRefresh, availabilityFilter }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -35,6 +36,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     const [loadingRecipes, setLoadingRecipes] = useState(true);
     const [recipeProductName, setRecipeProductName] = useState("");
     const [pendingRecipeData, setPendingRecipeData] = useState(null);
+    const [ingredientesInsumo, setIngredientesInsumo] = useState([]);
 
     useEffect(() => {
         const timeout = setTimeout(() => setLoading(false), 1000);
@@ -53,6 +55,21 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             }
         };
         fetchRecipes();
+    }, []);
+
+    useEffect(() => {
+        const fetchIngredientes = async () => {
+            try {
+                const result = await getIngredientesInventario();
+                if (result.success) {
+                    const filtrados = result.data.filter(ing => ing.category === 'insumo');
+                    setIngredientesInsumo(filtrados);
+                }
+            } catch (error) {
+                console.error('Error al cargar ingredientes:', error);
+            }
+        };
+        fetchIngredientes();
     }, []);
 
     const truncateText = (text, maxLength) => {
@@ -936,6 +953,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                 }}
                 onSave={handleSaveRecipe}
                 productName={recipeProductName}
+                availableIngredients={ingredientesInsumo} // Agregar esta prop
             />
 
         </div>

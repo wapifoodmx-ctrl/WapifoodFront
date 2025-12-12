@@ -1,6 +1,8 @@
 import { BsCashCoin } from "react-icons/bs";
 import { FaCreditCard } from "react-icons/fa";
 import { IoMdPhonePortrait } from "react-icons/io";
+import { getTicket } from "../useCases/getTicket";
+import postProcessOrder from "../useCases/postMermas";
 
 export function ModalConfirmarPago({
     isOpen,
@@ -10,9 +12,38 @@ export function ModalConfirmarPago({
     setMetodoPago,
     mensajeError,
     isProcessingPayment,
-    confirmarPago
+    confirmarPago,
+    orderUuid // Necesitarás pasar el UUID de la orden
 }) {
     if (!isOpen) return null;
+
+    const handleConfirmarPago = async () => {
+        try {
+            // Primero ejecuta el proceso de pago original
+            await confirmarPago();
+
+            // Si el pago fue exitoso y hay un orderUuid, procesar en inventario
+            if (orderUuid) {
+                // Obtener los datos del ticket
+                const ticketData = await getTicket(orderUuid);
+
+                // Preparar los datos para postMermas
+                const orderData = {
+                    order_uuid: ticketData.order_uuid,
+                    order_status: ticketData.order_status,
+                    is_merma: false
+                };
+
+                // Procesar la orden en el inventario
+                await postProcessOrder(orderData);
+                
+                console.log('Orden procesada en inventario exitosamente');
+            }
+        } catch (error) {
+            console.error('Error al procesar el pago o inventario:', error);
+            // El error ya se maneja en confirmarPago, pero podrías agregar lógica adicional aquí
+        }
+    };
 
     return (
         <div
@@ -115,7 +146,7 @@ export function ModalConfirmarPago({
                                 ? 'bg-gray-300 cursor-not-allowed text-gray-500' 
                                 : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
                         }`}
-                        onClick={confirmarPago}
+                        onClick={handleConfirmarPago}
                         disabled={isProcessingPayment}
                     >
                         {isProcessingPayment ? (

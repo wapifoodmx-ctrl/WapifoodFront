@@ -1,5 +1,5 @@
 import { MdOutlineAttachMoney } from "react-icons/md";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa6";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FiFilter } from "react-icons/fi";
@@ -12,6 +12,7 @@ import ModalMessage from "../components/ModalMessage";
 import { postInventarioIngredientes } from "../useCases/postInventarioIngredientes";
 import { postRecetas } from "../useCases/postRecetas";
 import RecipeModalForProduct from "../components/RecipeModalForProduct";
+import getIngredientesInventario from "../useCases/getIngredientesInventario.js";
 
 export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh, categories, onAvailabilityChange }) {
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);
@@ -31,6 +32,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
         costo: "",
         comentarios: ""
     });
+    const [ingredientesInsumo, setIngredientesInsumo] = useState([]);
 
     // Función para capitalizar la primera letra
     const capitalizeFirstLetter = (string) => {
@@ -127,6 +129,21 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
         nombre_categoria: Yup.string().required("El nombre de la categoría es obligatorio"),
         descripcion_categoria: Yup.string().required("La descripción es obligatoria"),
     });
+
+    useEffect(() => {
+        const fetchIngredientes = async () => {
+            try {
+                const result = await getIngredientesInventario();
+                if (result.success) {
+                    const filtrados = result.data.filter(ing => ing.category === 'insumo');
+                    setIngredientesInsumo(filtrados);
+                }
+            } catch (error) {
+                console.error('Error al cargar ingredientes:', error);
+            }
+        };
+        fetchIngredientes();
+    }, []);
 
     return (
         <div className="bg-gradient-to-r from-white via-green-50 to-emerald-50 p-6 rounded-2xl shadow-lg border border-green-100 mb-8">
@@ -901,6 +918,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                 }}
                 onSave={handleSaveRecipe}
                 productName={recipeProductName}
+                availableIngredients={ingredientesInsumo} // Agregar esta prop
             />
         </div>
     );

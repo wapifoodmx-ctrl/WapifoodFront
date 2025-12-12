@@ -87,6 +87,28 @@ export default function RecipeModalForProduct({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    const fetchIngredientes = async () => {
+        try {
+            const result = await getIngredientesInventario();
+            
+            // Verificar que la petición fue exitosa y que hay datos
+            if (result.success && result.data) {
+                // Filtrar solo los ingredientes con category === 'insumo'
+                const ingredientesInsumo = result.data.filter(ing => ing.category === 'insumo');
+                setInsumos(ingredientesInsumo);
+            } else {
+                console.error('Error al cargar ingredientes:', result.message);
+                setInsumos([]);
+            }
+        } catch (error) {
+            console.error('Error al cargar ingredientes:', error);
+            setInsumos([]);
+        }
+    };
+    fetchIngredientes();
+}, []);
+
   const fetchInsumos = async () => {
     try {
       const result = await getIngredientesInventario();
