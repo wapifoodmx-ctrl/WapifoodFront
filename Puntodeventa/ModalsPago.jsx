@@ -13,19 +13,28 @@ export function ModalConfirmarPago({
     mensajeError,
     isProcessingPayment,
     confirmarPago,
-    orderUuid // Necesitarás pasar el UUID de la orden
+    orderUuid
 }) {
     if (!isOpen) return null;
 
     const handleConfirmarPago = async () => {
+        console.log('🔵 Botón Confirmar Pago clickeado');
+        
         try {
-            // Primero ejecuta el proceso de pago original
-            await confirmarPago();
+            // Ejecuta el proceso de pago original y obtiene el UUID de la orden
+            const orderUuid = await confirmarPago();
+            
+            console.log('🟢 confirmarPago ejecutado exitosamente');
+            console.log('🟢 orderUuid retornado:', orderUuid);
 
             // Si el pago fue exitoso y hay un orderUuid, procesar en inventario
             if (orderUuid) {
+                console.log('🟡 Iniciando llamada a getTicket con UUID:', orderUuid);
+                
                 // Obtener los datos del ticket
                 const ticketData = await getTicket(orderUuid);
+                
+                console.log('🟡 Datos del ticket obtenidos:', ticketData);
 
                 // Preparar los datos para postMermas
                 const orderData = {
@@ -34,13 +43,17 @@ export function ModalConfirmarPago({
                     is_merma: false
                 };
 
+                console.log('🟡 Enviando datos a postProcessOrder:', orderData);
+
                 // Procesar la orden en el inventario
-                await postProcessOrder(orderData);
+                const result = await postProcessOrder(orderData);
                 
-                console.log('Orden procesada en inventario exitosamente');
+                console.log('🟢 Orden procesada en inventario exitosamente:', result);
+            } else {
+                console.warn('⚠️ No hay orderUuid disponible para procesar inventario');
             }
         } catch (error) {
-            console.error('Error al procesar el pago o inventario:', error);
+            console.error('🔴 Error al procesar el pago o inventario:', error);
             // El error ya se maneja en confirmarPago, pero podrías agregar lógica adicional aquí
         }
     };

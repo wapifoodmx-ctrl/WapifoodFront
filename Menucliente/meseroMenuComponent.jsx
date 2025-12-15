@@ -25,6 +25,7 @@ import PaymentModal from "./PaymentModal";
 import ProductDetailModal from "./ProductDetailModal";
 import ConfirmationCodeModal from "./ConfirmationCodeModal";
 import { toast } from "@/components/Toast";
+import postProcessOrder from "@/useCases/postMermas";
 
 const categoriaOrden = {
     "Entradas": 0,
@@ -701,6 +702,65 @@ export default function MeseroMenuComponent() {
             const response = await endOrder(currentOrderUuid, metodoPago);
             
             if (response && (response.success !== false)) {
+                console.log('🔵 Pago confirmado exitosamente');
+                console.log('🟢 orderUuid:', currentOrderUuid);
+
+                // Descontar inventario después de confirmar el pago
+                try {
+                    // Obtener el ticket completo para tener los datos actualizados
+                    const ticketData = await getTicket(currentOrderUuid);
+                    
+                    if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
+                        const productosParaDescontar = ticketData.products
+                            .filter(producto => producto.order_detail_status !== "Cancelado")
+                            .map(producto => ({
+                                product_id: producto.product_id || producto.id_products,
+                                quantity: producto.quantity
+                            }));
+
+                        console.log('🟡 Descontando inventario:', productosParaDescontar);
+
+                        const inventarioResponse = await descontarInventario(productosParaDescontar);
+                        
+                        if (inventarioResponse.success) {
+                            console.log('🟢 Inventario descontado exitosamente:', inventarioResponse.data);
+                        } else {
+                            console.error('🔴 Error al descontar inventario:', inventarioResponse.error);
+                            // No detenemos el flujo, solo registramos el error
+                        }
+                    }
+                } catch (inventarioError) {
+                    console.error('🔴 Error al procesar descuento de inventario:', inventarioError);
+                    // No detenemos el flujo principal si falla el inventario
+                }
+
+                // Procesar orden en inventario con postMermas
+                try {
+                    console.log('🟡 Iniciando llamada a getTicket con UUID:', currentOrderUuid);
+                    
+                    // Obtener los datos del ticket
+                    const ticketData = await getTicket(currentOrderUuid);
+                    
+                    console.log('🟡 Datos del ticket obtenidos:', ticketData);
+
+                    // Preparar los datos para postProcessOrder
+                    const orderData = {
+                        order_uuid: ticketData.order_uuid,
+                        order_status: ticketData.order_status,
+                        is_merma: false
+                    };
+
+                    console.log('🟡 Enviando datos a postProcessOrder:', orderData);
+
+                    // Procesar la orden en el inventario
+                    const result = await postProcessOrder(orderData);
+                    
+                    console.log('🟢 Orden procesada en inventario exitosamente:', result);
+                } catch (postMermasError) {
+                    console.error('🔴 Error al procesar orden en inventario:', postMermasError);
+                    // No detenemos el flujo principal
+                }
+
                 // Limpiar datos
                 setHistorialPedidos([]);
                 setOrdenActiva(null);
@@ -728,7 +788,7 @@ export default function MeseroMenuComponent() {
                 throw new Error(response?.message || 'Error al procesar el pago');
             }
         } catch (error) {
-            console.error('Error al procesar el pago:', error);
+            console.error('🔴 Error al procesar el pago:', error);
             toast.error(`Error al procesar el pago: ${error.message}`);
             setErrorCodigoConfirmacion(error.message);
         } finally {

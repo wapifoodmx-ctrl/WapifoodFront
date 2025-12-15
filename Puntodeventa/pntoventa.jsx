@@ -45,6 +45,7 @@ export default function Pntoventa() {
     const [valorDescuento, setValorDescuento] = useState('');
     const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
     const [modalDescuentoOrdenOpen, setModalDescuentoOrdenOpen] = useState(false);
+    const [currentOrderUuid, setCurrentOrderUuid] = useState(null);
 
     // Mock para establecer permisos de ticket automáticamente
     useEffect(() => {
@@ -332,11 +333,11 @@ export default function Pntoventa() {
     const confirmarPago = async () => {
         if (pedidosPendientes.length === 0) {
             setMensajeError("No hay pedidos para procesar.");
-            return;
+            return null;
         }
 
         if (isProcessingPayment) {
-            return;
+            return null;
         }
 
         setIsProcessingPayment(true);
@@ -354,13 +355,17 @@ export default function Pntoventa() {
                 metodoPago
             );
 
+            // Guardar el UUID de la orden para usarlo en la petición de inventario
+            const orderUuid = response.order_uuid;
+            setCurrentOrderUuid(orderUuid);
+
             const cocinaEnabled = localStorage.getItem('cocinaSwitch');
             const switchEnabled = cocinaEnabled ? JSON.parse(cocinaEnabled) : false;
             
             const orderStatus = switchEnabled ? 'PuntoDeVenta' : 'Finalizado';
 
             const pagoResponse = await endOrderPuntoDeVenta(
-                response.order_uuid, 
+                orderUuid, 
                 metodoPago, 
                 orderStatus,
                 pedidosPendientes.map(item => ({
@@ -410,13 +415,16 @@ export default function Pntoventa() {
                 
                 const ticketsEnabled = localStorage.getItem('tickets');
                 if (ticketsEnabled === 'true') {
-                    setCompletedOrderUuid(response.order_uuid);
+                    setCompletedOrderUuid(orderUuid);
                     setShowTicketModal(true);
                 }
                 
                 setTimeout(() => {
                     setMensajeError("");
                 }, 3000);
+                
+                // Retornar el UUID de la orden para que pueda ser usado después
+                return orderUuid;
                 
             } else {
                 throw new Error(pagoResponse?.message || 'La API indicó que el pago no se pudo procesar');
@@ -440,6 +448,7 @@ export default function Pntoventa() {
             }
             
             setMensajeError(mensajeErrorUsuario);
+            return null;
             
         } finally {
             setIsProcessingPayment(false);
@@ -618,6 +627,7 @@ export default function Pntoventa() {
                     mensajeError={mensajeError}
                     isProcessingPayment={isProcessingPayment}
                     confirmarPago={confirmarPago}
+                    orderUuid={currentOrderUuid}
                 />
 
                 {/* Modal de detalles del producto */}

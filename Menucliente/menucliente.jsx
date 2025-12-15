@@ -14,9 +14,9 @@ import { getTables } from "@/useCases/getTables";
 import { updateTableStatus } from "@/useCases/tablesStatus";
 import { endOrder } from "@/useCases/endOrder";
 import getCodigoConfirmacion from "@/useCases/getCodogoConfirmacion";
+import descontarInventario from "@/useCases/inventarioDescontar";
 import TicketModal from "@/components/TicketModal";
 import { getTicket } from "@/useCases/getTicket";
-import descontarInventario from "@/useCases/inventarioDescontar"; 
 import ProductCard from "./ ProductCard";
 import CartModal from "./CartModal";
 import LoginModal from "./LoginModal";
@@ -25,6 +25,7 @@ import PaymentModal from "./PaymentModal";
 import ProductDetailModal from "./ProductDetailModal";
 import ConfirmationCodeModal from "./ConfirmationCodeModal";
 import kime from "@/pages/assets/img/kime.jpeg";
+import postProcessOrder from "@/useCases/postMermas";
 
 
 const categoriaOrden = {
@@ -91,71 +92,12 @@ export default function MenuCliente() {
     const [isValidandoCode, setIsValidandoCode] = useState(false);
     const [errorCodigoConfirmacion, setErrorCodigoConfirmacion] = useState('');
     
-    // *** Estado para identificar si la orden se finalizó en esta página ***
-    const [orderEndOnThisPage, setOrderEndOnThisPage] = useState(false);
-    
     // *** AGREGAR ESTE ESTADO AQUÍ ***
     const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
 
     useEffect(() => {
         localStorage.setItem('tickets', 'true');
     }, []);
-
-    // Verificar estado de la orden al cargar la página
-    const verificarEstadoOrdenInicial = async (orderUuid) => {
-        try {
-            const ticketData = await getTicket(orderUuid);
-            
-            if (ticketData) {
-                // Si la orden está finalizada o cancelada, limpiar datos
-                if (ticketData.order_status === "Finalizado") {
-                    
-                    // La orden fue finalizada (desde otro dispositivo)
-                    // Mostrar ticket antes de limpiar
-                    const ticketsEnabled = localStorage.getItem('tickets');
-                    if (ticketsEnabled === 'true') {
-                        setCompletedOrderUuid(orderUuid);
-                        setShowTicketModal(true);
-                    }
-                    
-                    // Limpiar datos locales (EXCEPTO número de mesa)
-                    localStorage.removeItem("ordenActiva1");
-                    localStorage.removeItem("historialPedidos1");
-                    localStorage.removeItem("carrito1");
-                    localStorage.removeItem("productosCanceladosSnapshot1");
-                    
-                    // Limpiar estados (EXCEPTO número de mesa)
-                    setHistorialPedidos([]);
-                    setOrdenActiva(null);
-                    setTotalFinal(0);
-                    setCarrito([]);
-                    
-                    setMensajeError("La orden anterior ya fue finalizada y pagada.");
-                    setTimeout(() => {
-                        setMensajeError("");
-                    }, 5000);
-                    
-                } else if (ticketData.order_status === "Cancelado") {
-                    setShowCancelledOrderModal(true);
-                    
-                } else {
-                    // Orden válida, cargar total
-                    cargarTotalFinal(orderUuid);
-                }
-            }
-        } catch (error) {
-            console.error('Error al verificar estado inicial de la orden:', error);
-            // Si hay error al obtener la orden, limpiar datos por seguridad (EXCEPTO número de mesa)
-            localStorage.removeItem("ordenActiva1");
-            localStorage.removeItem("historialPedidos1");
-            localStorage.removeItem("carrito1");
-            
-            setHistorialPedidos([]);
-            setOrdenActiva(null);
-            setTotalFinal(0);
-            setCarrito([]);
-        }
-    };
 
     // Función actualizada para monitorear tanto el estado de la mesa como la orden cada 45 segundos
     const monitorearEstadoMesaYOrden = async () => {
@@ -220,51 +162,12 @@ export default function MenuCliente() {
                     const ticketData = await getTicket(ordenActiva.order_uuid);
                     
                     if (ticketData) {
-                        // *** VERIFICACIÓN: Detectar orden cancelada o finalizada ***
+                        // *** NUEVA VERIFICACIÓN: Detectar orden cancelada ***
                         if (ticketData.order_status === "Cancelado") {
                             // console.log('Orden cancelada detectada por el listener');
                             
                             // Mostrar modal de orden cancelada automáticamente
                             setShowCancelledOrderModal(true);
-                            
-                            // No continuar con el resto del procesamiento
-                            return;
-                        }
-                        
-                        // *** VERIFICACIÓN: Detectar orden finalizada (pagada desde otro dispositivo) ***
-                        if (ticketData.order_status === "Finalizado") {
-                            // console.log('Orden finalizada detectada (pagada desde mesero u otro dispositivo)');
-                            
-                            // Verificar si NO se finalizó en esta página
-                            if (!orderEndOnThisPage) {
-                                // La orden fue finalizada desde otro dispositivo (cocina, mesero, etc.)
-                                
-                                // Mostrar ticket antes de limpiar
-                                const ticketsEnabled = localStorage.getItem('tickets');
-                                if (ticketsEnabled === 'true' && ordenActiva && ordenActiva.order_uuid) {
-                                    setCompletedOrderUuid(ordenActiva.order_uuid);
-                                    setShowTicketModal(true);
-                                }
-                                
-                                // Limpiar datos locales (EXCEPTO número de mesa)
-                                localStorage.removeItem("ordenActiva1");
-                                localStorage.removeItem("historialPedidos1");
-                                localStorage.removeItem("carrito1");
-                                localStorage.removeItem("productosCanceladosSnapshot1");
-                                
-                                // Limpiar estados (EXCEPTO número de mesa)
-                                setHistorialPedidos([]);
-                                setOrdenActiva(null);
-                                setTotalFinal(0);
-                                setCarrito([]);
-                                
-                                // Mostrar mensaje informativo
-                                setMensajeError("Tu orden ha sido finalizada y pagada desde otro dispositivo.");
-                                
-                                setTimeout(() => {
-                                    setMensajeError("");
-                                }, 5000);
-                            }
                             
                             // No continuar con el resto del procesamiento
                             return;
@@ -736,8 +639,7 @@ export default function MenuCliente() {
             const orden = JSON.parse(ordenActivaGuardada);
             setOrdenActiva(orden);
             if (orden && orden.order_uuid) {
-                // Verificar estado de la orden al cargar
-                verificarEstadoOrdenInicial(orden.order_uuid);
+                cargarTotalFinal(orden.order_uuid);
             }
         }
     }, []);
@@ -1121,9 +1023,59 @@ export default function MenuCliente() {
             const response = await endOrder(currentOrderUuid, metodoPago);
             
             if (response && (response.success !== false)) {
-                // *** Marcar que la orden se finalizó en esta página ***
-                setOrderEndOnThisPage(true);
-                
+                console.log('🔵 Pago confirmado exitosamente');
+                console.log('🟢 orderUuid:', currentOrderUuid);
+
+                // Descontar inventario después de confirmar el pago
+                try {
+                    // Construir el array de productos para descontar inventario
+                    const productosParaDescontar = historialPedidos.map(item => ({
+                        product_id: item.id_products,
+                        quantity: item.cantidad
+                    }));
+
+                    console.log('🟡 Descontando inventario:', productosParaDescontar);
+
+                    const inventarioResponse = await descontarInventario(productosParaDescontar);
+                    
+                    if (inventarioResponse.success) {
+                        console.log('🟢 Inventario descontado exitosamente:', inventarioResponse.data);
+                    } else {
+                        console.error('🔴 Error al descontar inventario:', inventarioResponse.error);
+                        // No detenemos el flujo, solo registramos el error
+                    }
+                } catch (inventarioError) {
+                    console.error('🔴 Error al procesar descuento de inventario:', inventarioError);
+                    // No detenemos el flujo principal si falla el inventario
+                }
+
+                // Procesar orden en inventario con postMermas
+                try {
+                    console.log('🟡 Iniciando llamada a getTicket con UUID:', currentOrderUuid);
+                    
+                    // Obtener los datos del ticket
+                    const ticketData = await getTicket(currentOrderUuid);
+                    
+                    console.log('🟡 Datos del ticket obtenidos:', ticketData);
+
+                    // Preparar los datos para postProcessOrder
+                    const orderData = {
+                        order_uuid: ticketData.order_uuid,
+                        order_status: ticketData.order_status,
+                        is_merma: false
+                    };
+
+                    console.log('🟡 Enviando datos a postProcessOrder:', orderData);
+
+                    // Procesar la orden en el inventario
+                    const result = await postProcessOrder(orderData);
+                    
+                    console.log('🟢 Orden procesada en inventario exitosamente:', result);
+                } catch (postMermasError) {
+                    console.error('🔴 Error al procesar orden en inventario:', postMermasError);
+                    // No detenemos el flujo principal
+                }
+
                 if (numeroMesa) {
                     try {
                         await updateTableStatus(parseInt(numeroMesa), 'NoDisponible');
@@ -1156,14 +1108,12 @@ export default function MenuCliente() {
                 
                 setTimeout(() => {
                     setMensajeError("");
-                    // Resetear el flag después de mostrar el ticket
-                    setOrderEndOnThisPage(false);
                 }, 3000);
             } else {
                 throw new Error(response?.message || 'La API indicó que el pago no se pudo procesar');
             }
         } catch (error) {
-            console.error('Error al procesar el pago:', error);
+            console.error('🔴 Error al procesar el pago:', error);
             let mensajeErrorUsuario = "Error al procesar el pago. ";
             if (error.message && error.message.includes('fetch')) {
                 mensajeErrorUsuario += "Problemas de conexión. Verifica tu internet e intenta nuevamente.";
@@ -1221,52 +1171,6 @@ export default function MenuCliente() {
         setErrorCodigoConfirmacion("");
 
         try {
-            // Intentar descontar inventario pero no bloquear el pago si falla
-            if (ordenActiva && ordenActiva.order_uuid) {
-                try {
-                    const ticketData = await getTicket(ordenActiva.order_uuid);
-                    
-                    
-                    if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
-                        // Ver cada producto individualmente
-                        ticketData.products.forEach((producto, index) => {
-                            
-                        });
-
-                        // Transformar los productos al formato requerido para descontar inventario
-                        const productosParaDescontar = ticketData.products
-                            .filter(producto => producto.order_detail_status !== "Cancelado")
-                            .map(producto => {
-                                // Intentar diferentes nombres de campo
-                                const productId = producto.product_id || producto.id_products || producto.id || producto.productId;
-                                
-                                return {
-                                    product_id: parseInt(productId),
-                                    quantity: parseInt(producto.quantity)
-                                };
-                            })
-                            .filter(producto => !isNaN(producto.product_id)); // Filtrar productos con ID inválido
-
-
-                        // Descontar inventario antes de confirmar el pago (no bloqueante)
-                        if (productosParaDescontar.length > 0) {
-                            const resultadoInventario = await descontarInventario(productosParaDescontar);
-                            
-                            if (!resultadoInventario.success) {
-                                console.error('Error al descontar inventario (continuando con el pago):', resultadoInventario.error);
-                            } else {
-                            }
-                        } else {
-                            console.warn('No hay productos válidos para descontar del inventario (continuando con el pago)');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error al obtener datos del ticket para inventario (continuando con el pago):', error);
-                    // NO retornar aquí, continuar con el pago
-                }
-            }
-
-            // Proceder con la confirmación del pago SIEMPRE
             await confirmarPago();
         } catch (error) {
             console.error('Error al confirmar el pago:', error);
