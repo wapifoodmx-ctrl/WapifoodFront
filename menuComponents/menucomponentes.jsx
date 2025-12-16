@@ -146,7 +146,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
     }, []);
 
     return (
-        <div className="bg-gradient-to-r from-white via-green-50 to-emerald-50 p-6 rounded-2xl shadow-lg border border-green-100 mb-8">
+        <div className="sticky top-16 z-30 bg-gradient-to-r from-white via-green-50 to-emerald-50 p-4 sm:p-6 rounded-2xl shadow-lg border border-green-100 mb-4 sm:mb-8 w-full">
             {/* Mostrar la modal si hay un mensaje */}
             {modalMessage && (
                 <ModalMessage

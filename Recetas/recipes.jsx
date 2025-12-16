@@ -449,7 +449,7 @@ export default function Recipes() {
         </div>
 
         {/* Barra de búsqueda y botones */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 mt-6">{/* Agregado max-w-7xl mx-auto para centrar */}
+        <div className="sticky top-16 z-30 bg-white w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4 sm:mb-6 py-4 sm:py-6">{/* Agregado max-w-7xl mx-auto para centrar */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
             {/* Barra de búsqueda */}
             <input

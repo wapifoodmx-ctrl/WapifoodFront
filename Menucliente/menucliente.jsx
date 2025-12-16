@@ -1199,8 +1199,8 @@ export default function MenuCliente() {
     }
 
     return (
-        <div className="h-screen min-h-[100dvh] bg-gradient-to-br from-gray-50 via-white to-green-50">
-            <header className="relative z-10">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+            <header className="sticky top-0 z-50">
                 <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
                         <div className="flex items-center">
@@ -1238,7 +1238,7 @@ export default function MenuCliente() {
             <div
                 className={`
                     fixed top-0 left-0 h-full w-64 bg-gradient-to-br from-green-100 to-emerald-100 shadow-2xl border-r border-green-200
-                    transition-transform duration-300 ease-in-out menu-container z-20
+                    transition-transform duration-300 ease-in-out menu-container z-[60]
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
             >
@@ -1260,8 +1260,17 @@ export default function MenuCliente() {
                 </ul>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 py-6 z-10 relative">
-                <div className="relative">
+            {/* Overlay para cerrar el menú al hacer clic fuera */}
+            {isOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/20 z-40"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+
+            <div className="sticky top-16 z-30 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6">
+                <div className="max-w-4xl mx-auto">
+                    <div className="relative">
                     <input
                         type="text"
                         placeholder="Buscar productos..."
@@ -1288,7 +1297,10 @@ export default function MenuCliente() {
                         {productosFiltrados.length} resultado(s) encontrado(s) para "{busqueda}"
                     </p>
                 )}
+                </div>
             </div>
+
+            <div className="relative z-0">
 
             <button
                 className="fixed bottom-10 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
@@ -1818,6 +1830,8 @@ export default function MenuCliente() {
                     }
                 }
             `}</style>
+            </div>
+
         </div>
     );
 }

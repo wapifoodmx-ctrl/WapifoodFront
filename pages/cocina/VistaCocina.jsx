@@ -655,7 +655,7 @@ export default function VistaCocina() {
                     handleFinalizeCompletedOrder={handleFinalizeCompletedOrder}
                 />
 
-                <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b bg-white/80 rounded-t-2xl">
+                <div className="sticky top-16 z-40 bg-white w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b bg-white/80 rounded-t-2xl">
                     <button
                         className={`px-4 py-2 cursor-pointer ${view === "all" ? "border-b-2 border-green-600 font-bold" : ""
                             }`}

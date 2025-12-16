@@ -37,8 +37,6 @@ export default function Ticketview() {
     const [endDate, setEndDate] = useState(null);
     // Estados para el filtro de fechas desplegables
     const [expandedDates, setExpandedDates] = useState(new Set());
-    // Estado para el switch de filtro de órdenes (true = exitosas, false = canceladas)
-    const [showSuccessfulOrders, setShowSuccessfulOrders] = useState(true);
     // Estado para el filtro de tickets: 'todos', 'finalizados', 'cancelados'
     const [ticketFilter, setTicketFilter] = useState('todos');
     // Estados para filtro de meseros
@@ -385,17 +383,6 @@ export default function Ticketview() {
     const filterTicketsByDate = (tickets, filter) => {
         let filteredByTab = tickets;
         
-        // Para "Seleccionar Fecha" mantener el filtro antiguo
-        if (filter === "Seleccionar Fecha") {
-            if (showSuccessfulOrders) {
-                filteredByTab = tickets.filter(ticket => 
-                    ticket.statusOrden === 'Finalizado' || ticket.statusOrden === 'PuntoDeVenta'
-                );
-            } else {
-                filteredByTab = tickets.filter(ticket => ticket.statusOrden === 'Cancelado');
-            }
-        }
-        
         // Aplicar filtro de estado para todas las pestañas
         switch (ticketFilter) {
             case 'finalizados':
@@ -437,21 +424,22 @@ export default function Ticketview() {
         }
     };
 
-    // Función para seleccionar un mesero y filtrar sus tickets
+    // Función para seleccionar un mesero y filtrar sus tickets (histórico completo)
     const handleSelectMesero = async (mesero) => {
         setSelectedMesero(mesero);
         setShowMeseroModal(false);
         
         try {
-            // Obtener todas las órdenes del día (puedes cambiar esto según el periodo deseado)
-            const response = await getOrdersDia();
+            // Obtener todas las órdenes del histórico completo usando entre-fechas
+            // Sin limitar fechas para obtener el histórico completo
+            const response = await getOrdersFecha("2020-01-01", "2099-12-31");
             
-            if (!response.success) {
-                console.error("Error fetching orders:", response.error);
+            if (!Array.isArray(response)) {
+                console.error("Error fetching orders:", "Invalid response format");
                 return;
             }
 
-            const allOrders = response.data;
+            const allOrders = response;
             
             // Filtrar órdenes donde participó el mesero seleccionado
             const meseroOrders = meserosOrdersData.filter(order => 
@@ -599,7 +587,7 @@ export default function Ticketview() {
             )}
 
             {/* Pestañas - Mismo estilo que VistaCocina */}
-            <div className="w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b">
+            <div className="sticky top-16 z-40 bg-white w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b">
                 <button
                     className={`px-4 py-2 cursor-pointer ${
                         activeTab === "hoy" ? "border-b-2 border-green-600 font-bold" : ""
@@ -645,7 +633,7 @@ export default function Ticketview() {
             {/* Contenido principal */}
             <div className="py-5 px-5">
                 {/* Barra de acciones con título dinámico y botón de reporte */}
-                <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="sticky top-[88px] z-30 bg-white pb-4 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                         <h2 className="text-lg font-bold">
                             {activeTab === "hoy" && "Tickets de Hoy"}
@@ -1016,47 +1004,6 @@ export default function Ticketview() {
                             Seleccionar Rango de Fechas
                         </h2>
 
-                        {/* Switch para filtrar por estado de órdenes */}
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <h3 className="text-sm font-semibold text-gray-800 mb-1">
-                                        Filtro de Estado de Órdenes
-                                    </h3>
-                                    <p className="text-xs text-gray-600">
-                                        {showSuccessfulOrders 
-                                            ? "Mostrando órdenes exitosas (Finalizadas y PuntoDeVenta)"
-                                            : "Mostrando órdenes canceladas"
-                                        }
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-sm font-medium transition-colors ${
-                                        !showSuccessfulOrders ? 'text-red-600' : 'text-gray-400'
-                                    }`}>
-                                        Canceladas
-                                    </span>
-                                    <button
-                                        onClick={() => setShowSuccessfulOrders(!showSuccessfulOrders)}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                                            showSuccessfulOrders ? 'bg-green-600' : 'bg-red-500'
-                                        }`}
-                                    >
-                                        <span
-                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                showSuccessfulOrders ? 'translate-x-6' : 'translate-x-1'
-                                            }`}
-                                        />
-                                    </button>
-                                    <span className={`text-sm font-medium transition-colors ${
-                                        showSuccessfulOrders ? 'text-green-600' : 'text-gray-400'
-                                    }`}>
-                                        Exitosas
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
                         {/* Selector de fechas */}
                         <div className="mb-6 space-y-4">
                             <div>
@@ -1099,8 +1046,7 @@ export default function Ticketview() {
                                 <p className="text-sm text-green-700">
                                     <strong>Rango seleccionado:</strong><br />
                                     Desde: {formatDate(startDate)}<br />
-                                    Hasta: {formatDate(endDate)}<br />
-                                    <strong>Estado:</strong> {showSuccessfulOrders ? 'Órdenes Exitosas' : 'Órdenes Canceladas'}
+                                    Hasta: {formatDate(endDate)}
                                 </p>
                             </div>
                         )}
@@ -1113,7 +1059,6 @@ export default function Ticketview() {
                                     setActiveTab("hoy"); // Cambiar a otra pestaña al cancelar
                                     setStartDate(null);
                                     setEndDate(null);
-                                    setShowSuccessfulOrders(true); // Resetear el switch
                                 }}
                                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                             >
@@ -1133,41 +1078,60 @@ export default function Ticketview() {
 
             {/* Modal de selección de meseros */}
             {showMeseroModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-gray-800">Selecciona un Mesero</h3>
+                <div 
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 p-4"
+                    onClick={() => {
+                        setShowMeseroModal(false);
+                        setActiveTab("hoy");
+                    }}
+                >
+                    <div 
+                        className="bg-white rounded-lg shadow-xl max-w-md w-full"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 flex justify-between items-center rounded-t-lg">
+                            <div>
+                                <h3 className="text-2xl font-bold text-white">Selecciona un Mesero</h3>
+                                <p className="text-green-100 text-sm mt-1">Ver histórico completo de tickets</p>
+                            </div>
                             <button
                                 onClick={() => {
                                     setShowMeseroModal(false);
                                     setActiveTab("hoy");
                                 }}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-white hover:bg-opacity-20 p-2 rounded transition-colors"
                             >
                                 <IoClose size={24} />
                             </button>
                         </div>
 
-                        <div className="p-6">
+                        <div className="p-6 max-h-[60vh] overflow-y-auto">
                             {meseros.length === 0 ? (
                                 <div className="text-center py-8 text-gray-500">
                                     <p>No hay meseros registrados</p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="space-y-3">
                                     {meseros.map((mesero) => (
                                         <button
                                             key={mesero.uuid}
                                             onClick={() => handleSelectMesero(mesero)}
-                                            className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-600 hover:bg-green-50 transition-all duration-200 text-left"
+                                            className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all duration-200 text-left group"
                                         >
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold text-gray-800 text-lg">
-                                                    {mesero.name}
-                                                </span>
-                                                <span className="text-xs text-gray-500 mt-1">
-                                                    {mesero.email || 'Sin email'}
-                                                </span>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1">
+                                                    <span className="font-semibold text-gray-800 text-lg group-hover:text-green-600 transition-colors">
+                                                        {mesero.name}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500 block mt-1">
+                                                        {mesero.email || 'Sin email'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex-shrink-0 ml-2 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                </div>
                                             </div>
                                         </button>
                                     ))}
@@ -1175,13 +1139,13 @@ export default function Ticketview() {
                             )}
                         </div>
 
-                        <div className="sticky bottom-0 bg-gray-50 border-t p-4">
+                        <div className="bg-gray-50 border-t p-4 rounded-b-lg">
                             <button
                                 onClick={() => {
                                     setShowMeseroModal(false);
                                     setActiveTab("hoy");
                                 }}
-                                className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                                className="w-full px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-medium"
                             >
                                 Cancelar
                             </button>

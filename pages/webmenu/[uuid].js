@@ -176,7 +176,7 @@ export default function MenuWebDinamico() {
             </div>
 
             {/* Header */}
-            <header className="relative z-10">
+            <header className="sticky top-0 z-50">
                 <nav className={`w-full bg-gradient-to-r ${currentStyle.colors.headerGradient} text-white p-4 shadow-lg ${
                     style === 'tokyo' ? currentStyle.colors.neonGlow : ''
                 }`}>
@@ -215,7 +215,7 @@ export default function MenuWebDinamico() {
                             ? 'border-r border-pink-500/30' 
                             : `border-r border-${currentStyle.colors.primary}-200`
                     }
-                    transition-transform duration-300 ease-in-out menu-container z-50
+                    transition-transform duration-300 ease-in-out menu-container z-[60]
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
             >
@@ -331,8 +331,9 @@ export default function MenuWebDinamico() {
             </div>
 
             {/* Buscador remodelado */}
-            <div className="max-w-4xl mx-auto px-4 py-6 z-10 relative">
-                <div className="relative">
+            <div className="sticky top-16 z-30 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6">
+                <div className="max-w-4xl mx-auto">
+                    <div className="relative">
                     <input
                         type="text"
                         placeholder="Buscar productos..."
@@ -373,7 +374,10 @@ export default function MenuWebDinamico() {
                         {productosFiltrados.length} resultado(s) encontrado(s) para {busqueda}
                     </p>
                 )}
+                </div>
             </div>
+
+            <div className="relative z-0">
 
             {/* Modal de producto remodelado */}
             {modalOpen && productoSeleccionado && (
@@ -560,7 +564,9 @@ export default function MenuWebDinamico() {
                     to { transform: translateY(0); opacity: 1; }
                 }
             `}</style>
+            </div>
         </section>
+
         </>
     );
 }

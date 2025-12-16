@@ -211,25 +211,7 @@ const NavegacionPestañas = ({
                   <span className="font-bold text-green-700">${elemento.total_cost?.toFixed(2) || '0.00'}</span>
                 </div>
               </div>
-
-              {/* Descripción */}
-              {elemento.description && (
-                <div className="pt-2 border-t border-gray-100">
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {elemento.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Categoría */}
-              {elemento.category && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Categoría:</span>
-                  <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full font-medium">
-                    {elemento.category}
-                  </span>
-                </div>
-              )}
+                
             </div>
 
             {/* Indicador de selección */}
