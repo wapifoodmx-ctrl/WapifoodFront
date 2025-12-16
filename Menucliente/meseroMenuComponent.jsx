@@ -14,7 +14,7 @@ import { endOrder } from "@/useCases/endOrder";
 import getCodigoConfirmacion from "@/useCases/getCodogoConfirmacion";
 import TicketModal from "@/components/TicketModal";
 import { getTicket } from "@/useCases/getTicket";
-import descontarInventario from "@/useCases/inventarioDescontar"; 
+import descontarInventario from "@/useCases/inventarioDescontar";
 import { getLatestOrdersByPlan } from "@/useCases/getLatestOrdersByPlan";
 import { vincularMeseroOrden } from "@/useCases/vincularMeseroOrden";
 import ProductCard from "./ ProductCard";
@@ -26,16 +26,6 @@ import ProductDetailModal from "./ProductDetailModal";
 import ConfirmationCodeModal from "./ConfirmationCodeModal";
 import { toast } from "@/components/Toast";
 import postProcessOrder from "@/useCases/postMermas";
-
-const categoriaOrden = {
-    "Entradas": 0,
-    "Platos Principales": 1,
-    "Ensaladas": 2,
-    "Pizzas": 3,
-    "Postres": 4,
-    "Bebidas": 5,
-    "Termos": 6,
-};
 
 const productosEstaticos = [];
 
@@ -54,7 +44,7 @@ export default function MeseroMenuComponent() {
     const [modalTotalOpen, setModalTotalOpen] = useState(false);
     const [totalPedidos, setTotalPedidos] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [busqueda, setBusqueda] = useState(""); 
+    const [busqueda, setBusqueda] = useState("");
     const [loginModalOpen, setLoginModalOpen] = useState(true);
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -75,7 +65,7 @@ export default function MeseroMenuComponent() {
     const [codigoConfirmacionEsperado, setCodigoConfirmacionEsperado] = useState('');
     const [isValidandoCode, setIsValidandoCode] = useState(false);
     const [errorCodigoConfirmacion, setErrorCodigoConfirmacion] = useState('');
-    
+
     // Estados específicos del mesero
     const [meseroData, setMeseroData] = useState(null);
     const [ordenesActivas, setOrdenesActivas] = useState([]);
@@ -105,6 +95,20 @@ export default function MeseroMenuComponent() {
             ingredientesExcluidos: [],
         }));
     };
+    useEffect(() => {
+        const meseroGuardado = localStorage.getItem("meseroData");
+        const token = localStorage.getItem("token");
+
+        if (token && meseroGuardado) {
+            // Si ya hay token y datos del mesero, inicia sesión automáticamente y carga mesas
+            setMeseroData(JSON.parse(meseroGuardado));
+            setIsAuthenticated(true);
+            setLoginModalOpen(false);
+            cargarMesas();
+            cargarOrdenesActivas();
+        }
+        // El resto de tu lógica de persistencia puede ir aquí si lo necesitas
+    }, []);
 
     // Login del mesero
     const handleLogin = async (values) => {
@@ -113,7 +117,7 @@ export default function MeseroMenuComponent() {
 
         try {
             const response = await loginMesero(values.email, values.access_code);
-            
+
             // Guardar token y datos del mesero
             localStorage.setItem('token', response.access_token);
             localStorage.setItem('meseroData', JSON.stringify({
@@ -132,13 +136,13 @@ export default function MeseroMenuComponent() {
 
             setIsAuthenticated(true);
             setLoginModalOpen(false);
-            
+
             toast.success(`¡Bienvenido ${response.mesero_name}!`);
-            
+
             // Cargar mesas y órdenes activas
             await cargarMesas();
             await cargarOrdenesActivas();
-            
+
         } catch (error) {
             console.error('Error durante el login:', error);
             setServerError(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
@@ -164,7 +168,7 @@ export default function MeseroMenuComponent() {
         setLoadingMesas(true);
         try {
             const mesasData = await getTables();
-            
+
             if (mesasData && mesasData.table_status) {
                 const mesasArray = Object.entries(mesasData.table_status)
                     .filter(([numero]) => parseInt(numero) !== 1) // Excluir mesa 1
@@ -173,7 +177,7 @@ export default function MeseroMenuComponent() {
                         estado: estado
                     }))
                     .sort((a, b) => a.numero - b.numero);
-                
+
                 setMesas(mesasArray);
             }
         } catch (error) {
@@ -191,18 +195,18 @@ export default function MeseroMenuComponent() {
             setModalMesaOpen(false);
             return;
         }
-        
+
         if (numeroMesaSeleccionada && numeroMesaSeleccionada !== '') {
             const mesaString = String(numeroMesaSeleccionada).trim();
-            
+
             try {
                 // Si hay una orden pendiente, cargarla
                 if (ordenPendiente) {
                     setOrdenPendienteSeleccionada(ordenPendiente);
-                    
+
                     // Cargar el ticket completo para obtener los productos
                     const ticketData = await getTicket(ordenPendiente.order_uuid);
-                    
+
                     if (ticketData && ticketData.products) {
                         // Transformar productos del ticket al formato del historial
                         const productosHistorial = ticketData.products.map(producto => ({
@@ -229,7 +233,7 @@ export default function MeseroMenuComponent() {
                             date_time: ordenPendiente.date_time
                         });
                         setTotalFinal(parseFloat(ordenPendiente.total));
-                        
+
                         localStorage.setItem("ordenActiva_mesero", JSON.stringify({
                             order_uuid: ordenPendiente.order_uuid,
                             id_orders: ordenPendiente.id_orders,
@@ -240,7 +244,7 @@ export default function MeseroMenuComponent() {
                         }));
                         localStorage.setItem("historialPedidos_mesero", JSON.stringify(productosHistorial));
                     }
-                    
+
                     toast.info(`Mesa ${mesaString} tiene una orden activa`);
                 } else {
                     // Mesa libre - limpiar datos
@@ -249,17 +253,17 @@ export default function MeseroMenuComponent() {
                     setOrdenActiva(null);
                     setTotalFinal(0);
                     setCarrito([]);
-                    
+
                     localStorage.removeItem("ordenActiva_mesero");
                     localStorage.removeItem("historialPedidos_mesero");
                     localStorage.removeItem("carrito_mesero");
                 }
-                
+
                 setNumeroMesa(mesaString);
                 localStorage.setItem('numeroMesa_mesero', mesaString);
                 setModalMesaOpen(false);
                 setMensajeError('');
-                
+
             } catch (error) {
                 console.error('Error al seleccionar mesa:', error);
                 toast.error('Error al cargar datos de la mesa');
@@ -278,7 +282,7 @@ export default function MeseroMenuComponent() {
         localStorage.removeItem('ordenActiva_mesero');
         localStorage.removeItem('historialPedidos_mesero');
         localStorage.removeItem('carrito_mesero');
-        
+
         setIsAuthenticated(false);
         setMeseroData(null);
         setNumeroMesa('');
@@ -286,7 +290,7 @@ export default function MeseroMenuComponent() {
         setHistorialPedidos([]);
         setCarrito([]);
         setLoginModalOpen(true);
-        
+
         toast.info('Sesión cerrada exitosamente');
         router.push('/');
     };
@@ -299,28 +303,28 @@ export default function MeseroMenuComponent() {
         try {
             // Verificar estado de la orden activa
             const ticketData = await getTicket(ordenActiva.order_uuid);
-            
+
             if (ticketData) {
                 // Detectar orden cancelada
                 if (ticketData.order_status === "Cancelado") {
                     toast.warning('La orden fue cancelada desde otro dispositivo');
-                    
+
                     // Limpiar SOLO datos de la orden (mantener número de mesa)
                     localStorage.removeItem("ordenActiva_mesero");
                     localStorage.removeItem("historialPedidos_mesero");
                     localStorage.removeItem("carrito_mesero");
-                    
+
                     setHistorialPedidos([]);
                     setOrdenActiva(null);
                     setTotalFinal(0);
                     setCarrito([]);
-                    
+
                     // Actualizar lista de mesas
                     await cargarOrdenesActivas();
-                    
+
                     return;
                 }
-                
+
                 // Detectar orden finalizada desde otro dispositivo
                 if (ticketData.order_status === "Finalizado") {
                     // Mostrar ticket
@@ -329,22 +333,22 @@ export default function MeseroMenuComponent() {
                         setCompletedOrderUuid(ordenActiva.order_uuid);
                         setShowTicketModal(true);
                     }
-                    
+
                     // Limpiar SOLO datos de la orden (mantener número de mesa)
                     localStorage.removeItem("ordenActiva_mesero");
                     localStorage.removeItem("historialPedidos_mesero");
                     localStorage.removeItem("carrito_mesero");
-                    
+
                     setHistorialPedidos([]);
                     setOrdenActiva(null);
                     setTotalFinal(0);
                     setCarrito([]);
-                    
+
                     toast.success("La orden fue finalizada desde otro dispositivo");
-                    
+
                     // Actualizar lista de mesas
                     await cargarOrdenesActivas();
-                    
+
                     return;
                 }
 
@@ -355,22 +359,40 @@ export default function MeseroMenuComponent() {
 
                 // Actualizar historial si cambió (por productos agregados desde otro dispositivo)
                 if (ticketData.products && Array.isArray(ticketData.products)) {
-                    const productosActualizados = ticketData.products.map(producto => ({
-                        id_products: producto.id_products || producto.product_id,
-                        nombre: producto.product_name,
-                        name: producto.product_name,
-                        cantidad: producto.quantity,
-                        precio: parseFloat(producto.unit_price),
-                        price: parseFloat(producto.unit_price),
-                        comentario: "",
-                        ingredientesExcluidos: [],
-                        order_id: ordenActiva.id_orders,
-                        fecha_orden: ordenActiva.date_time,
-                        estado: producto.order_detail_status
-                    }));
+                    let hayProductosPreparados = false;
+                    let hayProductosPendientes = false;
+                    let hayProductosCancelados = false;
 
-                    // Solo actualizar si la cantidad de productos cambió
-                    if (productosActualizados.length !== historialPedidos.length) {
+                    const productosActualizados = ticketData.products.map(producto => {
+                        // Contar estados para mensajes informativos
+                        if (producto.order_detail_status === "Preparado") {
+                            hayProductosPreparados = true;
+                        } else if (producto.order_detail_status === "Pendiente") {
+                            hayProductosPendientes = true;
+                        } else if (producto.order_detail_status === "Cancelado") {
+                            hayProductosCancelados = true;
+                        }
+
+                        return {
+                            id_products: producto.id_products || producto.product_id,
+                            nombre: producto.product_name,
+                            name: producto.product_name,
+                            cantidad: producto.quantity,
+                            precio: parseFloat(producto.unit_price),
+                            price: parseFloat(producto.unit_price),
+                            comentario: "",
+                            ingredientesExcluidos: [],
+                            order_id: ordenActiva.id_orders,
+                            fecha_orden: ordenActiva.date_time,
+                            estado: producto.order_detail_status
+                        };
+                    });
+
+                    // Solo actualizar si hay cambios en los productos
+                    const historialAnterior = JSON.stringify(historialPedidos.map(p => ({ id: p.id_products, estado: p.estado })));
+                    const historialNuevo = JSON.stringify(productosActualizados.map(p => ({ id: p.id_products, estado: p.estado })));
+
+                    if (historialAnterior !== historialNuevo) {
                         setHistorialPedidos(productosActualizados);
                         localStorage.setItem("historialPedidos_mesero", JSON.stringify(productosActualizados));
                     }
@@ -384,15 +406,15 @@ export default function MeseroMenuComponent() {
     // useEffect para inicializar el monitoreo cuando hay una mesa seleccionada
     useEffect(() => {
         let intervalId;
-        
+
         if (numeroMesa && isAuthenticated) {
             // Ejecutar inmediatamente la primera vez
             monitorearEstadoMesaYOrden();
-            
+
             // Configurar intervalo de 45 segundos
             intervalId = setInterval(monitorearEstadoMesaYOrden, 45000);
         }
-        
+
         // Limpiar intervalo cuando se desmonta o cambia la mesa
         return () => {
             if (intervalId) {
@@ -521,7 +543,6 @@ export default function MeseroMenuComponent() {
 
         setCarrito((prevCarrito) => [...prevCarrito, productoConId]);
         closeModal();
-        toast.success(`${producto.nombre} agregado al carrito`);
     };
 
     // Realizar pedido
@@ -555,8 +576,8 @@ export default function MeseroMenuComponent() {
             const orderUuid = (ordenActiva && ordenActiva.order_uuid) ? ordenActiva.order_uuid : null;
 
             const response = await createSimpleClientOrder(
-                productosParaEnviar, 
-                parseInt(numeroMesa), 
+                productosParaEnviar,
+                parseInt(numeroMesa),
                 orderUuid,
                 descuentoOrden
             );
@@ -622,7 +643,7 @@ export default function MeseroMenuComponent() {
             setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
             await cargarTotalFinal(response.order_uuid);
             await cargarOrdenesActivas(); // Actualizar lista de órdenes
-            
+
             toast.success("¡Orden enviada exitosamente!");
 
         } catch (error) {
@@ -643,16 +664,16 @@ export default function MeseroMenuComponent() {
         if (ordenActiva && ordenActiva.order_uuid) {
             try {
                 const ticketData = await getTicket(ordenActiva.order_uuid);
-                
+
                 if (ticketData.order_status === "Cancelado") {
                     toast.error("Esta orden ha sido cancelada");
                     return;
                 }
-                
+
                 setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
                 setModalTotalOpen(true);
                 setMensajeError("");
-                
+
             } catch (error) {
                 console.error('Error al verificar el estado de la orden:', error);
                 toast.error("Error al verificar el estado de la orden");
@@ -679,7 +700,7 @@ export default function MeseroMenuComponent() {
 
         try {
             const currentOrderUuid = ordenActiva.order_uuid;
-            
+
             // Vincular mesero a la orden antes de finalizar
             if (meseroData && meseroData.uuid) {
                 try {
@@ -698,9 +719,9 @@ export default function MeseroMenuComponent() {
                     uuid: meseroData?.uuid
                 });
             }
-            
+
             const response = await endOrder(currentOrderUuid, metodoPago);
-            
+
             if (response && (response.success !== false)) {
                 console.log('🔵 Pago confirmado exitosamente');
                 console.log('🟢 orderUuid:', currentOrderUuid);
@@ -709,7 +730,7 @@ export default function MeseroMenuComponent() {
                 try {
                     // Obtener el ticket completo para tener los datos actualizados
                     const ticketData = await getTicket(currentOrderUuid);
-                    
+
                     if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
                         const productosParaDescontar = ticketData.products
                             .filter(producto => producto.order_detail_status !== "Cancelado")
@@ -721,7 +742,7 @@ export default function MeseroMenuComponent() {
                         console.log('🟡 Descontando inventario:', productosParaDescontar);
 
                         const inventarioResponse = await descontarInventario(productosParaDescontar);
-                        
+
                         if (inventarioResponse.success) {
                             console.log('🟢 Inventario descontado exitosamente:', inventarioResponse.data);
                         } else {
@@ -737,10 +758,10 @@ export default function MeseroMenuComponent() {
                 // Procesar orden en inventario con postMermas
                 try {
                     console.log('🟡 Iniciando llamada a getTicket con UUID:', currentOrderUuid);
-                    
+
                     // Obtener los datos del ticket
                     const ticketData = await getTicket(currentOrderUuid);
-                    
+
                     console.log('🟡 Datos del ticket obtenidos:', ticketData);
 
                     // Preparar los datos para postProcessOrder
@@ -754,7 +775,7 @@ export default function MeseroMenuComponent() {
 
                     // Procesar la orden en el inventario
                     const result = await postProcessOrder(orderData);
-                    
+
                     console.log('🟢 Orden procesada en inventario exitosamente:', result);
                 } catch (postMermasError) {
                     console.error('🔴 Error al procesar orden en inventario:', postMermasError);
@@ -766,19 +787,17 @@ export default function MeseroMenuComponent() {
                 setOrdenActiva(null);
                 setTotalFinal(0);
                 setCarrito([]);
-                
+
                 localStorage.removeItem("ordenActiva_mesero");
                 localStorage.removeItem("historialPedidos_mesero");
                 localStorage.removeItem("carrito_mesero");
-                
+
                 setModalTotalOpen(false);
                 setModalConfirmacionCodigoOpen(false);
                 setMetodoPago('efectivo');
-                
+
                 await cargarOrdenesActivas(); // Actualizar lista de órdenes
-                
-                toast.success("¡Pago procesado exitosamente!");
-                
+
                 const ticketsEnabled = localStorage.getItem('tickets');
                 if (ticketsEnabled === 'true') {
                     setCompletedOrderUuid(currentOrderUuid);
@@ -810,7 +829,7 @@ export default function MeseroMenuComponent() {
 
         try {
             const codigoData = await getCodigoConfirmacion();
-            
+
             if (codigoData && codigoData.codigo_confirmacion) {
                 setCodigoConfirmacionEsperado(codigoData.codigo_confirmacion);
                 setModalConfirmacionCodigoOpen(true);
@@ -840,7 +859,7 @@ export default function MeseroMenuComponent() {
             if (ordenActiva && ordenActiva.order_uuid) {
                 try {
                     const ticketData = await getTicket(ordenActiva.order_uuid);
-                    
+
                     if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
                         const productosParaDescontar = ticketData.products
                             .filter(producto => producto.order_detail_status !== "Cancelado")
@@ -875,7 +894,7 @@ export default function MeseroMenuComponent() {
 
     const cerrarModalConfirmacionCodigo = () => {
         if (isValidandoCode || isProcessingPayment) return;
-        
+
         setModalConfirmacionCodigoOpen(false);
         setCodigoConfirmacionEsperado('');
         setErrorCodigoConfirmacion('');
@@ -918,10 +937,10 @@ export default function MeseroMenuComponent() {
                                 <FaUser className="text-white" size={16} />
                                 <span className="text-sm font-semibold text-white">{meseroData?.name}</span>
                             </div>
-                            
+
                             {/* Botón de Mesa */}
                             {numeroMesa ? (
-                                <div 
+                                <div
                                     className="flex items-center gap-2 bg-gradient-to-r from-green-100 to-emerald-100 px-3 py-1 rounded-lg cursor-pointer hover:bg-green-200 transition-colors border border-green-300 shadow"
                                     onClick={() => {
                                         setModalMesaOpen(true);
@@ -947,7 +966,7 @@ export default function MeseroMenuComponent() {
                                     Seleccionar Mesa
                                 </button>
                             )}
-                            
+
                             {/* Botón logout */}
                             <button
                                 onClick={cerrarSesionMesero}
@@ -957,7 +976,7 @@ export default function MeseroMenuComponent() {
                                 <IoLogOutOutline size={18} />
                                 <span>Salir</span>
                             </button>
-                            
+
                             {/* Menú hamburguesa */}
                             <button
                                 className="z-20 cursor-pointer py-3 hamburger-button"
@@ -1009,181 +1028,191 @@ export default function MeseroMenuComponent() {
 
             {/* Overlay para cerrar el menú al hacer clic fuera */}
             {isOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black/20 z-40"
                     onClick={() => setIsOpen(false)}
                 />
             )}
 
             {/* Buscador */}
-            <div className="sticky top-16 z-30 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6">
+            <div
+                className="sticky top-16 z-30 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6"
+                style={{
+                    visibility: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal) ? 'hidden' : 'visible',
+                    zIndex: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal) ? -1 : 30
+                }}
+            >
                 <div className="max-w-4xl mx-auto">
                     <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Buscar productos..."
-                        value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
-                        className="w-full px-4 py-3 pl-12 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white/80 backdrop-blur-sm shadow-lg transition-all duration-200 hover:border-green-300 text-green-800"
-                    />
-                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                        <HiMagnifyingGlass className="h-5 w-5 text-green-600" />
+                        <input
+                            type="text"
+                            placeholder="Buscar productos..."
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                            className="w-full px-4 py-3 pl-12 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white/80 backdrop-blur-sm shadow-lg transition-all duration-200 hover:border-green-300 text-green-800"
+                        />
+                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                            <HiMagnifyingGlass className="h-5 w-5 text-green-600" />
+                        </div>
+                        {busqueda && (
+                            <button
+                                onClick={() => setBusqueda("")}
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-green-400 hover:text-green-600"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                     {busqueda && (
-                        <button
-                            onClick={() => setBusqueda("")}
-                            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-green-400 hover:text-green-600"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                        <p className="mt-2 text-sm text-green-700">
+                            {productosFiltrados.length} resultado(s) encontrado(s) para "{busqueda}"
+                        </p>
                     )}
-                </div>
-                {busqueda && (
-                    <p className="mt-2 text-sm text-green-700">
-                        {productosFiltrados.length} resultado(s) encontrado(s) para "{busqueda}"
-                    </p>
-                )}
                 </div>
             </div>
 
             <div className="relative z-0">
 
-            {/* Botón flotante del carrito */}
-            <button
-                className="fixed bottom-10 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
-                onClick={() => setCarritoModalOpen(true)}
-            >
-                <FaShoppingCart className="text-xl" />
-                {carrito.length > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-white animate-bounce">
-                        {carrito.length}
-                    </span>
-                )}
-            </button>
+                {/* Botón flotante del carrito */}
+                <button
+                    className="fixed bottom-10 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
+                    onClick={() => setCarritoModalOpen(true)}
+                >
+                    <FaShoppingCart className="text-xl" />
+                    {carrito.length > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-white animate-bounce">
+                            {carrito.length}
+                        </span>
+                    )}
+                </button>
 
-            {/* Mensajes */}
-            {mensajeError && (
-                <div className="max-w-4xl mx-auto px-4 mb-4">
-                    <div className="p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
-                        {mensajeError}
-                    </div>
-                </div>
-            )}
-
-            {/* Grid de Productos */}
-            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12 relative z-10">
-                {productosFiltrados.length > 0 ? (
-                    productosFiltrados.map((producto) => (
-                        <ProductCard
-                            key={producto.id}
-                            producto={producto}
-                            onAddToCart={(prod, incremento) => {
-                                if (incremento !== undefined) {
-                                    setProductosFiltrados((prevProductos) =>
-                                        prevProductos.map((item) =>
-                                            item.id === prod.id
-                                                ? { ...item, cantidad: Math.max((item.cantidad || 1) + incremento, 1) }
-                                                : item
-                                        )
-                                    );
-                                } else {
-                                    agregarAlCarrito(prod);
-                                }
-                            }}
-                            onViewDetails={abrirModal}
-                        />
-                    ))
-                ) : (
-                    <div className="col-span-full text-center py-16">
-                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <FaShoppingCart className="text-gray-400 text-4xl" />
+                {/* Mensajes */}
+                {mensajeError && (
+                    <div className="max-w-4xl mx-auto px-4 mb-4">
+                        <div className="p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
+                            {mensajeError}
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">No se encontraron productos</h3>
-                        <p className="text-gray-600">Intenta ajustar los filtros de búsqueda</p>
                     </div>
                 )}
-            </section>
 
-            {/* Modales */}
-            <MeseroMesaSelectionModal
-                isOpen={modalMesaOpen}
-                loadingMesas={loadingMesas}
-                mesas={mesas}
-                ordenesActivas={ordenesActivas}
-                mensajeError={mensajeError}
-                onSelectMesa={seleccionarMesa}
-                meseroName={meseroData?.name}
-            />
+                {/* Grid de Productos */}
+                <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12 relative z-10">
+                    {productosFiltrados.length > 0 ? (
+                        productosFiltrados.map((producto) => (
+                            <ProductCard
+                                key={producto.id}
+                                producto={producto}
+                                onAddToCart={(prod, incremento) => {
+                                    if (incremento !== undefined) {
+                                        setProductosFiltrados((prevProductos) =>
+                                            prevProductos.map((item) =>
+                                                item.id === prod.id
+                                                    ? { ...item, cantidad: Math.max((item.cantidad || 1) + incremento, 1) }
+                                                    : item
+                                            )
+                                        );
+                                    } else {
+                                        agregarAlCarrito(prod);
+                                    }
+                                }}
+                                onViewDetails={abrirModal}
+                            />
+                        ))
+                    ) : (
+                        <div className="col-span-full text-center py-16">
+                            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FaShoppingCart className="text-gray-400 text-4xl" />
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">No se encontraron productos</h3>
+                            <p className="text-gray-600">Intenta ajustar los filtros de búsqueda</p>
+                        </div>
+                    )}
+                </section>
 
-            <CartModal
-                isOpen={carritoModalOpen}
-                carrito={carrito}
-                historialPedidos={historialPedidos}
-                totalFinal={totalFinal}
-                mensajeError={mensajeError}
-                isCreatingOrder={isCreatingOrder}
-                ordenActiva={ordenActiva}
-                descuentoOrden={descuentoOrden}
-                setDescuentoOrden={setDescuentoOrden}
-                onClose={() => setCarritoModalOpen(false)}
-                onUpdateQuantity={(id, incremento) => {
-                    setCarrito((prevCarrito) =>
-                        prevCarrito.map((producto) =>
-                            producto.id === id
-                                ? { ...producto, cantidad: Math.max(producto.cantidad + incremento, 1) }
-                                : producto
-                        )
-                    );
-                }}
-                onRemoveItem={(id) => {
-                    setCarrito((prevCarrito) =>
-                        prevCarrito.filter((producto) => producto.id !== id)
-                    );
-                }}
-                onRealizarPedido={realizarPedido}
-                onTerminarOrden={terminarOrden}
-                onUpdateCart={setCarrito}
-                getCodigoConfirmacion={getCodigoConfirmacion}
-            />
+                {/* Modales */}
+                <MeseroMesaSelectionModal
+                    isOpen={modalMesaOpen}
+                    loadingMesas={loadingMesas}
+                    mesas={mesas}
+                    ordenesActivas={ordenesActivas}
+                    mensajeError={mensajeError}
+                    onSelectMesa={seleccionarMesa}
+                    meseroName={meseroData?.name}
+                />
 
-            <PaymentModal
-                isOpen={modalTotalOpen}
-                totalPedidos={totalPedidos}
-                metodoPago={metodoPago}
-                mensajeError={mensajeError}
-                isProcessingPayment={isProcessingPayment}
-                onClose={() => setModalTotalOpen(false)}
-                onSelectMetodoPago={setMetodoPago}
-                onConfirmarPago={confirmarPago}
-                onRequestConfirmationCode={confirmarPago}
-            />
+                <CartModal
+                    isOpen={carritoModalOpen}
+                    carrito={carrito}
+                    historialPedidos={historialPedidos}
+                    totalFinal={totalFinal}
+                    mensajeError={mensajeError}
+                    isCreatingOrder={isCreatingOrder}
+                    ordenActiva={ordenActiva}
+                    descuentoOrden={descuentoOrden}
+                    setDescuentoOrden={setDescuentoOrden}
+                    onClose={() => setCarritoModalOpen(false)}
+                    onUpdateQuantity={(id, incremento) => {
+                        setCarrito((prevCarrito) =>
+                            prevCarrito.map((producto) =>
+                                producto.id === id
+                                    ? { ...producto, cantidad: Math.max(producto.cantidad + incremento, 1) }
+                                    : producto
+                            )
+                        );
+                    }}
+                    onRemoveItem={(id) => {
+                        setCarrito((prevCarrito) =>
+                            prevCarrito.filter((producto) => producto.id !== id)
+                        );
+                    }}
+                    onRealizarPedido={realizarPedido}
+                    onTerminarOrden={terminarOrden}
+                    onUpdateCart={setCarrito}
+                    getCodigoConfirmacion={getCodigoConfirmacion}
+                    visibilityStyle={{
+                        visibility: (modalMesaOpen || modalTotalOpen || showTicketModal) ? 'hidden' : 'visible',
+                        zIndex: (modalMesaOpen || modalTotalOpen || showTicketModal) ? -1 : 99999
+                    }}
+                />
 
-            <ProductDetailModal
-                isOpen={modalOpen}
-                producto={productoSeleccionado}
-                onClose={closeModal}
-                onAddToCart={(prod, incremento) => {
-                    if (incremento !== undefined) {
-                        setProductoSeleccionado({
-                            ...prod,
-                            cantidad: Math.max((prod.cantidad || 1) + incremento, 1),
-                        });
-                    } else {
-                        agregarAlCarrito(prod);
-                    }
-                }}
-            />
+                <PaymentModal
+                    isOpen={modalTotalOpen}
+                    totalPedidos={totalPedidos}
+                    metodoPago={metodoPago}
+                    mensajeError={mensajeError}
+                    isProcessingPayment={isProcessingPayment}
+                    onClose={() => setModalTotalOpen(false)}
+                    onSelectMetodoPago={setMetodoPago}
+                    onConfirmarPago={confirmarPago}
+                    onRequestConfirmationCode={confirmarPago}
+                />
 
-            <TicketModal
-                isOpen={showTicketModal}
-                onClose={() => {
-                    setShowTicketModal(false);
-                    setCompletedOrderUuid(null);
-                }}
-                orderUuid={completedOrderUuid}
-            />
+                <ProductDetailModal
+                    isOpen={modalOpen}
+                    producto={productoSeleccionado}
+                    onClose={closeModal}
+                    onAddToCart={(prod, incremento) => {
+                        if (incremento !== undefined) {
+                            setProductoSeleccionado({
+                                ...prod,
+                                cantidad: Math.max((prod.cantidad || 1) + incremento, 1),
+                            });
+                        } else {
+                            agregarAlCarrito(prod);
+                        }
+                    }}
+                />
+
+                <TicketModal
+                    isOpen={showTicketModal}
+                    onClose={() => {
+                        setShowTicketModal(false);
+                        setCompletedOrderUuid(null);
+                    }}
+                    orderUuid={completedOrderUuid}
+                />
             </div>
 
         </div>

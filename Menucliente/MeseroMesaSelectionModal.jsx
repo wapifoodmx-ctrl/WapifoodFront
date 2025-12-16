@@ -60,8 +60,19 @@ export default function MeseroMesaSelectionModal({
     };
 
     return (
-        <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1001] p-4">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center p-4 z-[9999]"
+            onClick={(e) => {
+                // Cerrar modal si se hace click en el overlay (fuera del modal)
+                if (e.target === e.currentTarget) {
+                    onSelectMesa(null, null);
+                }
+            }}
+        >
+            <div 
+                className="bg-white p-6 rounded-lg shadow-xl w-full max-w-5xl max-h-[80vh] flex flex-col relative z-[10000]"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {loadingMesas ? (
                     <div className="flex justify-center items-center h-32">
                         <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin"></div>
@@ -122,8 +133,8 @@ export default function MeseroMesaSelectionModal({
                         )}
 
                         {/* Grid de mesas - con scroll */}
-                        <div className="overflow-y-auto flex-1">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-4">
+                        <div className="overflow-y-auto flex-1 px-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-4 ">
                                 {(busquedaMesa ? mesasFiltradas : mesas).map((mesa) => {
                                 const { estado, ordenPendiente } = getEstadoMesa(mesa.numero);
                                 const total = getTotalMesa(mesa.numero);

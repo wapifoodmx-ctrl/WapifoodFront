@@ -17,7 +17,8 @@ export default function CartModal({
     onRealizarPedido,
     onTerminarOrden,
     onUpdateCart,
-    getCodigoConfirmacion
+    getCodigoConfirmacion,
+    visibilityStyle
 }) {
     // Estados existentes...
     const [modalDescuentoOpen, setModalDescuentoOpen] = useState(false);
@@ -327,8 +328,8 @@ export default function CartModal({
     };
 
     return (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex justify-end items-center z-[99999]" onClick={onClose}>
-            <div className="bg-white w-full sm:w-[28rem] lg:w-[32rem] h-full flex flex-col shadow-2xl overflow-hidden relative z-[99999]" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed top-16 left-0 right-0 bottom-0 backdrop-blur-sm bg-black/50 flex justify-end items-center z-[99999]" onClick={onClose} style={visibilityStyle}>
+            <div className="bg-white w-full sm:w-[28rem] lg:w-[32rem] h-full flex flex-col shadow-2xl overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
                 {/* ========== HEADER MEJORADO ========== */}
                 <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 px-6 py-5 text-white shadow-md flex-shrink-0">
                     <div className="flex items-center justify-between">

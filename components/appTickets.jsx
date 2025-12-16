@@ -14,19 +14,19 @@ export default function AppTickets() {
                         <Image 
                             src={ticketApp1} 
                             className="h-auto w-full max-w-[220px] xl:max-w-[250px] shadow-2xl rounded-2xl border-4 border-green-200 transition-all duration-300 hover:scale-105"
-                            alt="Ticket App 1"
+                            alt="Sistema de Tickets WapiFood"
                             priority
                         />
                         <Image 
                             src={ticketApp2} 
                             className="h-auto w-full max-w-[220px] xl:max-w-[250px] shadow-2xl rounded-2xl border-4 border-green-200 transition-all duration-300 hover:scale-105"
-                            alt="Ticket App 2"
+                            alt="Gestión de Pedidos WapiFood"
                             priority
                         />
                         <Image 
                             src={ticketApp3} 
                             className="h-auto w-full max-w-[220px] xl:max-w-[250px] shadow-2xl rounded-2xl border-4 border-green-200 transition-all duration-300 hover:scale-105"
-                            alt="Ticket App 3"
+                            alt="Dashboard WapiFood"
                             priority
                         />
                     </div>
@@ -38,7 +38,7 @@ export default function AppTickets() {
                                 <Image 
                                     src={ticketApp1}
                                     className="h-auto w-[240px] sm:w-[280px] md:w-[320px] shadow-xl rounded-xl border-3 border-emerald-200 transition-all duration-300"
-                                    alt="Ticket App 1"
+                                    alt="Sistema de Tickets WapiFood"
                                     priority
                                 />
                             </div>
@@ -46,7 +46,7 @@ export default function AppTickets() {
                                 <Image 
                                     src={ticketApp2}
                                     className="h-auto w-[240px] sm:w-[280px] md:w-[320px] shadow-xl rounded-xl border-3 border-emerald-200 transition-all duration-300"
-                                    alt="Ticket App 2"
+                                    alt="Gestión de Pedidos WapiFood"
                                     priority
                                 />
                             </div>
@@ -54,7 +54,7 @@ export default function AppTickets() {
                                 <Image 
                                     src={ticketApp3}
                                     className="h-auto w-[240px] sm:w-[280px] md:w-[320px] shadow-xl rounded-xl border-3 border-emerald-200 transition-all duration-300"
-                                    alt="Ticket App 3"
+                                    alt="Dashboard WapiFood"
                                     priority
                                 />
                             </div>
@@ -71,20 +71,36 @@ export default function AppTickets() {
                 
                 <div className="w-full lg:w-2/3 flex flex-col justify-center items-center mt-8 lg:mt-0">
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl text-center font-extrabold text-green-800 drop-shadow-lg mb-4 max-w-xl leading-tight bg-gradient-to-r bg-clip-text">
-                        Obtén nuestra app de tickets para potenciar tu negocio
+                        Sistema completo de gestión para tu restaurante
                     </h2>
                     <p className="text-center text-green-700 text-base sm:text-lg lg:text-xl mt-2 mb-4 font-medium max-w-lg px-4">
-                        Contrata un paquete con impresora y obtén nuestra app de tickets para completar la experiencia con tus clientes.
+                        Tickets digitales, gestión de cocina, menú para clientes, control de meseros y mucho más. Todo integrado en una sola plataforma web.
                     </p>
-                    <div className="flex flex-col gap-6 w-full max-w-md my-6">
-                        {/* <a
-                            href="https://play.google.com/store/apps/details?id=tuapp"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-xl bg-gradient-to-r from-green-400 to-emerald-400 text-white font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:from-green-500 hover:to-emerald-500 transition-all duration-200 border-2 border-green-300 text-center"
-                        >
-                            Descargar en Play Store
-                        </a> */}
+                    <div className="flex flex-wrap justify-center gap-4 w-full max-w-md my-6">
+                        <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-green-200">
+                            <span className="text-green-600">✓</span>
+                            <span className="text-green-800 font-medium">Tickets digitales</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-green-200">
+                            <span className="text-green-600">✓</span>
+                            <span className="text-green-800 font-medium">Vista de cocina</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-green-200">
+                            <span className="text-green-600">✓</span>
+                            <span className="text-green-800 font-medium">Menú del cliente</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-green-200">
+                            <span className="text-green-600">✓</span>
+                            <span className="text-green-800 font-medium">Portal de meseros</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-green-200">
+                            <span className="text-green-600">✓</span>
+                            <span className="text-green-800 font-medium">Punto de venta</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-green-200">
+                            <span className="text-green-600">✓</span>
+                            <span className="text-green-800 font-medium">Dashboard analytics</span>
+                        </div>
                     </div>
                 </div>
             </section>

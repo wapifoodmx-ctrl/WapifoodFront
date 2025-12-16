@@ -92,12 +92,71 @@ export default function MenuCliente() {
     const [isValidandoCode, setIsValidandoCode] = useState(false);
     const [errorCodigoConfirmacion, setErrorCodigoConfirmacion] = useState('');
     
+    // *** Estado para identificar si la orden se finalizó en esta página ***
+    const [orderEndOnThisPage, setOrderEndOnThisPage] = useState(false);
+    
     // *** AGREGAR ESTE ESTADO AQUÍ ***
     const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
 
     useEffect(() => {
         localStorage.setItem('tickets', 'true');
     }, []);
+
+    // Verificar estado de la orden al cargar la página
+    const verificarEstadoOrdenInicial = async (orderUuid) => {
+        try {
+            const ticketData = await getTicket(orderUuid);
+            
+            if (ticketData) {
+                // Si la orden está finalizada o cancelada, limpiar datos
+                if (ticketData.order_status === "Finalizado") {
+                    
+                    // La orden fue finalizada (desde otro dispositivo)
+                    // Mostrar ticket antes de limpiar
+                    const ticketsEnabled = localStorage.getItem('tickets');
+                    if (ticketsEnabled === 'true') {
+                        setCompletedOrderUuid(orderUuid);
+                        setShowTicketModal(true);
+                    }
+                    
+                    // Limpiar datos locales (EXCEPTO número de mesa)
+                    localStorage.removeItem("ordenActiva1");
+                    localStorage.removeItem("historialPedidos1");
+                    localStorage.removeItem("carrito1");
+                    localStorage.removeItem("productosCanceladosSnapshot1");
+                    
+                    // Limpiar estados (EXCEPTO número de mesa)
+                    setHistorialPedidos([]);
+                    setOrdenActiva(null);
+                    setTotalFinal(0);
+                    setCarrito([]);
+                    
+                    setMensajeError("La orden anterior ya fue finalizada y pagada.");
+                    setTimeout(() => {
+                        setMensajeError("");
+                    }, 5000);
+                    
+                } else if (ticketData.order_status === "Cancelado") {
+                    setShowCancelledOrderModal(true);
+                    
+                } else {
+                    // Orden válida, cargar total
+                    cargarTotalFinal(orderUuid);
+                }
+            }
+        } catch (error) {
+            console.error('Error al verificar estado inicial de la orden:', error);
+            // Si hay error al obtener la orden, limpiar datos por seguridad (EXCEPTO número de mesa)
+            localStorage.removeItem("ordenActiva1");
+            localStorage.removeItem("historialPedidos1");
+            localStorage.removeItem("carrito1");
+            
+            setHistorialPedidos([]);
+            setOrdenActiva(null);
+            setTotalFinal(0);
+            setCarrito([]);
+        }
+    };
 
     // Función actualizada para monitorear tanto el estado de la mesa como la orden cada 45 segundos
     const monitorearEstadoMesaYOrden = async () => {
@@ -162,12 +221,51 @@ export default function MenuCliente() {
                     const ticketData = await getTicket(ordenActiva.order_uuid);
                     
                     if (ticketData) {
-                        // *** NUEVA VERIFICACIÓN: Detectar orden cancelada ***
+                        // *** VERIFICACIÓN: Detectar orden cancelada o finalizada ***
                         if (ticketData.order_status === "Cancelado") {
                             // console.log('Orden cancelada detectada por el listener');
                             
                             // Mostrar modal de orden cancelada automáticamente
                             setShowCancelledOrderModal(true);
+                            
+                            // No continuar con el resto del procesamiento
+                            return;
+                        }
+                        
+                        // *** VERIFICACIÓN: Detectar orden finalizada (pagada desde otro dispositivo) ***
+                        if (ticketData.order_status === "Finalizado") {
+                            // console.log('Orden finalizada detectada (pagada desde mesero u otro dispositivo)');
+                            
+                            // Verificar si NO se finalizó en esta página
+                            if (!orderEndOnThisPage) {
+                                // La orden fue finalizada desde otro dispositivo (cocina, mesero, etc.)
+                                
+                                // Mostrar ticket antes de limpiar
+                                const ticketsEnabled = localStorage.getItem('tickets');
+                                if (ticketsEnabled === 'true' && ordenActiva && ordenActiva.order_uuid) {
+                                    setCompletedOrderUuid(ordenActiva.order_uuid);
+                                    setShowTicketModal(true);
+                                }
+                                
+                                // Limpiar datos locales (EXCEPTO número de mesa)
+                                localStorage.removeItem("ordenActiva1");
+                                localStorage.removeItem("historialPedidos1");
+                                localStorage.removeItem("carrito1");
+                                localStorage.removeItem("productosCanceladosSnapshot1");
+                                
+                                // Limpiar estados (EXCEPTO número de mesa)
+                                setHistorialPedidos([]);
+                                setOrdenActiva(null);
+                                setTotalFinal(0);
+                                setCarrito([]);
+                                
+                                // Mostrar mensaje informativo
+                                setMensajeError("Tu orden ha sido finalizada y pagada desde otro dispositivo.");
+                                
+                                setTimeout(() => {
+                                    setMensajeError("");
+                                }, 5000);
+                            }
                             
                             // No continuar con el resto del procesamiento
                             return;
@@ -639,7 +737,8 @@ export default function MenuCliente() {
             const orden = JSON.parse(ordenActivaGuardada);
             setOrdenActiva(orden);
             if (orden && orden.order_uuid) {
-                cargarTotalFinal(orden.order_uuid);
+                // Verificar estado de la orden al cargar
+                verificarEstadoOrdenInicial(orden.order_uuid);
             }
         }
     }, []);
@@ -1023,6 +1122,9 @@ export default function MenuCliente() {
             const response = await endOrder(currentOrderUuid, metodoPago);
             
             if (response && (response.success !== false)) {
+                // *** Marcar que la orden se finalizó en esta página ***
+                setOrderEndOnThisPage(true);
+                
                 console.log('🔵 Pago confirmado exitosamente');
                 console.log('🟢 orderUuid:', currentOrderUuid);
 
@@ -1108,6 +1210,8 @@ export default function MenuCliente() {
                 
                 setTimeout(() => {
                     setMensajeError("");
+                    // Resetear el flag después de mostrar el ticket
+                    setOrderEndOnThisPage(false);
                 }, 3000);
             } else {
                 throw new Error(response?.message || 'La API indicó que el pago no se pudo procesar');
@@ -1200,6 +1304,8 @@ export default function MenuCliente() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+            {isAuthenticated && (
+            <>
             <header className="sticky top-0 z-50">
                 <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
@@ -1267,8 +1373,16 @@ export default function MenuCliente() {
                     onClick={() => setIsOpen(false)}
                 />
             )}
+            </>
+            )}
 
-            <div className="sticky top-16 z-30 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6">
+            <div 
+                className="sticky top-16 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6"
+                style={{ 
+                    visibility: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? 'hidden' : 'visible',
+                    zIndex: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? -1 : 30
+                }}
+            >
                 <div className="max-w-4xl mx-auto">
                     <div className="relative">
                     <input
@@ -1302,6 +1416,7 @@ export default function MenuCliente() {
 
             <div className="relative z-0">
 
+            {isAuthenticated && (
             <button
                 className="fixed bottom-10 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
                 onClick={() => setCarritoModalOpen(true)}
@@ -1313,6 +1428,7 @@ export default function MenuCliente() {
                     </span>
                 )}
             </button>
+            )}
 
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12 relative z-10">
                 {productosFiltrados.length > 0 ? (
@@ -1568,6 +1684,10 @@ export default function MenuCliente() {
                 ordenActiva={ordenActiva}
                 descuentoOrden={descuentoOrden}
                 setDescuentoOrden={setDescuentoOrden}
+                visibilityStyle={{ 
+                    visibility: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? 'hidden' : 'visible',
+                    zIndex: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? -1 : 99999
+                }}
                 onClose={() => setCarritoModalOpen(false)}
                 onUpdateQuantity={(id, incremento) => {
                     setCarrito((prevCarrito) =>

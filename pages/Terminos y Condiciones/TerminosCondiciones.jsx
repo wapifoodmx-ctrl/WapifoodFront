@@ -93,7 +93,7 @@ export default function TermsAndConditions() {
                 eligibility: 'Todos los usuarios con suscripción activa son acreedores de soporte técnico general y apoyo con el sistema.',
                 schedule: 'El soporte está disponible de lunes a viernes de 12:00 PM a 5:00 PM (Hora de la Ciudad de México - GMT-6).',
                 channels: [
-                    'Correo electrónico: wapitech.dev@gmail.com (mencionado en la sección 12 de Contacto)',
+                    'Correo electrónico: wapifoodmx@gmail.com (mencionado en la sección 12 de Contacto)',
                     'WhatsApp: 55-2053-5967 (número disponible en la sección 12 de Contacto)'
                 ],
                 coverage: [
@@ -389,7 +389,7 @@ export default function TermsAndConditions() {
                                                     En caso de que algún tercero presente una queja, reclamo, demanda o solicitud relacionada 
                                                     con el uso que usted haga de la Aplicación, el contenido publicado por usted, o los 
                                                     servicios que ofrezca a través de la plataforma, <strong>dicho tercero afectado deberá 
-                                                    ponerse en contacto directamente al correo electrónico wapitech.dev@gmail.com </strong> 
+                                                    ponerse en contacto directamente al correo electrónico wapifoodmx@gmail.com </strong> 
                                                     (mencionado en la sección 12 de Contacto) para dar seguimiento a su queja o solicitud 
                                                     y buscar la resolución correspondiente.
                                                 </p>
@@ -445,7 +445,7 @@ export default function TermsAndConditions() {
                                     <MdOutlineEmail className="text-2xl" />
                                 </div>
                                 <p className="font-semibold mb-1">Correo electrónico</p>
-                                <p className="text-sm sm:text-base">wapitech.dev@gmail.com</p>
+                                <p className="text-sm sm:text-base">wapifoodmx@gmail.com</p>
                                 <p className="text-xs text-green-100 mt-1">Para soporte y consultas generales</p>
                             </div>
                             

@@ -3,6 +3,9 @@ import { useRouter } from 'next/router'
 import Menu from '@/pages/assets/img/menu.png'
 import Menuuwu from '@/pages/assets/img/Menuuwu.png'
 import Menu2 from '@/pages/assets/images/Menu2.png'
+import { HiOutlineSparkles, HiOutlineChartBar, HiOutlineClipboardList } from "react-icons/hi"
+import { MdOutlineRestaurantMenu, MdOutlinePointOfSale } from "react-icons/md"
+import { FaUserTie } from "react-icons/fa"
 
 export default function Main() {
     const router = useRouter();
@@ -22,53 +25,102 @@ export default function Main() {
         router.push('/meseroMenu');
     }
 
+    const highlights = [
+        { icon: <MdOutlineRestaurantMenu size={20} />, text: "Menú digital" },
+        { icon: <MdOutlinePointOfSale size={20} />, text: "Punto de venta" },
+        { icon: <HiOutlineChartBar size={20} />, text: "Analytics" },
+    ];
+
     return (
-        <main className="bg-gradient-to-br from-green-200 via-emerald-100 to-teal-100 min-h-screen flex items-center justify-center">
-            <section className="flex flex-col md:flex-row items-center justify-center w-full px-4 md:gap-10 md:px-16 py-10 md:py-0 min-h-[80vh]" id='main'>
+        <main className="bg-gradient-to-br from-green-200 via-emerald-100 to-teal-100 min-h-screen flex items-center justify-center relative overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-20 left-10 w-32 h-32 bg-green-300/30 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-20 right-10 w-40 h-40 bg-emerald-300/30 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-teal-300/20 rounded-full blur-2xl"></div>
+            
+            <section className="flex flex-col md:flex-row items-center justify-center w-full px-4 md:gap-10 md:px-16 py-10 md:py-0 min-h-[80vh] relative z-10" id='main'>
                 <div className="w-full md:w-2/3 flex flex-col justify-center items-center">
-                    <h2 className="text-4xl md:text-5xl text-center font-extrabold text-green-800 drop-shadow-lg mb-4 max-w-xl leading-tight">
-                        Gestiona tus pedidos de forma fácil y eficiente!
-                    </h2>
-                    <p className="text-center text-green-700 text-lg md:text-xl mt-2 mb-4 font-medium max-w-lg">
-                        WapiFood es la plataforma que simplifica la gestión de pedidos para tu restaurante o negocio de comida.
+                    {/* Badge */}
+                    <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full shadow-md mb-6 border border-green-200">
+                        <HiOutlineSparkles className="text-emerald-500" size={18} />
+                        <span className="text-green-700 font-semibold text-sm">La plataforma #1 para restaurantes</span>
+                    </div>
+                    
+                    <h1 className="text-4xl md:text-6xl text-center font-extrabold text-green-800 drop-shadow-lg mb-4 max-w-2xl leading-tight">
+                        Todo lo que tu restaurante necesita en <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">un solo lugar</span>
+                    </h1>
+                    <p className="text-center text-green-700 text-lg md:text-xl mt-2 mb-6 font-medium max-w-xl">
+                        WapiFood integra menú digital, punto de venta, cocina, gestión de meseros, inventarios, recetas y analytics. <strong>Todo sincronizado.</strong>
                     </p>
-                    <div className="flex flex-col gap-6 w-full max-w-md my-6">
+                    
+                    {/* Highlights */}
+                    <div className="flex flex-wrap justify-center gap-3 mb-8">
+                        {highlights.map((item, index) => (
+                            <div key={index} className="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-3 py-2 rounded-full shadow-sm border border-green-100">
+                                <span className="text-emerald-600">{item.icon}</span>
+                                <span className="text-green-700 text-sm font-medium">{item.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 w-full max-w-lg my-4">
                         <button 
-                            className="rounded-xl bg-gradient-to-r from-green-400 to-emerald-400 text-white font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:from-green-500 hover:to-emerald-500 transition-all duration-200 border-2 border-green-300"
+                            className="flex-1 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold shadow-lg shadow-green-500/30 p-4 text-xl hover:scale-105 hover:from-green-600 hover:to-emerald-600 transition-all duration-200 border-2 border-green-400"
                             onClick={handleStartClick}
                         >
-                            Comenzar ahora
+                            🚀 Comenzar gratis
                         </button>
                         <button 
-                            className="rounded-xl bg-gradient-to-r from-white to-green-100 text-green-800 font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:bg-green-200 transition-all duration-200 border-2 border-emerald-200"
+                            className="flex-1 rounded-xl bg-white/80 backdrop-blur-sm text-green-700 font-bold shadow-lg p-4 text-xl hover:scale-105 hover:bg-white transition-all duration-200 border-2 border-green-200"
                             onClick={handleHowItWorksClick}
                         >
                             Iniciar Sesión
                         </button>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-lg mt-2">
                         <button 
-                            className="rounded-xl bg-gradient-to-r from-green-100 to-white text-emerald-700 font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:bg-emerald-100 transition-all duration-200 border-2 border-green-200"
+                            className="flex-1 rounded-xl bg-gradient-to-r from-green-100 to-emerald-50 text-green-700 font-semibold shadow-md p-3 text-lg hover:scale-105 hover:bg-green-50 transition-all duration-200 border border-green-200 flex items-center justify-center gap-2"
                             onClick={handleClientMenuClick}
                         >
-                            Menú del Cliente
+                            <MdOutlineRestaurantMenu size={22} />
+                            Menú Cliente
                         </button>
                         <button 
-                            className="rounded-xl bg-gradient-to-r from-orange-400 to-amber-400 text-white font-bold shadow-lg p-3 w-full text-2xl hover:scale-105 hover:from-orange-500 hover:to-amber-500 transition-all duration-200 border-2 border-orange-300"
+                            className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold shadow-md shadow-emerald-500/20 p-3 text-lg hover:scale-105 hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 border border-emerald-400 flex items-center justify-center gap-2"
                             onClick={handleMeseroMenuClick}
                         >
+                            <FaUserTie size={18} />
                             Menú Mesero
                         </button>
                     </div>
+                    
+                    {/* Trust indicators */}
+                    <div className="flex items-center gap-6 mt-8 text-green-600 text-sm">
+                        <div className="flex items-center gap-1">
+                            <span className="text-emerald-500">✓</span>
+                            <span>Sin comisiones</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-emerald-500">✓</span>
+                            <span>Actualiza tu restaurante</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-emerald-500">✓</span>
+                            <span>Fácil de usar</span>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex flex-col items-center justify-center">
+                <div className="flex flex-col items-center justify-center mt-8 md:mt-0">
                     <Image 
                         src={Menu2} 
                         className="hidden md:block h-[900px] w-[600px] shadow-2xl rounded-2xl border-4 border-green-200 md:h-[50%] md:w-[50%] lg:w-[100%] md:min-w-[400px] lg:min-w-[600px] transition-all duration-300 hover:scale-105"
-                        alt="Imagen para pantallas grandes"
+                        alt="WapiFood Dashboard - Gestión completa de restaurante"
                     />
                     <Image 
                         src={Menuuwu}
                         className="block md:hidden h-[350px] w-[90vw] max-w-[375px] shadow-2xl rounded-2xl border-4 border-emerald-200 transition-all duration-300 hover:scale-105"
-                        alt="Imagen para pantallas pequeñas"
+                        alt="WapiFood App Móvil"
                     />
                 </div>
             </section>

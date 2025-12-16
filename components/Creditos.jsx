@@ -1,8 +1,10 @@
 import { IoCartOutline } from "react-icons/io5";
 import { FaRegCopyright, FaWhatsapp } from "react-icons/fa";
-import { MdEmail, MdPhone, MdLocationOn } from "react-icons/md";
+import { MdEmail, MdPhone, MdLocationOn, MdOutlineRestaurantMenu, MdOutlinePointOfSale } from "react-icons/md";
 import { FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 import { FaTiktok } from "react-icons/fa";
+import { GiCook } from "react-icons/gi";
+import { HiOutlineChartBar } from "react-icons/hi";
 
 export default function Creditos() {
     const data = {
@@ -33,6 +35,13 @@ export default function Creditos() {
         }
     };
 
+    const modules = [
+        { icon: <MdOutlineRestaurantMenu size={16} />, name: "Menú Digital" },
+        { icon: <MdOutlinePointOfSale size={16} />, name: "Punto de Venta" },
+        { icon: <GiCook size={16} />, name: "Vista de Cocina" },
+        { icon: <HiOutlineChartBar size={16} />, name: "Analytics" },
+    ];
+
     const renderList = (title, items) => (
         <div className="flex flex-col pt-4 gap-3 w-full md:w-1/4">
             <h4 className="text-xl font-bold text-green-900">{title}</h4>
@@ -59,11 +68,24 @@ export default function Creditos() {
                         <div className="p-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full shadow-lg">
                             <IoCartOutline size={32} className="text-white" />
                         </div>
-                        <h3 className="font-bold text-2xl bg-gradient-to-r from-green-800 via-emerald-700 to-teal-600 bg-clip-text text-transparent drop-shadow-sm">WapiFood</h3>
+                        <div>
+                            <h3 className="font-bold text-2xl bg-gradient-to-r from-green-800 via-emerald-700 to-teal-600 bg-clip-text text-transparent drop-shadow-sm">WapiFood</h3>
+                            <p className="text-green-700 text-sm">Plataforma integral para restaurantes</p>
+                        </div>
                     </div>
                     <p className="font-medium text-green-700 md:w-full max-w-md">
-                        La solución completa para la gestión de pedidos en tu negocio de comida. Simplifica tus operaciones y mejora la experiencia de tus clientes.
+                        La solución completa para la gestión de tu restaurante. Menú digital, punto de venta, cocina y analytics en una sola plataforma.
                     </p>
+
+                    {/* Modules Pills */}
+                    <div className="flex flex-wrap gap-2">
+                        {modules.map((module, index) => (
+                            <div key={index} className="flex items-center gap-1 bg-white/50 px-3 py-1 rounded-full text-green-800 text-sm">
+                                {module.icon}
+                                <span>{module.name}</span>
+                            </div>
+                        ))}
+                    </div>
 
                     {/* Social Media Icons */}
                     <div className="flex gap-4">
@@ -92,7 +114,7 @@ export default function Creditos() {
                         <h4 className="text-xl font-bold text-green-900">Contacto</h4>
                         <ul className="flex flex-col gap-3">
                             <li className="font-medium text-green-800 flex items-center gap-2">
-                                <MdEmail size={18} className="text-emerald-600" />wapitech.dev@gmail.com
+                                <MdEmail size={18} className="text-emerald-600" />wapifoodmx@gmail.com
                             </li>
                             <li className="font-medium text-green-800 flex items-center gap-2">
                                 <MdPhone size={18} className="text-emerald-600" />+52 5520535967

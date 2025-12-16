@@ -10,7 +10,9 @@ import getOrdersDia from "../../useCases/getOrdersDia.js";
 import { updateProductStatus } from "../../useCases/updateProductStatus.js";
 import { cancelOrder } from "../../useCases/cancelOrder.js";
 import { endPuntoDeVenta } from "../../useCases/endPuntoDeVenta.js";
-import { updateTableStatus } from "../../useCases/tablesStatus.js"; // Agregar esta importación
+import { updateTableStatus } from "../../useCases/tablesStatus.js";
+import { getTicket } from "../../useCases/getTicket.js";
+import { toast } from "@/components/Toast";
 import ModalCocina from "./modalCocina.jsx";
 
 export default function VistaCocina() {
@@ -38,7 +40,11 @@ export default function VistaCocina() {
     const [unavailableTables, setUnavailableTables] = useState([]);
     const [showReleaseModal, setShowReleaseModal] = useState(false);
     const [selectedTableToRelease, setSelectedTableToRelease] = useState(null);
-    const [tablesData, setTablesData] = useState(null); // Agregar este estado
+    const [tablesData, setTablesData] = useState(null);
+    
+    // Estado para confirmación de cancelar orden finalizada
+    const [showConfirmCancelFinalized, setShowConfirmCancelFinalized] = useState(false);
+    const [ordenFinalizadaParaCancelar, setOrdenFinalizadaParaCancelar] = useState(null);
 
     const fetchTablesData = async () => {
         try {
@@ -353,57 +359,18 @@ export default function VistaCocina() {
             const orderUuid = selectedTable.orderUuid;
 
             if (selectedTable.tableNumber === 1) {
-                // console.log('Mesa 1 detectada - usando endPuntoDeVenta');
-
+                // Mesa 1 (Punto de Venta) - Finalizar orden completa
                 const metodoPago = selectedTable.metodoPago || 'efectivo';
-
-                // console.log('Finalizando orden con endPuntoDeVenta:', {
-                //     orderUuid,
-                //     metodoPago,
-                //     tableNumber: selectedTable.tableNumber
-                // });
-
                 await endPuntoDeVenta(orderUuid, metodoPago);
-
-                setApiTables((prevTables) =>
-                    prevTables.filter((table) => {
-                        if (table.orderUuid === orderUuid) {
-                            setFinishedTables((prevFinished) => [...prevFinished, {
-                                ...table,
-                                type: 'finished',
-                                products: table.products.map(p => ({ ...p, status: 'Finalizado' }))
-                            }]);
-                            return false;
-                        }
-                        return true;
-                    })
-                );
-
-                // console.log('Orden finalizada exitosamente con endPuntoDeVenta');
+                toast.success("Orden finalizada exitosamente");
             } else {
-                // console.log('Mesa normal - usando updateProductStatus');
-
+                // Mesa normal - Marcar productos como preparados
                 const productIds = activeProducts.map(product => product.id);
-
                 await updateProductStatus(orderUuid, productIds, 'Preparado');
-
-                setApiTables((prevTables) =>
-                    prevTables.filter((table) => {
-                        if (table.orderUuid === orderUuid) {
-                            setCompletedTables((prevCompleted) => [...prevCompleted, {
-                                ...table,
-                                type: 'completed',
-                                products: table.products.map(p => ({ ...p, status: 'Preparado' }))
-                            }]);
-                            return false;
-                        }
-                        return true;
-                    })
-                );
-
-                // console.log('Orden completada exitosamente con updateProductStatus');
+                toast.success("Productos marcados como preparados");
             }
 
+            // Refrescar datos desde el servidor para obtener el estado actualizado
             await fetchTablesData();
 
             setActiveModal(null);
@@ -415,6 +382,44 @@ export default function VistaCocina() {
         }
     };
 
+    // Función para verificar si la orden está finalizada antes de cancelar
+    const verificarYCancelarOrden = async () => {
+        try {
+            if (!selectedTable || !selectedTable.orderUuid) {
+                console.error('No se encontró la orden para cancelar');
+                return;
+            }
+
+            // Verificar estado actual de la orden
+            const ticketData = await getTicket(selectedTable.orderUuid);
+            
+            if (ticketData && ticketData.order_status === "Finalizado") {
+                // La orden ya está finalizada, mostrar confirmación extra
+                setOrdenFinalizadaParaCancelar(selectedTable);
+                setShowConfirmCancelFinalized(true);
+                setActiveModal(null); // Cerrar modal de confirmación anterior
+                return;
+            }
+            
+            // Si no está finalizada, proceder con la cancelación normal
+            await handleCancelOrder();
+        } catch (error) {
+            console.error('Error al verificar estado de la orden:', error);
+            // Si hay error, proceder con la cancelación normal
+            await handleCancelOrder();
+        }
+    };
+
+    // Función para cancelar orden finalizada (después de confirmación extra)
+    const confirmarCancelarOrdenFinalizada = async () => {
+        setShowConfirmCancelFinalized(false);
+        if (ordenFinalizadaParaCancelar) {
+            setSelectedTable(ordenFinalizadaParaCancelar);
+            await handleCancelOrder();
+            setOrdenFinalizadaParaCancelar(null);
+        }
+    };
+
     const handleCancelOrder = async () => {
         try {
             if (!selectedTable || !selectedTable.orderUuid) {
@@ -423,54 +428,18 @@ export default function VistaCocina() {
             }
 
             const orderUuid = selectedTable.orderUuid;
-            const tableNumber = selectedTable.tableNumber;
-
-            // console.log('Cancelando orden completa:', orderUuid);
 
             await cancelOrder(orderUuid);
 
-            // Si la orden estaba en completedTables, moverla desde ahí
-            if (selectedTable.type === 'completed') {
-                setCompletedTables((prevCompleted) =>
-                    prevCompleted.filter((table) => {
-                        if (table.orderUuid === orderUuid) {
-                            setCancelledTables((prevCancelled) => [...prevCancelled, {
-                                ...table,
-                                type: 'cancelled',
-                                products: table.products.map(p => ({ ...p, status: 'Cancelado' }))
-                            }]);
-                            return false;
-                        }
-                        return true;
-                    })
-                );
-
-                // NO liberar la mesa al cancelar - solo al finalizar
-            } else {
-                // Si la orden estaba en apiTables (pendientes), moverla desde ahí
-                setApiTables((prevTables) =>
-                    prevTables.filter((table) => {
-                        if (table.orderUuid === orderUuid) {
-                            setCancelledTables((prevCancelled) => [...prevCancelled, {
-                                ...table,
-                                type: 'cancelled',
-                                products: table.products.map(p => ({ ...p, status: 'Cancelado' }))
-                            }]);
-                            return false;
-                        }
-                        return true;
-                    })
-                );
-            }
-
+            // Refrescar datos desde el servidor
             await fetchTablesData();
 
             setActiveModal(null);
             setIsTableDetailModalOpen(false);
-            // console.log('Orden cancelada exitosamente');
+            toast.success('Orden cancelada exitosamente');
         } catch (error) {
             console.error('Error al cancelar la orden:', error);
-            alert('Error al cancelar la orden: ' + error.message);
+            toast.error('Error al cancelar la orden: ' + error.message);
         }
     };
 
@@ -559,7 +528,45 @@ export default function VistaCocina() {
         }
     };
 
-    const openTableDetail = (table) => {
+    const openTableDetail = async (table) => {
+        // Verificar si la orden ya fue finalizada desde otro dispositivo
+        if (table.orderUuid) {
+            try {
+                const ticketData = await getTicket(table.orderUuid);
+                
+                if (ticketData && ticketData.order_status === "Finalizado") {
+                    // La orden ya fue finalizada desde otro dispositivo
+                    toast.info("Orden finalizada desde otro dispositivo");
+                    
+                    // Mover la orden a finalizadas
+                    if (table.type === 'pending') {
+                        setApiTables((prevTables) => 
+                            prevTables.filter((t) => t.orderUuid !== table.orderUuid)
+                        );
+                    } else if (table.type === 'completed') {
+                        setCompletedTables((prevTables) => 
+                            prevTables.filter((t) => t.orderUuid !== table.orderUuid)
+                        );
+                    }
+                    
+                    // Agregar a finalizadas
+                    setFinishedTables((prevTables) => [...prevTables, {
+                        ...table,
+                        type: 'finished',
+                        products: table.products.map(p => ({ ...p, status: 'Finalizado' }))
+                    }]);
+                    
+                    // Refrescar datos
+                    await fetchTablesData();
+                    
+                    return; // No abrir el modal
+                }
+            } catch (error) {
+                console.error('Error al verificar estado de la orden:', error);
+                // Si hay error, continuar abriendo el modal normalmente
+            }
+        }
+        
         setSelectedTable(table);
         setIsTableDetailModalOpen(true);
     };
@@ -648,14 +655,57 @@ export default function VistaCocina() {
                     setActiveModal={setActiveModal}
                     activeModal={activeModal}
                     handleCompleteOrder={handleCompleteOrder}
-                    handleCancelOrder={handleCancelOrder}
+                    handleCancelOrder={verificarYCancelarOrden}
                     isModalOpen={isModalOpen}
                     selectedProduct={selectedProduct}
                     handleCancelProduct={handleCancelProduct}
                     handleFinalizeCompletedOrder={handleFinalizeCompletedOrder}
                 />
 
-                <div className="sticky top-16 z-40 bg-white w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b bg-white/80 rounded-t-2xl">
+                {/* Modal de confirmación para cancelar orden finalizada */}
+                {showConfirmCancelFinalized && (
+                    <div 
+                        className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[100] p-4"
+                        onClick={() => setShowConfirmCancelFinalized(false)}
+                    >
+                        <div 
+                            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-orange-200"
+                            style={{
+                                background: "linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)",
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <IoMdInformationCircleOutline className="text-orange-500 text-4xl" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">Orden Finalizada</h3>
+                                <p className="text-gray-600">
+                                    La orden ha sido finalizada desde otro dispositivo. ¿Estás seguro que deseas cancelarla?
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowConfirmCancelFinalized(false);
+                                        setOrdenFinalizadaParaCancelar(null);
+                                    }}
+                                    className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-colors"
+                                >
+                                    No
+                                </button>
+                                <button
+                                    onClick={confirmarCancelarOrdenFinalizada}
+                                    className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-colors"
+                                >
+                                    Sí, cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-sm w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b rounded-t-2xl">
                     <button
                         className={`px-4 py-2 cursor-pointer ${view === "all" ? "border-b-2 border-green-600 font-bold" : ""
                             }`}

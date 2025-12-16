@@ -74,12 +74,12 @@ export default function Home() {
 
         {/* SEO base */}
         <title>WapiFood | Menú digital y punto de venta para restaurantes</title>
-        <meta name="description" content="Crea tu menú digital y gestiona ventas y cocina en tiempo real con WapiFood." />
+        <meta name="description" content="Crea tu menú digital y gestiona ventas y cocina con WapiFood." />
         <link rel="canonical" href={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://wapifood.com'}/`} />
 
         {/* Open Graph */}
         <meta property="og:title" content="WapiFood | Menú digital y punto de venta" />
-        <meta property="og:description" content="Crea tu menú digital y gestiona ventas y cocina en tiempo real con WapiFood." />
+        <meta property="og:description" content="Crea tu menú digital y gestiona ventas y cocina con WapiFood." />
         <meta property="og:url" content={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://wapifood.com'}/`} />
         <meta property="og:type" content="website" />
 
@@ -136,16 +136,11 @@ export default function Home() {
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-6 bg-white text-gray-500 font-medium">✨ Características Premium ✨</span>
+              <span className="px-6 bg-white text-gray-500 font-medium">🚀 Plataforma Completa 🚀</span>
             </div>
           </div>
 
-          {/* Sección AppTickets con contenedor mejorado */}
-          <section className="relative py-8 md:py-16 bg-white">
-            <div className="animate-fade-in-up delay-200">
-              <AppTickets />
-            </div>
-          </section>
+        
 
           {/* Sección de Funcionamiento con fondo alternativo */}
           <section className="relative py-8 md:py-16 bg-gradient-to-b from-gray-50 to-white">

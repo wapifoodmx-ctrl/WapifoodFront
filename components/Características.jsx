@@ -1,59 +1,135 @@
 import { AiFillSignal } from "react-icons/ai";
-import { IoCartOutline } from "react-icons/io5";
-import { FaRegUser } from "react-icons/fa";
+import { IoCartOutline, IoRestaurantOutline } from "react-icons/io5";
+import { FaRegUser, FaUserTie, FaConciergeBell } from "react-icons/fa";
 import { RiCoinsLine } from "react-icons/ri";
+import { MdOutlinePointOfSale, MdOutlineInventory2, MdOutlineReceipt, MdOutlineTableRestaurant, MdOutlineMenuBook } from "react-icons/md";
+import { HiOutlineChartBar, HiOutlineClock, HiOutlineDeviceMobile } from "react-icons/hi";
+import { GiCook } from "react-icons/gi";
+import { BiReceipt } from "react-icons/bi";
 
-// "Objeto que retroalimenta las tarjetas";
-const data = [
+// Features principales del software
+const mainFeatures = [
     {
-        icon: <IoCartOutline size={32} />,
-        title: "Gestiona tus pedidos",
-        interm: "Recibe y organiza pedidos. Mantén un seguimiento claro de cada orden y optimiza la gestión de tu negocio.",
+        icon: <MdOutlinePointOfSale size={32} />,
+        title: "Punto de Venta",
+        description: "Sistema de cobro completo con múltiples métodos de pago, descuentos y generación automática de tickets.",
+        gradient: "from-green-500 to-emerald-500"
     },
     {
-        icon: <FaRegUser size={32} />,
-        title: "Amigable con tus clientes ",
-        interm: "Crea perfiles de usuario para tu equipo y asigna roles y permisos personalizados. Controla el acceso a la información de tu negocio.",
+        icon: <GiCook size={32} />,
+        title: "Gestión de Cocina",
+        description: "Los cocineros reciben pedidos en tiempo real, marcan productos como preparados y la mesa se notifica a tu cliente.",
+        gradient: "from-orange-500 to-amber-500"
     },
     {
-        icon: <RiCoinsLine size={32} />,
-        title: "Ahorra tiempo y dinero",
-        interm: "Optimiza la gestión de tu restaurante y ahorra tiempo y dinero. WapiFood te permite gestionar tu negocio de forma eficiente.",
+        icon: <MdOutlineMenuBook size={32} />,
+        title: "Ticket Digital QR",
+        description: "Tus clientes pueden ver su ticket digital escaneando un código QR en, sin necesidad de apps ni descargas.",
+        gradient: "from-blue-500 to-cyan-500"
     },
     {
-        icon: <AiFillSignal size={32} />,
-        title: "Informes y estadísticas",
-        interm: "Visualiza tus informes y estadísticas cuando quieras. Comprende el rendimiento de tu negocio y toma decisiones informadas.",
+        icon: <FaUserTie size={32} />,
+        title: "Portal de Meseros",
+        description: "Los meseros gestionan mesas, toman pedidos y ven el estado de preparación desde su celular en tiempo real.",
+        gradient: "from-purple-500 to-indigo-500"
     },
-    
+    {
+        icon: <HiOutlineChartBar size={32} />,
+        title: "Dashboard Analytics",
+        description: "Visualiza ventas por día, productos más vendidos, rendimiento de meseros y estadísticas clave de tu negocio.",
+        gradient: "from-teal-500 to-green-500"
+    },
+    {
+        icon: <MdOutlineInventory2 size={32} />,
+        title: "Control de Inventario",
+        description: "Gestiona ingredientes, recetas, controla stock y descarga reportes de inventario.",
+        gradient: "from-rose-500 to-pink-500"
+    },
+];
 
-
-
+const additionalFeatures = [
+    { icon: <BiReceipt size={24} />, title: "Tickets digitales", description: "Genera y visualiza tickets de cada pedido" },
+    { icon: <MdOutlineTableRestaurant size={24} />, title: "Gestión de mesas", description: "Controla ocupación y estados de mesa" },
+    { icon: <IoRestaurantOutline size={24} />, title: "Recetas y costos", description: "Vincula ingredientes y calcula costos" },
+    { icon: <FaConciergeBell size={24} />, title: "Notificaciones", description: "Alertas en tiempo real de pedidos" },
+    { icon: <HiOutlineDeviceMobile size={24} />, title: "Multi-dispositivo", description: "Funciona en PC y dispositivos móviles" },
+    { icon: <HiOutlineClock size={24} />, title: "Tiempo real", description: "Sincronización instantánea" },
 ];
 
 export default function Características() {
     return (
-        // Sección de las características principales de la aplicación
-        <section className="py-10 flex justify-center items-center flex-col px-8 bg-gradient-to-br from-green-100 via-emerald-50 to-teal-50" id="caracteristicas">
-            <div className="w-full">
-                <h2 className="text-4xl text-center font-extrabold  w-full mb-8 drop-shadow-lg bg-gradient-to-r text-green-800  to-teal-200 bg-clip-text ">
-                    Características Principales
-                </h2>
-                <div className="flex justify-center items-center my-8 flex-col gap-12 md:flex-row md:gap-6 md:px-10 md:flex-wrap">
-                    {data.map((item, index) => (
-                        <section
+        <section className="py-16 flex justify-center items-center flex-col px-4 md:px-8 bg-gradient-to-br from-green-100 via-emerald-50 to-teal-50" id="caracteristicas">
+            <div className="w-full max-w-7xl">
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <span className="inline-block px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold mb-4">
+                        ✨ Todo incluido
+                    </span>
+                    <h2 className="text-4xl md:text-5xl font-extrabold text-green-800 mb-4">
+                        Un ecosistema completo para tu restaurante
+                    </h2>
+                    <p className="text-green-600 text-lg max-w-2xl mx-auto">
+                        Desde que el cliente ordena hasta que paga, WapiFood conecta cada parte de tu operación en tiempo real.
+                    </p>
+                </div>
+
+                {/* Main Features Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+                    {mainFeatures.map((item, index) => (
+                        <div
                             key={index}
-                            className="bg-gradient-to-br from-green-200 via-emerald-100 to-teal-100 p-6 rounded-3xl w-full shadow-2xl flex justify-center items-center flex-col gap-4 md:w-5/12 md:min-h-[350px] md:max-h-[400px] lg:w-5/24 lg:max-h-[500px] lg:min-h-[400px] border-2 border-green-200 hover:scale-105 transition-all duration-300"
+                            className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group"
                         >
-                            <div className="w-fit p-4 rounded-full self-start bg-gradient-to-br from-green-400 via-emerald-300 to-teal-200 shadow-lg">
+                            <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-lg mb-4 group-hover:scale-110 transition-transform duration-300`}>
                                 {item.icon}
                             </div>
-                            <h3 className="text-2xl font-bold text-green-800 self-start drop-shadow">
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">
                                 {item.title}
                             </h3>
-                            <p className="text-green-700 text-md">{item.interm}</p>
-                        </section>
+                            <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                        </div>
                     ))}
+                </div>
+
+                {/* Additional Features */}
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-8 md:p-12 shadow-2xl">
+                    <h3 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">
+                        Y mucho más...
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {additionalFeatures.map((item, index) => (
+                            <div
+                                key={index}
+                                className="bg-white/10 backdrop-blur-sm p-4 rounded-xl text-center hover:bg-white/20 transition-all duration-300"
+                            >
+                                <div className="text-white mb-2 flex justify-center">
+                                    {item.icon}
+                                </div>
+                                <h4 className="text-white font-semibold text-sm mb-1">{item.title}</h4>
+                                <p className="text-green-100 text-xs">{item.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12">
+                    <div className="text-center p-6">
+                        <div className="text-4xl font-extrabold text-green-600 mb-1">0%</div>
+                        <div className="text-gray-600 text-sm">Comisiones por venta</div>
+                    </div>
+                    <div className="text-center p-6">
+                        <div className="text-4xl font-extrabold text-green-600 mb-1">GRATIS</div>
+                        <div className="text-gray-600 text-sm">soporte técnico con su suscripción</div>
+                    </div>
+                    <div className="text-center p-6">
+                        <div className="text-4xl font-extrabold text-green-600 mb-1">5 min</div>
+                        <div className="text-gray-600 text-sm">Para configurar</div>
+                    </div>
+                    <div className="text-center p-6">
+                        <div className="text-4xl font-extrabold text-green-600 mb-1">Paquetes</div>
+                        <div className="text-gray-600 text-sm">Para todos los restaurantes</div>
+                    </div>
                 </div>
             </div>
         </section>
