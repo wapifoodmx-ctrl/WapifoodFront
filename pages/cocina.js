@@ -8,7 +8,7 @@ export default function Cocina() {
         <>
             <Head>
                 <title>Cocina - WapiFood</title>
-                <meta name="description" content="Vista de cocina para gestionar órdenes en tiempo real" />
+                <meta name="description" content="Vista de cocina para gestionar órdenes casi en tiempo real" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
             
@@ -44,7 +44,7 @@ export default function Cocina() {
                                         </div>
                                         <div>
                                             <h1 className="text-3xl font-bold text-gray-800">Cocina</h1>
-                                            <p className="text-gray-600 mt-1">Gestiona todas las órdenes en tiempo real</p>
+                                            <p className="text-gray-600 mt-1">Gestiona todas las órdenes casi en tiempo real</p>
                                         </div>
                                     </div>
                                     

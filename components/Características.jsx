@@ -18,7 +18,7 @@ const mainFeatures = [
     {
         icon: <GiCook size={32} />,
         title: "Gestión de Cocina",
-        description: "Los cocineros reciben pedidos en tiempo real, marcan productos como preparados y la mesa se notifica a tu cliente.",
+        description: "Los cocineros reciben pedidos casi en tiempo real, marcan productos como preparados y la mesa se notifica a tu cliente.",
         gradient: "from-orange-500 to-amber-500"
     },
     {
@@ -30,7 +30,7 @@ const mainFeatures = [
     {
         icon: <FaUserTie size={32} />,
         title: "Portal de Meseros",
-        description: "Los meseros gestionan mesas, toman pedidos y ven el estado de preparación desde su celular en tiempo real.",
+        description: "Los meseros gestionan mesas, toman pedidos y ven el estado de preparación desde su celular casi en tiempo real.",
         gradient: "from-purple-500 to-indigo-500"
     },
     {
@@ -51,9 +51,9 @@ const additionalFeatures = [
     { icon: <BiReceipt size={24} />, title: "Tickets digitales", description: "Genera y visualiza tickets de cada pedido" },
     { icon: <MdOutlineTableRestaurant size={24} />, title: "Gestión de mesas", description: "Controla ocupación y estados de mesa" },
     { icon: <IoRestaurantOutline size={24} />, title: "Recetas y costos", description: "Vincula ingredientes y calcula costos" },
-    { icon: <FaConciergeBell size={24} />, title: "Notificaciones", description: "Alertas en tiempo real de pedidos" },
+    { icon: <FaConciergeBell size={24} />, title: "Notificaciones", description: "Alertas casi en tiempo real de pedidos" },
     { icon: <HiOutlineDeviceMobile size={24} />, title: "Multi-dispositivo", description: "Funciona en PC y dispositivos móviles" },
-    { icon: <HiOutlineClock size={24} />, title: "Tiempo real", description: "Sincronización instantánea" },
+    { icon: <HiOutlineClock size={24} />, title: "Tiempo real", description: "Sincronización casi instantánea" },
 ];
 
 export default function Características() {
@@ -69,7 +69,7 @@ export default function Características() {
                         Un ecosistema completo para tu restaurante
                     </h2>
                     <p className="text-green-600 text-lg max-w-2xl mx-auto">
-                        Desde que el cliente ordena hasta que paga, WapiFood conecta cada parte de tu operación en tiempo real.
+                        Desde que el cliente ordena hasta que paga, WapiFood conecta cada parte de tu operación casi en tiempo real.
                     </p>
                 </div>
 
