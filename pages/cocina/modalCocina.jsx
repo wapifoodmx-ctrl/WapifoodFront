@@ -4,6 +4,8 @@ import { GoDotFill } from "react-icons/go";
 import { MdTableBar } from "react-icons/md";
 import { BsClock, BsThreeDotsVertical } from "react-icons/bs";
 import { LuCalendarDays } from "react-icons/lu";
+import postProcessOrder from "../../useCases/postMermas.js";
+import { getTicket } from "../../useCases/getTicket.js";
 
 export default function ModalCocina({
     isTableDetailModalOpen,
@@ -25,8 +27,10 @@ export default function ModalCocina({
     const dropdownRef = useRef(null);
     const buttonRef = useRef(null);
     const [metodoPago, setMetodoPago] = useState('efectivo');
+    const [showInventoryModal, setShowInventoryModal] = useState(false);
+    const [showPlaceholderModal, setShowPlaceholderModal] = useState(false);
 
-    if (!isTableDetailModalOpen && !activeModal && !isModalOpen) return null;
+    if (!isTableDetailModalOpen && !activeModal && !isModalOpen && !showInventoryModal && !showPlaceholderModal) return null;
 
     return (
         <>
@@ -382,7 +386,10 @@ export default function ModalCocina({
                             </button>
                             <button
                                 className="bg-gradient-to-r from-red-500 to-orange-600 text-white px-4 py-2 rounded-md font-bold shadow-lg hover:scale-105 transition-all"
-                                onClick={handleCancelOrder}
+                                onClick={() => {
+                                    setActiveModal(null);
+                                    setShowInventoryModal(true);
+                                }}
                             >
                                 Sí, cancelar orden
                             </button>
@@ -417,7 +424,10 @@ export default function ModalCocina({
                             </button>
                             <button
                                 className="bg-gradient-to-r from-red-500 to-orange-600 text-white px-4 py-2 rounded-md font-bold shadow-lg hover:scale-105 transition-all"
-                                onClick={handleCancelOrder}
+                                onClick={() => {
+                                    setActiveModal(null);
+                                    setShowInventoryModal(true);
+                                }}
                             >
                                 Sí, cancelar orden
                             </button>
@@ -425,6 +435,117 @@ export default function ModalCocina({
                     </div>
                 </div>
             )}
+            {/* Modal de confirmación para devolver insumos al inventario */}
+            {showInventoryModal && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={() => setShowInventoryModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-2xl p-8 modal shadow-2xl border border-orange-100 max-w-md w-full relative"
+                        style={{
+                            background: "linear-gradient(135deg, #fff7ed 0%, #fff7f7 100%)",
+                            boxShadow: "0 8px 32px 0 rgba(251,146,60,0.15), 0 1.5px 8px 0 rgba(251,191,36,0.10)"
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="text-lg font-bold mb-4 text-orange-700">¿Devolver los insumos al inventario?</p>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Selecciona si deseas devolver los insumos utilizados en esta orden al inventario.
+                        </p>
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md font-semibold transition-all"
+                                onClick={async () => {
+                                    try {
+                                        setShowInventoryModal(false);
+                                        
+                                        // Obtener datos del ticket
+                                        const ticketData = await getTicket(selectedTable.orderUuid);
+                                        
+                                        // Llamar a postProcessOrder con is_merma: false
+                                        await postProcessOrder({
+                                            order_uuid: ticketData.order_uuid,
+                                            order_status: "Cancelado",
+                                            is_merma: false
+                                        });
+                                        
+                                        // Cancelar la orden
+                                        handleCancelOrder();
+                                    } catch (error) {
+                                        console.error('Error al procesar la orden:', error);
+                                        // Continuar con la cancelación aunque falle el proceso de mermas
+                                        handleCancelOrder();
+                                    }
+                                }}
+                            >
+                                No
+                            </button>
+                            <button
+                                className="bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2 rounded-md font-bold shadow-lg hover:scale-105 transition-all"
+                                onClick={async () => {
+                                    try {
+                                        setShowInventoryModal(false);
+                                        
+                                        // Obtener datos del ticket
+                                        const ticketData = await getTicket(selectedTable.orderUuid);
+                                        
+                                        // Llamar a postProcessOrder con is_merma: true
+                                        await postProcessOrder({
+                                            order_uuid: ticketData.order_uuid,
+                                            order_status: "Cancelado",
+                                            is_merma: true
+                                        });
+                                        
+                                        // Mostrar modal placeholder y luego cancelar
+                                        setShowPlaceholderModal(true);
+                                    } catch (error) {
+                                        console.error('Error al procesar la orden:', error);
+                                        // Mostrar modal placeholder aunque falle
+                                        setShowPlaceholderModal(true);
+                                    }
+                                }}
+                            >
+                                Sí
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal placeholder para funcionalidad futura */}
+            {showPlaceholderModal && (
+                <div
+                    className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
+                    onClick={() => setShowPlaceholderModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-2xl p-8 modal shadow-2xl border border-blue-100 max-w-md w-full relative"
+                        style={{
+                            background: "linear-gradient(135deg, #eff6ff 0%, #f7fff7 100%)",
+                            boxShadow: "0 8px 32px 0 rgba(59,130,246,0.15), 0 1.5px 8px 0 rgba(96,165,250,0.10)"
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="text-lg font-bold mb-4 text-blue-700">Modal de Ejemplo</p>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Este es un modal simple que puedes modificar y personalizar más adelante.
+                        </p>
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-md font-bold shadow-lg hover:scale-105 transition-all"
+                                onClick={() => {
+                                    setShowPlaceholderModal(false);
+                                    handleCancelOrder();
+                                }}
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isModalOpen && selectedProduct && (
                 <div
                     className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50"
