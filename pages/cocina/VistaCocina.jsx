@@ -344,9 +344,10 @@ export default function VistaCocina() {
     };
 
     const handleCompleteOrder = async () => {
+       
+
         try {
             if (!selectedTable || !selectedTable.products || selectedTable.products.length === 0) {
-                console.error('No hay productos para completar');
                 return;
             }
 
@@ -358,11 +359,29 @@ export default function VistaCocina() {
             }
 
             const orderUuid = selectedTable.orderUuid;
+            const tableNumber = selectedTable.tableNumber;
 
-            if (selectedTable.tableNumber === 1) {
+            if (tableNumber === 1) {
+
                 // Mesa 1 (Punto de Venta) - Finalizar orden completa
                 const metodoPago = selectedTable.metodoPago || 'efectivo';
                 await endPuntoDeVenta(orderUuid, metodoPago);
+
+                // Descontar del inventario para Mesa 1
+                try {
+                    const ticketData = await getTicket(orderUuid);
+
+                    const orderData = {
+                        order_uuid: ticketData.order_uuid || orderUuid,
+                        order_status: ticketData.order_status,
+                        is_merma: false
+                    };
+
+                    await postProcessOrder(orderData);
+                } catch (error) {
+                    toast.warning('La orden se finalizó, pero hubo un error al descontar del inventario.');
+                }
+
                 toast.success("Orden finalizada exitosamente");
             } else {
                 // Mesa normal - Marcar productos como preparados
@@ -378,8 +397,7 @@ export default function VistaCocina() {
             setIsTableDetailModalOpen(false);
 
         } catch (error) {
-            console.error('Error al completar la orden:', error);
-            alert('Error al completar la orden: ' + error.message);
+            toast.error('Error al completar la orden: ' + error.message);
         }
     };
 
@@ -387,7 +405,6 @@ export default function VistaCocina() {
     const verificarYCancelarOrden = async () => {
         try {
             if (!selectedTable || !selectedTable.orderUuid) {
-                console.error('No se encontró la orden para cancelar');
                 return;
             }
 
@@ -439,16 +456,15 @@ export default function VistaCocina() {
             setIsTableDetailModalOpen(false);
             toast.success('Orden cancelada exitosamente');
         } catch (error) {
-            console.error('Error al cancelar la orden:', error);
             toast.error('Error al cancelar la orden: ' + error.message);
         }
     };
 
     // Nueva función para finalizar comandas completadas
     const handleFinalizeCompletedOrder = async () => {
+
         try {
             if (!selectedTable || !selectedTable.orderUuid) {
-                console.error('No se encontró la orden para finalizar');
                 return;
             }
 
@@ -459,28 +475,8 @@ export default function VistaCocina() {
             const metodoPago = selectedTable.metodoPago || 'efectivo';
             await endPuntoDeVenta(orderUuid, metodoPago);
 
-            // Si es Mesa 1 (Punto de Venta), descontar del inventario
-            if (tableNumber === 1) {
-                try {
-                    console.log('Procesando descuento de inventario para Mesa 1 desde Cocina...');
-                    const ticketData = await getTicket(orderUuid);
-
-                    const orderData = {
-                        order_uuid: ticketData.order_uuid || orderUuid,
-                        order_status: ticketData.order_status,
-                        is_merma: false
-                    };
-
-                    await postProcessOrder(orderData);
-                    console.log('Inventario descontado exitosamente para Mesa 1');
-                } catch (error) {
-                    console.error('Error al descontar inventario para Mesa 1:', error);
-                    toast.warning('La orden se finalizó, pero hubo un error al descontar del inventario.');
-                }
-            }
-
-            // Si no es mesa 1, liberar la mesa
-            if (tableNumber !== 1 && tablesData) {
+            // Liberar la mesa (todas las mesas que llegan aquí son mesas normales, no Mesa 1)
+            if (tablesData) {
                 await updateTableStatus(tableNumber, 'Libre');
             }
 
@@ -504,10 +500,8 @@ export default function VistaCocina() {
             setActiveModal(null);
             setIsTableDetailModalOpen(false);
 
-            // console.log('Comanda completada finalizada exitosamente');
         } catch (error) {
-            console.error('Error al finalizar la comanda completada:', error);
-            alert('Error al finalizar la comanda: ' + error.message);
+            toast.error('Error al finalizar la comanda: ' + error.message);
         }
     };
 
@@ -519,12 +513,8 @@ export default function VistaCocina() {
 
     const confirmReleaseTable = async () => {
         try {
-            // console.log(`Liberando mesa ${selectedTableToRelease}`);
-
             // Cambiar el estado de la mesa de "NoDisponible" a "Libre"
             await updateTableStatus(selectedTableToRelease, 'Libre');
-
-            // console.log(`Mesa ${selectedTableToRelease} liberada exitosamente`);
 
             // Actualizar los datos para reflejar el cambio
             await fetchTablesData();
@@ -532,8 +522,7 @@ export default function VistaCocina() {
             setShowReleaseModal(false);
             setSelectedTableToRelease(null);
         } catch (error) {
-            console.error('Error al liberar la mesa:', error);
-            alert('Error al liberar la mesa: ' + error.message);
+            toast.error('Error al liberar la mesa: ' + error.message);
         }
     };
 
@@ -900,8 +889,8 @@ export default function VistaCocina() {
                                             <button
                                                 onClick={() => table.type === 'unavailable' ? handleReleaseTable(table.tableNumber) : null}
                                                 className={`w-full px-4 py-2 rounded transition-colors ${table.type === 'unavailable'
-                                                        ? 'bg-green-600 text-white hover:bg-green-700'
-                                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                    ? 'bg-green-600 text-white hover:bg-green-700'
+                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                     }`}
                                                 disabled={table.type === 'occupied'}
                                             >

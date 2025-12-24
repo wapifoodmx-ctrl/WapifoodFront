@@ -19,21 +19,27 @@ export function ModalConfirmarPago({
 
     const handleConfirmarPago = async () => {
         console.log('🔵 Botón Confirmar Pago clickeado');
-        
+
         try {
             // Ejecuta el proceso de pago original y obtiene el UUID de la orden
             const orderUuid = await confirmarPago();
-            
+
             console.log('🟢 confirmarPago ejecutado exitosamente');
             console.log('🟢 orderUuid retornado:', orderUuid);
 
+            // Verificar si la cocina está activa
+            const cocinaEnabled = localStorage.getItem('cocinaSwitch');
+            const switchEnabled = cocinaEnabled ? JSON.parse(cocinaEnabled) : false;
+
             // Si el pago fue exitoso y hay un orderUuid, procesar en inventario
-            if (orderUuid) {
+            // SOLO si la cocina NO está activa
+            if (orderUuid && !switchEnabled) {
+                console.log('🟡 Cocina desactivada - Procesando inventario inmediatamente');
                 console.log('🟡 Iniciando llamada a getTicket con UUID:', orderUuid);
-                
+
                 // Obtener los datos del ticket
                 const ticketData = await getTicket(orderUuid);
-                
+
                 console.log('🟡 Datos del ticket obtenidos:', ticketData);
 
                 // Preparar los datos para postMermas
@@ -47,8 +53,10 @@ export function ModalConfirmarPago({
 
                 // Procesar la orden en el inventario
                 const result = await postProcessOrder(orderData);
-                
+
                 console.log('🟢 Orden procesada en inventario exitosamente:', result);
+            } else if (orderUuid && switchEnabled) {
+                console.log('🟡 Cocina activada - El inventario se procesará cuando se finalice la orden desde cocina');
             } else {
                 console.warn('⚠️ No hay orderUuid disponible para procesar inventario');
             }
@@ -80,40 +88,37 @@ export function ModalConfirmarPago({
                 <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-700 mb-4">Seleccionar método de pago:</h3>
                     <div className="grid grid-cols-3 gap-3">
-                        <button 
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                metodoPago === 'efectivo' 
-                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
+                        <button
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${metodoPago === 'efectivo'
+                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg'
                                     : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                            } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
                             onClick={() => !isProcessingPayment && setMetodoPago('efectivo')}
                             disabled={isProcessingPayment}
                         >
-                            <BsCashCoin className="text-3xl mb-2"/>
+                            <BsCashCoin className="text-3xl mb-2" />
                             <span className="font-medium">Efectivo</span>
                         </button>
-                        <button 
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                metodoPago === 'tarjeta' 
-                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
+                        <button
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${metodoPago === 'tarjeta'
+                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg'
                                     : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                            } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
                             onClick={() => !isProcessingPayment && setMetodoPago('tarjeta')}
                             disabled={isProcessingPayment}
                         >
-                            <FaCreditCard className="text-3xl mb-2"/>
+                            <FaCreditCard className="text-3xl mb-2" />
                             <span className="font-medium">Tarjeta</span>
                         </button>
-                        <button 
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                metodoPago === 'pasarela' 
-                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg' 
+                        <button
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${metodoPago === 'pasarela'
+                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg'
                                     : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                            } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                } ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`}
                             onClick={() => !isProcessingPayment && setMetodoPago('pasarela')}
                             disabled={isProcessingPayment}
                         >
-                            <IoMdPhonePortrait className="text-3xl mb-2"/>
+                            <IoMdPhonePortrait className="text-3xl mb-2" />
                             <span className="font-medium">Aplicación</span>
                         </button>
                     </div>
@@ -132,11 +137,10 @@ export function ModalConfirmarPago({
                 </div>
 
                 {mensajeError && (
-                    <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${
-                        mensajeError.includes('exitosamente') 
-                            ? 'bg-green-100 text-green-800 border border-green-200' 
+                    <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${mensajeError.includes('exitosamente')
+                            ? 'bg-green-100 text-green-800 border border-green-200'
                             : 'bg-red-100 text-red-800 border border-red-200'
-                    }`}>
+                        }`}>
                         <div className="flex items-center gap-2">
                             {mensajeError.includes('exitosamente') ? (
                                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,11 +158,10 @@ export function ModalConfirmarPago({
 
                 <div className="space-y-3">
                     <button
-                        className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${
-                            isProcessingPayment 
-                                ? 'bg-gray-300 cursor-not-allowed text-gray-500' 
+                        className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${isProcessingPayment
+                                ? 'bg-gray-300 cursor-not-allowed text-gray-500'
                                 : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
-                        }`}
+                            }`}
                         onClick={handleConfirmarPago}
                         disabled={isProcessingPayment}
                     >
@@ -203,7 +206,7 @@ export function ModalDescuentoProducto({
 
     const handleInputChange = (e) => {
         const value = e.target.value;
-        
+
         if (tipoDescuento === 'porcentaje') {
             // Solo permitir hasta 2 dígitos para porcentaje
             if (value === '' || (/^\d{0,2}$/.test(value) && parseInt(value) <= 99)) {
@@ -214,16 +217,16 @@ export function ModalDescuentoProducto({
             // Para pesos, validar según el precio del producto
             if (productoDescuento) {
                 const precioProducto = parseFloat(productoDescuento.price);
-                
+
                 // Calcular el número máximo de dígitos basado en el precio menos 0.01
                 // Por ejemplo: si el precio es 50, el máximo descuento es 49.99 (2 dígitos)
                 // si el precio es 150, el máximo descuento es 149.99 (3 dígitos)
                 const precioMaxDescuento = precioProducto - 0.01;
                 const maxDigitos = Math.floor(precioMaxDescuento).toString().length;
-                
+
                 // Regex que permite: punto opcional al inicio, números (máximo maxDigitos), punto opcional, hasta 2 decimales
                 const regex = new RegExp(`^(\\.\\d{0,2}|\\d{0,${maxDigitos}}(\\.\\d{0,2})?)$`);
-                
+
                 if (value === '' || regex.test(value)) {
                     // Validar que el valor no sea mayor o igual al precio
                     if (value === '' || value === '.') {
@@ -267,11 +270,10 @@ export function ModalDescuentoProducto({
                     <h3 className="text-lg font-semibold text-gray-700 mb-4">Tipo de descuento:</h3>
                     <div className="grid grid-cols-2 gap-3">
                         <button
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                tipoDescuento === 'porcentaje'
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${tipoDescuento === 'porcentaje'
                                     ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg'
                                     : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                            }`}
+                                }`}
                             onClick={() => {
                                 setTipoDescuento('porcentaje');
                                 setValorDescuento('');
@@ -281,11 +283,10 @@ export function ModalDescuentoProducto({
                             <span className="font-medium">Porcentaje</span>
                         </button>
                         <button
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                tipoDescuento === 'pesos'
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${tipoDescuento === 'pesos'
                                     ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg'
                                     : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                            }`}
+                                }`}
                             onClick={() => {
                                 setTipoDescuento('pesos');
                                 setValorDescuento('');
@@ -365,7 +366,7 @@ export function ModalDescuentoOrden({
 
     const handleInputChange = (e) => {
         const value = e.target.value;
-        
+
         if (descuentoOrden.tipo === 'porcentaje') {
             // Solo permitir hasta 2 dígitos para porcentaje
             if (value === '' || (/^\d{0,2}$/.test(value) && parseInt(value) <= 99)) {
@@ -375,14 +376,14 @@ export function ModalDescuentoOrden({
         } else {
             // Para pesos, validar según el total del carrito
             const totalCarrito = calcularTotalCarrito();
-            
+
             // Calcular el número máximo de dígitos basado en el total menos 0.01
             const totalMaxDescuento = totalCarrito - 0.01;
             const maxDigitos = Math.floor(totalMaxDescuento).toString().length;
-            
+
             // Regex que permite: punto opcional al inicio, números (máximo maxDigitos), punto opcional, hasta 2 decimales
             const regex = new RegExp(`^(\\.\\d{0,2}|\\d{0,${maxDigitos}}(\\.\\d{0,2})?)$`);
-            
+
             if (value === '' || regex.test(value)) {
                 // Validar que el valor no sea mayor o igual al total
                 if (value === '' || value === '.') {
@@ -432,11 +433,10 @@ export function ModalDescuentoOrden({
                     <h3 className="text-lg font-semibold text-gray-700 mb-4">Tipo de descuento:</h3>
                     <div className="grid grid-cols-2 gap-3">
                         <button
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                descuentoOrden.tipo === 'porcentaje'
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${descuentoOrden.tipo === 'porcentaje'
                                     ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg'
                                     : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                            }`}
+                                }`}
                             onClick={() => {
                                 setDescuentoOrden({ ...descuentoOrden, tipo: 'porcentaje', valor: '' });
                                 setMensajeError('');
@@ -446,11 +446,10 @@ export function ModalDescuentoOrden({
                             <span className="font-medium">Porcentaje</span>
                         </button>
                         <button
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                                descuentoOrden.tipo === 'pesos'
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${descuentoOrden.tipo === 'pesos'
                                     ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500 text-green-700 shadow-lg'
                                     : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300 hover:bg-green-50'
-                            }`}
+                                }`}
                             onClick={() => {
                                 setDescuentoOrden({ ...descuentoOrden, tipo: 'pesos', valor: '' });
                                 setMensajeError('');
