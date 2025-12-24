@@ -14,7 +14,7 @@ import { endOrder } from "@/useCases/endOrder";
 import getCodigoConfirmacion from "@/useCases/getCodogoConfirmacion";
 import TicketModal from "@/components/TicketModal";
 import { getTicket } from "@/useCases/getTicket";
-import descontarInventario from "@/useCases/inventarioDescontar";
+
 import { getLatestOrdersByPlan } from "@/useCases/getLatestOrdersByPlan";
 import { vincularMeseroOrden } from "@/useCases/vincularMeseroOrden";
 import ProductCard from "./ ProductCard";
@@ -727,33 +727,7 @@ export default function MeseroMenuComponent() {
                 console.log('🟢 orderUuid:', currentOrderUuid);
 
                 // Descontar inventario después de confirmar el pago
-                try {
-                    // Obtener el ticket completo para tener los datos actualizados
-                    const ticketData = await getTicket(currentOrderUuid);
 
-                    if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
-                        const productosParaDescontar = ticketData.products
-                            .filter(producto => producto.order_detail_status !== "Cancelado")
-                            .map(producto => ({
-                                product_id: producto.product_id || producto.id_products,
-                                quantity: producto.quantity
-                            }));
-
-                        console.log('🟡 Descontando inventario:', productosParaDescontar);
-
-                        const inventarioResponse = await descontarInventario(productosParaDescontar);
-
-                        if (inventarioResponse.success) {
-                            console.log('🟢 Inventario descontado exitosamente:', inventarioResponse.data);
-                        } else {
-                            console.error('🔴 Error al descontar inventario:', inventarioResponse.error);
-                            // No detenemos el flujo, solo registramos el error
-                        }
-                    }
-                } catch (inventarioError) {
-                    console.error('🔴 Error al procesar descuento de inventario:', inventarioError);
-                    // No detenemos el flujo principal si falla el inventario
-                }
 
                 // Procesar orden en inventario con postMermas
                 try {
@@ -855,33 +829,7 @@ export default function MeseroMenuComponent() {
         setErrorCodigoConfirmacion("");
 
         try {
-            // Descontar inventario (sin restricciones si falla)
-            if (ordenActiva && ordenActiva.order_uuid) {
-                try {
-                    const ticketData = await getTicket(ordenActiva.order_uuid);
 
-                    if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
-                        const productosParaDescontar = ticketData.products
-                            .filter(producto => producto.order_detail_status !== "Cancelado")
-                            .map(producto => {
-                                const productId = producto.product_id || producto.id_products || producto.id;
-                                return {
-                                    product_id: parseInt(productId),
-                                    quantity: parseInt(producto.quantity)
-                                };
-                            })
-                            .filter(producto => !isNaN(producto.product_id));
-
-                        if (productosParaDescontar.length > 0) {
-                            await descontarInventario(productosParaDescontar).catch(error => {
-                                console.error('Error al descontar inventario (continuando):', error);
-                            });
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error al procesar inventario (continuando):', error);
-                }
-            }
 
             await confirmarPago();
         } catch (error) {

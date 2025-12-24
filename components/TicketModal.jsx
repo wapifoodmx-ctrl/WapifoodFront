@@ -232,20 +232,13 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
             `}</style>
 
             <div 
-                className="fixed inset-0 cm-modal-backdrop flex items-center justify-center z-[10000] px-4"
+                className="fixed inset-0 cm-modal-backdrop flex items-center justify-center z-[10000] px-4 pt-8"
                 onClick={onClose}
             >
                 <div 
                     className="bg-white cm-card p-6 max-w-lg w-full mx-auto cm-modal-content"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <button
-                        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl z-20 cm-close bg-white p-1 rounded-full shadow"
-                        onClick={onClose}
-                        aria-label="Cerrar ticket"
-                    >
-                        <IoClose />
-                    </button>
 
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full mb-0 mt-6">

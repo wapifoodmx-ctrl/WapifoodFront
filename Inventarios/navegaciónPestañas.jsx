@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { IoSwapHorizontalOutline, IoChevronDownOutline, IoChevronUpOutline } from "react-icons/io5";
+import { IoSwapHorizontalOutline, IoChevronDownOutline, IoChevronUpOutline, IoEyeOutline } from "react-icons/io5";
 
-const NavegacionPestañas = ({ 
-  pestañaActiva, 
-  cambiarPestaña, 
-  insumos = [], 
-  isLoadingData = false, 
+const NavegacionPestañas = ({
+  pestañaActiva,
+  cambiarPestaña,
+  insumos = [],
+  isLoadingData = false,
   vistaActiva = 'cards',
   insumosSeleccionados = [],
   setInsumosSeleccionados,
   terminoBusqueda = '',
-  filtrarPorBusqueda
+  filtrarPorBusqueda,
+  onVerDetalles
 }) => {
   const [insumoExpandido, setInsumoExpandido] = useState(null);
   // Estado para controlar la visualización de unidades por cada card
@@ -69,19 +70,19 @@ const NavegacionPestañas = ({
   const filtrarElementosPorPestaña = (elementos, pestaña) => {
     switch (pestaña) {
       case 'insumos':
-        return elementos.filter(elemento => 
-          elemento.category === 'insumo' || 
+        return elementos.filter(elemento =>
+          elemento.category === 'insumo' ||
           elemento.category === 'insumos' ||
           !elemento.category
         );
       case 'productos':
-        return elementos.filter(elemento => 
-          elemento.category === 'producto' || 
+        return elementos.filter(elemento =>
+          elemento.category === 'producto' ||
           elemento.category === 'productos'
         );
       case 'otros':
-        return elementos.filter(elemento => 
-          elemento.category === 'otros' || 
+        return elementos.filter(elemento =>
+          elemento.category === 'otros' ||
           elemento.category === 'otro'
         );
       default:
@@ -91,7 +92,7 @@ const NavegacionPestañas = ({
 
   // Obtener elementos filtrados para la pestaña actual
   let elementosFiltrados = filtrarElementosPorPestaña(insumos, pestañaActiva);
-  
+
   // Aplicar filtro de búsqueda si existe
   if (terminoBusqueda && filtrarPorBusqueda) {
     elementosFiltrados = filtrarPorBusqueda(elementosFiltrados, terminoBusqueda);
@@ -118,44 +119,63 @@ const NavegacionPestañas = ({
       {elementosFiltrados.map((elemento) => {
         // Determinar si mostrar en unidad base o convertida
         const mostrarEnUnidadBase = unidadesVisualizacion[elemento.id] || false;
-        
+
         // Convertir unidades para visualización
         const { cantidad, unidad } = convertirDesdeAPI(elemento.stock, elemento.unit);
-        
+
         // Determinar qué mostrar
         const stockMostrado = mostrarEnUnidadBase ? elemento.stock : cantidad;
         const unidadMostrada = mostrarEnUnidadBase ? elemento.unit : unidad;
-        
+
         return (
           <div
             key={elemento.id}
-            className={`border rounded-lg p-4 transition-all duration-200 cursor-pointer hover:shadow-md ${
-              insumosSeleccionados.includes(elemento.id)
-                ? 'border-green-500 bg-green-50 shadow-lg ring-2 ring-green-200'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
+            className={`border rounded-lg p-4 transition-all duration-200 cursor-pointer hover:shadow-md ${insumosSeleccionados.includes(elemento.id)
+              ? 'border-green-500 bg-green-50 shadow-lg ring-2 ring-green-200'
+              : 'border-gray-200 hover:border-gray-300'
+              }`}
             onClick={() => toggleSeleccionInsumo(elemento.id)}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              if (onVerDetalles) {
+                onVerDetalles(elemento.id);
+              }
+            }}
           >
-            {/* Header con checkbox */}
+            {/* Header con checkbox y botón de ver detalles */}
             <div className="flex items-start justify-between mb-3">
-              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                insumosSeleccionados.includes(elemento.id)
+              <div className="flex items-center gap-2">
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${insumosSeleccionados.includes(elemento.id)
                   ? 'bg-green-500 border-green-500'
                   : 'border-gray-300 hover:border-green-400'
-              }`}>
-                {insumosSeleccionados.includes(elemento.id) && (
-                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
+                  }`}>
+                  {insumosSeleccionados.includes(elemento.id) && (
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+
+                {/* Botón de ver detalles */}
+                {onVerDetalles && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onVerDetalles(elemento.id);
+                    }}
+                    className="p-1 rounded-full hover:bg-green-100 text-green-600 transition-colors"
+                    title="Ver detalles"
+                  >
+                    <IoEyeOutline className="text-lg" />
+                  </button>
                 )}
               </div>
-              
+
               {/* Estado visual */}
-              <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                elemento.stock > 0 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-red-100 text-red-700'
-              }`}>
+              <div className={`px-2 py-1 rounded-full text-xs font-medium ${elemento.stock > 0
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'
+                }`}>
                 {elemento.stock > 0 ? 'Disponible' : 'Agotado'}
               </div>
             </div>
@@ -165,16 +185,15 @@ const NavegacionPestañas = ({
               <h3 className="font-semibold text-gray-800 text-lg leading-tight line-clamp-2">
                 {elemento.name}
               </h3>
-              
+
               {/* Stock y Costo */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-600">Stock:</span>
                     <div className="flex items-center gap-2">
-                      <span className={`font-medium text-sm px-2 py-1 rounded ${
-                        elemento.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
+                      <span className={`font-medium text-sm px-2 py-1 rounded ${elemento.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
                         {stockMostrado} {unidadMostrada}
                       </span>
                       {/* Botón de conversión para unidades convertibles (excepto Piezas) */}
@@ -185,13 +204,13 @@ const NavegacionPestañas = ({
                             toggleUnidadVisualizacion(elemento.id);
                           }}
                           className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors flex items-center gap-1"
-                          title={`Ver en ${mostrarEnUnidadBase 
+                          title={`Ver en ${mostrarEnUnidadBase
                             ? (elemento.unit === "Gramos" ? "kilos" : "litros")
                             : (elemento.unit === "Gramos" ? "gramos" : "mililitros")
-                          }`}
+                            }`}
                         >
                           <IoSwapHorizontalOutline className="text-xs" />
-                          {mostrarEnUnidadBase 
+                          {mostrarEnUnidadBase
                             ? (elemento.unit === "Gramos" ? "Kg" : "L")
                             : (elemento.unit === "Gramos" ? "g" : "ml")
                           }
@@ -200,18 +219,18 @@ const NavegacionPestañas = ({
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Costo por unidad:</span>
-                  <span className="font-medium text-green-600">${elemento.cost?.toFixed(2) || '0.00'}</span>
+                  <span className="font-medium text-green-600">${elemento.cost?.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN</span>
                 </div>
-                
+
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Costo total:</span>
-                  <span className="font-bold text-green-700">${elemento.total_cost?.toFixed(2) || '0.00'}</span>
+                  <span className="font-bold text-green-700">${elemento.total_cost?.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN</span>
                 </div>
               </div>
-                
+
             </div>
 
             {/* Indicador de selección */}
@@ -257,10 +276,10 @@ const NavegacionPestañas = ({
           {elementosFiltrados.map((elemento) => {
             // Determinar si mostrar en unidad base o convertida
             const mostrarEnUnidadBase = unidadesVisualizacion[elemento.id] || false;
-            
+
             // Convertir unidades para visualización
             const { cantidad, unidad } = convertirDesdeAPI(elemento.stock, elemento.unit);
-            
+
             // Determinar qué mostrar
             const stockMostrado = mostrarEnUnidadBase ? elemento.stock : cantidad;
             const unidadMostrada = mostrarEnUnidadBase ? elemento.unit : unidad;
@@ -268,17 +287,15 @@ const NavegacionPestañas = ({
             return (
               <tr
                 key={elemento.id}
-                className={`hover:bg-gray-50 cursor-pointer transition-colors duration-200 ${
-                  insumosSeleccionados.includes(elemento.id) ? 'bg-green-50' : ''
-                }`}
+                className={`hover:bg-gray-50 cursor-pointer transition-colors duration-200 ${insumosSeleccionados.includes(elemento.id) ? 'bg-green-50' : ''
+                  }`}
                 onClick={() => toggleSeleccionInsumo(elemento.id)}
               >
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                    insumosSeleccionados.includes(elemento.id)
-                      ? 'bg-green-500 border-green-500'
-                      : 'border-gray-300 hover:border-green-400'
-                  }`}>
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${insumosSeleccionados.includes(elemento.id)
+                    ? 'bg-green-500 border-green-500'
+                    : 'border-gray-300 hover:border-green-400'
+                    }`}>
                     {insumosSeleccionados.includes(elemento.id) && (
                       <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -300,9 +317,8 @@ const NavegacionPestañas = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium px-2 py-1 rounded ${
-                      elemento.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
+                    <span className={`text-sm font-medium px-2 py-1 rounded ${elemento.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
                       {stockMostrado} {unidadMostrada}
                     </span>
                     {/* Botón de conversión para unidades convertibles en vista lista (excepto Piezas) */}
@@ -313,13 +329,13 @@ const NavegacionPestañas = ({
                           toggleUnidadVisualizacion(elemento.id);
                         }}
                         className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors flex items-center gap-1"
-                        title={`Ver en ${mostrarEnUnidadBase 
+                        title={`Ver en ${mostrarEnUnidadBase
                           ? (elemento.unit === "Gramos" ? "kilos" : "litros")
                           : (elemento.unit === "Gramos" ? "gramos" : "mililitros")
-                        }`}
+                          }`}
                       >
                         <IoSwapHorizontalOutline className="text-xs" />
-                        {mostrarEnUnidadBase 
+                        {mostrarEnUnidadBase
                           ? (elemento.unit === "Gramos" ? "Kg" : "L")
                           : (elemento.unit === "Gramos" ? "g" : "ml")
                         }
@@ -328,17 +344,16 @@ const NavegacionPestañas = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  ${elemento.cost?.toFixed(2) || '0.00'}
+                  ${elemento.cost?.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                  ${elemento.total_cost?.toFixed(2) || '0.00'}
+                  ${elemento.total_cost?.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    elemento.stock > 0 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${elemento.stock > 0
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                    }`}>
                     {elemento.stock > 0 ? 'Disponible' : 'Agotado'}
                   </span>
                 </td>
@@ -363,19 +378,17 @@ const NavegacionPestañas = ({
             <button
               key={tab.key}
               onClick={() => cambiarPestaña(tab.key)}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                pestañaActiva === tab.key
-                  ? 'border-green-500 text-green-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${pestañaActiva === tab.key
+                ? 'border-green-500 text-green-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               {tab.label}
               {tab.count > 0 && (
-                <span className={`ml-2 py-1 px-2 rounded-full text-xs ${
-                  pestañaActiva === tab.key
-                    ? 'bg-green-100 text-green-600'
-                    : 'bg-gray-100 text-gray-600'
-                }`}>
+                <span className={`ml-2 py-1 px-2 rounded-full text-xs ${pestañaActiva === tab.key
+                  ? 'bg-green-100 text-green-600'
+                  : 'bg-gray-100 text-gray-600'
+                  }`}>
                   {tab.count}
                 </span>
               )}
@@ -397,7 +410,7 @@ const NavegacionPestañas = ({
               {terminoBusqueda ? (
                 <>
                   <p className="mb-2">No se encontraron {pestañaActiva} con "{terminoBusqueda}"</p>
-                  <button 
+                  <button
                     onClick={() => filtrarPorBusqueda && filtrarPorBusqueda([], '')}
                     className="text-green-500 hover:text-green-600 font-medium"
                   >

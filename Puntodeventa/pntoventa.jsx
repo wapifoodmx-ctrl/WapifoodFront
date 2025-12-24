@@ -14,7 +14,7 @@ import TicketModal from "@/components/TicketModal";
 import CarritoModal from "./CarritoModal";
 import { ModalConfirmarPago, ModalDescuentoProducto, ModalDescuentoOrden, ModalSuscripcion, ModalOrdenCancelada } from "./ModalsPago";
 import ProductoCard, { ModalProducto } from "./ProductoCard";
-import descontarInventario from "@/useCases/inventarioDescontar";
+
 
 export default function Pntoventa() {
     const router = useRouter();
@@ -233,7 +233,7 @@ export default function Pntoventa() {
                 const precioConDescuento = calcularPrecioConDescuento(item);
                 return total + (precioConDescuento * item.cantidad);
             }, 0);
-            
+
             if (valor >= totalCarrito) {
                 setMensajeError(`El descuento en pesos no puede ser mayor o igual al total de la orden ($${totalCarrito.toFixed(2)})`);
                 return;
@@ -289,7 +289,7 @@ export default function Pntoventa() {
             ]);
 
             setCarrito([]);
-            
+
             setTimeout(() => {
                 setMensajeError("");
             }, 3000);
@@ -323,7 +323,7 @@ export default function Pntoventa() {
                 totalFinal = Math.max(0, subtotalConDescuentos - valorDesc);
             }
         }
-        
+
         setTotalPedidos(totalFinal.toFixed(2));
         setModalTotalOpen(true);
         setMensajeError("");
@@ -349,8 +349,8 @@ export default function Pntoventa() {
                     id: item.id_products,
                     cantidad: item.cantidad,
                     descuento: item.descuento
-                })), 
-                null, 
+                })),
+                null,
                 descuentoOrden.aplicado ? descuentoOrden : null,
                 metodoPago
             );
@@ -361,12 +361,12 @@ export default function Pntoventa() {
 
             const cocinaEnabled = localStorage.getItem('cocinaSwitch');
             const switchEnabled = cocinaEnabled ? JSON.parse(cocinaEnabled) : false;
-            
+
             const orderStatus = switchEnabled ? 'PuntoDeVenta' : 'Finalizado';
 
             const pagoResponse = await endOrderPuntoDeVenta(
-                orderUuid, 
-                metodoPago, 
+                orderUuid,
+                metodoPago,
                 orderStatus,
                 pedidosPendientes.map(item => ({
                     id: item.id_products,
@@ -375,66 +375,47 @@ export default function Pntoventa() {
                 })),
                 descuentoOrden.aplicado ? descuentoOrden : null
             );
-            
+
             if (pagoResponse && (pagoResponse.success !== false)) {
-                // Descontar inventario después de confirmar el pago
-                try {
-                    // Construir el array de productos para descontar inventario
-                    const productosParaDescontar = response.order_details.map(detail => ({
-                        product_id: detail.product_id,
-                        quantity: detail.quantity
-                    }));
-
-
-                    const inventarioResponse = await descontarInventario(productosParaDescontar);
-                    
-                    if (inventarioResponse.success) {
-                    } else {
-                        console.error('Error al descontar inventario:', inventarioResponse.error);
-                        // No detenemos el flujo, solo registramos el error
-                    }
-                } catch (inventarioError) {
-                    console.error('Error al procesar descuento de inventario:', inventarioError);
-                    // No detenemos el flujo principal si falla el inventario
-                }
+                // Inventario logic removed
 
                 setPedidosPendientes([]);
                 localStorage.removeItem("pedidosPendientes");
                 localStorage.removeItem("carrito");
-                
+
                 setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
-                
+
                 setModalTotalOpen(false);
                 setMetodoPago('efectivo');
-                
-                const mensajeExito = switchEnabled 
-                    ? "¡Pago procesado! La orden ha sido enviada al punto de venta." 
+
+                const mensajeExito = switchEnabled
+                    ? "¡Pago procesado! La orden ha sido enviada al punto de venta."
                     : "¡Pago procesado y orden finalizada exitosamente!";
-                
+
                 setMensajeError(mensajeExito);
-                
+
                 const ticketsEnabled = localStorage.getItem('tickets');
                 if (ticketsEnabled === 'true') {
                     setCompletedOrderUuid(orderUuid);
                     setShowTicketModal(true);
                 }
-                
+
                 setTimeout(() => {
                     setMensajeError("");
                 }, 3000);
-                
+
                 // Retornar el UUID de la orden para que pueda ser usado después
                 return orderUuid;
-                
+
             } else {
                 throw new Error(pagoResponse?.message || 'La API indicó que el pago no se pudo procesar');
             }
-            
+
         } catch (error) {
             console.error('Error al procesar el pago:', error);
-            
+
             let mensajeErrorUsuario = "Error al procesar el pago. ";
-            
+
             if (error.message.includes('fetch')) {
                 mensajeErrorUsuario += "Problemas de conexión. Verifica tu internet e intenta nuevamente.";
             } else if (error.message.includes('token')) {
@@ -446,10 +427,10 @@ export default function Pntoventa() {
             } else {
                 mensajeErrorUsuario += error.message || "Error desconocido. Intenta nuevamente.";
             }
-            
+
             setMensajeError(mensajeErrorUsuario);
             return null;
-            
+
         } finally {
             setIsProcessingPayment(false);
         }
@@ -459,12 +440,12 @@ export default function Pntoventa() {
     const limpiarOrdenCancelada = () => {
         setPedidosPendientes([]);
         setCarrito([]);
-        
+
         localStorage.removeItem("pedidosPendientes");
         localStorage.removeItem("carrito");
-        
+
         setShowCancelledOrderModal(false);
-        
+
         setMensajeError("Los datos han sido limpiados.");
         setTimeout(() => {
             setMensajeError("");
@@ -500,7 +481,7 @@ export default function Pntoventa() {
     // Efecto para el contador de la modal de suscripción
     useEffect(() => {
         let interval = null;
-        
+
         if (showSubscriptionModal && countdown > 0) {
             interval = setInterval(() => {
                 setCountdown(prev => prev - 1);

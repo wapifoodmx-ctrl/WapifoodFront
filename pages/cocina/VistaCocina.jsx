@@ -12,6 +12,7 @@ import { cancelOrder } from "../../useCases/cancelOrder.js";
 import { endPuntoDeVenta } from "../../useCases/endPuntoDeVenta.js";
 import { updateTableStatus } from "../../useCases/tablesStatus.js";
 import { getTicket } from "../../useCases/getTicket.js";
+import postProcessOrder from "../../useCases/postMermas.js";
 import { toast } from "@/components/Toast";
 import ModalCocina from "./modalCocina.jsx";
 
@@ -41,7 +42,7 @@ export default function VistaCocina() {
     const [showReleaseModal, setShowReleaseModal] = useState(false);
     const [selectedTableToRelease, setSelectedTableToRelease] = useState(null);
     const [tablesData, setTablesData] = useState(null);
-    
+
     // Estado para confirmación de cancelar orden finalizada
     const [showConfirmCancelFinalized, setShowConfirmCancelFinalized] = useState(false);
     const [ordenFinalizadaParaCancelar, setOrdenFinalizadaParaCancelar] = useState(null);
@@ -392,7 +393,7 @@ export default function VistaCocina() {
 
             // Verificar estado actual de la orden
             const ticketData = await getTicket(selectedTable.orderUuid);
-            
+
             if (ticketData && ticketData.order_status === "Finalizado") {
                 // La orden ya está finalizada, mostrar confirmación extra
                 setOrdenFinalizadaParaCancelar(selectedTable);
@@ -400,7 +401,7 @@ export default function VistaCocina() {
                 setActiveModal(null); // Cerrar modal de confirmación anterior
                 return;
             }
-            
+
             // Si no está finalizada, proceder con la cancelación normal
             await handleCancelOrder();
         } catch (error) {
@@ -458,6 +459,26 @@ export default function VistaCocina() {
             const metodoPago = selectedTable.metodoPago || 'efectivo';
             await endPuntoDeVenta(orderUuid, metodoPago);
 
+            // Si es Mesa 1 (Punto de Venta), descontar del inventario
+            if (tableNumber === 1) {
+                try {
+                    console.log('Procesando descuento de inventario para Mesa 1 desde Cocina...');
+                    const ticketData = await getTicket(orderUuid);
+
+                    const orderData = {
+                        order_uuid: ticketData.order_uuid || orderUuid,
+                        order_status: ticketData.order_status,
+                        is_merma: false
+                    };
+
+                    await postProcessOrder(orderData);
+                    console.log('Inventario descontado exitosamente para Mesa 1');
+                } catch (error) {
+                    console.error('Error al descontar inventario para Mesa 1:', error);
+                    toast.warning('La orden se finalizó, pero hubo un error al descontar del inventario.');
+                }
+            }
+
             // Si no es mesa 1, liberar la mesa
             if (tableNumber !== 1 && tablesData) {
                 await updateTableStatus(tableNumber, 'Libre');
@@ -499,12 +520,12 @@ export default function VistaCocina() {
     const confirmReleaseTable = async () => {
         try {
             // console.log(`Liberando mesa ${selectedTableToRelease}`);
-            
+
             // Cambiar el estado de la mesa de "NoDisponible" a "Libre"
             await updateTableStatus(selectedTableToRelease, 'Libre');
-            
+
             // console.log(`Mesa ${selectedTableToRelease} liberada exitosamente`);
-            
+
             // Actualizar los datos para reflejar el cambio
             await fetchTablesData();
 
@@ -533,32 +554,32 @@ export default function VistaCocina() {
         if (table.orderUuid) {
             try {
                 const ticketData = await getTicket(table.orderUuid);
-                
+
                 if (ticketData && ticketData.order_status === "Finalizado") {
                     // La orden ya fue finalizada desde otro dispositivo
                     toast.info("Orden finalizada desde otro dispositivo");
-                    
+
                     // Mover la orden a finalizadas
                     if (table.type === 'pending') {
-                        setApiTables((prevTables) => 
+                        setApiTables((prevTables) =>
                             prevTables.filter((t) => t.orderUuid !== table.orderUuid)
                         );
                     } else if (table.type === 'completed') {
-                        setCompletedTables((prevTables) => 
+                        setCompletedTables((prevTables) =>
                             prevTables.filter((t) => t.orderUuid !== table.orderUuid)
                         );
                     }
-                    
+
                     // Agregar a finalizadas
                     setFinishedTables((prevTables) => [...prevTables, {
                         ...table,
                         type: 'finished',
                         products: table.products.map(p => ({ ...p, status: 'Finalizado' }))
                     }]);
-                    
+
                     // Refrescar datos
                     await fetchTablesData();
-                    
+
                     return; // No abrir el modal
                 }
             } catch (error) {
@@ -566,7 +587,7 @@ export default function VistaCocina() {
                 // Si hay error, continuar abriendo el modal normalmente
             }
         }
-        
+
         setSelectedTable(table);
         setIsTableDetailModalOpen(true);
     };
@@ -616,7 +637,7 @@ export default function VistaCocina() {
 
                 {/* Modal para liberar mesa */}
                 {showReleaseModal && (
-                    <div 
+                    <div
                         className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50"
                         onClick={handleModalBackdropClick}
                     >
@@ -664,11 +685,11 @@ export default function VistaCocina() {
 
                 {/* Modal de confirmación para cancelar orden finalizada */}
                 {showConfirmCancelFinalized && (
-                    <div 
+                    <div
                         className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[100] p-4"
                         onClick={() => setShowConfirmCancelFinalized(false)}
                     >
-                        <div 
+                        <div
                             className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-orange-200"
                             style={{
                                 background: "linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)",
@@ -869,9 +890,8 @@ export default function VistaCocina() {
                                     return filteredTables.map((table) => (
                                         <div
                                             key={`table-${table.tableNumber}-${table.type}`}
-                                            className={`bg-white border-l-green-500 border-l-5 shadow-md rounded-lg p-4 flex flex-col justify-between ${
-                                                table.type === 'occupied' ? 'opacity-50 cursor-not-allowed' : ''
-                                            }`}
+                                            className={`bg-white border-l-green-500 border-l-5 shadow-md rounded-lg p-4 flex flex-col justify-between ${table.type === 'occupied' ? 'opacity-50 cursor-not-allowed' : ''
+                                                }`}
                                         >
                                             <div className="flex items-center mb-4">
                                                 <MdTableBar className="text-xl text-green-500 mr-2" />
@@ -879,11 +899,10 @@ export default function VistaCocina() {
                                             </div>
                                             <button
                                                 onClick={() => table.type === 'unavailable' ? handleReleaseTable(table.tableNumber) : null}
-                                                className={`w-full px-4 py-2 rounded transition-colors ${
-                                                    table.type === 'unavailable'
+                                                className={`w-full px-4 py-2 rounded transition-colors ${table.type === 'unavailable'
                                                         ? 'bg-green-600 text-white hover:bg-green-700'
                                                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                }`}
+                                                    }`}
                                                 disabled={table.type === 'occupied'}
                                             >
                                                 {table.type === 'unavailable' ? 'Liberar' : 'Ocupado'}

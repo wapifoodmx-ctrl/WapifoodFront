@@ -14,7 +14,7 @@ import { getTables } from "@/useCases/getTables";
 import { updateTableStatus } from "@/useCases/tablesStatus";
 import { endOrder } from "@/useCases/endOrder";
 import getCodigoConfirmacion from "@/useCases/getCodogoConfirmacion";
-import descontarInventario from "@/useCases/inventarioDescontar";
+
 import TicketModal from "@/components/TicketModal";
 import { getTicket } from "@/useCases/getTicket";
 import ProductCard from "./ ProductCard";
@@ -55,7 +55,7 @@ export default function MenuCliente() {
     const [modalTotalOpen, setModalTotalOpen] = useState(false);
     const [totalPedidos, setTotalPedidos] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [busqueda, setBusqueda] = useState(""); 
+    const [busqueda, setBusqueda] = useState("");
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -91,10 +91,10 @@ export default function MenuCliente() {
     const [codigoConfirmacionEsperado, setCodigoConfirmacionEsperado] = useState('');
     const [isValidandoCode, setIsValidandoCode] = useState(false);
     const [errorCodigoConfirmacion, setErrorCodigoConfirmacion] = useState('');
-    
+
     // *** Estado para identificar si la orden se finalizó en esta página ***
     const [orderEndOnThisPage, setOrderEndOnThisPage] = useState(false);
-    
+
     // *** AGREGAR ESTE ESTADO AQUÍ ***
     const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
 
@@ -106,11 +106,11 @@ export default function MenuCliente() {
     const verificarEstadoOrdenInicial = async (orderUuid) => {
         try {
             const ticketData = await getTicket(orderUuid);
-            
+
             if (ticketData) {
                 // Si la orden está finalizada o cancelada, limpiar datos
                 if (ticketData.order_status === "Finalizado") {
-                    
+
                     // La orden fue finalizada (desde otro dispositivo)
                     // Mostrar ticket antes de limpiar
                     const ticketsEnabled = localStorage.getItem('tickets');
@@ -118,27 +118,27 @@ export default function MenuCliente() {
                         setCompletedOrderUuid(orderUuid);
                         setShowTicketModal(true);
                     }
-                    
+
                     // Limpiar datos locales (EXCEPTO número de mesa)
                     localStorage.removeItem("ordenActiva1");
                     localStorage.removeItem("historialPedidos1");
                     localStorage.removeItem("carrito1");
                     localStorage.removeItem("productosCanceladosSnapshot1");
-                    
+
                     // Limpiar estados (EXCEPTO número de mesa)
                     setHistorialPedidos([]);
                     setOrdenActiva(null);
                     setTotalFinal(0);
                     setCarrito([]);
-                    
+
                     setMensajeError("La orden anterior ya fue finalizada y pagada.");
                     setTimeout(() => {
                         setMensajeError("");
                     }, 5000);
-                    
+
                 } else if (ticketData.order_status === "Cancelado") {
                     setShowCancelledOrderModal(true);
-                    
+
                 } else {
                     // Orden válida, cargar total
                     cargarTotalFinal(orderUuid);
@@ -150,7 +150,7 @@ export default function MenuCliente() {
             localStorage.removeItem("ordenActiva1");
             localStorage.removeItem("historialPedidos1");
             localStorage.removeItem("carrito1");
-            
+
             setHistorialPedidos([]);
             setOrdenActiva(null);
             setTotalFinal(0);
@@ -165,52 +165,52 @@ export default function MenuCliente() {
         try {
             // 1. Verificar estado de la mesa
             const mesasData = await getTables();
-            
+
             // Verificar si hay errores de suscripción
             if (mesasData.error && mesasData.status === 403) {
                 return;
             }
-            
+
             // Verificar si es respuesta de paquete básico
-            if (mesasData && 
-                mesasData.max_mesas === 1 && 
-                mesasData.table_status && 
+            if (mesasData &&
+                mesasData.max_mesas === 1 &&
+                mesasData.table_status &&
                 Object.keys(mesasData.table_status).length === 1 &&
                 mesasData.table_status["1"] === "Libre") {
                 return;
             }
-            
+
             // Verificar el estado actual de la mesa seleccionada
             if (mesasData && mesasData.table_status && typeof mesasData.table_status === 'object') {
                 const estadoMesaActual = mesasData.table_status[numeroMesa];
-                
+
                 // Si la mesa cambió a "Libre", significa que fue liberada desde otra vista
                 if (estadoMesaActual === 'Libre') {
                     // console.log(`Mesa ${numeroMesa} fue liberada desde otra vista. Limpiando datos locales...`);
-                    
+
                     // Limpiar localStorage
                     localStorage.removeItem('numeroMesa');
                     localStorage.removeItem("carrito1");
                     localStorage.removeItem("historialPedidos1");
                     localStorage.removeItem("ordenActiva1");
                     localStorage.removeItem("productosCanceladosSnapshot1"); // Limpiar snapshot también
-                    
+
                     // Limpiar estados
                     setNumeroMesa('');
                     setCarrito([]);
                     setHistorialPedidos([]);
                     setOrdenActiva(null);
                     setTotalFinal(0);
-                    
+
                     // Mostrar mensaje informativo
                     setMensajeError("La mesa fue liberada desde otro dispositivo. Por favor, selecciona una nueva mesa.");
-                    
+
                     // Abrir modal para seleccionar nueva mesa
                     setTimeout(() => {
                         cargarMesas();
                         setMensajeError("");
                     }, 2000);
-                    
+
                     return; // Salir de la función si la mesa fue liberada
                 }
             }
@@ -219,54 +219,54 @@ export default function MenuCliente() {
             if (ordenActiva && ordenActiva.order_uuid) {
                 try {
                     const ticketData = await getTicket(ordenActiva.order_uuid);
-                    
+
                     if (ticketData) {
                         // *** VERIFICACIÓN: Detectar orden cancelada o finalizada ***
                         if (ticketData.order_status === "Cancelado") {
                             // console.log('Orden cancelada detectada por el listener');
-                            
+
                             // Mostrar modal de orden cancelada automáticamente
                             setShowCancelledOrderModal(true);
-                            
+
                             // No continuar con el resto del procesamiento
                             return;
                         }
-                        
+
                         // *** VERIFICACIÓN: Detectar orden finalizada (pagada desde otro dispositivo) ***
                         if (ticketData.order_status === "Finalizado") {
                             // console.log('Orden finalizada detectada (pagada desde mesero u otro dispositivo)');
-                            
+
                             // Verificar si NO se finalizó en esta página
                             if (!orderEndOnThisPage) {
                                 // La orden fue finalizada desde otro dispositivo (cocina, mesero, etc.)
-                                
+
                                 // Mostrar ticket antes de limpiar
                                 const ticketsEnabled = localStorage.getItem('tickets');
                                 if (ticketsEnabled === 'true' && ordenActiva && ordenActiva.order_uuid) {
                                     setCompletedOrderUuid(ordenActiva.order_uuid);
                                     setShowTicketModal(true);
                                 }
-                                
+
                                 // Limpiar datos locales (EXCEPTO número de mesa)
                                 localStorage.removeItem("ordenActiva1");
                                 localStorage.removeItem("historialPedidos1");
                                 localStorage.removeItem("carrito1");
                                 localStorage.removeItem("productosCanceladosSnapshot1");
-                                
+
                                 // Limpiar estados (EXCEPTO número de mesa)
                                 setHistorialPedidos([]);
                                 setOrdenActiva(null);
                                 setTotalFinal(0);
                                 setCarrito([]);
-                                
+
                                 // Mostrar mensaje informativo
                                 setMensajeError("Tu orden ha sido finalizada y pagada desde otro dispositivo.");
-                                
+
                                 setTimeout(() => {
                                     setMensajeError("");
                                 }, 5000);
                             }
-                            
+
                             // No continuar con el resto del procesamiento
                             return;
                         }
@@ -276,7 +276,7 @@ export default function MenuCliente() {
                             let hayProductosPreparados = false;
                             let hayProductosPendientes = false;
                             let hayProductosCancelados = false;
-                            
+
                             // Crear historial con TODOS los productos, incluyendo cancelados
                             const historialActualizado = ticketData.products.map(producto => {
                                 // Contar estados para mensajes informativos
@@ -305,12 +305,12 @@ export default function MenuCliente() {
 
                             // *** LÓGICA DE MATCH PARA EVITAR MODALS REPETIDOS ***
                             const productosAhoraCancelados = historialActualizado.filter(item => item.estado === 'Cancelado');
-                            
+
                             // Obtener snapshot de productos cancelados previamente mostrados
                             const snapshotKey = `productosCanceladosSnapshot1`;
                             const snapshotGuardado = localStorage.getItem(snapshotKey);
                             let productosCanceladosAnteriores = [];
-                            
+
                             if (snapshotGuardado) {
                                 try {
                                     productosCanceladosAnteriores = JSON.parse(snapshotGuardado);
@@ -319,21 +319,21 @@ export default function MenuCliente() {
                                     productosCanceladosAnteriores = [];
                                 }
                             }
-                            
+
                             // Crear lista de IDs de productos ya mostrados como cancelados
                             const idsProductosCanceladosAnteriores = productosCanceladosAnteriores.map(p => p.id_products);
-                            
+
                             // Filtrar solo los productos que son NUEVOS cancelados (no están en el snapshot)
                             const nuevosProductosCancelados = productosAhoraCancelados.filter(
                                 producto => !idsProductosCanceladosAnteriores.includes(producto.id_products)
                             );
-                            
+
                             // Solo mostrar modal si HAY productos REALMENTE NUEVOS cancelados
                             if (nuevosProductosCancelados.length > 0) {
                                 // console.log('Nuevos productos cancelados detectados:', nuevosProductosCancelados.length);
                                 setProductosCancelados(nuevosProductosCancelados);
                                 setModalProductosCanceladosOpen(true);
-                                
+
                                 // Actualizar snapshot con TODOS los productos cancelados (anteriores + nuevos)
                                 localStorage.setItem(snapshotKey, JSON.stringify(productosAhoraCancelados));
                             } else {
@@ -343,10 +343,10 @@ export default function MenuCliente() {
                             // Solo actualizar si hay cambios
                             const historialAnterior = JSON.stringify(historialPedidos);
                             const historialNuevo = JSON.stringify(historialActualizado);
-                            
+
                             if (historialAnterior !== historialNuevo) {
                                 setHistorialPedidos(historialActualizado);
-                                
+
                                 // Actualizar el total final basándose en el total de la API
                                 const nuevoTotal = parseFloat(ticketData.total || 0);
                                 setTotalFinal(nuevoTotal);
@@ -359,7 +359,7 @@ export default function MenuCliente() {
                                 } else if (hayProductosPendientes) {
                                     setMensajeError("Tu orden está siendo preparada en cocina.");
                                 }
-                                
+
                                 setTimeout(() => {
                                     setMensajeError("");
                                 }, 5000);
@@ -373,9 +373,9 @@ export default function MenuCliente() {
                             state: ticketData.state,
                             total: ticketData.total
                         };
-                        
+
                         setOrdenActiva(ordenActualizada);
-                        
+
                         // Log para debugging
                         // console.log('Estado actual de la orden:', {
                         //     order_status: ticketData.order_status,
@@ -397,17 +397,17 @@ export default function MenuCliente() {
     // useEffect para inicializar el monitoreo cuando hay una mesa seleccionada
     useEffect(() => {
         let intervalId;
-        
+
         if (numeroMesa && isAuthenticated) {
             // Ejecutar inmediatamente la primera vez
             monitorearEstadoMesaYOrden();
-            
+
             // Configurar intervalo de 45 segundos
             intervalId = setInterval(monitorearEstadoMesaYOrden, 45000);
-            
+
             // console.log(`Iniciando monitoreo de mesa ${numeroMesa} y orden cada 45 segundos`);
         }
-        
+
         // Limpiar intervalo cuando se desmonta o cambia la mesa
         return () => {
             if (intervalId) {
@@ -420,10 +420,10 @@ export default function MenuCliente() {
     const seleccionarMesa = async (numeroMesaSeleccionada) => {
         if (numeroMesaSeleccionada && numeroMesaSeleccionada !== '') {
             const mesaString = String(numeroMesaSeleccionada).trim();
-            
+
             try {
                 const resultado = await updateTableStatus(parseInt(mesaString), 'NoDisponible');
-                
+
                 setNumeroMesa(mesaString);
                 localStorage.setItem('numeroMesa', mesaString);
                 setModalMesaOpen(false);
@@ -442,7 +442,7 @@ export default function MenuCliente() {
             setModalOrdenActivaOpen(true);
             return;
         }
-        
+
         setModalCambioMesaOpen(true);
         setCodigoCambioMesa('');
         setErrorCodigoMesa('');
@@ -452,7 +452,7 @@ export default function MenuCliente() {
         try {
             const codigoAPI = await getCodigoConfirmacion();
             const codigoEsperado = codigoAPI.codigo_confirmacion;
-            
+
             if (codigoCambioMesa !== codigoEsperado.toString()) {
                 setErrorCodigoMesa('Código incorrecto. Intenta nuevamente.');
                 return;
@@ -468,7 +468,7 @@ export default function MenuCliente() {
             localStorage.removeItem('numeroMesa');
             setNumeroMesa('');
             setModalCambioMesaOpen(false);
-            
+
             await cargarMesas();
 
         } catch (error) {
@@ -483,7 +483,7 @@ export default function MenuCliente() {
         try {
             const codigoAPI = await getCodigoConfirmacion();
             const codigoEsperado = codigoAPI.codigo_confirmacion;
-            
+
             if (codigoCambioMesa !== codigoEsperado.toString()) {
                 setErrorCodigoMesa('Código incorrecto. Intenta nuevamente.');
                 return;
@@ -511,7 +511,7 @@ export default function MenuCliente() {
             setTotalFinal(0);
             setModalCambioMesaOpen(false);
             setIsAuthenticated(false);
-            
+
             setLoginModalOpen(true);
 
         } catch (error) {
@@ -545,7 +545,7 @@ export default function MenuCliente() {
         try {
             const codigoAPI = await getCodigoConfirmacion();
             const codigoEsperado = codigoAPI.codigo_confirmacion;
-            
+
             if (codigoExitFullscreen !== codigoEsperado.toString()) {
                 setErrorCodigoExitFullscreen('Código incorrecto. Intenta nuevamente.');
                 return;
@@ -574,7 +574,7 @@ export default function MenuCliente() {
         };
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);
-        
+
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
         };
@@ -583,7 +583,7 @@ export default function MenuCliente() {
     useEffect(() => {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         const mesaGuardada = localStorage.getItem('numeroMesa');
-        
+
         if (!token) {
             setLoginModalOpen(true);
             setLoading(false);
@@ -606,12 +606,12 @@ export default function MenuCliente() {
             setLoadingMesas(true);
             setSubscriptionError(false);
             setRedirectCountdown(10);
-            
+
             const mesasData = await getTables();
-            
+
             // Guardar la respuesta para poder verificarla después
             localStorage.setItem('lastMesasResponse', JSON.stringify(mesasData));
-            
+
             if (mesasData.error && mesasData.status === 403) {
                 // console.log('Error 403 detectado - Suscripción requerida');
                 setSubscriptionError(true);
@@ -620,14 +620,14 @@ export default function MenuCliente() {
                 setMensajeError('');
                 return;
             }
-            
+
             // Verificar si la respuesta es exactamente la que indica falta de función
-            if (mesasData && 
-                mesasData.max_mesas === 1 && 
-                mesasData.table_status && 
+            if (mesasData &&
+                mesasData.max_mesas === 1 &&
+                mesasData.table_status &&
                 Object.keys(mesasData.table_status).length === 1 &&
                 mesasData.table_status["1"] === "Libre") {
-                
+
                 // console.log('Detectado paquete básico sin función de mesas');
                 setSubscriptionError(true);
                 setMesas([]);
@@ -635,9 +635,9 @@ export default function MenuCliente() {
                 setMensajeError('');
                 return;
             }
-            
+
             let mesasArray = [];
-            
+
             if (mesasData && mesasData.table_status && typeof mesasData.table_status === 'object') {
                 mesasArray = Object.entries(mesasData.table_status)
                     .map(([numeroMesa, estado]) => ({
@@ -647,13 +647,13 @@ export default function MenuCliente() {
                     }))
                     .filter(mesa => !isNaN(mesa.number))
                     .sort((a, b) => a.number - b.number);
-                
-                const mesasLibres = mesasArray.filter(mesa => 
+
+                const mesasLibres = mesasArray.filter(mesa =>
                     mesa.status === 'Libre' && mesa.number !== 1
                 );
-                
+
                 setMesas(mesasLibres);
-                
+
             } else {
                 mesasArray = Array.from({ length: 25 }, (_, index) => ({
                     id: index + 2,
@@ -662,13 +662,13 @@ export default function MenuCliente() {
                 }));
                 setMesas(mesasArray);
             }
-            
+
             setModalMesaOpen(true);
             setMensajeError('');
-            
+
         } catch (error) {
             console.error('Error al cargar las mesas:', error);
-            
+
             if (error.message && (error.message.includes('403') || error.message.includes('Favor de renovar'))) {
                 setSubscriptionError(true);
                 setMesas([]);
@@ -676,15 +676,15 @@ export default function MenuCliente() {
                 setMensajeError('');
                 return;
             }
-            
+
             setMensajeError(`Error al cargar las mesas: ${error.message}`);
-            
+
             const mesasDefault = Array.from({ length: 25 }, (_, index) => ({
                 id: index + 2,
                 number: index + 2,
                 status: 'Libre'
             }));
-            
+
             setMesas(mesasDefault);
             setModalMesaOpen(true);
         } finally {
@@ -701,8 +701,8 @@ export default function MenuCliente() {
         } else if (subscriptionError && redirectCountdown === 0) {
             // Verificar si debe redirigir a user o payments
             const mesasData = JSON.parse(localStorage.getItem('lastMesasResponse') || '{}');
-            if (mesasData.max_mesas === 1 && 
-                mesasData.table_status && 
+            if (mesasData.max_mesas === 1 &&
+                mesasData.table_status &&
                 Object.keys(mesasData.table_status).length === 1 &&
                 mesasData.table_status["1"] === "Libre") {
                 router.push('/user');
@@ -710,7 +710,7 @@ export default function MenuCliente() {
                 router.push('/payments');
             }
         }
-        
+
         return () => {
             if (interval) {
                 clearInterval(interval);
@@ -821,11 +821,11 @@ export default function MenuCliente() {
         const filtradosPorCategoria = categoriaSeleccionada === "Todos los platillos"
             ? productos
             : productos.filter(producto => producto.categoria === categoriaSeleccionada);
-        
+
         if (busqueda.trim() !== "") {
             const terminoBusqueda = busqueda.toLowerCase().trim();
-            const resultadosFiltrados = filtradosPorCategoria.filter(producto => 
-                (producto.nombre || producto.name || "").toLowerCase().includes(terminoBusqueda) || 
+            const resultadosFiltrados = filtradosPorCategoria.filter(producto =>
+                (producto.nombre || producto.name || "").toLowerCase().includes(terminoBusqueda) ||
                 (producto.descripcion || producto.description || "").toLowerCase().includes(terminoBusqueda) ||
                 (producto.categoria || "").toLowerCase().includes(terminoBusqueda)
             );
@@ -980,7 +980,7 @@ export default function MenuCliente() {
 
             const ordenUuid = ordenActiva ? ordenActiva.order_uuid : null;
             const response = await createSimpleClientOrder(
-                productosParaOrden, 
+                productosParaOrden,
                 parseInt(numeroMesa),
                 ordenUuid,
                 descuentoOrdenAPI
@@ -1023,7 +1023,7 @@ export default function MenuCliente() {
             setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
             await cargarTotalFinal(response.order_uuid);
             setMensajeError("¡Orden enviada exitosamente!");
-            
+
             setTimeout(() => {
                 setMensajeError("");
             }, 3000);
@@ -1045,16 +1045,16 @@ export default function MenuCliente() {
         if (ordenActiva && ordenActiva.order_uuid) {
             try {
                 const ticketData = await getTicket(ordenActiva.order_uuid);
-                
+
                 if (ticketData.order_status === "Cancelado") {
                     setShowCancelledOrderModal(true);
                     return;
                 }
-                
+
                 setTotalPedidos(totalFinal > 0 ? totalFinal.toFixed(2) : "0.00");
                 setModalTotalOpen(true);
                 setMensajeError("");
-                
+
             } catch (error) {
                 console.error('Error al verificar el estado de la orden:', error);
                 setMensajeError("Error al verificar el estado de la orden. Intenta nuevamente.");
@@ -1078,24 +1078,24 @@ export default function MenuCliente() {
                     console.error('Error al cambiar mesa a NoDisponible:', error);
                 }
             }
-            
+
             setHistorialPedidos([]);
             setOrdenActiva(null);
             setTotalFinal(0);
             setCarrito([]);
-            
+
             localStorage.removeItem("ordenActiva1");
             localStorage.removeItem("historialPedidos1");
             localStorage.removeItem("carrito1");
             localStorage.removeItem("productosCanceladosSnapshot1"); // Limpiar snapshot
-            
+
             setShowCancelledOrderModal(false);
-            
+
             setMensajeError("Los datos de la orden cancelada han sido limpiados.");
             setTimeout(() => {
                 setMensajeError("");
             }, 3000);
-            
+
         } catch (error) {
             console.error('Error al limpiar orden cancelada:', error);
             setMensajeError("Error al procesar la limpieza. Algunos datos pueden no haberse actualizado correctamente.");
@@ -1120,44 +1120,24 @@ export default function MenuCliente() {
         try {
             const currentOrderUuid = ordenActiva.order_uuid;
             const response = await endOrder(currentOrderUuid, metodoPago);
-            
+
             if (response && (response.success !== false)) {
                 // *** Marcar que la orden se finalizó en esta página ***
                 setOrderEndOnThisPage(true);
-                
+
                 console.log('🔵 Pago confirmado exitosamente');
                 console.log('🟢 orderUuid:', currentOrderUuid);
 
                 // Descontar inventario después de confirmar el pago
-                try {
-                    // Construir el array de productos para descontar inventario
-                    const productosParaDescontar = historialPedidos.map(item => ({
-                        product_id: item.id_products,
-                        quantity: item.cantidad
-                    }));
 
-                    console.log('🟡 Descontando inventario:', productosParaDescontar);
-
-                    const inventarioResponse = await descontarInventario(productosParaDescontar);
-                    
-                    if (inventarioResponse.success) {
-                        console.log('🟢 Inventario descontado exitosamente:', inventarioResponse.data);
-                    } else {
-                        console.error('🔴 Error al descontar inventario:', inventarioResponse.error);
-                        // No detenemos el flujo, solo registramos el error
-                    }
-                } catch (inventarioError) {
-                    console.error('🔴 Error al procesar descuento de inventario:', inventarioError);
-                    // No detenemos el flujo principal si falla el inventario
-                }
 
                 // Procesar orden en inventario con postMermas
                 try {
                     console.log('🟡 Iniciando llamada a getTicket con UUID:', currentOrderUuid);
-                    
+
                     // Obtener los datos del ticket
                     const ticketData = await getTicket(currentOrderUuid);
-                    
+
                     console.log('🟡 Datos del ticket obtenidos:', ticketData);
 
                     // Preparar los datos para postProcessOrder
@@ -1171,7 +1151,7 @@ export default function MenuCliente() {
 
                     // Procesar la orden en el inventario
                     const result = await postProcessOrder(orderData);
-                    
+
                     console.log('🟢 Orden procesada en inventario exitosamente:', result);
                 } catch (postMermasError) {
                     console.error('🔴 Error al procesar orden en inventario:', postMermasError);
@@ -1185,7 +1165,7 @@ export default function MenuCliente() {
                         console.error('Error al cambiar mesa a NoDisponible:', error);
                     }
                 }
-                
+
                 setHistorialPedidos([]);
                 setOrdenActiva(null);
                 setTotalFinal(0);
@@ -1193,21 +1173,21 @@ export default function MenuCliente() {
                 localStorage.removeItem("historialPedidos1");
                 localStorage.removeItem("carrito1");
                 localStorage.removeItem("productosCanceladosSnapshot1");
-                
+
                 setModalTotalOpen(false);
                 setModalConfirmacionCodigoOpen(false);
                 setMetodoPago('efectivo');
                 setCodigoConfirmacion('');
                 setCodigoConfirmacionEsperado('');
-                
+
                 setMensajeError("¡Pago procesado exitosamente!");
-                
+
                 const ticketsEnabled = localStorage.getItem('tickets');
                 if (ticketsEnabled === 'true') {
                     setCompletedOrderUuid(currentOrderUuid);
                     setShowTicketModal(true);
                 }
-                
+
                 setTimeout(() => {
                     setMensajeError("");
                     // Resetear el flag después de mostrar el ticket
@@ -1250,7 +1230,7 @@ export default function MenuCliente() {
 
         try {
             const codigoData = await getCodigoConfirmacion();
-            
+
             if (codigoData && codigoData.codigo_confirmacion) {
                 setCodigoConfirmacionEsperado(codigoData.codigo_confirmacion);
                 setModalConfirmacionCodigoOpen(true);
@@ -1286,7 +1266,7 @@ export default function MenuCliente() {
 
     const cerrarModalConfirmacionCodigo = () => {
         if (isValidandoCode || isProcessingPayment) return;
-        
+
         setModalConfirmacionCodigoOpen(false);
         setCodigoConfirmacionEsperado('');
         setErrorCodigoConfirmacion('');
@@ -1305,638 +1285,635 @@ export default function MenuCliente() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             {isAuthenticated && (
-            <>
-            <header className="sticky top-0 z-50">
-                <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
-                    <div className="flex items-center max-w-7xl mx-auto justify-between">
-                        <div className="flex items-center">
-                            <h1 className="text-3xl font-bold ml-2 text-white">WapiFood</h1>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            {numeroMesa ? (
-                                <div 
-                                    className="flex items-center gap-2 bg-gradient-to-r from-green-100 to-emerald-100 px-3 py-1 rounded-lg cursor-pointer hover:bg-green-200 transition-colors border border-green-300 shadow"
-                                    onClick={handleClickMesa}
-                                    title="Click para cambiar de mesa"
-                                >
-                                    <MdTableRestaurant className="text-green-600" size={20} />
-                                    <span className="text-sm font-medium text-green-800">
-                                        Mesa {numeroMesa}
-                                    </span>
+                <>
+                    <header className="sticky top-0 z-50">
+                        <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
+                            <div className="flex items-center max-w-7xl mx-auto justify-between">
+                                <div className="flex items-center">
+                                    <h1 className="text-3xl font-bold ml-2 text-white">WapiFood</h1>
                                 </div>
-                            ) : (
-                                <div className="text-xs text-green-100">Sin mesa</div>
-                            )}
-                            <button
-                                className="z-20 cursor-pointer py-3 hamburger-button"
-                                onClick={() => setIsOpen(!isOpen)}
-                                aria-label="Toggle menu"
-                            >
-                                <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-                                <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
-                                <div className={`w-6 h-0.5 bg-white transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
-                            </button>
-                        </div>
-                    </div>
-                </nav>
-            </header>
+                                <div className="flex items-center gap-4">
+                                    {numeroMesa ? (
+                                        <div
+                                            className="flex items-center gap-2 bg-gradient-to-r from-green-100 to-emerald-100 px-3 py-1 rounded-lg cursor-pointer hover:bg-green-200 transition-colors border border-green-300 shadow"
+                                            onClick={handleClickMesa}
+                                            title="Click para cambiar de mesa"
+                                        >
+                                            <MdTableRestaurant className="text-green-600" size={20} />
+                                            <span className="text-sm font-medium text-green-800">
+                                                Mesa {numeroMesa}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="text-xs text-green-100">Sin mesa</div>
+                                    )}
+                                    <button
+                                        className="z-20 cursor-pointer py-3 hamburger-button"
+                                        onClick={() => setIsOpen(!isOpen)}
+                                        aria-label="Toggle menu"
+                                    >
+                                        <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+                                        <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
+                                        <div className={`w-6 h-0.5 bg-white transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </nav>
+                    </header>
 
-            <div
-                className={`
+                    <div
+                        className={`
                     fixed top-0 left-0 h-full w-64 bg-gradient-to-br from-green-100 to-emerald-100 shadow-2xl border-r border-green-200
                     transition-transform duration-300 ease-in-out menu-container z-[60]
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
-            >
-                <ul className="flex flex-col mt-16 p-4 text-xl">
-                    <p className="text-green-700 font-bold mb-2">Menú principal</p>
-                    {categorias.map((categoria, index) => (
-                        <li
-                            key={index}
-                            className="flex hover:bg-green-200 p-2 rounded-xl cursor-pointer gap-2 transition-all duration-200"
-                            onClick={() => {
-                                setCategoriaSeleccionada(categoria);
-                                setIsOpen(false);
-                            }}
-                        >
-                            {categoria === "Todos los platillos" && <IoHomeOutline className="self-center text-green-600" />}
-                            <span className="font-semibold text-green-800">{categoria}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+                    >
+                        <ul className="flex flex-col mt-16 p-4 text-xl">
+                            <p className="text-green-700 font-bold mb-2">Menú principal</p>
+                            {categorias.map((categoria, index) => (
+                                <li
+                                    key={index}
+                                    className="flex hover:bg-green-200 p-2 rounded-xl cursor-pointer gap-2 transition-all duration-200"
+                                    onClick={() => {
+                                        setCategoriaSeleccionada(categoria);
+                                        setIsOpen(false);
+                                    }}
+                                >
+                                    {categoria === "Todos los platillos" && <IoHomeOutline className="self-center text-green-600" />}
+                                    <span className="font-semibold text-green-800">{categoria}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
 
-            {/* Overlay para cerrar el menú al hacer clic fuera */}
-            {isOpen && (
-                <div 
-                    className="fixed inset-0 bg-black/20 z-40"
-                    onClick={() => setIsOpen(false)}
-                />
-            )}
-            </>
+                    {/* Overlay para cerrar el menú al hacer clic fuera */}
+                    {isOpen && (
+                        <div
+                            className="fixed inset-0 bg-black/20 z-40"
+                            onClick={() => setIsOpen(false)}
+                        />
+                    )}
+                </>
             )}
 
-            <div 
+            <div
                 className="sticky top-16 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6"
-                style={{ 
+                style={{
                     visibility: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? 'hidden' : 'visible',
                     zIndex: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? -1 : 30
                 }}
             >
                 <div className="max-w-4xl mx-auto">
                     <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Buscar productos..."
-                        value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
-                        className="w-full px-4 py-3 pl-12 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white/80 backdrop-blur-sm shadow-lg transition-all duration-200 hover:border-green-300 text-green-800"
-                    />
-                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                        <HiMagnifyingGlass className="h-5 w-5 text-green-600" />
+                        <input
+                            type="text"
+                            placeholder="Buscar productos..."
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                            className="w-full px-4 py-3 pl-12 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white/80 backdrop-blur-sm shadow-lg transition-all duration-200 hover:border-green-300 text-green-800"
+                        />
+                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                            <HiMagnifyingGlass className="h-5 w-5 text-green-600" />
+                        </div>
+                        {busqueda && (
+                            <button
+                                onClick={() => setBusqueda("")}
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-green-400 hover:text-green-600"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                     {busqueda && (
-                        <button
-                            onClick={() => setBusqueda("")}
-                            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-green-400 hover:text-green-600"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                        <p className="mt-2 text-sm text-green-700">
+                            {productosFiltrados.length} resultado(s) encontrado(s) para "{busqueda}"
+                        </p>
                     )}
-                </div>
-                {busqueda && (
-                    <p className="mt-2 text-sm text-green-700">
-                        {productosFiltrados.length} resultado(s) encontrado(s) para "{busqueda}"
-                    </p>
-                )}
                 </div>
             </div>
 
             <div className="relative z-0">
 
-            {isAuthenticated && (
-            <button
-                className="fixed bottom-10 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
-                onClick={() => setCarritoModalOpen(true)}
-            >
-                <FaShoppingCart className="text-xl" />
-                {carrito.length > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-white animate-bounce">
-                        {carrito.length}
-                    </span>
+                {isAuthenticated && (
+                    <button
+                        className="fixed bottom-10 right-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 z-[9999] border-2 border-white"
+                        onClick={() => setCarritoModalOpen(true)}
+                    >
+                        <FaShoppingCart className="text-xl" />
+                        {carrito.length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-white animate-bounce">
+                                {carrito.length}
+                            </span>
+                        )}
+                    </button>
                 )}
-            </button>
-            )}
 
-            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12 relative z-10">
-                {productosFiltrados.length > 0 ? (
-                    productosFiltrados
-                        .sort((a, b) => {
-                            const ordenA = categoriaOrden[a.categoria] ?? Number.MAX_SAFE_INTEGER;
-                            const ordenB = categoriaOrden[b.categoria] ?? Number.MAX_SAFE_INTEGER;
-                            return ordenA - ordenB;
-                        })
-                        .map((producto) => (
-                            <ProductCard
-                                key={producto.id}
-                                producto={producto}
-                                onAddToCart={(prod, incremento) => {
-                                    if (incremento !== undefined) {
-                                        setProductosFiltrados((prevProductos) =>
-                                            prevProductos.map((item) =>
-                                                item.id === prod.id
-                                                    ? { ...item, cantidad: Math.max((item.cantidad || 1) + incremento, 1) }
-                                                    : item
-                                            )
-                                        );
-                                    } else {
-                                        agregarAlCarrito(prod);
-                                    }
-                                }}
-                                onViewDetails={openModal}
-                            />
-                        ))
-                ) : (
-                    <div className="col-span-full text-center py-16">
-                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <FaShoppingCart className="text-gray-400 text-4xl" />
+                <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto my-8 w-11/12 relative z-10">
+                    {productosFiltrados.length > 0 ? (
+                        productosFiltrados
+                            .sort((a, b) => {
+                                const ordenA = categoriaOrden[a.categoria] ?? Number.MAX_SAFE_INTEGER;
+                                const ordenB = categoriaOrden[b.categoria] ?? Number.MAX_SAFE_INTEGER;
+                                return ordenA - ordenB;
+                            })
+                            .map((producto) => (
+                                <ProductCard
+                                    key={producto.id}
+                                    producto={producto}
+                                    onAddToCart={(prod, incremento) => {
+                                        if (incremento !== undefined) {
+                                            setProductosFiltrados((prevProductos) =>
+                                                prevProductos.map((item) =>
+                                                    item.id === prod.id
+                                                        ? { ...item, cantidad: Math.max((item.cantidad || 1) + incremento, 1) }
+                                                        : item
+                                                )
+                                            );
+                                        } else {
+                                            agregarAlCarrito(prod);
+                                        }
+                                    }}
+                                    onViewDetails={openModal}
+                                />
+                            ))
+                    ) : (
+                        <div className="col-span-full text-center py-16">
+                            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FaShoppingCart className="text-gray-400 text-4xl" />
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">No se encontraron productos</h3>
+                            <p className="text-gray-600">Intenta ajustar los filtros de búsqueda</p>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">No se encontraron productos</h3>
-                        <p className="text-gray-600">Intenta ajustar los filtros de búsqueda</p>
-                    </div>
-                )}
-            </section>
+                    )}
+                </section>
 
-            <MesaSelectionModal
-                isOpen={modalMesaOpen}
-                loadingMesas={loadingMesas}
-                subscriptionError={subscriptionError}
-                redirectCountdown={redirectCountdown}
-                mesas={mesas}
-                mensajeError={mensajeError}
-                onSelectMesa={seleccionarMesa}
-            />
+                <MesaSelectionModal
+                    isOpen={modalMesaOpen}
+                    loadingMesas={loadingMesas}
+                    subscriptionError={subscriptionError}
+                    redirectCountdown={redirectCountdown}
+                    mesas={mesas}
+                    mensajeError={mensajeError}
+                    onSelectMesa={seleccionarMesa}
+                />
 
-            {showCancelledOrderModal && (
-                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[10000]">
-                    <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
-                        <div className="text-center">
-                            <div className="mb-4">
-                                <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
+                {showCancelledOrderModal && (
+                    <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[10000]">
+                        <div className="bg-white rounded-lg p-6 w-11/12 md:w-1/3 shadow-lg">
+                            <div className="text-center">
+                                <div className="mb-4">
+                                    <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h2 className="text-xl font-bold mb-4 text-green-600">Orden Cancelada</h2>
+                                <p className="text-gray-700 mb-6">
+                                    La orden ha sido cancelada desde cocina. No es posible procesar el pago.
+                                    Se limpiarán todos los datos relacionados con esta orden.
+                                </p>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={limpiarOrdenCancelada}
+                                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                    >
+                                        Entendido
+                                    </button>
                                 </div>
                             </div>
-                            <h2 className="text-xl font-bold mb-4 text-green-600">Orden Cancelada</h2>
-                            <p className="text-gray-700 mb-6">
-                                La orden ha sido cancelada desde cocina. No es posible procesar el pago.
-                                Se limpiarán todos los datos relacionados con esta orden.
+                        </div>
+                    </div>
+                )}
+
+                <LoginModal
+                    isOpen={loginModalOpen}
+                    onLogin={handleLogin}
+                    serverError={serverError}
+                    isLoading={isLoading}
+                />
+
+                {modalOrdenActivaOpen && (
+                    <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1003]">
+                        <div className="bg-white p-8 rounded-2xl shadow-2xl border-2 border-green-200 w-full max-w-md mx-4">
+                            <div className='flex justify-center mb-4'>
+                                <div className='bg-gradient-to-r from-green-400 to-emerald-400 text-white p-3 rounded-full shadow-lg'>
+                                    <MdTableRestaurant size={36} />
+                                </div>
+                            </div>
+                            <h2 className="text-2xl text-center font-bold text-green-700 mb-2">
+                                No se puede cambiar de mesa
+                            </h2>
+                            <p className='text-center text-gray-600 mb-6'>
+                                No se puede cambiar la mesa porque tienes una orden activa.<br />
+                                Por favor, termina la orden para poder cambiar de mesa.
                             </p>
-                            <div className="flex gap-3">
+                            {ordenActiva && (
+                                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <p className="text-sm text-yellow-800 text-center">
+                                        <strong>Orden Activa:</strong> {ordenActiva.order_uuid.slice(0, 8)}...
+                                    </p>
+                                    <p className="text-sm text-yellow-800 text-center">
+                                        <strong>Estado:</strong> {ordenActiva.order_status || 'Activa'}
+                                    </p>
+                                </div>
+                            )}
+                            <div className="flex gap-3 mt-2">
                                 <button
-                                    onClick={limpiarOrdenCancelada}
-                                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                    className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colores font-semibold"
+                                    onClick={() => setModalOrdenActivaOpen(false)}
                                 >
                                     Entendido
+                                </button>
+                                <button
+                                    className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colores font-semibold"
+                                    onClick={() => {
+                                        setModalOrdenActivaOpen(false);
+                                        terminarOrden();
+                                    }}
+                                >
+                                    Terminar Orden
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            <LoginModal
-                isOpen={loginModalOpen}
-                onLogin={handleLogin}
-                serverError={serverError}
-                isLoading={isLoading}
-            />
-
-            {modalOrdenActivaOpen && (
-                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1003]">
-                    <div className="bg-white p-8 rounded-2xl shadow-2xl border-2 border-green-200 w-full max-w-md mx-4">
-                        <div className='flex justify-center mb-4'>
-                            <div className='bg-gradient-to-r from-green-400 to-emerald-400 text-white p-3 rounded-full shadow-lg'>
-                                <MdTableRestaurant size={36} />
-                            </div>
-                        </div>
-                        <h2 className="text-2xl text-center font-bold text-green-700 mb-2">
-                            No se puede cambiar de mesa
-                        </h2>
-                        <p className='text-center text-gray-600 mb-6'>
-                            No se puede cambiar la mesa porque tienes una orden activa.<br />
-                            Por favor, termina la orden para poder cambiar de mesa.
-                        </p>
-                        {ordenActiva && (
-                            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                <p className="text-sm text-yellow-800 text-center">
-                                    <strong>Orden Activa:</strong> {ordenActiva.order_uuid.slice(0, 8)}...
-                                </p>
-                                <p className="text-sm text-yellow-800 text-center">
-                                    <strong>Estado:</strong> {ordenActiva.order_status || 'Activa'}
-                                </p>
-                            </div>
-                        )}
-                        <div className="flex gap-3 mt-2">
-                            <button
-                                className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colores font-semibold"
-                                onClick={() => setModalOrdenActivaOpen(false)}
-                            >
-                                Entendido
-                            </button>
-                            <button
-                                className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colores font-semibold"
-                                onClick={() => {
-                                    setModalOrdenActivaOpen(false);
-                                    terminarOrden();
-                                }}
-                            >
-                                Terminar Orden
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {modalCambioMesaOpen && (
-                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1002]">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
-                        {procesandoCambioMesa ? (
-                            <div className="flex flex-col justify-center items-center h-32">
-                                <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin mb-4"></div>
-                                <p className="text-gray-600">Procesando...</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div className='flex justify-between items-start mb-4 relative'>
-                                    <div className='text-[#3fe283] text-4xl flex justify-center w-full'>
-                                        <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
-                                            <MdTableRestaurant size={32} />
-                                        </div>
-                                    </div>
-                                    <div className="absolute top-0 right-0">
-                                        <button
-                                            onClick={toggleFullscreen}
-                                            className="z-50 cursor-pointer bg-white/20 rounded-full p-2 shadow-lg border border-green-200 hover:bg-white/40 transition-all duration-200"
-                                            title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-                                            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                                        >
-                                            {isFullscreen ? (
-                                                <MdFullscreenExit className="w-6 h-6 text-black"/>
-                                            ) : (
-                                                <MdFullscreen className="w-6 h-6 text-black"/>
-                                            )}
-                                        </button>
-                                    </div>
+                {modalCambioMesaOpen && (
+                    <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1002]">
+                        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
+                            {procesandoCambioMesa ? (
+                                <div className="flex flex-col justify-center items-center h-32">
+                                    <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin mb-4"></div>
+                                    <p className="text-gray-600">Procesando...</p>
                                 </div>
-                                <h2 className="text-2xl text-center font-bold text-black mb-2">Cambiar Mesa</h2>
-                                <p className='text-center text-gray-600 mb-4'>
-                                    Ingrese código de 4 dígitos para cambiar el número de mesa o cerrar sesión
-                                </p>
-                                
-                                <div className="flex flex-col gap-4">
-                                    <div className='flex flex-col gap-2'>
-                                        <label className="text-sm font-medium text-gray-700 text-center">
-                                            Código de Seguridad
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={codigoCambioMesa}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                if (/^\d{0,4}$/.test(value)) {
-                                                    setCodigoCambioMesa(value);
-                                                    if (errorCodigoMesa) {
-                                                        setErrorCodigoMesa('');
-                                                    }
-                                                }
-                                            }}
-                                            placeholder="****"
-                                            maxLength="4"
-                                            className="p-3 border border-gray-300 rounded-lg w-full text-lg text-center font-mono focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                            autoFocus
-                                        />
-                                        
-                                        {errorCodigoMesa && (
-                                            <p className="text-red-500 text-sm text-center mt-1">
-                                                {errorCodigoMesa}
-                                            </p>
-                                        )}
-                                    </div>
-                                    
-                                    <div className="flex gap-3">
-                                        <button
-                                            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colores"
-                                            onClick={() => {
-                                                setModalCambioMesaOpen(false);
-                                                setCodigoCambioMesa('');
-                                                setErrorCodigoMesa('');
-                                            }}
-                                        >
-                                            Cancelar
-                                        </button>
-                                        <button
-                                            className={`flex-1 py-2 px-4 rounded-lg transition-colores ${
-                                                codigoCambioMesa.length === 4
-                                                    ? 'bg-green-500 text-white hover:bg-green-600'
-                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                            }`}
-                                            onClick={confirmarCambioMesa}
-                                            disabled={codigoCambioMesa.length !== 4}
-                                        >
-                                            Cambiar Mesa
-                                        </button>
-                                    </div>
-                                    
-                                    <button
-                                        className={`w-full py-2 px-4 rounded-lg transition-colores ${
-                                            codigoCambioMesa.length === 4
-                                                ? 'bg-red-500 text-white hover:bg-red-600'
-                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        }`}
-                                        onClick={cerrarSesion}
-                                        disabled={codigoCambioMesa.length !== 4}
-                                    >
-                                        Cerrar Sesión
-                                    </button>
-                                    
-                                    <div className="text-center text-xs text-gray-500">
-                                        Al cambiar de mesa, la mesa actual quedará disponible.<br/>
-                                        Al cerrar sesión se liberará la mesa y perderás todos los datos.
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            <CartModal
-                isOpen={carritoModalOpen}
-                carrito={carrito}
-                historialPedidos={historialPedidos}
-                totalFinal={totalFinal}
-                mensajeError={mensajeError}
-                isCreatingOrder={isCreatingOrder}
-                ordenActiva={ordenActiva}
-                descuentoOrden={descuentoOrden}
-                setDescuentoOrden={setDescuentoOrden}
-                visibilityStyle={{ 
-                    visibility: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? 'hidden' : 'visible',
-                    zIndex: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? -1 : 99999
-                }}
-                onClose={() => setCarritoModalOpen(false)}
-                onUpdateQuantity={(id, incremento) => {
-                    setCarrito((prevCarrito) =>
-                        prevCarrito.map((producto) =>
-                            producto.id === id
-                                ? { ...producto, cantidad: Math.max(producto.cantidad + incremento, 1) }
-                                : producto
-                        )
-                    );
-                }}
-                onRemoveItem={(id) => {
-                    setCarrito((prevCarrito) =>
-                        prevCarrito.filter((producto) => producto.id !== id)
-                    );
-                }}
-                onRealizarPedido={realizarPedido}
-                onTerminarOrden={terminarOrden}
-                onUpdateCart={setCarrito}
-                getCodigoConfirmacion={getCodigoConfirmacion} // Agregar esta línea
-            />
-
-            <PaymentModal
-                isOpen={modalTotalOpen}
-                totalPedidos={totalPedidos}
-                metodoPago={metodoPago}
-                mensajeError={mensajeError}
-                isProcessingPayment={isProcessingPayment}
-                onClose={() => setModalTotalOpen(false)}
-                onSelectMetodoPago={setMetodoPago}
-                onConfirmarPago={confirmarPago}
-                onRequestConfirmationCode={solicitarCodigoConfirmacion}
-            />
-
-            <ConfirmationCodeModal
-                isOpen={modalConfirmacionCodigoOpen}
-                codigoEsperado={codigoConfirmacionEsperado}
-                isValidando={isValidandoCode}
-                mensajeError={errorCodigoConfirmacion}
-                onClose={cerrarModalConfirmacionCodigo}
-                onConfirm={validarCodigoConfirmacion}
-            />
-
-            <ProductDetailModal
-                isOpen={modalOpen}
-                producto={productoSeleccionado}
-                onClose={closeModal}
-                onAddToCart={(prod, incremento) => {
-                    if (incremento !== undefined) {
-                        setProductoSeleccionado({
-                            ...prod,
-                            cantidad: Math.max((prod.cantidad || 1) + incremento, 1),
-                        });
-                    } else {
-                        agregarAlCarrito(prod);
-                    }
-                }}
-            />
-
-            <TicketModal
-                isOpen={showTicketModal}
-                onClose={() => {
-                    setShowTicketModal(false);
-                    setCompletedOrderUuid(null);
-                }}
-                orderUuid={completedOrderUuid}
-            />
-
-            {modalProductosCanceladosOpen && (
-                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[10001]">
-                    <div className="bg-white rounded-2xl p-8 w-11/12 md:w-2/3 lg:w-1/2 max-w-2xl shadow-2xl border border-red-200 max-h-[90vh] overflow-y-auto">
-                        <div className="text-center mb-6">
-                            <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                            </div>
-                            <h2 className="text-3xl font-bold mb-2 text-red-600">¡Atención!</h2>
-                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Productos No Disponibles</h3>
-                            <p className="text-gray-600 mb-6">
-                                Lamentamos informarte que los siguientes productos no pudieron ser preparados y han sido excluidos de tu orden:
-                            </p>
-                        </div>
-
-                        <div className="space-y-4 mb-8">
-                            {productosCancelados.map((producto, index) => (
-                                <div key={index} className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6 border-2 border-red-200 shadow-lg">
-                                    <div className="flex justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                    </svg>
-                                                </div>
-                                                <h4 className="text-lg font-bold text-red-800">
-                                                    {producto.cantidad} x {producto.nombre}
-                                                </h4>
+                            ) : (
+                                <>
+                                    <div className='flex justify-between items-start mb-4 relative'>
+                                        <div className='text-[#3fe283] text-4xl flex justify-center w-full'>
+                                            <div className='bg-[#3fe283] text-white p-2 rounded-lg'>
+                                                <MdTableRestaurant size={32} />
                                             </div>
-                                            {producto.ingredientesExcluidos && producto.ingredientesExcluidos.length > 0 && (
-                                                <p className="text-sm text-red-700 mb-1">
-                                                    Sin: {producto.ingredientesExcluidos.join(", ")}
-                                                </p>
-                                            )}
-                                            {producto.comentario && (
-                                                <p className="text-sm text-red-700 mb-1">
-                                                    Nota: {producto.comentario}
-                                                </p>
-                                            )}
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-lg font-bold text-red-600 line-through">
-                                                ${parseFloat(producto.precio * producto.cantidad).toFixed(2)}
-                                            </p>
-                                            <p className="text-xs text-red-500">No disponible</p>
+                                        <div className="absolute top-0 right-0">
+                                            <button
+                                                onClick={toggleFullscreen}
+                                                className="z-50 cursor-pointer bg-white/20 rounded-full p-2 shadow-lg border border-green-200 hover:bg-white/40 transition-all duration-200"
+                                                title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                                                aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                                            >
+                                                {isFullscreen ? (
+                                                    <MdFullscreenExit className="w-6 h-6 text-black" />
+                                                ) : (
+                                                    <MdFullscreen className="w-6 h-6 text-black" />
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                    <h2 className="text-2xl text-center font-bold text-black mb-2">Cambiar Mesa</h2>
+                                    <p className='text-center text-gray-600 mb-4'>
+                                        Ingrese código de 4 dígitos para cambiar el número de mesa o cerrar sesión
+                                    </p>
 
-                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 mb-6">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                                <h4 className="text-lg font-semibold text-blue-800">¿Qué puedes hacer?</h4>
-                            </div>
-                            <ul className="text-blue-700 space-y-2">
-                                <li className="flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                    Tu orden sigue activa y puedes agregar más productos
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                    El total se ha actualizado automáticamente
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                    Los productos restantes se están preparando normalmente
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div className="text-center">
-                            <button
-                                onClick={() => {
-                                    setModalProductosCanceladosOpen(false);
-                                    setProductosCancelados([]);
-                                }}
-                                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
-                            >
-                                ✓ Entendido, continuar
-                            </button>
-                        </div>
-
-                        <div className="mt-6 text-center text-sm text-gray-500">
-                            Disculpa las molestias. Nuestro equipo trabaja para ofrecerte la mejor experiencia.
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {modalExitFullscreenOpen && (
-                <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1004]">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
-                        {procesandoExitFullscreen ? (
-                            <div className="flex flex-col justify-center items-center h-32">
-                                <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin mb-4"></div>
-                                <p className="text-gray-600">Procesando...</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div className='text-red-500 text-4xl flex justify-center mb-4'>
-                                    <div className='bg-red-500 text-white p-2 rounded-lg'>
-                                        <MdFullscreenExit size={32} />
-                                    </div>
-                                </div>
-                                <h2 className="text-2xl text-center font-bold text-black mb-2">Salir de Pantalla Completa</h2>
-                                <p className='text-center text-gray-600 mb-4'>
-                                    Ingrese código de 4 dígitos para salir del modo pantalla completa
-                                </p>
-                                
-                                <div className="flex flex-col gap-4">
-                                    <div className='flex flex-col gap-2'>
-                                        <label className="text-sm font-medium text-gray-700 text-center">
-                                            Código de Seguridad
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={codigoExitFullscreen}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                if (/^\d{0,4}$/.test(value)) {
-                                                    setCodigoExitFullscreen(value);
-                                                    if (errorCodigoExitFullscreen) {
-                                                        setErrorCodigoExitFullscreen('');
+                                    <div className="flex flex-col gap-4">
+                                        <div className='flex flex-col gap-2'>
+                                            <label className="text-sm font-medium text-gray-700 text-center">
+                                                Código de Seguridad
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={codigoCambioMesa}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    if (/^\d{0,4}$/.test(value)) {
+                                                        setCodigoCambioMesa(value);
+                                                        if (errorCodigoMesa) {
+                                                            setErrorCodigoMesa('');
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                            placeholder="****"
-                                            maxLength="4"
-                                            className="p-3 border border-gray-300 rounded-lg w-full text-lg text-center font-mono focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                            autoFocus
-                                        />
-                                        
-                                        {errorCodigoExitFullscreen && (
-                                            <p className="text-red-500 text-sm text-center mt-1">
-                                                {errorCodigoExitFullscreen}
-                                            </p>
-                                        )}
-                                    </div>
-                                    
-                                    <div className="flex gap-3">
+                                                }}
+                                                placeholder="****"
+                                                maxLength="4"
+                                                className="p-3 border border-gray-300 rounded-lg w-full text-lg text-center font-mono focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                autoFocus
+                                            />
+
+                                            {errorCodigoMesa && (
+                                                <p className="text-red-500 text-sm text-center mt-1">
+                                                    {errorCodigoMesa}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-3">
+                                            <button
+                                                className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colores"
+                                                onClick={() => {
+                                                    setModalCambioMesaOpen(false);
+                                                    setCodigoCambioMesa('');
+                                                    setErrorCodigoMesa('');
+                                                }}
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                className={`flex-1 py-2 px-4 rounded-lg transition-colores ${codigoCambioMesa.length === 4
+                                                        ? 'bg-green-500 text-white hover:bg-green-600'
+                                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                    }`}
+                                                onClick={confirmarCambioMesa}
+                                                disabled={codigoCambioMesa.length !== 4}
+                                            >
+                                                Cambiar Mesa
+                                            </button>
+                                        </div>
+
                                         <button
-                                            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colores"
-                                            onClick={() => {
-                                                setModalExitFullscreenOpen(false);
-                                                setCodigoExitFullscreen('');
-                                                setErrorCodigoExitFullscreen('');
-                                            }}
-                                        >
-                                            Cancelar
-                                        </button>
-                                        <button
-                                            className={`flex-1 py-2 px-4 rounded-lg transition-colores ${
-                                                codigoExitFullscreen.length === 4
+                                            className={`w-full py-2 px-4 rounded-lg transition-colores ${codigoCambioMesa.length === 4
                                                     ? 'bg-red-500 text-white hover:bg-red-600'
                                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                            }`}
-                                            onClick={confirmarExitFullscreen}
-                                            disabled={codigoExitFullscreen.length !== 4}
+                                                }`}
+                                            onClick={cerrarSesion}
+                                            disabled={codigoCambioMesa.length !== 4}
                                         >
-                                            Salir de Pantalla Completa
+                                            Cerrar Sesión
                                         </button>
-                                    </div>
-                                    
-                                    <div className="text-center text-xs text-gray-500">
-                                        Por seguridad, se requiere código para salir del modo pantalla completa.
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
 
-            <style jsx>{`
+                                        <div className="text-center text-xs text-gray-500">
+                                            Al cambiar de mesa, la mesa actual quedará disponible.<br />
+                                            Al cerrar sesión se liberará la mesa y perderás todos los datos.
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <CartModal
+                    isOpen={carritoModalOpen}
+                    carrito={carrito}
+                    historialPedidos={historialPedidos}
+                    totalFinal={totalFinal}
+                    mensajeError={mensajeError}
+                    isCreatingOrder={isCreatingOrder}
+                    ordenActiva={ordenActiva}
+                    descuentoOrden={descuentoOrden}
+                    setDescuentoOrden={setDescuentoOrden}
+                    visibilityStyle={{
+                        visibility: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? 'hidden' : 'visible',
+                        zIndex: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? -1 : 99999
+                    }}
+                    onClose={() => setCarritoModalOpen(false)}
+                    onUpdateQuantity={(id, incremento) => {
+                        setCarrito((prevCarrito) =>
+                            prevCarrito.map((producto) =>
+                                producto.id === id
+                                    ? { ...producto, cantidad: Math.max(producto.cantidad + incremento, 1) }
+                                    : producto
+                            )
+                        );
+                    }}
+                    onRemoveItem={(id) => {
+                        setCarrito((prevCarrito) =>
+                            prevCarrito.filter((producto) => producto.id !== id)
+                        );
+                    }}
+                    onRealizarPedido={realizarPedido}
+                    onTerminarOrden={terminarOrden}
+                    onUpdateCart={setCarrito}
+                    getCodigoConfirmacion={getCodigoConfirmacion} // Agregar esta línea
+                />
+
+                <PaymentModal
+                    isOpen={modalTotalOpen}
+                    totalPedidos={totalPedidos}
+                    metodoPago={metodoPago}
+                    mensajeError={mensajeError}
+                    isProcessingPayment={isProcessingPayment}
+                    onClose={() => setModalTotalOpen(false)}
+                    onSelectMetodoPago={setMetodoPago}
+                    onConfirmarPago={confirmarPago}
+                    onRequestConfirmationCode={solicitarCodigoConfirmacion}
+                />
+
+                <ConfirmationCodeModal
+                    isOpen={modalConfirmacionCodigoOpen}
+                    codigoEsperado={codigoConfirmacionEsperado}
+                    isValidando={isValidandoCode}
+                    mensajeError={errorCodigoConfirmacion}
+                    onClose={cerrarModalConfirmacionCodigo}
+                    onConfirm={validarCodigoConfirmacion}
+                />
+
+                <ProductDetailModal
+                    isOpen={modalOpen}
+                    producto={productoSeleccionado}
+                    onClose={closeModal}
+                    onAddToCart={(prod, incremento) => {
+                        if (incremento !== undefined) {
+                            setProductoSeleccionado({
+                                ...prod,
+                                cantidad: Math.max((prod.cantidad || 1) + incremento, 1),
+                            });
+                        } else {
+                            agregarAlCarrito(prod);
+                        }
+                    }}
+                />
+
+                <TicketModal
+                    isOpen={showTicketModal}
+                    onClose={() => {
+                        setShowTicketModal(false);
+                        setCompletedOrderUuid(null);
+                    }}
+                    orderUuid={completedOrderUuid}
+                />
+
+                {modalProductosCanceladosOpen && (
+                    <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[10001]">
+                        <div className="bg-white rounded-2xl p-8 w-11/12 md:w-2/3 lg:w-1/2 max-w-2xl shadow-2xl border border-red-200 max-h-[90vh] overflow-y-auto">
+                            <div className="text-center mb-6">
+                                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <h2 className="text-3xl font-bold mb-2 text-red-600">¡Atención!</h2>
+                                <h3 className="text-xl font-semibold text-gray-800 mb-4">Productos No Disponibles</h3>
+                                <p className="text-gray-600 mb-6">
+                                    Lamentamos informarte que los siguientes productos no pudieron ser preparados y han sido excluidos de tu orden:
+                                </p>
+                            </div>
+
+                            <div className="space-y-4 mb-8">
+                                {productosCancelados.map((producto, index) => (
+                                    <div key={index} className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6 border-2 border-red-200 shadow-lg">
+                                        <div className="flex justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <h4 className="text-lg font-bold text-red-800">
+                                                        {producto.cantidad} x {producto.nombre}
+                                                    </h4>
+                                                </div>
+                                                {producto.ingredientesExcluidos && producto.ingredientesExcluidos.length > 0 && (
+                                                    <p className="text-sm text-red-700 mb-1">
+                                                        Sin: {producto.ingredientesExcluidos.join(", ")}
+                                                    </p>
+                                                )}
+                                                {producto.comentario && (
+                                                    <p className="text-sm text-red-700 mb-1">
+                                                        Nota: {producto.comentario}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-lg font-bold text-red-600 line-through">
+                                                    ${parseFloat(producto.precio * producto.cantidad).toFixed(2)}
+                                                </p>
+                                                <p className="text-xs text-red-500">No disponible</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 mb-6">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <h4 className="text-lg font-semibold text-blue-800">¿Qué puedes hacer?</h4>
+                                </div>
+                                <ul className="text-blue-700 space-y-2">
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        Tu orden sigue activa y puedes agregar más productos
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        El total se ha actualizado automáticamente
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        Los productos restantes se están preparando normalmente
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="text-center">
+                                <button
+                                    onClick={() => {
+                                        setModalProductosCanceladosOpen(false);
+                                        setProductosCancelados([]);
+                                    }}
+                                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
+                                >
+                                    ✓ Entendido, continuar
+                                </button>
+                            </div>
+
+                            <div className="mt-6 text-center text-sm text-gray-500">
+                                Disculpa las molestias. Nuestro equipo trabaja para ofrecerte la mejor experiencia.
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {modalExitFullscreenOpen && (
+                    <div className="fixed inset-0 backdrop-brightness-30 flex justify-center items-center z-[1004]">
+                        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
+                            {procesandoExitFullscreen ? (
+                                <div className="flex flex-col justify-center items-center h-32">
+                                    <div className="loader border-t-4 border-green-500 rounded-full w-12 h-12 animate-spin mb-4"></div>
+                                    <p className="text-gray-600">Procesando...</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className='text-red-500 text-4xl flex justify-center mb-4'>
+                                        <div className='bg-red-500 text-white p-2 rounded-lg'>
+                                            <MdFullscreenExit size={32} />
+                                        </div>
+                                    </div>
+                                    <h2 className="text-2xl text-center font-bold text-black mb-2">Salir de Pantalla Completa</h2>
+                                    <p className='text-center text-gray-600 mb-4'>
+                                        Ingrese código de 4 dígitos para salir del modo pantalla completa
+                                    </p>
+
+                                    <div className="flex flex-col gap-4">
+                                        <div className='flex flex-col gap-2'>
+                                            <label className="text-sm font-medium text-gray-700 text-center">
+                                                Código de Seguridad
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={codigoExitFullscreen}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    if (/^\d{0,4}$/.test(value)) {
+                                                        setCodigoExitFullscreen(value);
+                                                        if (errorCodigoExitFullscreen) {
+                                                            setErrorCodigoExitFullscreen('');
+                                                        }
+                                                    }
+                                                }}
+                                                placeholder="****"
+                                                maxLength="4"
+                                                className="p-3 border border-gray-300 rounded-lg w-full text-lg text-center font-mono focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                                autoFocus
+                                            />
+
+                                            {errorCodigoExitFullscreen && (
+                                                <p className="text-red-500 text-sm text-center mt-1">
+                                                    {errorCodigoExitFullscreen}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-3">
+                                            <button
+                                                className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colores"
+                                                onClick={() => {
+                                                    setModalExitFullscreenOpen(false);
+                                                    setCodigoExitFullscreen('');
+                                                    setErrorCodigoExitFullscreen('');
+                                                }}
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                className={`flex-1 py-2 px-4 rounded-lg transition-colores ${codigoExitFullscreen.length === 4
+                                                        ? 'bg-red-500 text-white hover:bg-red-600'
+                                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                    }`}
+                                                onClick={confirmarExitFullscreen}
+                                                disabled={codigoExitFullscreen.length !== 4}
+                                            >
+                                                Salir de Pantalla Completa
+                                            </button>
+                                        </div>
+
+                                        <div className="text-center text-xs text-gray-500">
+                                            Por seguridad, se requiere código para salir del modo pantalla completa.
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <style jsx>{`
                 .delay-500 { animation-delay: 500ms; }
                 .delay-1000 { animation-delay: 1000ms; }
                 .delay-1500 { animation-delay: 1500ms; }

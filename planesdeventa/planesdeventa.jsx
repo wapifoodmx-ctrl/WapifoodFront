@@ -13,59 +13,12 @@ import { FaUserTie, FaConciergeBell } from "react-icons/fa";
 import Menu2 from "@/pages/assets/images/Menu2.png";
 import Pago from "@/pages/assets/images/Pago.png";
 
-import Vistadecocina from "@/pages/assets/images/Vistadecocina.png";
+import Vistadecocina from "@/pages/assets/images/Vistadecocina.png"; 
 import getPaymentsLink, { getAllPaymentLinks } from "@/useCases/getPaymentsLink";
 import { useEffect, useState } from "react";
 
 export default function PlanDeVentas() {
 
-    const planes = [
-        {
-            id: 1,
-            icon: <LuNotebookPen className="text-3xl text-green-600" />,
-            title: "Registra tus pedidos casi en tiempo real",
-            features: [
-                "Recibe los datos de tus ventas al momento",
-                "Se registran ventas y rendimiento hasta anualmente",
-                "Grafica tu rendimiento para mejor comprencion",
-            ],
-            image: Vistadecocina,
-        },
-        {
-            id: 2,
-            icon: <IoMdTime className="text-3xl text-green-600" />,
-            title: "Reduce tiempos de entrega",
-            features: [
-                "Mejora el tiempo de servicio a tus clientes",
-                "Recibe ordenes desde la app directo a tu cocina",
-                "Opción de ¡más vendidos!",
-            ],
-            image: Menu2,
-        },
-        {
-            id: 3,
-            icon: <GiModernCity className="text-3xl text-green-600" />,
-            title: "Moderniza tu negocio",
-            features: [
-                "La app es amigable para todos los usuarios",
-                "Actualízate con la vanguardia tecnológica",
-                "Acepta cualquier forma de pago",
-            ],
-            image: Pago,
-        },
-        {
-            id: 4,
-            icon: <AiTwotonePrinter className="text-3xl text-green-600" />,
-            title: "Imprime tickets desde nuestra App",
-            features: [
-                "Impresión de tickets de venta",
-                "Busqueda con código QR",
-                "Impresora térmica incluida",
-            ],
-            // Esta será especial con carrusel
-            isCarousel: true,
-        },
-    ];
 
     const [planesAdicionales, setPlanesAdicionales] = useState([
         // Planes Mensuales
@@ -76,7 +29,7 @@ export default function PlanDeVentas() {
             price: "$400.00",
             period: "mxn/mes",
             buttonText: "Seleccionar Plan",
-            prop: "ventas_mensual",
+            prop: "basico",
             popular: false,
             category: "mensual",
             specs: {
@@ -102,7 +55,7 @@ export default function PlanDeVentas() {
             price: "$600.00",
             period: "mxn/mes",
             buttonText: "Seleccionar Plan",
-            prop: "restaurante_mensual",
+            prop: "profesional",
             popular: true,
             category: "mensual",
             specs: {
@@ -129,7 +82,7 @@ export default function PlanDeVentas() {
             price: "$800.00",
             period: "mxn/mes",
             buttonText: "Seleccionar Plan",
-            prop: "restaurante_plus_mensual",
+            prop: "empresarial",
             popular: false,
             category: "mensual",
             specs: {
@@ -157,7 +110,7 @@ export default function PlanDeVentas() {
             price: "$4,000.00",
             period: "mxn/año",
             buttonText: "Seleccionar Plan",
-            prop: "ventas_anual",
+            prop: "basico_impresora",
             popular: false,
             category: "anual",
             savings: "Ahorras $800",
@@ -178,7 +131,7 @@ export default function PlanDeVentas() {
             price: "$6,000.00",
             period: "mxn/año",
             buttonText: "Seleccionar Plan",
-            prop: "restaurante_anual",
+            prop: "restaurante_impresora",
             popular: false,
             category: "anual",
             savings: "Ahorras $1,200",
@@ -199,7 +152,7 @@ export default function PlanDeVentas() {
             price: "$8,000.00",
             period: "mxn/año",
             buttonText: "Seleccionar Plan",
-            prop: "restaurante_plus_anual",
+            prop: "plus_restaurante_impresora",
             popular: false,
             category: "anual",
             savings: "Ahorras $1,600",

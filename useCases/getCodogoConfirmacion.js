@@ -1,7 +1,7 @@
 async function getCodigoConfirmacion() {
     try {
         // Obtener el token del localStorage
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
         
         if (!token) {
             throw new Error('No se encontró el token de autenticación');

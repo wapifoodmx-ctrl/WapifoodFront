@@ -1,6 +1,7 @@
 import { LiaFilterSolid } from "react-icons/lia";
 import { IoAddOutline, IoClose, IoEyeOutline, IoSwapHorizontalOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
+import { MdInventory } from "react-icons/md";
 import Navbar from "@/dashboardComponents/navbar";
 import NavegacionPestañas from "@/Inventarios/navegaciónPestañas";
 import { useState, useEffect } from "react";
@@ -14,6 +15,7 @@ import { checkPayment } from "@/useCases/checkPayment";
 export default function Inventario() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   // NUEVO: Estados para modal de PIN
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pinValue, setPinValue] = useState('');
@@ -34,14 +36,15 @@ export default function Inventario() {
   const [insumos, setInsumos] = useState([]); // Estado para almacenar insumos creados
   const [insumosSeleccionados, setInsumosSeleccionados] = useState([]);
   const [insumoAEditar, setInsumoAEditar] = useState(null);
+  const [insumoDetalles, setInsumoDetalles] = useState(null);
+  const [stockInicial, setStockInicial] = useState(0);
   const [terminoBusqueda, setTerminoBusqueda] = useState(''); // Nuevo estado para búsqueda
   const [formData, setFormData] = useState({
     nombreProducto: "",
     medida: "Gramos",
     cantidad: "",
     costo: "",
-    comentarios: "",
-    categoriaAdicional: "No"
+    comentarios: ""
   });
 
   const [unidadEdit, setUnidadEdit] = useState("Gramos");
@@ -55,7 +58,7 @@ export default function Inventario() {
     setIsLoadingData(true);
     try {
       const response = await getIngredientesInventario();
-      
+
       if (response.success && response.data) {
         // Mapear los datos de la API al formato esperado por las cards
         const ingredientesMapeados = response.data.map(ingrediente => ({
@@ -69,7 +72,7 @@ export default function Inventario() {
           category: ingrediente.category, // Agregar categoría para filtrado
           total_cost: ingrediente.total_cost // Agregar total_cost
         }));
-        
+
         setInsumos(ingredientesMapeados);
       } else {
         alert(`Error al cargar ingredientes: ${response.message}`);
@@ -126,21 +129,20 @@ export default function Inventario() {
       setShowSubscriptionModal(true);
       return;
     }
-    
+
     // Si está en la pestaña de productos, redirigir a la página de menú
     if (pestañaActiva === 'productos') {
       router.push('/menu');
       return;
     }
-    
+
     // Para insumos y otros, abrir el modal normalmente
     setFormData({
       nombreProducto: "",
       medida: "Gramos",
       cantidad: "",
       costo: "",
-      comentarios: "",
-      categoriaAdicional: "No"
+      comentarios: ""
     });
     setIsAddProductModalOpen(true);
   };
@@ -154,8 +156,7 @@ export default function Inventario() {
       medida: "Gramos",
       cantidad: "",
       costo: "",
-      comentarios: "",
-      categoriaAdicional: "No"
+      comentarios: ""
     });
   };
 
@@ -163,7 +164,7 @@ export default function Inventario() {
   const convertirUnidadParaAPI = (cantidad, unidad, costoUnitario) => {
     const cantidadNum = parseFloat(cantidad);
     const costoNum = parseFloat(costoUnitario);
-    
+
     switch (unidad) {
       case "Kilos":
         return {
@@ -236,7 +237,7 @@ export default function Inventario() {
   // MODIFICAR: handleSubmit ahora envía directamente sin PIN
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validar que los campos obligatorios estén completos
     if (!formData.nombreProducto || !formData.cantidad || !formData.costo) {
       alert('Por favor completa todos los campos obligatorios');
@@ -253,7 +254,7 @@ export default function Inventario() {
 
     try {
       const { stock, unit, cost } = convertirUnidadParaAPI(
-        formData.cantidad, 
+        formData.cantidad,
         formData.medida,
         formData.costo
       );
@@ -273,15 +274,15 @@ export default function Inventario() {
       }
 
       const result = await postInventarioIngredientes(ingredientData);
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Error al crear ingrediente');
       }
 
-      
+
       setSuccessModalMessage(`${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'} "${ingredientData.name}" agregado exitosamente`);
       setShowSuccessModal(true);
-      
+
       await cargarIngredientes();
       cerrarModalAgregar();
 
@@ -330,7 +331,7 @@ export default function Inventario() {
   // MODIFICAR: handleSubmitEdit ahora solo abre el modal de PIN
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.nombreProducto || !formData.cantidad || !formData.costo) {
       alert('Por favor completa todos los campos obligatorios');
       return;
@@ -385,13 +386,13 @@ export default function Inventario() {
       };
 
       const result = await putEditarIngrediente(insumoAEditar.id_ingredient, ingredientData);
-      
+
       setSuccessModalMessage(`Insumo "${ingredientData.name}" modificado exitosamente`);
       setShowSuccessModal(true);
-      
+
       // Cerrar modal de PIN primero
       cerrarModalPin();
-      
+
       // Cerrar modal de edición
       setIsEditProductModalOpen(false);
       setInsumoAEditar(null);
@@ -402,10 +403,9 @@ export default function Inventario() {
         medida: "Gramos",
         cantidad: "",
         costo: "",
-        comentarios: "",
-        categoriaAdicional: "No"
+        comentarios: ""
       });
-      
+
       // Recargar la página después de un breve delay para que se vea el modal de éxito
       setTimeout(() => {
         window.location.reload();
@@ -413,7 +413,7 @@ export default function Inventario() {
 
     } catch (error) {
       console.error('Error al modificar insumo:', error);
-      
+
       // Verificar si el error es por PIN incorrecto
       if (error.message.includes('confirmation') || error.message.includes('PIN') || error.message.includes('código')) {
         setPinError('PIN incorrecto. Intenta nuevamente.');
@@ -421,6 +421,28 @@ export default function Inventario() {
         cerrarModalPin();
         alert(`Error al modificar insumo: ${error.message}`);
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función para ver detalles de un insumo
+  const handleVerDetalles = async (insumoId) => {
+    setIsLoading(true);
+    try {
+      const response = await getIngredienteById(insumoId);
+
+      if (!response.success || !response.data) {
+        throw new Error('No se pudieron cargar los datos del ingrediente');
+      }
+
+      const ingrediente = response.data;
+      setInsumoDetalles(ingrediente);
+      setIsDetailsModalOpen(true);
+
+    } catch (error) {
+      console.error('Error al cargar el ingrediente para ver detalles:', error);
+      alert(`Error al cargar los datos del ingrediente: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -442,20 +464,23 @@ export default function Inventario() {
     setIsLoading(true);
     try {
       const insumoId = insumosSeleccionados[0];
-      
+
       const response = await getIngredienteById(insumoId);
-      
+
       if (!response.success || !response.data) {
         throw new Error('No se pudieron cargar los datos del ingrediente');
       }
 
       const ingrediente = response.data;
-      
+
       setInsumoAEditar(ingrediente);
 
       // Convertir las unidades para mostrar en el formulario
       const { cantidad, unidad } = convertirDesdeAPI(ingrediente.stock, ingrediente.unit);
-      
+
+      // Guardar stock inicial para calcular entrada/salida
+      setStockInicial(cantidad);
+
       // Ajustar el costo mostrado según la unidad
       let costoMostrado = ingrediente.cost;
       if (unidad === "Kilos") {
@@ -463,14 +488,13 @@ export default function Inventario() {
       } else if (unidad === "Litros") {
         costoMostrado = ingrediente.cost * 1000; // Mostrar costo por litro
       }
-      
+
       setFormData({
         nombreProducto: ingrediente.name || '',
         medida: ingrediente.unit || 'Gramos',
         cantidad: cantidad.toString(),
         costo: costoMostrado.toString(),
         comentarios: ingrediente.description || '',
-        categoriaAdicional: "No",
         total_cost: ingrediente.total_cost || 0
       });
 
@@ -489,7 +513,7 @@ export default function Inventario() {
   const toggleUnidadEdit = () => {
     const cantidadActual = parseFloat(formData.cantidad);
     const costoActual = parseFloat(formData.costo);
-    
+
     if (unidadEdit === "Gramos") {
       // Convertir de gramos a kilos
       setUnidadEdit("Kilos");
@@ -528,9 +552,9 @@ export default function Inventario() {
   // Función para filtrar elementos por búsqueda
   const filtrarPorBusqueda = (elementos, termino) => {
     if (!termino.trim()) return elementos;
-    
+
     const terminoLower = termino.toLowerCase();
-    return elementos.filter(elemento => 
+    return elementos.filter(elemento =>
       elemento.name.toLowerCase().includes(terminoLower) ||
       elemento.description?.toLowerCase().includes(terminoLower) ||
       elemento.unit.toLowerCase().includes(terminoLower) ||
@@ -575,7 +599,7 @@ export default function Inventario() {
   // Efecto para el contador de la modal de suscripción (redirige cuando llega a 0)
   useEffect(() => {
     let interval = null;
-    
+
     if (showSubscriptionModal && countdown > 0) {
       interval = setInterval(() => {
         setCountdown(prev => prev - 1);
@@ -590,7 +614,7 @@ export default function Inventario() {
       }
     };
   }, [showSubscriptionModal, countdown]);
-  
+
   // Resetear contador cuando se abre la modal
   useEffect(() => {
     if (showSubscriptionModal) {
@@ -637,10 +661,10 @@ export default function Inventario() {
                 onChange={handleBusquedaChange}
                 className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 pl-10"
               />
-              <svg 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -656,38 +680,37 @@ export default function Inventario() {
                 </button>
               )}
             </div>
-            
+
             {/* Botones de acción */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:w-1/2 lg:justify-center lg:items-center">
               {/* Botón Añadir */}
-              <button 
+              <button
                 onClick={abrirModalAgregar}
                 className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-orange-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base"
               >
                 <IoAddOutline className="text-lg" />
                 <span>{textos.agregar}</span>
               </button>
-              
+
               {/* Botón Modificar */}
-              <button 
+              <button
                 onClick={handleModificarInsumo}
                 disabled={insumosSeleccionados.length !== 1 || isLoading}
-                className={`flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 transform lg:text-base ${
-                  insumosSeleccionados.length === 1 && !isLoading
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
-                }`}
+                className={`flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 transform lg:text-base ${insumosSeleccionados.length === 1 && !isLoading
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                  }`}
               >
                 <FiEdit className="text-lg" />
                 <span>
-                  {isLoading ? 'Cargando...' : 
-                   insumosSeleccionados.length === 0 ? `Editar elemento` :
-                   'Editar elemento'}
+                  {isLoading ? 'Cargando...' :
+                    insumosSeleccionados.length === 0 ? `Registrar movimiento` :
+                      'Registrar movimiento'}
                 </span>
               </button>
 
               {/* Botón Cambiar Vista */}
-              <button 
+              <button
                 onClick={() => setVistaActiva(vistaActiva === 'cards' ? 'lista' : 'cards')}
                 className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base cursor-pointer"
                 title={vistaActiva === 'cards' ? 'Cambiar a vista de lista' : 'Cambiar a vista de cards'}
@@ -697,7 +720,7 @@ export default function Inventario() {
               </button>
             </div>
           </div>
-          
+
           {/* Mostrar resultados de búsqueda si hay término */}
           {terminoBusqueda && (
             <div className="mt-2 text-sm text-gray-600">
@@ -709,8 +732,8 @@ export default function Inventario() {
         {/* Navegación de pestañas y contenido */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Quitado el contenedor con borde para verse más limpio */}
-          <NavegacionPestañas 
-            pestañaActiva={pestañaActiva} 
+          <NavegacionPestañas
+            pestañaActiva={pestañaActiva}
             cambiarPestaña={handleCambiarPestaña}
             insumos={insumos}
             isLoadingData={isLoadingData}
@@ -719,17 +742,18 @@ export default function Inventario() {
             setInsumosSeleccionados={setInsumosSeleccionados}
             terminoBusqueda={terminoBusqueda}
             filtrarPorBusqueda={filtrarPorBusqueda}
+            onVerDetalles={handleVerDetalles}
           />
         </div>
       </div>
 
       {/* Modal Agregar Producto */}
       {isAddProductModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 p-4"
           onClick={cerrarModalAgregar}
         >
-          <div 
+          <div
             className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -782,7 +806,7 @@ export default function Inventario() {
                   </select>
                   {(formData.medida === "Kilos" || formData.medida === "Litros") && (
                     <p className="text-xs text-blue-600 mt-1">
-                      {formData.medida === "Kilos" 
+                      {formData.medida === "Kilos"
                         ? "Se guardará automáticamente en gramos (1 kilo = 1000 gramos)"
                         : "Se guardará automáticamente en mililitros (1 litro = 1000 mililitros)"
                       }
@@ -809,9 +833,9 @@ export default function Inventario() {
                   onKeyDown={(e) => {
                     // Prevenir letras y algunos caracteres, pero permitir teclas de control
                     if (
-                      e.key === '-' || 
-                      e.key === 'e' || 
-                      e.key === 'E' || 
+                      e.key === '-' ||
+                      e.key === 'e' ||
+                      e.key === 'E' ||
                       e.key === '+' ||
                       (e.key.length === 1 && /[a-zA-Z]/.test(e.key))
                     ) {
@@ -846,9 +870,9 @@ export default function Inventario() {
                   onKeyDown={(e) => {
                     // Prevenir letras y algunos caracteres, pero permitir teclas de control
                     if (
-                      e.key === '-' || 
-                      e.key === 'e' || 
-                      e.key === 'E' || 
+                      e.key === '-' ||
+                      e.key === 'e' ||
+                      e.key === 'E' ||
                       e.key === '+' ||
                       (e.key.length === 1 && /[a-zA-Z]/.test(e.key))
                     ) {
@@ -885,11 +909,10 @@ export default function Inventario() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 ${
-                    isLoading 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
-                  } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95`}
+                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 ${isLoading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+                    } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95`}
                 >
                   {isLoading ? (
                     <>
@@ -911,7 +934,7 @@ export default function Inventario() {
 
       {/* Modal Editar Producto */}
       {isEditProductModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 p-4"
           onClick={() => {
             setIsEditProductModalOpen(false);
@@ -919,15 +942,15 @@ export default function Inventario() {
             setUnidadEdit("Gramos");
           }}
         >
-          <div 
+          <div
             className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-800">
-                {pestañaActiva === 'insumos' ? 'Editar Insumo' : 
-                 pestañaActiva === 'productos' ? 'Editar Producto' : 'Editar Elemento'}
+                {pestañaActiva === 'insumos' ? 'Editar Insumo' :
+                  pestañaActiva === 'productos' ? 'Editar Producto' : 'Editar Elemento'}
               </h2>
               <button
                 onClick={() => {
@@ -946,16 +969,16 @@ export default function Inventario() {
               {/* Nombre del Producto */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {pestañaActiva === 'insumos' ? 'Editar Insumo' : 
-                   pestañaActiva === 'productos' ? 'Editar Producto' : 'Editar Elemento'}
+                  {pestañaActiva === 'insumos' ? 'Editar Insumo' :
+                    pestañaActiva === 'productos' ? 'Editar Producto' : 'Editar Elemento'}
                 </label>
                 <input
                   type="text"
                   name="nombreProducto"
                   value={formData.nombreProducto}
                   onChange={handleInputChange}
-                  placeholder={`Nombre del ${pestañaActiva === 'insumos' ? 'insumo' : 
-                               pestañaActiva === 'productos' ? 'producto' : 'elemento'}`}
+                  placeholder={`Nombre del ${pestañaActiva === 'insumos' ? 'insumo' :
+                    pestañaActiva === 'productos' ? 'producto' : 'elemento'}`}
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   required
                 />
@@ -1001,9 +1024,9 @@ export default function Inventario() {
                     onKeyDown={(e) => {
                       // Prevenir letras y algunos caracteres, pero permitir teclas de control
                       if (
-                        e.key === '-' || 
-                        e.key === 'e' || 
-                        e.key === 'E' || 
+                        e.key === '-' ||
+                        e.key === 'e' ||
+                        e.key === 'E' ||
                         e.key === '+' ||
                         (e.key.length === 1 && /[a-zA-Z]/.test(e.key))
                       ) {
@@ -1019,26 +1042,25 @@ export default function Inventario() {
                     }}
                   />
                   {/* Botón de conversión - Solo para insumos con unidades convertibles (excepto Piezas) */}
-                  {pestañaActiva === 'insumos' && 
-                   formData.medida !== "Piezas" &&
-                   (unidadEdit === "Gramos" || unidadEdit === "Kilos" || 
-                    unidadEdit === "Mililitros" || unidadEdit === "Litros") && (
-                    <button
-                      type="button"
-                      onClick={toggleUnidadEdit}
-                      className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-1 text-sm"
-                      title={`Cambiar a ${
-                        unidadEdit === "Gramos" ? "Kilos" : 
-                        unidadEdit === "Kilos" ? "Gramos" :
-                        unidadEdit === "Mililitros" ? "Litros" : "Mililitros"
-                      }`}
-                    >
-                      <IoSwapHorizontalOutline className="text-sm" />
-                      {unidadEdit === "Gramos" ? "Kg" : 
-                       unidadEdit === "Kilos" ? "g" :
-                       unidadEdit === "Mililitros" ? "L" : "ml"}
-                    </button>
-                  )}
+                  {pestañaActiva === 'insumos' &&
+                    formData.medida !== "Piezas" &&
+                    (unidadEdit === "Gramos" || unidadEdit === "Kilos" ||
+                      unidadEdit === "Mililitros" || unidadEdit === "Litros") && (
+                      <button
+                        type="button"
+                        onClick={toggleUnidadEdit}
+                        className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-1 text-sm"
+                        title={`Cambiar a ${unidadEdit === "Gramos" ? "Kilos" :
+                          unidadEdit === "Kilos" ? "Gramos" :
+                            unidadEdit === "Mililitros" ? "Litros" : "Mililitros"
+                          }`}
+                      >
+                        <IoSwapHorizontalOutline className="text-sm" />
+                        {unidadEdit === "Gramos" ? "Kg" :
+                          unidadEdit === "Kilos" ? "g" :
+                            unidadEdit === "Mililitros" ? "L" : "ml"}
+                      </button>
+                    )}
                 </div>
                 {pestañaActiva === 'insumos' && formData.medida !== "Piezas" && (
                   <p className="text-xs text-gray-500 mt-1">
@@ -1068,9 +1090,9 @@ export default function Inventario() {
                   onKeyDown={(e) => {
                     // Prevenir letras y algunos caracteres, pero permitir teclas de control
                     if (
-                      e.key === '-' || 
-                      e.key === 'e' || 
-                      e.key === 'E' || 
+                      e.key === '-' ||
+                      e.key === 'e' ||
+                      e.key === 'E' ||
                       e.key === '+' ||
                       (e.key.length === 1 && /[a-zA-Z]/.test(e.key))
                     ) {
@@ -1118,45 +1140,56 @@ export default function Inventario() {
                 />
               </div>
 
-              {/* Categoría Adicional - Solo para insumos */}
-              {pestañaActiva === 'insumos' && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Categoría Adicional
-                  </label>
-                  <select
-                    name="categoriaAdicional"
-                    value={formData.categoriaAdicional}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                  >
-                    <option value="No">No</option>
-                    <option value="Si">Sí</option>
-                  </select>
-                </div>
-              )}
+              {/* Registro de Inventario - Campo calculado automáticamente */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Registro de Inventario
+                </label>
+                <input
+                  type="text"
+                  value={
+                    formData.cantidad && stockInicial
+                      ? parseFloat(formData.cantidad) > stockInicial
+                        ? 'Entrada'
+                        : parseFloat(formData.cantidad) < stockInicial
+                          ? 'Salida'
+                          : 'Sin cambios'
+                      : 'Sin cambios'
+                  }
+                  readOnly
+                  className={`w-full border border-gray-300 rounded-lg p-3 font-semibold focus:outline-none ${formData.cantidad && stockInicial
+                    ? parseFloat(formData.cantidad) > stockInicial
+                      ? 'bg-green-50 text-green-700'
+                      : parseFloat(formData.cantidad) < stockInicial
+                        ? 'bg-red-50 text-red-700'
+                        : 'bg-gray-100 text-gray-600'
+                    : 'bg-gray-100 text-gray-600'
+                    } cursor-not-allowed`}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Este campo se calcula automáticamente según la cantidad modificada
+                </p>
+              </div>
 
               {/* Botón Guardar */}
               <div className="pt-4">
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 ${
-                    isLoading 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
-                  } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95`}
+                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 ${isLoading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+                    } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95`}
                 >
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Editando...
+                      Registrando...
                     </>
                   ) : (
                     <>
-                      <FiEdit className="text-lg" />
-                      {pestañaActiva === 'insumos' ? 'Editar Insumo' : 
-                       pestañaActiva === 'productos' ? 'Editar Producto' : 'Editar Elemento'}
+                      <MdInventory className="text-lg" />
+                      Registrar Movimiento
                     </>
                   )}
                 </button>
@@ -1166,9 +1199,128 @@ export default function Inventario() {
         </div>
       )}
 
+      {/* Modal de Detalles (Solo lectura) */}
+      {isDetailsModalOpen && insumoDetalles && (
+        <div
+          className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setIsDetailsModalOpen(false);
+            setInsumoDetalles(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-500 to-emerald-600">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <IoEyeOutline className="text-2xl" />
+                Detalles del {pestañaActiva === 'insumos' ? 'Insumo' :
+                  pestañaActiva === 'productos' ? 'Producto' : 'Elemento'}
+              </h2>
+              <button
+                onClick={() => {
+                  setIsDetailsModalOpen(false);
+                  setInsumoDetalles(null);
+                }}
+                className="text-white hover:text-gray-200 transition-colors p-1 rounded-lg hover:bg-white/20"
+              >
+                <IoClose className="text-2xl" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Nombre */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Nombre
+                </label>
+                <div className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 text-gray-800 font-medium">
+                  {insumoDetalles.name}
+                </div>
+              </div>
+
+              {/* Unidad - Solo para insumos */}
+              {pestañaActiva === 'insumos' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Unidad
+                  </label>
+                  <div className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 text-gray-800">
+                    {insumoDetalles.unit}
+                  </div>
+                </div>
+              )}
+
+              {/* Stock */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Stock Actual
+                </label>
+                <div className={`w-full border border-gray-300 rounded-lg p-3 font-semibold ${insumoDetalles.stock > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                  }`}>
+                  {(() => {
+                    const { cantidad, unidad } = convertirDesdeAPI(insumoDetalles.stock, insumoDetalles.unit);
+                    return `${cantidad} ${unidad}`;
+                  })()}
+                </div>
+              </div>
+
+              {/* Costo por unidad */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Costo por Unidad
+                </label>
+                <div className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 text-green-600 font-semibold">
+                  ${(insumoDetalles.cost || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                </div>
+              </div>
+
+              {/* Costo Total */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Costo Total
+                </label>
+                <div className="w-full border border-gray-300 rounded-lg p-3 bg-green-50 text-green-700 font-bold text-lg">
+                  ${(insumoDetalles.total_cost || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                </div>
+              </div>
+
+              {/* Descripción/Comentarios */}
+              {insumoDetalles.description && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Descripción
+                  </label>
+                  <div className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 text-gray-800">
+                    {insumoDetalles.description}
+                  </div>
+                </div>
+              )}
+
+              {/* Botón Cerrar */}
+              <div className="pt-4">
+                <button
+                  onClick={() => {
+                    setIsDetailsModalOpen(false);
+                    setInsumoDetalles(null);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+                >
+                  <IoClose className="text-lg" />
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* NUEVO: Modal de PIN */}
       {isPinModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[60] p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -1176,7 +1328,7 @@ export default function Inventario() {
             }
           }}
         >
-          <div 
+          <div
             className="bg-white rounded-xl shadow-2xl w-full max-w-sm"
             onClick={(e) => e.stopPropagation()}
           >
@@ -1212,17 +1364,16 @@ export default function Inventario() {
                   className={`w-full border ${pinError ? 'border-red-500' : 'border-gray-300'} rounded-lg p-3 text-center text-2xl font-bold tracking-widest focus:outline-none focus:ring-2 ${pinError ? 'focus:ring-red-500' : 'focus:ring-green-500'} focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed`}
                   autoFocus
                 />
-                
+
                 {/* Indicador de dígitos */}
                 <div className="flex justify-center gap-2 mt-3">
                   {[1, 2, 3, 4].map((index) => (
                     <div
                       key={index}
-                      className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                        pinValue.length >= index
-                          ? 'bg-green-500 scale-110'
-                          : 'bg-gray-300'
-                      }`}
+                      className={`w-3 h-3 rounded-full transition-all duration-200 ${pinValue.length >= index
+                        ? 'bg-green-500 scale-110'
+                        : 'bg-gray-300'
+                        }`}
                     />
                   ))}
                 </div>
@@ -1247,11 +1398,10 @@ export default function Inventario() {
                   type="button"
                   onClick={confirmarPin}
                   disabled={pinValue.length !== 4 || isLoading}
-                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                    pinValue.length === 4 && !isLoading
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
+                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all duration-200 ${pinValue.length === 4 && !isLoading
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center gap-2">
@@ -1267,7 +1417,7 @@ export default function Inventario() {
           </div>
         </div>
       )}
-      
+
       {/* Modal Suscripción / Restricción de acceso */}
       {showSubscriptionModal && (
         <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
@@ -1293,7 +1443,7 @@ export default function Inventario() {
                 </div>
               </div>
             </div>
-            
+
             <h2 className="text-xl font-bold mb-4 text-green-600 text-center">Suscripción Requerida</h2>
             <p className="text-gray-700 mb-4 text-center">
               Tu suscripción ha expirado o no tienes permisos para acceder a esta funcionalidad.
@@ -1319,7 +1469,7 @@ export default function Inventario() {
           </div>
         </div>
       )}
-      
+
       {/* Modal de Éxito (crear / editar) */}
       {showSuccessModal && (
         <div
