@@ -494,7 +494,7 @@ export default function Inventario() {
         medida: ingrediente.unit || 'Gramos',
         cantidad: cantidad.toString(),
         costo: costoMostrado.toString(),
-        comentarios: ingrediente.description || '',
+        comentarios: '', // Siempre vacío al abrir la modal
         total_cost: ingrediente.total_cost || 0
       });
 
@@ -1128,15 +1128,16 @@ export default function Inventario() {
               {/* Comentarios */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Comentarios
+                  Comentarios <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   name="comentarios"
                   value={formData.comentarios}
                   onChange={handleInputChange}
-                  placeholder="Comentarios adicionales (opcional)"
+                  placeholder="Comentarios adicionales (obligatorio)"
                   rows="3"
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 resize-none"
+                  required
                 />
               </div>
 

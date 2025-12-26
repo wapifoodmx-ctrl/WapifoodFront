@@ -122,6 +122,18 @@ const NavegacionPestañas = ({
         const stockMostrado = mostrarEnUnidadBase ? elemento.stock : cantidad;
         const unidadMostrada = mostrarEnUnidadBase ? elemento.unit : unidad;
 
+        // Convertir precio por unidad según la visualización
+        let precioMostrado = elemento.cost;
+        if ((elemento.unit === "Gramos" || elemento.unit === "Mililitros") && elemento.unit !== "Piezas") {
+          // La API almacena el precio en la unidad base (por gramo o por mililitro)
+          // Si mostramos en unidad base (g/ml después de toggle), mantenemos el precio original
+          // Si mostramos en unidad convertida (kg/L por defecto), multiplicamos por 1000
+          precioMostrado = mostrarEnUnidadBase ? elemento.cost : (elemento.cost * 1000);
+        }
+        
+        // Formatear precio: si es menor a 0.01, mostrar 3 decimales; si no, 2 decimales
+        const precioFormateado = precioMostrado < 0.01 ? precioMostrado.toFixed(3) : precioMostrado.toFixed(2);
+
         return (
           <div
             key={elemento.id}
@@ -217,7 +229,7 @@ const NavegacionPestañas = ({
 
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Costo por unidad:</span>
-                  <span className="font-medium text-green-600">${elemento.cost} MXN</span>
+                  <span className="font-medium text-green-600">${precioFormateado} MXN</span>
                 </div>
 
                 <div className="flex justify-between items-center text-sm">
@@ -279,6 +291,18 @@ const NavegacionPestañas = ({
             const stockMostrado = mostrarEnUnidadBase ? elemento.stock : cantidad;
             const unidadMostrada = mostrarEnUnidadBase ? elemento.unit : unidad;
 
+            // Convertir precio por unidad según la visualización
+            let precioMostrado = elemento.cost;
+            if ((elemento.unit === "Gramos" || elemento.unit === "Mililitros") && elemento.unit !== "Piezas") {
+              // La API almacena el precio en la unidad base (por gramo o por mililitro)
+              // Si mostramos en unidad base (g/ml después de toggle), mantenemos el precio original
+              // Si mostramos en unidad convertida (kg/L por defecto), multiplicamos por 1000
+              precioMostrado = mostrarEnUnidadBase ? elemento.cost : (elemento.cost * 1000);
+            }
+            
+            // Formatear precio: si es menor a 0.01, mostrar 3 decimales; si no, 2 decimales
+            const precioFormateado = precioMostrado < 0.01 ? precioMostrado.toFixed(3) : precioMostrado.toFixed(2);
+
             return (
               <tr
                 key={elemento.id}
@@ -339,7 +363,7 @@ const NavegacionPestañas = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  ${elemento.cost} MXN
+                  ${precioFormateado} MXN
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
                   ${elemento.total_cost} MXN
