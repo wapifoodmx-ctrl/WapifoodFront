@@ -16,6 +16,17 @@ const LoginForm = () => {
 
     useEffect(() => {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const isWaiter = sessionStorage.getItem('isWaiter');
+
+        // Validar que no sea un mesero intentando acceder
+        if (isWaiter === 'true') {
+            // Limpiar todo el storage
+            localStorage.clear();
+            sessionStorage.clear();
+            setServerError('Acceso no autorizado. Los meseros no pueden acceder al dashboard.');
+            return;
+        }
+
         if (token) {
             router.push('/dashboard');
         }
@@ -36,6 +47,19 @@ const LoginForm = () => {
     const onSubmit = async (values, { setSubmitting }) => {
         setServerError('');
         setIsLoading(true);
+
+        // Validar que no sea un mesero intentando acceder
+        const isWaiter = sessionStorage.getItem('isWaiter');
+        if (isWaiter === 'true') {
+            // Limpiar todo el storage
+            localStorage.clear();
+            sessionStorage.clear();
+            setServerError('Acceso no autorizado. Los meseros no pueden acceder al dashboard.');
+            setIsLoading(false);
+            setSubmitting(false);
+            return;
+        }
+
         // console.log('Valores del formulario:', values);
         try {
             const response = await loginUser(values);

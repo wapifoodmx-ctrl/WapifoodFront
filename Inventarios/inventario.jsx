@@ -2,8 +2,10 @@ import { LiaFilterSolid } from "react-icons/lia";
 import { IoAddOutline, IoClose, IoEyeOutline, IoSwapHorizontalOutline } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import { MdInventory } from "react-icons/md";
+import { HiDocumentDownload } from "react-icons/hi";
 import Navbar from "@/dashboardComponents/navbar";
 import NavegacionPestañas from "@/Inventarios/navegaciónPestañas";
+import { toast } from '@/components/Toast';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { postInventarioIngredientes } from "@/useCases/postInventarioIngredientes";
@@ -11,6 +13,8 @@ import getIngredientesInventario from "@/useCases/getIngredientesInventario";
 import { getIngredienteById } from "@/useCases/getIngredienteId";
 import putEditarIngrediente from "@/useCases/putEditarIngrediente";
 import { checkPayment } from "@/useCases/checkPayment";
+import getKardexData from "@/useCases/getKardexData";
+import { generateKardexReportPDF } from "@/utils/pdfGenerator";
 
 export default function Inventario() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -39,6 +43,7 @@ export default function Inventario() {
   const [insumoDetalles, setInsumoDetalles] = useState(null);
   const [stockInicial, setStockInicial] = useState(0);
   const [terminoBusqueda, setTerminoBusqueda] = useState(''); // Nuevo estado para búsqueda
+  const [isLoadingKardex, setIsLoadingKardex] = useState(false); // Estado para descarga de kardex
   const [formData, setFormData] = useState({
     nombreProducto: "",
     medida: "Gramos",
@@ -332,8 +337,18 @@ export default function Inventario() {
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
 
-    if (!formData.nombreProducto || !formData.cantidad || !formData.costo) {
-      alert('Por favor completa todos los campos obligatorios');
+    if (!formData.nombreProducto || formData.cantidadAAnadir === '' || !formData.costo) {
+      toast.error('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    // Validar que las salidas no excedan la cantidad existente
+    const tipoMovimiento = formData.tipoMovimiento || 'entrada';
+    const cantidadActualNum = parseFloat(formData.cantidadActual || '0');
+    const cantidadAAnadirNum = parseFloat(formData.cantidadAAnadir || '0');
+
+    if (tipoMovimiento === 'salida' && cantidadAAnadirNum > cantidadActualNum) {
+      toast.error(`No puedes retirar ${cantidadAAnadirNum} unidades porque solo hay ${cantidadActualNum} disponibles en inventario.`);
       return;
     }
 
@@ -351,28 +366,53 @@ export default function Inventario() {
       }
 
       const cost = parseFloat(formData.costo);
-      const cantidadInput = parseFloat(formData.cantidad);
+      const cantidadActualNum = parseFloat(formData.cantidadActual || '0');
+      const cantidadAAnadirNum = parseFloat(formData.cantidadAAnadir || '0');
+      const tipoMovimiento = formData.tipoMovimiento || 'entrada';
+      const costoExistenteNum = parseFloat(formData.costoExistente || '0');
+
+      // Calcular la cantidad total según el tipo de movimiento
+      const cantidadTotal = tipoMovimiento === 'entrada'
+        ? cantidadActualNum + cantidadAAnadirNum
+        : cantidadActualNum - cantidadAAnadirNum;
 
       if (isNaN(cost) || cost < 0) {
         throw new Error('El costo debe ser un número válido mayor o igual a 0');
       }
 
-      if (isNaN(cantidadInput) || cantidadInput < 0) {
-        throw new Error('La cantidad debe ser un número válido mayor o igual a 0');
+      if (isNaN(cantidadTotal) || cantidadTotal < 0) {
+        throw new Error('La cantidad total debe ser un número válido mayor o igual a 0');
       }
 
-      let stockFinal = cantidadInput;
-      let unitFinal = unidadEdit;
-      let costFinal = cost;
+      // Calcular el costo total final
+      let costoTotalFinal;
+      if (tipoMovimiento === 'entrada') {
+        // Para entradas: costo existente + (cantidad nueva * costo nuevo)
+        costoTotalFinal = costoExistenteNum + (cantidadAAnadirNum * cost);
+      } else {
+        // Para salidas: costo existente - (cantidad retirada * costo promedio actual)
+        const costoPromedioActual = cantidadActualNum > 0 ? costoExistenteNum / cantidadActualNum : 0;
+        costoTotalFinal = costoExistenteNum - (cantidadAAnadirNum * costoPromedioActual);
+      }
 
+      // Calcular el costo promedio por unidad para enviar a la API
+      // La API calculará: total_cost = cost * stock
+      // Entonces necesitamos: cost = total_cost / stock
+      const costoPorUnidadFinal = cantidadTotal > 0 ? costoTotalFinal / cantidadTotal : 0;
+
+      let stockFinal = cantidadTotal;
+      let unitFinal = unidadEdit;
+      let costFinal = costoPorUnidadFinal;
+
+      // Convertir unidades a formato base de la API si es necesario
       if (unidadEdit === "Kilos") {
-        stockFinal = cantidadInput * 1000;
+        stockFinal = cantidadTotal * 1000;
         unitFinal = "Gramos";
-        costFinal = cost / 1000; // Ajustar costo por gramo
+        costFinal = costoPorUnidadFinal / 1000; // Ajustar costo por gramo
       } else if (unidadEdit === "Litros") {
-        stockFinal = cantidadInput * 1000;
+        stockFinal = cantidadTotal * 1000;
         unitFinal = "Mililitros";
-        costFinal = cost / 1000; // Ajustar costo por mililitro
+        costFinal = costoPorUnidadFinal / 1000; // Ajustar costo por mililitro
       }
 
       const ingredientData = {
@@ -401,9 +441,11 @@ export default function Inventario() {
       setFormData({
         nombreProducto: "",
         medida: "Gramos",
-        cantidad: "",
+        cantidadActual: 0,
+        cantidadAAnadir: '0',
         costo: "",
-        comentarios: ""
+        comentarios: "",
+        costoExistente: 0
       });
 
       // Recargar la página después de un breve delay para que se vea el modal de éxito
@@ -492,10 +534,13 @@ export default function Inventario() {
       setFormData({
         nombreProducto: ingrediente.name || '',
         medida: ingrediente.unit || 'Gramos',
-        cantidad: cantidad.toString(),
+        cantidadActual: cantidad,
+        cantidadAAnadir: '0',
+        tipoMovimiento: 'entrada', // Nuevo campo para tipo de movimiento
         costo: costoMostrado.toString(),
         comentarios: '', // Siempre vacío al abrir la modal
-        total_cost: ingrediente.total_cost || 0
+        total_cost: ingrediente.total_cost || 0,
+        costoExistente: ingrediente.total_cost || 0
       });
 
       setUnidadEdit(unidad);
@@ -511,7 +556,8 @@ export default function Inventario() {
 
   // Función para alternar entre unidades en la modal de edición
   const toggleUnidadEdit = () => {
-    const cantidadActual = parseFloat(formData.cantidad);
+    const cantidadActualNum = parseFloat(formData.cantidadActual || 0);
+    const cantidadAAnadirNum = parseFloat(formData.cantidadAAnadir || 0);
     const costoActual = parseFloat(formData.costo);
 
     if (unidadEdit === "Gramos") {
@@ -519,7 +565,8 @@ export default function Inventario() {
       setUnidadEdit("Kilos");
       setFormData(prev => ({
         ...prev,
-        cantidad: (cantidadActual / 1000).toString(),
+        cantidadActual: (cantidadActualNum / 1000),
+        cantidadAAnadir: (cantidadAAnadirNum / 1000).toString(),
         costo: (costoActual * 1000).toString() // Ajustar costo: de $/gramo a $/kilo
       }));
     } else if (unidadEdit === "Kilos") {
@@ -527,7 +574,8 @@ export default function Inventario() {
       setUnidadEdit("Gramos");
       setFormData(prev => ({
         ...prev,
-        cantidad: (cantidadActual * 1000).toString(),
+        cantidadActual: (cantidadActualNum * 1000),
+        cantidadAAnadir: (cantidadAAnadirNum * 1000).toString(),
         costo: (costoActual / 1000).toString() // Ajustar costo: de $/kilo a $/gramo
       }));
     } else if (unidadEdit === "Mililitros") {
@@ -535,7 +583,8 @@ export default function Inventario() {
       setUnidadEdit("Litros");
       setFormData(prev => ({
         ...prev,
-        cantidad: (cantidadActual / 1000).toString(),
+        cantidadActual: (cantidadActualNum / 1000),
+        cantidadAAnadir: (cantidadAAnadirNum / 1000).toString(),
         costo: (costoActual * 1000).toString() // Ajustar costo: de $/ml a $/litro
       }));
     } else if (unidadEdit === "Litros") {
@@ -543,7 +592,8 @@ export default function Inventario() {
       setUnidadEdit("Mililitros");
       setFormData(prev => ({
         ...prev,
-        cantidad: (cantidadActual * 1000).toString(),
+        cantidadActual: (cantidadActualNum * 1000),
+        cantidadAAnadir: (cantidadAAnadirNum * 1000).toString(),
         costo: (costoActual / 1000).toString() // Ajustar costo: de $/litro a $/ml
       }));
     }
@@ -626,6 +676,44 @@ export default function Inventario() {
     setShowSubscriptionModal(false);
     setCountdown(10);
     router.push('/payments');
+  };
+
+  // Función para descargar el reporte de kardex
+  const handleDownloadKardex = async () => {
+    if (!insumoDetalles) return;
+
+    setIsLoadingKardex(true);
+    try {
+      // Obtener los movimientos del kardex
+      const response = await getKardexData(insumoDetalles.id_ingredient);
+
+      if (!response.success) {
+        toast.error(`Error al obtener datos: ${response.message}`);
+        return;
+      }
+
+      // Convertir el stock y unidad para mostrar correctamente en el PDF
+      const { cantidad, unidad } = convertirDesdeAPI(insumoDetalles.stock, insumoDetalles.unit);
+
+      // Generar el PDF
+      const pdfResult = generateKardexReportPDF(
+        insumoDetalles.name,
+        response.data,
+        cantidad,
+        unidad
+      );
+
+      if (pdfResult.success) {
+        toast.success('Reporte de kardex generado exitosamente');
+      } else {
+        toast.error(`Error al generar PDF: ${pdfResult.message}`);
+      }
+    } catch (error) {
+      console.error('Error al descargar kardex:', error);
+      toast.error('Error al generar el reporte de kardex');
+    } finally {
+      setIsLoadingKardex(false);
+    }
   };
 
   return (
@@ -969,19 +1057,42 @@ export default function Inventario() {
               {/* Nombre del Producto */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {pestañaActiva === 'insumos' ? 'Editar Insumo' :
-                    pestañaActiva === 'productos' ? 'Editar Producto' : 'Editar Elemento'}
+                  {pestañaActiva === 'insumos' ? 'Nombre del Insumo' :
+                    pestañaActiva === 'productos' ? 'Nombre del Producto' : 'Nombre del Elemento'}
                 </label>
                 <input
                   type="text"
                   name="nombreProducto"
                   value={formData.nombreProducto}
-                  onChange={handleInputChange}
+                  readOnly
+                  disabled
                   placeholder={`Nombre del ${pestañaActiva === 'insumos' ? 'insumo' :
                     pestañaActiva === 'productos' ? 'producto' : 'elemento'}`}
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                  required
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none"
                 />
+              </div>
+
+              {/* Tipo de Movimiento - NUEVO */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Tipo de Movimiento <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="tipoMovimiento"
+                  value={formData.tipoMovimiento || 'entrada'}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-semibold"
+                  required
+                >
+                  <option value="entrada" className="text-green-600 font-semibold">✓ Entrada (Agregar al inventario)</option>
+                  <option value="salida" className="text-red-600 font-semibold">✗ Salida (Retirar del inventario)</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formData.tipoMovimiento === 'entrada'
+                    ? '✓ Se agregará inventario'
+                    : '✗ Se retirará inventario'
+                  }
+                </p>
               </div>
 
               {/* Medidas - Solo para insumos */}
@@ -1002,10 +1113,10 @@ export default function Inventario() {
                 </div>
               )}
 
-              {/* Cantidad con botón de conversión - En modal de editar */}
+              {/* Cantidad a Añadir con botón de conversión */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Cantidad
+                  Cantidad a {formData.tipoMovimiento === 'entrada' ? 'Añadir' : 'Retirar'}
                   {pestañaActiva === 'insumos' && (
                     <span className="text-blue-600 ml-1">({unidadEdit})</span>
                   )}
@@ -1013,28 +1124,33 @@ export default function Inventario() {
                 <div className="flex gap-2">
                   <input
                     type="number"
-                    name="cantidad"
-                    value={formData.cantidad}
-                    onChange={handleInputChange}
-                    placeholder="Cantidad"
-                    min="0.01"
+                    name="cantidadAAnadir"
+                    value={formData.cantidadAAnadir === '0' ? '' : formData.cantidadAAnadir}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      // Si el campo está vacío, establecer '0', de lo contrario usar el valor
+                      setFormData(prev => ({
+                        ...prev,
+                        cantidadAAnadir: valor === '' ? '0' : valor
+                      }));
+                    }}
+                    placeholder="Ingresa cantidad"
+                    min="0"
                     step="0.01"
                     className="flex-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                     required
                     onKeyDown={(e) => {
-                      // Prevenir letras y algunos caracteres, pero permitir teclas de control
                       if (
-                        e.key === '-' ||
                         e.key === 'e' ||
                         e.key === 'E' ||
                         e.key === '+' ||
+                        e.key === '-' ||
                         (e.key.length === 1 && /[a-zA-Z]/.test(e.key))
                       ) {
                         e.preventDefault();
                       }
                     }}
                     onPaste={(e) => {
-                      // Prevenir pegar texto con letras
                       const pastedText = e.clipboardData.getData('text');
                       if (!/^[0-9.]*$/.test(pastedText)) {
                         e.preventDefault();
@@ -1062,20 +1178,41 @@ export default function Inventario() {
                       </button>
                     )}
                 </div>
-                {pestañaActiva === 'insumos' && formData.medida !== "Piezas" && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {unidadEdit === "Kilos" && "1 kilo = 1000 gramos"}
-                    {unidadEdit === "Litros" && "1 litro = 1000 mililitros"}
-                    {unidadEdit === "Gramos" && "Unidad base: gramos"}
-                    {unidadEdit === "Mililitros" && "Unidad base: mililitros"}
+
+                {/* Indicador visual de la operación */}
+                <div className={`mt-3 p-3 border rounded-lg ${formData.tipoMovimiento === 'entrada'
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-red-50 border-red-200'
+                  }`}>
+                  <p className="text-sm font-medium text-gray-700">
+                    <span className="text-blue-600">Cantidad actual:</span> {formData.cantidadActual || 0} {pestañaActiva === 'insumos' ? unidadEdit : 'Piezas'}
                   </p>
-                )}
+                  <p className="text-sm font-medium text-gray-700 mt-1">
+                    <span className={formData.tipoMovimiento === 'entrada' ? 'text-green-600' : 'text-red-600'}>
+                      {formData.tipoMovimiento === 'entrada' ? '+ Entrada:' : '- Salida:'}
+                    </span> {Math.abs(parseFloat(formData.cantidadAAnadir || 0))} {pestañaActiva === 'insumos' ? unidadEdit : 'Piezas'}
+                  </p>
+                  <div className={`border-t my-2 ${formData.tipoMovimiento === 'entrada' ? 'border-green-300' : 'border-red-300'
+                    }`}></div>
+                  <p className="text-sm font-bold text-gray-800">
+                    <span className="text-blue-700">= Cantidad total:</span> {
+                      formData.tipoMovimiento === 'entrada'
+                        ? (parseFloat(formData.cantidadActual || 0) + parseFloat(formData.cantidadAAnadir || 0)).toFixed(2)
+                        : (parseFloat(formData.cantidadActual || 0) - parseFloat(formData.cantidadAAnadir || 0)).toFixed(2)
+                    } {pestañaActiva === 'insumos' ? unidadEdit : 'Piezas'}
+                  </p>
+
+
+                </div>
               </div>
 
-              {/* Costo por pieza - En modal de editar */}
+              {/* Costo por unidad - Dinámico según la unidad de medida */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Costo por pieza
+                  {pestañaActiva === 'insumos'
+                    ? `Costo por ${unidadEdit === 'Kilos' || unidadEdit === 'Gramos' ? (unidadEdit === 'Kilos' ? 'Kilo' : 'Gramo') : unidadEdit === 'Litros' || unidadEdit === 'Mililitros' ? (unidadEdit === 'Litros' ? 'Litro' : 'Mililitro') : 'Pieza'}`
+                    : 'Costo por Pieza'
+                  }
                 </label>
                 <input
                   type="number"
@@ -1088,7 +1225,6 @@ export default function Inventario() {
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   required
                   onKeyDown={(e) => {
-                    // Prevenir letras y algunos caracteres, pero permitir teclas de control
                     if (
                       e.key === '-' ||
                       e.key === 'e' ||
@@ -1100,7 +1236,6 @@ export default function Inventario() {
                     }
                   }}
                   onPaste={(e) => {
-                    // Prevenir pegar texto con letras
                     const pastedText = e.clipboardData.getData('text');
                     if (!/^[0-9.]*$/.test(pastedText)) {
                       e.preventDefault();
@@ -1109,20 +1244,37 @@ export default function Inventario() {
                 />
               </div>
 
-              {/* Costo Total */}
+              {/* Costo Total con desglose visual */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Costo Total
                 </label>
-                <input
-                  type="number"
-                  value={formData.total_cost || 0}
-                  placeholder="0.00"
-                  step="0.01"
-                  readOnly
-                  className="w-full border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">Este campo se calcula automáticamente</p>
+
+                {/* Desglose de costos */}
+                <div className={`mb-2 p-3 border rounded-lg ${formData.tipoMovimiento === 'entrada'
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-red-50 border-red-200'
+                  }`}>
+                  <p className="text-sm font-medium text-gray-700">
+                    <span className="text-green-600">Costo existente:</span> ${(formData.costoExistente || 0).toFixed(2)} MXN
+                  </p>
+                  <p className="text-sm font-medium text-gray-700 mt-1">
+                    <span className={formData.tipoMovimiento === 'entrada' ? 'text-green-600' : 'text-red-600'}>
+                      {formData.tipoMovimiento === 'entrada' ? '+ Costo nuevo:' : '- Costo reducido:'}
+                    </span> ${((Math.abs(parseFloat(formData.cantidadAAnadir || 0)) * parseFloat(formData.costo || 0))).toFixed(2)} MXN
+                  </p>
+                  <div className={`border-t my-2 ${formData.tipoMovimiento === 'entrada' ? 'border-green-300' : 'border-red-300'
+                    }`}></div>
+                  <p className="text-sm font-bold text-gray-800">
+                    <span className="text-green-700">= Costo total final:</span> ${(
+                      formData.tipoMovimiento === 'entrada'
+                        ? (parseFloat(formData.costoExistente || 0)) + (parseFloat(formData.cantidadAAnadir || 0) * parseFloat(formData.costo || 0))
+                        : (parseFloat(formData.costoExistente || 0)) - (parseFloat(formData.cantidadAAnadir || 0) * parseFloat(formData.costo || 0))
+                    ).toFixed(2)} MXN
+                  </p>
+                </div>
+
+                <p className="text-xs text-gray-500">Este campo se calcula automáticamente</p>
               </div>
 
               {/* Comentarios */}
@@ -1139,37 +1291,6 @@ export default function Inventario() {
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 resize-none"
                   required
                 />
-              </div>
-
-              {/* Registro de Inventario - Campo calculado automáticamente */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Registro de Inventario
-                </label>
-                <input
-                  type="text"
-                  value={
-                    formData.cantidad && stockInicial
-                      ? parseFloat(formData.cantidad) > stockInicial
-                        ? 'Entrada'
-                        : parseFloat(formData.cantidad) < stockInicial
-                          ? 'Salida'
-                          : 'Sin cambios'
-                      : 'Sin cambios'
-                  }
-                  readOnly
-                  className={`w-full border border-gray-300 rounded-lg p-3 font-semibold focus:outline-none ${formData.cantidad && stockInicial
-                    ? parseFloat(formData.cantidad) > stockInicial
-                      ? 'bg-green-50 text-green-700'
-                      : parseFloat(formData.cantidad) < stockInicial
-                        ? 'bg-red-50 text-red-700'
-                        : 'bg-gray-100 text-gray-600'
-                    : 'bg-gray-100 text-gray-600'
-                    } cursor-not-allowed`}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Este campo se calcula automáticamente según la cantidad modificada
-                </p>
               </div>
 
               {/* Botón Guardar */}
@@ -1301,8 +1422,22 @@ export default function Inventario() {
                 </div>
               )}
 
-              {/* Botón Cerrar */}
-              <div className="pt-4">
+              {/* Botones de acción */}
+              <div className="pt-4 space-y-3">
+                {/* Botón Descargar Kardex */}
+                <button
+                  onClick={handleDownloadKardex}
+                  disabled={isLoadingKardex}
+                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 ${isLoadingKardex
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                >
+                  <HiDocumentDownload className="text-lg" />
+                  {isLoadingKardex ? 'Generando Reporte...' : 'Descargar Kardex'}
+                </button>
+
+                {/* Botón Cerrar */}
                 <button
                   onClick={() => {
                     setIsDetailsModalOpen(false);

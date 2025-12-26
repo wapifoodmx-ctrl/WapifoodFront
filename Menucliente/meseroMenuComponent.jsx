@@ -96,10 +96,21 @@ export default function MeseroMenuComponent() {
         }));
     };
     useEffect(() => {
-        const meseroGuardado = localStorage.getItem("meseroData");
-        const token = localStorage.getItem("token");
+        const meseroGuardado = sessionStorage.getItem("meseroData");
+        const token = sessionStorage.getItem("token");
+        const isWaiter = sessionStorage.getItem("isWaiter");
 
-        if (token && meseroGuardado) {
+        // Validar que si hay token, también debe haber isWaiter
+        if (token && !isWaiter) {
+            // Intento de acceso no autorizado - limpiar todo
+            localStorage.clear();
+            sessionStorage.clear();
+            setLoginModalOpen(true);
+            toast.error('Acceso no autorizado. Por favor, inicia sesión como mesero.');
+            return;
+        }
+
+        if (token && meseroGuardado && isWaiter === 'true') {
             // Si ya hay token y datos del mesero, inicia sesión automáticamente y carga mesas
             setMeseroData(JSON.parse(meseroGuardado));
             setIsAuthenticated(true);
@@ -107,7 +118,6 @@ export default function MeseroMenuComponent() {
             cargarMesas();
             cargarOrdenesActivas();
         }
-        // El resto de tu lógica de persistencia puede ir aquí si lo necesitas
     }, []);
 
     // Login del mesero
@@ -119,13 +129,15 @@ export default function MeseroMenuComponent() {
             const response = await loginMesero(values.email, values.access_code);
 
             // Guardar token y datos del mesero
-            localStorage.setItem('token', response.access_token);
-            localStorage.setItem('meseroData', JSON.stringify({
+            sessionStorage.setItem('token', response.access_token);
+            sessionStorage.setItem('meseroData', JSON.stringify({
                 name: response.mesero_name,
                 restaurant: response.restaurant_name,
                 email: values.email,
                 uuid: response.mesero_uuid
             }));
+            sessionStorage.setItem('isWaiter', 'true');
+
 
             setMeseroData({
                 name: response.mesero_name,
@@ -276,8 +288,9 @@ export default function MeseroMenuComponent() {
     // Cerrar sesión del mesero
     const cerrarSesionMesero = () => {
         // Limpiar todos los datos
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('meseroData');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('meseroData');
+        sessionStorage.removeItem('isWaiter');
         localStorage.removeItem('numeroMesa_mesero');
         localStorage.removeItem('ordenActiva_mesero');
         localStorage.removeItem('historialPedidos_mesero');

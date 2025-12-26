@@ -583,6 +583,21 @@ export default function MenuCliente() {
     useEffect(() => {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         const mesaGuardada = localStorage.getItem('numeroMesa');
+        const isWaiter = sessionStorage.getItem('isWaiter');
+
+        // Validar que no sea un mesero intentando acceder
+        if (isWaiter === 'true') {
+            // Limpiar todo el storage
+            localStorage.clear();
+            sessionStorage.clear();
+            setLoginModalOpen(true);
+            setLoading(false);
+            setMensajeError('Acceso no autorizado. Los meseros no pueden acceder al menú de cliente.');
+            setTimeout(() => {
+                setMensajeError('');
+            }, 5000);
+            return;
+        }
 
         if (!token) {
             setLoginModalOpen(true);
@@ -838,6 +853,19 @@ export default function MenuCliente() {
     const handleLogin = async (values, { setSubmitting }) => {
         setServerError('');
         setIsLoading(true);
+
+        // Validar que no sea un mesero intentando acceder
+        const isWaiter = sessionStorage.getItem('isWaiter');
+        if (isWaiter === 'true') {
+            // Limpiar todo el storage
+            localStorage.clear();
+            sessionStorage.clear();
+            setServerError('Acceso no autorizado. Los meseros no pueden acceder al menú de cliente.');
+            setIsLoading(false);
+            setSubmitting(false);
+            return;
+        }
+
         try {
             const response = await loginUser(values);
 
@@ -1620,8 +1648,8 @@ export default function MenuCliente() {
                                             </button>
                                             <button
                                                 className={`flex-1 py-2 px-4 rounded-lg transition-colores ${codigoCambioMesa.length === 4
-                                                        ? 'bg-green-500 text-white hover:bg-green-600'
-                                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                    ? 'bg-green-500 text-white hover:bg-green-600'
+                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                     }`}
                                                 onClick={confirmarCambioMesa}
                                                 disabled={codigoCambioMesa.length !== 4}
@@ -1632,8 +1660,8 @@ export default function MenuCliente() {
 
                                         <button
                                             className={`w-full py-2 px-4 rounded-lg transition-colores ${codigoCambioMesa.length === 4
-                                                    ? 'bg-red-500 text-white hover:bg-red-600'
-                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                ? 'bg-red-500 text-white hover:bg-red-600'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                 }`}
                                             onClick={cerrarSesion}
                                             disabled={codigoCambioMesa.length !== 4}
@@ -1893,8 +1921,8 @@ export default function MenuCliente() {
                                             </button>
                                             <button
                                                 className={`flex-1 py-2 px-4 rounded-lg transition-colores ${codigoExitFullscreen.length === 4
-                                                        ? 'bg-red-500 text-white hover:bg-red-600'
-                                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                    ? 'bg-red-500 text-white hover:bg-red-600'
+                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                     }`}
                                                 onClick={confirmarExitFullscreen}
                                                 disabled={codigoExitFullscreen.length !== 4}

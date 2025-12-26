@@ -63,7 +63,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
     try {
         // Obtener configuración del tamaño seleccionado
         const sizeConfig = TICKET_SIZES[sizeKey] || TICKET_SIZES.STANDARD_80;
-        
+
         // Crear documento PDF formato ticket
         const pdf = new jsPDF({
             orientation: 'portrait',
@@ -102,7 +102,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
 
         pdf.setFontSize(sizeConfig.fontSize.normal);
         pdf.setFont('helvetica', 'normal');
-        
+
         // Fecha y hora
         const fecha = ticketData.fecha || new Date().toLocaleDateString('es-MX');
         const hora = ticketData.hora || new Date().toLocaleTimeString('es-MX');
@@ -132,11 +132,11 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         // ==== PRODUCTOS ====
         pdf.setFontSize(sizeConfig.fontSize.normal);
         pdf.setFont('helvetica', 'bold');
-        
+
         // Calcular posiciones relativas al ancho según el tamaño del ticket
         const colProducto = leftMargin;
         let colCantidad, colPrecio;
-        
+
         if (pageWidth >= 110) {
             // Ticket grande (110mm) - más espacio entre columnas
             colCantidad = pageWidth - rightMargin - 35; // 35mm desde el borde derecho
@@ -150,7 +150,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
             colCantidad = pageWidth - rightMargin - 20; // 20mm desde el borde derecho
             colPrecio = pageWidth - rightMargin - 10; // 10mm desde el borde derecho
         }
-        
+
         pdf.text('Producto', colProducto, yPos);
         pdf.text('Cant', colCantidad, yPos, { align: 'center' });
         pdf.text('Precio', colPrecio, yPos, { align: 'right' });
@@ -166,8 +166,8 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         if (ticketData.productos) {
             try {
                 // Si productos es string, parsearlo
-                productos = typeof ticketData.productos === 'string' 
-                    ? JSON.parse(ticketData.productos) 
+                productos = typeof ticketData.productos === 'string'
+                    ? JSON.parse(ticketData.productos)
                     : ticketData.productos;
             } catch (e) {
                 console.error('Error parsing productos:', e);
@@ -187,7 +187,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
                 // Nombre del producto (truncado según el ancho disponible)
                 const maxProductWidth = pageWidth - leftMargin - rightMargin - 28;
                 let nombreDisplay = nombre;
-                
+
                 // Truncar si es necesario
                 const textWidth = pdf.getTextWidth(nombreDisplay);
                 if (textWidth > maxProductWidth) {
@@ -196,7 +196,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
                     }
                     nombreDisplay += '...';
                 }
-                
+
                 pdf.text(nombreDisplay, colProducto, yPos);
                 pdf.text(cantidad.toString(), colCantidad, yPos, { align: 'center' });
                 pdf.text(`$${subtotal.toFixed(2)}`, colPrecio, yPos, { align: 'right' });
@@ -217,14 +217,14 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
                     const maxNotaWidth = maxProductWidth - 4;
                     let notaDisplay = producto.notas;
                     const notaWidth = pdf.getTextWidth(`Nota: ${notaDisplay}`);
-                    
+
                     if (notaWidth > maxNotaWidth) {
                         while (pdf.getTextWidth(`Nota: ${notaDisplay}...`) > maxNotaWidth && notaDisplay.length > 0) {
                             notaDisplay = notaDisplay.slice(0, -1);
                         }
                         notaDisplay += '...';
                     }
-                    
+
                     pdf.text(`Nota: ${notaDisplay}`, colProducto + 1, yPos);
                     pdf.setFontSize(sizeConfig.fontSize.normal);
                     yPos += 3;
@@ -354,9 +354,9 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(100, 100, 100); // Gris
-        const fechaGeneracion = new Date().toLocaleDateString('es-MX', { 
-            year: 'numeric', 
-            month: 'long', 
+        const fechaGeneracion = new Date().toLocaleDateString('es-MX', {
+            year: 'numeric',
+            month: 'long',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
@@ -379,7 +379,7 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
 
         // Calcular estadísticas
         const totalTickets = ticketsData.length;
-        const ticketsExitosos = ticketsData.filter(t => 
+        const ticketsExitosos = ticketsData.filter(t =>
             t.statusOrden === 'Finalizado' || t.statusOrden === 'PuntoDeVenta'
         ).length;
         const ticketsCancelados = ticketsData.filter(t => t.statusOrden === 'Cancelado').length;
@@ -389,8 +389,8 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
         // Crear tabla de estadísticas
         const statsData = [
             ['Total de Tickets', totalTickets.toString()],
-            ['Tickets Exitosos', `${ticketsExitosos} (${((ticketsExitosos/totalTickets)*100 || 0).toFixed(1)}%)`],
-            ['Tickets Cancelados', `${ticketsCancelados} (${((ticketsCancelados/totalTickets)*100 || 0).toFixed(1)}%)`],
+            ['Tickets Exitosos', `${ticketsExitosos} (${((ticketsExitosos / totalTickets) * 100 || 0).toFixed(1)}%)`],
+            ['Tickets Cancelados', `${ticketsCancelados} (${((ticketsCancelados / totalTickets) * 100 || 0).toFixed(1)}%)`],
             ['Total en Ventas', `$${totalVentas.toFixed(2)}`],
             ['Ticket Promedio', `$${promedioTicket.toFixed(2)}`]
         ];
@@ -400,7 +400,7 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
             head: [['Métrica', 'Valor']],
             body: statsData,
             theme: 'grid',
-            headStyles: { 
+            headStyles: {
                 fillColor: [34, 197, 94], // Verde
                 textColor: 255,
                 fontStyle: 'bold',
@@ -432,26 +432,26 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
                 }
                 groups[fecha].push(ticket);
             });
-            
+
             // Ordenar las fechas
             const sortedDates = Object.keys(groups).sort((a, b) => {
                 const dateA = new Date(a.split('/').reverse().join('-'));
                 const dateB = new Date(b.split('/').reverse().join('-'));
                 return dateB - dateA;
             });
-            
+
             const sortedGroups = {};
             sortedDates.forEach(date => {
                 sortedGroups[date] = groups[date];
             });
-            
+
             return sortedGroups;
         };
 
         if (groupByDate) {
             // ==== VISTA AGRUPADA POR FECHA ====
             const groupedTickets = groupTicketsByDate(ticketsData);
-            
+
             Object.entries(groupedTickets).forEach(([fecha, tickets], index) => {
                 // Verificar si hay espacio suficiente en la página
                 if (yPos > pageHeight - 60) {
@@ -465,15 +465,15 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
                 pdf.setFillColor(220, 220, 220); // Gris claro
                 pdf.rect(leftMargin, yPos - 5, pageWidth - (leftMargin * 2), 10, 'F');
                 pdf.text(`${fecha}`, leftMargin + 3, yPos);
-                
+
                 // Total del día
                 const totalDia = tickets.reduce((sum, t) => sum + (parseFloat(t.total) || 0), 0);
                 pdf.text(`Total: $${totalDia.toFixed(2)}`, pageWidth - leftMargin - 3, yPos, { align: 'right' });
-                
+
                 // Cantidad de tickets
                 pdf.setFontSize(9);
                 pdf.text(`(${tickets.length} ticket${tickets.length !== 1 ? 's' : ''})`, leftMargin + 3, yPos + 4);
-                
+
                 yPos += 10;
 
                 // Preparar datos para la tabla del día
@@ -507,7 +507,7 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
                     },
                     margin: { left: leftMargin, right: leftMargin },
                     styles: { fontSize: 8 },
-                    didParseCell: function(data) {
+                    didParseCell: function (data) {
                         // Colorear columna de estado
                         if (data.column.index === 4 && data.section === 'body') {
                             const estado = data.cell.text[0];
@@ -558,7 +558,7 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
                 },
                 margin: { left: leftMargin, right: leftMargin },
                 styles: { fontSize: 9 },
-                didParseCell: function(data) {
+                didParseCell: function (data) {
                     // Colorear columna de estado
                     if (data.column.index === 5 && data.section === 'body') {
                         const estado = data.cell.text[0];
@@ -601,6 +601,246 @@ export const generateTicketsReportPDF = (ticketsData, period = 'Reporte de Ticke
         return { success: true, message: 'Reporte PDF generado correctamente' };
     } catch (error) {
         console.error('Error al generar reporte PDF:', error);
+        return { success: false, message: error.message };
+    }
+};
+
+/**
+ * Genera un PDF con reporte de kardex (movimientos) de un ingrediente
+ * @param {String} ingredientName - Nombre del ingrediente
+ * @param {Array} movementsData - Array de movimientos del ingrediente
+ * @param {Number} currentStock - Stock actual del ingrediente
+ * @param {String} currentUnit - Unidad del ingrediente
+ * @returns {Object} - Objeto con success y message
+ */
+export const generateKardexReportPDF = (ingredientName, movementsData, currentStock = 0, currentUnit = '') => {
+    try {
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        let yPos = 20;
+        const leftMargin = 15;
+        const pageWidth = 210;
+        const pageHeight = 297;
+
+        // ==== HEADER ====
+        pdf.setFontSize(22);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(34, 197, 94); // Verde WapiFood
+        pdf.text('WapiFood', pageWidth / 2, yPos, { align: 'center' });
+        pdf.setTextColor(0, 0, 0); // Volver a negro
+        yPos += 8;
+
+        pdf.setFontSize(16);
+        pdf.text(`Reporte de Kardex`, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 6;
+
+        // Nombre del ingrediente
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(34, 197, 94); // Verde
+        pdf.text(`Ingrediente: ${ingredientName}`, pageWidth / 2, yPos, { align: 'center' });
+        pdf.setTextColor(0, 0, 0);
+        yPos += 6;
+
+        // Stock actual
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Stock Actual: ${currentStock} ${currentUnit}`, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 4;
+
+        pdf.setFontSize(9);
+        pdf.setTextColor(100, 100, 100); // Gris
+        const fechaGeneracion = new Date().toLocaleDateString('es-MX', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        pdf.text(`Generado: ${fechaGeneracion}`, pageWidth / 2, yPos, { align: 'center' });
+        pdf.setTextColor(0, 0, 0);
+        yPos += 10;
+
+        // Línea decorativa
+        pdf.setDrawColor(34, 197, 94); // Verde
+        pdf.setLineWidth(0.5);
+        pdf.line(leftMargin, yPos, pageWidth - leftMargin, yPos);
+        yPos += 10;
+
+        // ==== AGRUPAR MOVIMIENTOS POR TIPO ====
+        const groupedMovements = {
+            inventario_inicial: [],
+            ajuste_entrada: [],
+            ajuste_salida: [],
+            ventas: [],
+            otros: []
+        };
+
+        movementsData.forEach(movement => {
+            const reason = movement.reason || '';
+            const type = movement.movement_type || '';
+
+            if (reason === 'INVENTARIO_INICIAL') {
+                groupedMovements.inventario_inicial.push(movement);
+            } else if (reason === 'AJUSTE_MANUAL' && type === 'ENTRADA') {
+                groupedMovements.ajuste_entrada.push(movement);
+            } else if (reason === 'AJUSTE_MANUAL' && type === 'SALIDA') {
+                groupedMovements.ajuste_salida.push(movement);
+            } else if (reason === 'VENTA_ORDEN') {
+                groupedMovements.ventas.push(movement);
+            } else {
+                groupedMovements.otros.push(movement);
+            }
+        });
+
+        // Función auxiliar para crear tabla de movimientos
+        const createMovementsTable = (movements, title, color) => {
+            if (movements.length === 0) return;
+
+            // Verificar si hay espacio suficiente, sino agregar nueva página
+            if (yPos > pageHeight - 60) {
+                pdf.addPage();
+                yPos = 20;
+            }
+
+            // Título de la sección
+            pdf.setFontSize(12);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(color[0], color[1], color[2]);
+            pdf.text(title, leftMargin, yPos);
+            pdf.setTextColor(0, 0, 0);
+            yPos += 2;
+
+            // Preparar datos para la tabla
+            const tableData = movements.map(mov => {
+                const fecha = new Date(mov.timestamp).toLocaleDateString('es-MX');
+                const hora = new Date(mov.timestamp).toLocaleTimeString('es-MX', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const costoTotal = (Math.abs(mov.quantity) * mov.cost).toFixed(2);
+                const ticketNum = mov.ticket_number ? `#${mov.ticket_number}` : '-';
+
+                return [
+                    `${fecha}\n${hora}`,
+                    mov.description || '-',
+                    mov.quantity.toString(),
+                    mov.stock_after.toString(),
+                    `$${mov.cost.toFixed(2)}`,
+                    `$${costoTotal}`,
+                    ticketNum
+                ];
+            });
+
+            // Crear tabla
+            autoTable(pdf, {
+                startY: yPos,
+                head: [['Fecha/Hora', 'Descripción', 'Cantidad', 'Stock Después', 'Costo Unit.', 'Costo Total', 'Ticket #']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: color,
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    halign: 'center',
+                    fontSize: 8
+                },
+                columnStyles: {
+                    0: { cellWidth: 25, fontSize: 7 },
+                    1: { cellWidth: 48, fontSize: 7 },
+                    2: { cellWidth: 20, halign: 'center', fontSize: 7 },
+                    3: { cellWidth: 22, halign: 'center', fontSize: 7 },
+                    4: { cellWidth: 20, halign: 'right', fontSize: 7 },
+                    5: { cellWidth: 20, halign: 'right', fontSize: 7 },
+                    6: { cellWidth: 25, halign: 'center', fontSize: 7 }
+                },
+                margin: { left: leftMargin, right: leftMargin },
+                styles: {
+                    fontSize: 7,
+                    cellPadding: 2
+                },
+                didDrawPage: function (data) {
+                    // Actualizar yPos para la siguiente sección
+                    yPos = data.cursor.y;
+                }
+            });
+
+            yPos = pdf.lastAutoTable.finalY + 10;
+        };
+
+        // Crear tablas para cada grupo con colores distintivos (tonos verdes)
+        createMovementsTable(
+            groupedMovements.inventario_inicial,
+            'Inventario Inicial',
+            [21, 128, 61] // Verde oscuro
+        );
+
+        createMovementsTable(
+            groupedMovements.ajuste_entrada,
+            'Ajustes Manuales - Entradas',
+            [34, 197, 94] // Verde medio
+        );
+
+        createMovementsTable(
+            groupedMovements.ajuste_salida,
+            'Ajustes Manuales - Salidas',
+            [74, 222, 128] // Verde claro
+        );
+
+        createMovementsTable(
+            groupedMovements.ventas,
+            'Ventas',
+            [5, 150, 105] // Verde esmeralda
+        );
+
+        createMovementsTable(
+            groupedMovements.otros,
+            'Otros Movimientos',
+            [16, 185, 129] // Verde teal
+        );
+
+        // Si no hay movimientos
+        if (movementsData.length === 0) {
+            pdf.setFontSize(12);
+            pdf.setFont('helvetica', 'italic');
+            pdf.setTextColor(107, 114, 128);
+            pdf.text('No hay movimientos registrados para este ingrediente', pageWidth / 2, yPos, { align: 'center' });
+        }
+
+        // ==== FOOTER ====
+        const totalPages = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(8);
+            pdf.setFont('helvetica', 'italic');
+            pdf.setTextColor(100, 100, 100);
+            pdf.text(
+                `Página ${i} de ${totalPages}`,
+                pageWidth / 2,
+                pageHeight - 10,
+                { align: 'center' }
+            );
+            pdf.text(
+                'Este documento fue generado automáticamente por WapiFood',
+                pageWidth / 2,
+                pageHeight - 6,
+                { align: 'center' }
+            );
+        }
+
+        // Guardar PDF
+        const timestamp = Date.now();
+        const sanitizedName = ingredientName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+        const fileName = `kardex-${sanitizedName}-${timestamp}.pdf`;
+        pdf.save(fileName);
+
+        return { success: true, message: 'Reporte de Kardex generado correctamente' };
+    } catch (error) {
+        console.error('Error al generar reporte de Kardex:', error);
         return { success: false, message: error.message };
     }
 };
