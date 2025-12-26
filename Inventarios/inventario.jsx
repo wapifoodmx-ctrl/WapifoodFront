@@ -855,7 +855,7 @@ export default function Inventario() {
               {/* Costo por unidad */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Costo por unidad
+                  Costo por unidad (Costo por Kilo, Litro o Pieza)
                 </label>
                 <input
                   type="number"
@@ -1271,7 +1271,7 @@ export default function Inventario() {
               {/* Costo por unidad */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Costo por Unidad
+                  Costo por unidad (Costo por Kilo, Litro o Pieza)
                 </label>
                 <div className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 text-green-600 font-semibold">
                   ${(insumoDetalles.cost || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN

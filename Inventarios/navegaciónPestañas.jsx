@@ -80,11 +80,6 @@ const NavegacionPestañas = ({
           elemento.category === 'producto' ||
           elemento.category === 'productos'
         );
-      case 'otros':
-        return elementos.filter(elemento =>
-          elemento.category === 'otros' ||
-          elemento.category === 'otro'
-        );
       default:
         return elementos;
     }
@@ -222,12 +217,12 @@ const NavegacionPestañas = ({
 
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Costo por unidad:</span>
-                  <span className="font-medium text-green-600">${elemento.cost?.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN</span>
+                  <span className="font-medium text-green-600">${elemento.cost} MXN</span>
                 </div>
 
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Costo total:</span>
-                  <span className="font-bold text-green-700">${elemento.total_cost?.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN</span>
+                  <span className="font-bold text-green-700">${elemento.total_cost} MXN</span>
                 </div>
               </div>
 
@@ -344,10 +339,10 @@ const NavegacionPestañas = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  ${elemento.cost?.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                  ${elemento.cost} MXN
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                  ${elemento.total_cost?.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                  ${elemento.total_cost} MXN
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${elemento.stock > 0
@@ -372,8 +367,7 @@ const NavegacionPestañas = ({
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
           {[
             { key: 'insumos', label: 'Insumos', count: filtrarElementosPorPestaña(insumos, 'insumos').length },
-            { key: 'productos', label: 'Productos', count: filtrarElementosPorPestaña(insumos, 'productos').length },
-            { key: 'otros', label: 'Otros', count: filtrarElementosPorPestaña(insumos, 'otros').length }
+            { key: 'productos', label: 'Productos', count: filtrarElementosPorPestaña(insumos, 'productos').length }
           ].map((tab) => (
             <button
               key={tab.key}
