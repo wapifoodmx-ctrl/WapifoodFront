@@ -425,7 +425,7 @@ export default function MeseroMenuComponent() {
             monitorearEstadoMesaYOrden();
 
             // Configurar intervalo de 45 segundos
-            intervalId = setInterval(monitorearEstadoMesaYOrden, 45000);
+            intervalId = setInterval(monitorearEstadoMesaYOrden, 30000);
         }
 
         // Limpiar intervalo cuando se desmonta o cambia la mesa

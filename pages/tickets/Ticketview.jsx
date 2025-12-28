@@ -1123,9 +1123,6 @@ export default function Ticketview() {
                                                     <span className="font-semibold text-gray-800 text-lg group-hover:text-green-600 transition-colors">
                                                         {mesero.name}
                                                     </span>
-                                                    <span className="text-xs text-gray-500 block mt-1">
-                                                        {mesero.email || 'Sin email'}
-                                                    </span>
                                                 </div>
                                                 <div className="flex-shrink-0 ml-2 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

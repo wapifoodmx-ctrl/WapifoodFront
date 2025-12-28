@@ -403,7 +403,7 @@ export default function MenuCliente() {
             monitorearEstadoMesaYOrden();
 
             // Configurar intervalo de 45 segundos
-            intervalId = setInterval(monitorearEstadoMesaYOrden, 45000);
+            intervalId = setInterval(monitorearEstadoMesaYOrden, 30000);
 
             // console.log(`Iniciando monitoreo de mesa ${numeroMesa} y orden cada 45 segundos`);
         }

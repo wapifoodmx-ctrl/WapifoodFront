@@ -280,7 +280,7 @@ export default function VistaCocina() {
         fetchTablesData();
         const interval = setInterval(() => {
             fetchTablesData();
-        }, 60000);
+        }, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -343,8 +343,66 @@ export default function VistaCocina() {
         }
     };
 
+    const handleMarkProductPrepared = async (productId) => {
+        try {
+            const product = selectedTable.products.find(p => p.id === productId);
+            if (!product) {
+                console.error('Producto no encontrado');
+                return;
+            }
+
+            const orderUuid = selectedTable.orderUuid;
+
+            await updateProductStatus(orderUuid, product.id, 'Preparado');
+
+            // Actualiza la lista de productos localmente
+            const updatedProducts = selectedTable.products.map(p =>
+                p.id === productId ? { ...p, status: 'Preparado' } : p
+            );
+            const updatedTable = { ...selectedTable, products: updatedProducts };
+
+            setSelectedTable(updatedTable);
+
+            // Refrescar datos desde el servidor
+            await fetchTablesData();
+            toast.success('Producto preparado');
+        } catch (error) {
+            console.error('Error al marcar el producto como preparado:', error);
+            toast.error('Error al marcar el producto: ' + error.message);
+        }
+    };
+
+    const handleUndoProductToPending = async (productId) => {
+        try {
+            const product = selectedTable.products.find(p => p.id === productId);
+            if (!product) {
+                console.error('Producto no encontrado');
+                return;
+            }
+
+            const orderUuid = selectedTable.orderUuid;
+
+            await updateProductStatus(orderUuid, product.id, 'Pendiente');
+
+            // Actualiza la lista de productos localmente
+            const updatedProducts = selectedTable.products.map(p =>
+                p.id === productId ? { ...p, status: 'Pendiente' } : p
+            );
+            const updatedTable = { ...selectedTable, products: updatedProducts };
+
+            setSelectedTable(updatedTable);
+
+            // Refrescar datos desde el servidor
+            await fetchTablesData();
+            toast.success('Producto enviado de vuelta a cocina');
+        } catch (error) {
+            console.error('Error al regresar el producto a pendiente:', error);
+            toast.error('Error al regresar el producto: ' + error.message);
+        }
+    };
+
     const handleCompleteOrder = async () => {
-       
+
 
         try {
             if (!selectedTable || !selectedTable.products || selectedTable.products.length === 0) {
@@ -669,6 +727,8 @@ export default function VistaCocina() {
                     isModalOpen={isModalOpen}
                     selectedProduct={selectedProduct}
                     handleCancelProduct={handleCancelProduct}
+                    handleMarkProductPrepared={handleMarkProductPrepared}
+                    handleUndoProductToPending={handleUndoProductToPending}
                     handleFinalizeCompletedOrder={handleFinalizeCompletedOrder}
                 />
 
