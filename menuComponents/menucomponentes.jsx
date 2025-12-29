@@ -33,6 +33,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
         comentarios: ""
     });
     const [ingredientesInsumo, setIngredientesInsumo] = useState([]);
+    const [formikSetFieldValue, setFormikSetFieldValue] = useState(null);
 
     // Función para capitalizar la primera letra
     const capitalizeFirstLetter = (string) => {
@@ -79,7 +80,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
 
     const handleAddToInventory = (e) => {
         e.preventDefault();
-        
+
         if (!inventoryFormData.cantidad || !inventoryFormData.costo) {
             setModalMessage("Por favor completa todos los campos obligatorios");
             return;
@@ -99,7 +100,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
             costo: "",
             comentarios: ""
         });
-        
+
         // Mostrar mensaje de confirmación
         setModalMessage("Datos del inventario guardados. Presiona 'Crear' para confirmar.");
     };
@@ -112,6 +113,10 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
             comentarios: ""
         });
         setTempInventoryData(null);
+        // Reset the checkbox
+        if (formikSetFieldValue) {
+            formikSetFieldValue("agregarInventario", false);
+        }
     };
 
     const validationSchemaProducto = Yup.object().shape({
@@ -324,7 +329,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                             };
 
                                             const result = await postInventarioIngredientes(ingredientData);
-                                            
+
                                             if (!result.success) {
                                                 throw new Error(result.error || 'Error al agregar al inventario');
                                             }
@@ -361,9 +366,9 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                         const successMessage = tempInventoryData && values.agregarInventario
                                             ? "Producto creado, agregado al inventario y receta automática creada exitosamente"
                                             : pendingRecipeData && values.agregarReceta
-                                            ? "Producto creado con receta exitosamente"
-                                            : "Producto creado exitosamente";
-                                            
+                                                ? "Producto creado con receta exitosamente"
+                                                : "Producto creado exitosamente";
+
                                         setModalMessage(successMessage);
                                         closeModals();
                                         await onRefresh();
@@ -445,9 +450,8 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                             </p>
                                                         )}
                                                     </div>
-                                                    <span className={`text-xs ${
-                                                        values.descripcion?.length > 500 ? 'text-red-500' : 'text-gray-400'
-                                                    }`}>
+                                                    <span className={`text-xs ${values.descripcion?.length > 500 ? 'text-red-500' : 'text-gray-400'
+                                                        }`}>
                                                         {values.descripcion?.length || 0}/500
                                                     </span>
                                                 </div>
@@ -455,13 +459,13 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
 
                                             {/* Checkboxes de Inventario y Receta */}
                                             <div className="flex gap-4 py-2">
-                                                <label 
+                                                <label
                                                     className="flex items-center gap-2 cursor-pointer group"
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         const newValue = !values.agregarInventario;
                                                         setFieldValue("agregarInventario", newValue);
-                                                        
+
                                                         if (newValue) {
                                                             // Desmarcar receta si se marca inventario
                                                             setFieldValue("agregarReceta", false);
@@ -485,13 +489,13 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                     </span>
                                                 </label>
 
-                                                <label 
+                                                <label
                                                     className="flex items-center gap-2 cursor-pointer group"
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         const newValue = !values.agregarReceta;
                                                         setFieldValue("agregarReceta", newValue);
-                                                        
+
                                                         if (newValue) {
                                                             // Desmarcar inventario si se marca receta
                                                             setFieldValue("agregarInventario", false);
@@ -617,7 +621,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                     <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                    </svg>
+                                                        </svg>
                                                         {errors.imagen}
                                                     </p>
                                                 )}
@@ -628,11 +632,10 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                 <button
                                                     type="submit"
                                                     disabled={isFormInvalid}
-                                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
-                                                        isFormInvalid 
-                                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
-                                                    }`}
+                                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${isFormInvalid
+                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                        : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                                                        }`}
                                                 >
                                                     Guardar
                                                 </button>
@@ -748,11 +751,10 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                 <button
                                     type="submit"
                                     disabled={isLoadingInventory}
-                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
-                                        isLoadingInventory
-                                            ? 'bg-gray-400 cursor-not-allowed'
-                                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
-                                    }`}
+                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${isLoadingInventory
+                                        ? 'bg-gray-400 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                                        }`}
                                 >
                                     {isLoadingInventory ? (
                                         <div className="flex items-center justify-center gap-2">
@@ -873,13 +875,13 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none"
                                                 placeholder="Describe esta categoría..."
                                             />
-                                            
+
 
                                             {errors.descripcion_categoria && touched.descripcion_categoria && (
                                                 <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                </svg>
+                                                    </svg>
                                                     {errors.descripcion_categoria}
                                                 </p>
                                             )}
@@ -915,6 +917,10 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                 onClose={() => {
                     setIsRecipeModalOpen(false);
                     setPendingRecipeData(null);
+                    // Reset the checkbox
+                    if (formikSetFieldValue) {
+                        formikSetFieldValue("agregarReceta", false);
+                    }
                 }}
                 onSave={handleSaveRecipe}
                 productName={recipeProductName}

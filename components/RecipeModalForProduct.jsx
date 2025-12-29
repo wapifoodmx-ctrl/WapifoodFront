@@ -2,11 +2,24 @@ import { IoClose } from "react-icons/io5";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import getIngredientesInventario from "../useCases/getIngredientesInventario";
 
-const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCantidadChange, toggleUnit, className = "" }) => {
+const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCantidadChange, toggleUnit, unitType, className = "" }) => {
   const inputRef = useRef(null);
-  const isKg = unitsInKg[ingredientId];
+  const isLargeUnit = unitsInKg[ingredientId]; // For Pieza: kg, For Mililitros: l
   const currentValue = cantidadesInsumos[ingredientId] || '';
-  
+
+  // Determine unit labels based on unitType
+  const getUnitLabels = () => {
+    if (unitType === 'Gramos') {
+      return { large: 'kg', small: 'g' };
+    } else if (unitType === 'Mililitros') {
+      return { large: 'L', small: 'ml' };
+    }
+    return null; // No converter for other units
+  };
+
+  const unitLabels = getUnitLabels();
+  const showConverter = unitLabels !== null;
+
   const handleChange = (e) => {
     let value = e.target.value;
     if (value === '') {
@@ -17,7 +30,7 @@ const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCant
     if (/^\d*\.?\d*$/.test(value)) {
       if (value.includes('.')) {
         const [, decimals = ''] = value.split('.');
-        const maxDecimals = isKg ? 3 : 2;
+        const maxDecimals = isLargeUnit ? 3 : 2;
         if (decimals.length > maxDecimals) return;
       }
       onCantidadChange(ingredientId, value);
@@ -34,7 +47,7 @@ const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCant
       }
     }, 0);
   };
-  
+
   return (
     <div className="flex items-center gap-1">
       <div className="relative flex-1">
@@ -45,36 +58,45 @@ const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCant
           placeholder="0"
           value={currentValue}
           onChange={handleChange}
-          className={`w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 pr-6 ${className}`}
+          className={`w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${showConverter ? 'pr-6' : 'pr-2'} ${className}`}
           autoComplete="off"
           maxLength="10"
         />
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-600 pointer-events-none select-none">
-          {isKg ? 'kg' : 'g'}
-        </span>
+        {showConverter && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-600 pointer-events-none select-none">
+            {isLargeUnit ? unitLabels.large : unitLabels.small}
+          </span>
+        )}
       </div>
-      <button
-        onClick={handleToggleUnit}
-        type="button"
-        className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs font-semibold transition-colors flex-shrink-0"
-        title={isKg ? "Convertir a gramos" : "Convertir a kilos"}
-      >
-        {isKg ? 'g' : 'kg'}
-      </button>
+      {showConverter && (
+        <button
+          onClick={handleToggleUnit}
+          type="button"
+          className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs font-semibold transition-colors flex-shrink-0"
+          title={
+            unitType === 'Gramos'
+              ? (isLargeUnit ? "Convertir a gramos" : "Convertir a kilos")
+              : (isLargeUnit ? "Convertir a mililitros" : "Convertir a litros")
+          }
+        >
+          {isLargeUnit ? unitLabels.small : unitLabels.large}
+        </button>
+      )}
     </div>
   );
 });
 
 QuantityInput.displayName = 'QuantityInput';
 
-export default function RecipeModalForProduct({ 
-  isOpen, 
-  onClose, 
+export default function RecipeModalForProduct({
+  isOpen,
+  onClose,
   onSave,
-  productName 
+  productName
 }) {
   const [insumos, setInsumos] = useState([]);
   const [insumosSeleccionados, setInsumosSeleccionados] = useState([]);
+  const [tempInsumosSeleccionados, setTempInsumosSeleccionados] = useState([]);
   const [cantidadesInsumos, setCantidadesInsumos] = useState({});
   const [unitsInKg, setUnitsInKg] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,25 +111,25 @@ export default function RecipeModalForProduct({
 
   useEffect(() => {
     const fetchIngredientes = async () => {
-        try {
-            const result = await getIngredientesInventario();
-            
-            // Verificar que la petición fue exitosa y que hay datos
-            if (result.success && result.data) {
-                // Filtrar solo los ingredientes con category === 'insumo'
-                const ingredientesInsumo = result.data.filter(ing => ing.category === 'insumo');
-                setInsumos(ingredientesInsumo);
-            } else {
-                console.error('Error al cargar ingredientes:', result.message);
-                setInsumos([]);
-            }
-        } catch (error) {
-            console.error('Error al cargar ingredientes:', error);
-            setInsumos([]);
+      try {
+        const result = await getIngredientesInventario();
+
+        // Verificar que la petición fue exitosa y que hay datos
+        if (result.success && result.data) {
+          // Filtrar solo los ingredientes con category === 'insumo'
+          const ingredientesInsumo = result.data.filter(ing => ing.category === 'insumo');
+          setInsumos(ingredientesInsumo);
+        } else {
+          console.error('Error al cargar ingredientes:', result.message);
+          setInsumos([]);
         }
+      } catch (error) {
+        console.error('Error al cargar ingredientes:', error);
+        setInsumos([]);
+      }
     };
     fetchIngredientes();
-}, []);
+  }, []);
 
   const fetchInsumos = async () => {
     try {
@@ -136,7 +158,32 @@ export default function RecipeModalForProduct({
   }, [cantidadesInsumos, unitsInKg]);
 
   const handleSelectSupplies = () => {
+    setTempInsumosSeleccionados([...insumosSeleccionados]);
     setIsSelectingSupplies(true);
+  };
+
+  const handleCancelSelection = () => {
+    // Revert to the saved state
+    setInsumosSeleccionados([...tempInsumosSeleccionados]);
+
+    // Remove quantities for items that were unchecked
+    setCantidadesInsumos(current => {
+      const newCantidades = { ...current };
+      // Remove quantities for items not in the original selection
+      Object.keys(newCantidades).forEach(id => {
+        if (!tempInsumosSeleccionados.includes(parseInt(id))) {
+          delete newCantidades[id];
+        }
+      });
+      return newCantidades;
+    });
+
+    setIsSelectingSupplies(false);
+  };
+
+  const handleConfirmSelection = () => {
+    // Keep the current selection
+    setIsSelectingSupplies(false);
   };
 
   const handleToggleInsumo = (ingredientId) => {
@@ -174,7 +221,7 @@ export default function RecipeModalForProduct({
     }
 
     setIsSubmitting(true);
-    
+
     const ingredients = insumosSeleccionados.map(ingredientId => {
       const cantidad = parseFloat(cantidadesInsumos[ingredientId]) || 0;
       const isKg = unitsInKg[ingredientId];
@@ -203,7 +250,7 @@ export default function RecipeModalForProduct({
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-t-2xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-white">Seleccionar Ingredientes</h3>
-              <button onClick={() => setIsSelectingSupplies(false)} className="text-white hover:text-gray-200">
+              <button onClick={handleCancelSelection} className="text-white hover:text-gray-200">
                 <IoClose className="text-2xl" />
               </button>
             </div>
@@ -222,11 +269,10 @@ export default function RecipeModalForProduct({
               {filteredInsumos.map(insumo => (
                 <label
                   key={insumo.id_ingredient}
-                  className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                    insumosSeleccionados.includes(insumo.id_ingredient)
-                      ? 'bg-green-50 border-green-300'
-                      : 'bg-white border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${insumosSeleccionados.includes(insumo.id_ingredient)
+                    ? 'bg-green-50 border-green-300'
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                    }`}
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <input
@@ -245,7 +291,7 @@ export default function RecipeModalForProduct({
             </div>
 
             <button
-              onClick={() => setIsSelectingSupplies(false)}
+              onClick={handleConfirmSelection}
               className="w-full mt-4 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold"
             >
               Confirmar Selección ({insumosSeleccionados.length})
@@ -316,10 +362,11 @@ export default function RecipeModalForProduct({
                             ingredientId={ingredientId}
                             cantidadesInsumos={cantidadesInsumos}
                             unitsInKg={unitsInKg}
-                            onCantidadChange={(id, value) => 
+                            onCantidadChange={(id, value) =>
                               setCantidadesInsumos(prev => ({ ...prev, [id]: value }))
                             }
                             toggleUnit={toggleUnit}
+                            unitType={insumo.unit}
                           />
                         </div>
                         <button
