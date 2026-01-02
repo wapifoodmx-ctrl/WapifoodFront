@@ -65,25 +65,24 @@ export default function Inventario() {
       const response = await getIngredientesInventario();
 
       if (response.success && response.data) {
-        // Mapear los datos de la API al formato esperado por las cards
         const ingredientesMapeados = response.data.map(ingrediente => ({
-          id: ingrediente.id_ingredient, // Usar id_ingredient como id
-          originalId: ingrediente.id_ingredient, // Mantener el ID original para la API
+          id: ingrediente.id_ingredient,
+          originalId: ingrediente.id_ingredient,
           name: ingrediente.name,
           stock: ingrediente.stock,
           unit: ingrediente.unit,
           cost: ingrediente.cost,
           description: ingrediente.description,
-          category: ingrediente.category, // Agregar categoría para filtrado
-          total_cost: ingrediente.total_cost // Agregar total_cost
+          category: ingrediente.category,
+          total_cost: ingrediente.total_cost
         }));
 
         setInsumos(ingredientesMapeados);
       } else {
-        alert(`Error al cargar ingredientes: ${response.message}`);
+        toast.error(`Error al cargar ingredientes: ${response.message}`);
       }
     } catch (error) {
-      alert("Error al cargar los ingredientes del inventario");
+      toast.error("Error al cargar los ingredientes del inventario");
     } finally {
       setIsLoadingData(false);
     }
@@ -245,7 +244,7 @@ export default function Inventario() {
 
     // Validar que los campos obligatorios estén completos
     if (!formData.nombreProducto || !formData.cantidad || !formData.costo) {
-      alert('Por favor completa todos los campos obligatorios');
+      toast.error('Por favor completa todos los campos obligatorios');
       return;
     }
 
@@ -284,7 +283,6 @@ export default function Inventario() {
         throw new Error(result.error || 'Error al crear ingrediente');
       }
 
-
       setSuccessModalMessage(`${pestañaActiva === 'insumos' ? 'Insumo' : pestañaActiva === 'productos' ? 'Producto' : 'Elemento'} "${ingredientData.name}" agregado exitosamente`);
       setShowSuccessModal(true);
 
@@ -293,7 +291,7 @@ export default function Inventario() {
 
     } catch (error) {
       console.error(`Error al crear ${pestañaActiva.slice(0, -1)}:`, error);
-      alert(`Error al agregar ${pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'elemento'}: ${error.message}`);
+      toast.error(`Error al agregar ${pestañaActiva === 'insumos' ? 'insumo' : pestañaActiva === 'productos' ? 'producto' : 'elemento'}: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -461,7 +459,7 @@ export default function Inventario() {
         setPinError('PIN incorrecto. Intenta nuevamente.');
       } else {
         cerrarModalPin();
-        alert(`Error al modificar insumo: ${error.message}`);
+        toast.error(`Error al modificar insumo: ${error.message}`);
       }
     } finally {
       setIsLoading(false);
@@ -484,7 +482,7 @@ export default function Inventario() {
 
     } catch (error) {
       console.error('Error al cargar el ingrediente para ver detalles:', error);
-      alert(`Error al cargar los datos del ingrediente: ${error.message}`);
+      toast.error(`Error al cargar los datos del ingrediente: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -493,7 +491,7 @@ export default function Inventario() {
   // Función para manejar la edición de un insumo
   const handleModificarInsumo = async () => {
     if (insumosSeleccionados.length !== 1) {
-      alert('Por favor selecciona exactamente un elemento para editar');
+      toast.error('Por favor selecciona exactamente un elemento para editar');
       return;
     }
 
@@ -548,7 +546,7 @@ export default function Inventario() {
 
     } catch (error) {
       console.error('Error al cargar el ingrediente para editar:', error);
-      alert(`Error al cargar los datos del ingrediente: ${error.message}`);
+      toast.error(`Error al cargar los datos del ingrediente: ${error.message}`);
     } finally {
       setIsLoading(false);
     }

@@ -312,7 +312,7 @@ export default function VistaCocina() {
         try {
             const product = selectedTable.products.find(p => p.id === productId);
             if (!product) {
-                console.error('Producto no encontrado');
+                toast.error('Producto no encontrado');
                 return;
             }
 
@@ -336,10 +336,10 @@ export default function VistaCocina() {
 
             setVisibleDropdown(null);
             await fetchTablesData();
-            // console.log('Producto cancelado exitosamente');
+            toast.success('Producto cancelado exitosamente');
         } catch (error) {
             console.error('Error al cancelar el producto:', error);
-            alert('Error al cancelar el producto: ' + error.message);
+            toast.error('Error al cancelar el producto: ' + error.message);
         }
     };
 
@@ -402,17 +402,16 @@ export default function VistaCocina() {
     };
 
     const handleCompleteOrder = async () => {
-
-
         try {
             if (!selectedTable || !selectedTable.products || selectedTable.products.length === 0) {
+                toast.warning('No hay productos para completar');
                 return;
             }
 
             const activeProducts = selectedTable.products.filter(p => p.status !== 'Cancelado');
 
             if (activeProducts.length === 0) {
-                alert('No hay productos activos para completar');
+                toast.warning('No hay productos activos para completar');
                 return;
             }
 
@@ -420,7 +419,6 @@ export default function VistaCocina() {
             const tableNumber = selectedTable.tableNumber;
 
             if (tableNumber === 1) {
-
                 // Mesa 1 (Punto de Venta) - Finalizar orden completa
                 const metodoPago = selectedTable.metodoPago || 'efectivo';
                 await endPuntoDeVenta(orderUuid, metodoPago);
@@ -488,7 +486,7 @@ export default function VistaCocina() {
 
     // Función para cancelar orden finalizada (después de confirmación extra)
     const confirmarCancelarOrdenFinalizada = async () => {
-        setShowConfirmCancelFinalized(false);
+        setShowConfirmCancelFinalizado(false);
         if (ordenFinalizadaParaCancelar) {
             setSelectedTable(ordenFinalizadaParaCancelar);
             await handleCancelOrder();
@@ -733,10 +731,10 @@ export default function VistaCocina() {
                 />
 
                 {/* Modal de confirmación para cancelar orden finalizada */}
-                {showConfirmCancelFinalized && (
+                {showConfirmCancelFinalizado && (
                     <div
                         className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[100] p-4"
-                        onClick={() => setShowConfirmCancelFinalized(false)}
+                        onClick={() => setShowConfirmCancelFinalizado(false)}
                     >
                         <div
                             className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-orange-200"
@@ -757,7 +755,7 @@ export default function VistaCocina() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => {
-                                        setShowConfirmCancelFinalized(false);
+                                        setShowConfirmCancelFinalizado(false);
                                         setOrdenFinalizadaParaCancelar(null);
                                     }}
                                     className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-colors"
