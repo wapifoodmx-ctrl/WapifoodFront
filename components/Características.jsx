@@ -24,7 +24,7 @@ const mainFeatures = [
     {
         icon: <MdOutlineMenuBook size={32} />,
         title: "Ticket Digital QR",
-        description: "Tus clientes pueden ver su ticket digital escaneando un código QR en, sin necesidad de apps ni descargas.",
+        description: "Tus clientes pueden ver su ticket digital escaneando un código QR, sin necesidad de apps ni descargas.",
         gradient: "from-blue-500 to-cyan-500"
     },
     {
@@ -69,7 +69,7 @@ export default function Características() {
                         Un ecosistema completo para tu restaurante
                     </h2>
                     <p className="text-green-600 text-lg max-w-2xl mx-auto">
-                        Desde que el cliente ordena hasta que paga, WapiFood conecta cada parte de tu operación casi en tiempo real.
+                        Desde que el cliente ordena hasta que paga, WapiFood conecta cada parte de tu operación en tiempo real.
                     </p>
                 </div>
 
