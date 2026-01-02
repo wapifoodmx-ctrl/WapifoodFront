@@ -1,6 +1,7 @@
 import { IoClose } from "react-icons/io5";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import getIngredientesInventario from "../useCases/getIngredientesInventario";
+import toast, { Toaster } from 'react-hot-toast';
 
 const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCantidadChange, toggleUnit, unitType, className = "" }) => {
   const inputRef = useRef(null);
@@ -209,14 +210,17 @@ export default function RecipeModalForProduct({
   };
 
   const handleSave = async () => {
-    if (insumosSeleccionados.length === 0) {
-      alert('Selecciona al menos un ingrediente');
-      return;
-    }
-
     const hasEmptyQuantities = insumosSeleccionados.some(id => !cantidadesInsumos[id]);
     if (hasEmptyQuantities) {
-      alert('Completa las cantidades de todos los ingredientes');
+      toast.error('Completa las cantidades de todos los ingredientes', {
+        duration: 2000,
+        position: 'top-center',
+        style: {
+          background: '#fee2e2',
+          color: '#991b1b',
+          fontWeight: '600',
+        },
+      });
       return;
     }
 
@@ -304,7 +308,21 @@ export default function RecipeModalForProduct({
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
+        <Toaster 
+          containerStyle={{
+            position: 'absolute',
+            top: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+          }}
+          toastOptions={{
+            style: {
+              zIndex: 9999,
+            },
+          }}
+        />
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <div>
