@@ -9,10 +9,14 @@ import { createProduct } from "../useCases/createProduct";
 import * as Yup from "yup";
 import postCategoria from "../useCases/postCategoria";
 import ModalMessage from "../components/ModalMessage";
+import LoadingOverlay from "../components/LoadingOverlay";
 import { postInventarioIngredientes } from "../useCases/postInventarioIngredientes";
 import { postRecetas } from "../useCases/postRecetas";
 import RecipeModalForProduct from "../components/RecipeModalForProduct";
 import getIngredientesInventario from "../useCases/getIngredientesInventario.js";
+import { getRecetas } from "../useCases/getRecetas";
+import { getIngredienteById } from "../useCases/getIngredienteId";
+import { getProducts } from "../useCases/getProducts";
 
 export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh, categories, onAvailabilityChange }) {
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);
@@ -22,7 +26,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
     const [searchTerm, setSearchTerm] = useState("");
     const [modalMessage, setModalMessage] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState("Procesando...");
     const [tempInventoryData, setTempInventoryData] = useState(null);
     const [currentProductName, setCurrentProductName] = useState("");
     const [recipeProductName, setRecipeProductName] = useState("");
@@ -152,6 +156,9 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
 
     return (
         <div className="sticky top-16 z-30 bg-gradient-to-r from-white via-green-50 to-emerald-50 p-4 sm:p-6 rounded-2xl shadow-lg border border-green-100 mb-4 sm:mb-8 w-full">
+            {/* Loading Overlay */}
+            <LoadingOverlay isVisible={isLoading} message={loadingMessage} />
+            
             {/* Mostrar la modal si hay un mensaje */}
             {modalMessage && (
                 <ModalMessage
@@ -297,6 +304,10 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                 validationSchema={validationSchemaProducto}
                                 onSubmit={async (values, { setSubmitting }) => {
                                     try {
+                                        // Activar loader
+                                        setIsLoading(true);
+                                        setLoadingMessage("Creando producto...");
+
                                         const productData = {
                                             name: capitalizeFirstLetter(values.nombre),
                                             description: capitalizeFirstLetter(values.descripcion),
@@ -305,6 +316,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                         };
 
                                         if (!values.imagen) {
+                                            setIsLoading(false);
                                             setModalMessage("Por favor, selecciona una imagen válida.");
                                             setSubmitting(false);
                                             return;
@@ -319,6 +331,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
 
                                         // PASO 2: Si hay datos de inventario
                                         if (tempInventoryData && values.agregarInventario) {
+                                            
                                             const ingredientData = {
                                                 name: productName,
                                                 description: tempInventoryData.comentarios || `Producto: ${productName}`,
@@ -331,51 +344,92 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                             const result = await postInventarioIngredientes(ingredientData);
 
                                             if (!result.success) {
-                                                throw new Error(result.error || 'Error al agregar al inventario');
+                                                throw new Error(`No se pudo agregar al inventario: ${result.error}`);
                                             }
 
                                             ingredientId = result.data?.id_ingredient;
 
-                                            if (ingredientId) {
-                                                const recipeData = {
-                                                    name: `recipeStatusNoDisplay.${productName}`,
-                                                    product_id: productId,
-                                                    ingredients: [
-                                                        {
-                                                            ingredient_id: ingredientId,
-                                                            quantity: 1
-                                                        }
-                                                    ]
-                                                };
+                                            if (!ingredientId) {
+                                                throw new Error("No se obtuvo el ID del ingrediente creado");
+                                            }
 
-                                                await postRecetas(recipeData);
+                                            // Verificar que el ingrediente se creó correctamente
+                                            const ingredientCheck = await getIngredienteById(ingredientId);
+                                            if (!ingredientCheck.success) {
+                                                throw new Error("El ingrediente no se creó correctamente. Verifica en el inventario.");
+                                            }
+
+                                            // Crear receta automática
+                                            
+                                            const recipeData = {
+                                                name: `recipeStatusNoDisplay.${productName}`,
+                                                product_id: productId,
+                                                ingredients: [
+                                                    {
+                                                        ingredient_id: ingredientId,
+                                                        quantity: 1
+                                                    }
+                                                ]
+                                            };
+
+                                            await postRecetas(recipeData);
+
+                                            // Verificar que la receta se creó
+                                            const recetasVerificacion = await getRecetas();
+                                            const recetaAutoCreada = recetasVerificacion.find(r => 
+                                                r.product_id === productId && 
+                                                r.name.includes('recipeStatusNoDisplay')
+                                            );
+                                            if (!recetaAutoCreada) {
+                                                throw new Error("La receta automática no se creó correctamente. Verifica en recetas.");
                                             }
                                         }
 
                                         // PASO 3: Si hay datos de receta personalizada
                                         if (pendingRecipeData && values.agregarReceta) {
-                                            const recipeData = {
+                                            const customRecipeData = {
                                                 name: productName,
                                                 product_id: productId,
                                                 ingredients: pendingRecipeData
                                             };
 
-                                            await postRecetas(recipeData);
+                                            await postRecetas(customRecipeData);
+
+                                            // Verificar que la receta se creó
+                                            const recetasVerificacionCustom = await getRecetas();
+                                            const recetaCreada = recetasVerificacionCustom.find(r => 
+                                                r.product_id === productId && 
+                                                r.name === productName
+                                            );
+                                            if (!recetaCreada) {
+                                                throw new Error("La receta personalizada no se creó correctamente. Verifica en recetas.");
+                                            }
                                         }
 
                                         const successMessage = tempInventoryData && values.agregarInventario
-                                            ? "Producto creado, agregado al inventario y receta automática creada exitosamente"
+                                            ? "✅ Producto creado, agregado al inventario y receta automática creada exitosamente"
                                             : pendingRecipeData && values.agregarReceta
-                                                ? "Producto creado con receta exitosamente"
-                                                : "Producto creado exitosamente";
+                                                ? "✅ Producto creado con receta exitosamente"
+                                                : "✅ Producto creado exitosamente";
 
+                                        // Desactivar loader antes de mostrar mensaje de éxito
+                                        setIsLoading(false);
                                         setModalMessage(successMessage);
                                         closeModals();
                                         await onRefresh();
 
                                     } catch (error) {
-                                        console.error("Error al crear el producto:", error.message);
-                                        setModalMessage(error.message || "Error al crear el producto. Verifica los datos enviados.");
+                                        console.error("❌ Error al crear el producto:", error.message);
+                                        
+                                        // Desactivar loader antes de mostrar error
+                                        setIsLoading(false);
+                                        
+                                        setModalMessage(
+                                            `❌ Error: ${error.message}\n\n` +
+                                            `Por favor revisa el sistema y verifica qué se creó correctamente. ` +
+                                            `No intentes crear el producto nuevamente sin verificar primero.`
+                                        );
+                                        // NO cerrar la modal en caso de error para que el usuario lea el mensaje
                                     } finally {
                                         setSubmitting(false);
                                     }
@@ -750,13 +804,13 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                             <div className="flex gap-3 pt-2">
                                 <button
                                     type="submit"
-                                    disabled={isLoadingInventory}
-                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${isLoadingInventory
+                                    disabled={isLoading}
+                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${isLoading
                                         ? 'bg-gray-400 cursor-not-allowed'
                                         : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
                                         }`}
                                 >
-                                    {isLoadingInventory ? (
+                                    {isLoading ? (
                                         <div className="flex items-center justify-center gap-2">
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                             Guardando...
