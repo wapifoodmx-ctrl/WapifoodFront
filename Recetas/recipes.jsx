@@ -2,6 +2,7 @@ import { IoAddOutline, IoClose } from "react-icons/io5";
 import { FiEdit } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import toast, { Toaster } from 'react-hot-toast';
 import Navbar from "@/dashboardComponents/navbar";
 import getIngredientesInventario from "@/useCases/getIngredientesInventario";
 import { postRecetas } from "@/useCases/postRecetas";
@@ -132,11 +133,17 @@ export default function Recipes() {
         setInsumos(soloInsumos);
       } else {
         console.error('Error al cargar insumos:', response.message);
-        alert('Error al cargar los insumos: ' + response.message);
+        toast.error('Error al cargar los insumos: ' + response.message, {
+          duration: 2000,
+          position: 'top-center',
+        });
       }
     } catch (error) {
       console.error('Error al cargar insumos:', error);
-      alert('Error al cargar los insumos: ' + error.message);
+      toast.error('Error al cargar los insumos: ' + error.message, {
+        duration: 2000,
+        position: 'top-center',
+      });
     } finally {
       setIsLoadingInsumos(false);
     }
@@ -429,6 +436,31 @@ export default function Recipes() {
 
   return (
     <section>
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          duration: 2000,
+          style: {
+            background: '#333',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+            fontSize: '14px',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <Navbar />
       <div className="pt-16">
         {/* Header de Recetas */}

@@ -37,6 +37,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     const [recipeProductName, setRecipeProductName] = useState("");
     const [pendingRecipeData, setPendingRecipeData] = useState(null);
     const [ingredientesInsumo, setIngredientesInsumo] = useState([]);
+    const [formikSetFieldValue, setFormikSetFieldValue] = useState(null);
 
     useEffect(() => {
         const timeout = setTimeout(() => setLoading(false), 1000);
@@ -101,6 +102,20 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         }));
     };
 
+    const cancelInventoryModal = () => {
+        setIsInventoryModalOpen(false);
+        setInventoryFormData({
+            cantidad: "",
+            costo: "",
+            comentarios: ""
+        });
+        setTempInventoryData(null);
+        // Reset the checkbox
+        if (formikSetFieldValue) {
+            formikSetFieldValue("agregarInventario", false);
+        }
+    };
+
     const handleAddToInventory = (e) => {
         e.preventDefault();
         
@@ -116,6 +131,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             comentarios: inventoryFormData.comentarios
         });
 
+        // NO desmarcar el checkbox aquí, se mantiene marcado
         setIsInventoryModalOpen(false);
         setInventoryFormData({
             cantidad: "",
@@ -126,17 +142,13 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
         setModalMessage("Datos del inventario guardados. Presiona 'Guardar' para confirmar.");
     };
 
-    const cancelInventoryModal = () => {
-        setIsInventoryModalOpen(false);
-        setInventoryFormData({
-            cantidad: "",
-            costo: "",
-            comentarios: ""
-        });
-        setTempInventoryData(null);
+    const handleSaveRecipe = async (ingredients) => {
+        setPendingRecipeData(ingredients);
+        setIsRecipeModalOpen(false);
+        // NO desmarcar el checkbox aquí, se mantiene marcado
+        setModalMessage("Receta guardada. Presiona 'Guardar' para confirmar.");
     };
 
-    // Modificar la función productHasRecipe para que sea más general
     const productHasRecipe = (productId) => {
         return existingRecipes.some(recipe => recipe.product_id === productId);
     };
@@ -155,12 +167,6 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             recipe.product_id === productId && 
             !recipe.name.startsWith('recipeStatusNoDisplay.')
         );
-    };
-
-    const handleSaveRecipe = async (ingredients) => {
-        setPendingRecipeData(ingredients);
-        setIsRecipeModalOpen(false);
-        setModalMessage("Receta guardada. Presiona 'Guardar' para confirmar.");
     };
 
     const handleUpdateProduct = async (values, imageFile) => {
@@ -529,6 +535,11 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                 }}
                             >
                                 {({ setFieldValue, values }) => {
+                                    // Guardar la función setFieldValue para usar en otros lugares
+                                    if (!formikSetFieldValue) {
+                                        setFormikSetFieldValue(() => setFieldValue);
+                                    }
+
                                     const isDescriptionTooLong = values.description && values.description.length > 500;
                                     const isCategoryNotSelected = !values.category_id || values.category_id === "";
                                     const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
@@ -628,16 +639,14 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                                     className="flex items-center gap-2 cursor-pointer group"
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
-                                                                        const newValue = !values.agregarInventario;
-                                                                        setFieldValue("agregarInventario", newValue);
-                                                                        
-                                                                        if (newValue) {
-                                                                            // Desmarcar receta si se marca inventario
+                                                                        if (!values.agregarInventario) {
+                                                                            // Solo abrir modal si no está marcado
                                                                             setFieldValue("agregarReceta", false);
                                                                             setCurrentProductName(selectedProduct.name);
                                                                             setIsInventoryModalOpen(true);
                                                                         } else {
-                                                                            // Si desmarca, limpiar datos temporales
+                                                                            // Desmarcar y limpiar datos
+                                                                            setFieldValue("agregarInventario", false);
                                                                             setTempInventoryData(null);
                                                                         }
                                                                     }}
@@ -646,6 +655,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                                         <Field
                                                                             type="checkbox"
                                                                             name="agregarInventario"
+                                                                            checked={!!tempInventoryData}
                                                                             className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 pointer-events-none"
                                                                         />
                                                                     </div>
@@ -658,16 +668,15 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                                     className="flex items-center gap-2 cursor-pointer group"
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
-                                                                        const newValue = !values.agregarReceta;
-                                                                        setFieldValue("agregarReceta", newValue);
-                                                                        
-                                                                        if (newValue) {
-                                                                            // Desmarcar inventario si se marca receta
+                                                                        if (!values.agregarReceta) {
+                                                                            // Solo abrir modal si no está marcado
                                                                             setFieldValue("agregarInventario", false);
                                                                             setTempInventoryData(null);
                                                                             setRecipeProductName(selectedProduct.name);
                                                                             setIsRecipeModalOpen(true);
                                                                         } else {
+                                                                            // Desmarcar y limpiar datos
+                                                                            setFieldValue("agregarReceta", false);
                                                                             setPendingRecipeData(null);
                                                                         }
                                                                     }}
@@ -676,6 +685,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                                         <Field
                                                                             type="checkbox"
                                                                             name="agregarReceta"
+                                                                            checked={!!pendingRecipeData}
                                                                             className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 pointer-events-none"
                                                                         />
                                                                     </div>

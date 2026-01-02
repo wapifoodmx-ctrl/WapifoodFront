@@ -61,10 +61,50 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
         });
     };
 
-    // Agregar esta función después de closeModals
+    const cancelInventoryModal = () => {
+        setIsInventoryModalOpen(false);
+        setInventoryFormData({
+            cantidad: "",
+            costo: "",
+            comentarios: ""
+        });
+        setTempInventoryData(null);
+        // Reset the checkbox
+        if (formikSetFieldValue) {
+            formikSetFieldValue("agregarInventario", false);
+        }
+    };
+
+    const handleAddToInventory = (e) => {
+        e.preventDefault();
+
+        if (!inventoryFormData.cantidad || !inventoryFormData.costo) {
+            setModalMessage("Por favor completa todos los campos obligatorios");
+            return;
+        }
+
+        // Guardar datos en estado temporal
+        setTempInventoryData({
+            cantidad: parseFloat(inventoryFormData.cantidad),
+            costo: parseFloat(inventoryFormData.costo),
+            comentarios: inventoryFormData.comentarios
+        });
+
+        // NO desmarcar el checkbox aquí, se mantiene marcado
+        setIsInventoryModalOpen(false);
+        setInventoryFormData({
+            cantidad: "",
+            costo: "",
+            comentarios: ""
+        });
+        
+        setModalMessage("Datos del inventario guardados. Presiona 'Crear' para confirmar.");
+    };
+
     const handleSaveRecipe = async (ingredients) => {
         setPendingRecipeData(ingredients);
         setIsRecipeModalOpen(false);
+        // NO desmarcar el checkbox aquí, se mantiene marcado
         setModalMessage("Receta guardada. Presiona 'Guardar' para confirmar el producto con la receta.");
     };
 
@@ -80,47 +120,6 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
             ...prev,
             [name]: value
         }));
-    };
-
-    const handleAddToInventory = (e) => {
-        e.preventDefault();
-
-        if (!inventoryFormData.cantidad || !inventoryFormData.costo) {
-            setModalMessage("Por favor completa todos los campos obligatorios");
-            return;
-        }
-
-        // Guardar datos en estado temporal en lugar de ejecutar inmediatamente
-        setTempInventoryData({
-            cantidad: parseFloat(inventoryFormData.cantidad),
-            costo: parseFloat(inventoryFormData.costo),
-            comentarios: inventoryFormData.comentarios
-        });
-
-        // Cerrar el modal sin ejecutar la acción
-        setIsInventoryModalOpen(false);
-        setInventoryFormData({
-            cantidad: "",
-            costo: "",
-            comentarios: ""
-        });
-
-        // Mostrar mensaje de confirmación
-        setModalMessage("Datos del inventario guardados. Presiona 'Crear' para confirmar.");
-    };
-
-    const cancelInventoryModal = () => {
-        setIsInventoryModalOpen(false);
-        setInventoryFormData({
-            cantidad: "",
-            costo: "",
-            comentarios: ""
-        });
-        setTempInventoryData(null);
-        // Reset the checkbox
-        if (formikSetFieldValue) {
-            formikSetFieldValue("agregarInventario", false);
-        }
     };
 
     const validationSchemaProducto = Yup.object().shape({
@@ -436,6 +435,11 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                 }}
                             >
                                 {({ setFieldValue, errors, touched, values }) => {
+                                    // Guardar la función setFieldValue para usar en otros lugares
+                                    if (!formikSetFieldValue) {
+                                        setFormikSetFieldValue(() => setFieldValue);
+                                    }
+
                                     const isDescriptionTooLong = values.descripcion && values.descripcion.length > 500;
                                     const isCategoryNotSelected = !values.categoria || values.categoria === "";
                                     const isFormInvalid = isDescriptionTooLong || isCategoryNotSelected;
@@ -517,16 +521,14 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                     className="flex items-center gap-2 cursor-pointer group"
                                                     onClick={(e) => {
                                                         e.preventDefault();
-                                                        const newValue = !values.agregarInventario;
-                                                        setFieldValue("agregarInventario", newValue);
-
-                                                        if (newValue) {
-                                                            // Desmarcar receta si se marca inventario
+                                                        if (!values.agregarInventario) {
+                                                            // Solo abrir modal si no está marcado
                                                             setFieldValue("agregarReceta", false);
                                                             setCurrentProductName(values.nombre || "Producto");
                                                             setIsInventoryModalOpen(true);
                                                         } else {
-                                                            // Si desmarca, limpiar datos temporales
+                                                            // Desmarcar y limpiar datos
+                                                            setFieldValue("agregarInventario", false);
                                                             setTempInventoryData(null);
                                                         }
                                                     }}
@@ -535,6 +537,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                         <Field
                                                             type="checkbox"
                                                             name="agregarInventario"
+                                                            checked={!!tempInventoryData}
                                                             className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 pointer-events-none"
                                                         />
                                                     </div>
@@ -547,16 +550,15 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                     className="flex items-center gap-2 cursor-pointer group"
                                                     onClick={(e) => {
                                                         e.preventDefault();
-                                                        const newValue = !values.agregarReceta;
-                                                        setFieldValue("agregarReceta", newValue);
-
-                                                        if (newValue) {
-                                                            // Desmarcar inventario si se marca receta
+                                                        if (!values.agregarReceta) {
+                                                            // Solo abrir modal si no está marcado
                                                             setFieldValue("agregarInventario", false);
                                                             setTempInventoryData(null);
                                                             setRecipeProductName(values.nombre || "Producto");
                                                             setIsRecipeModalOpen(true);
                                                         } else {
+                                                            // Desmarcar y limpiar datos
+                                                            setFieldValue("agregarReceta", false);
                                                             setPendingRecipeData(null);
                                                         }
                                                     }}
@@ -565,7 +567,8 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                         <Field
                                                             type="checkbox"
                                                             name="agregarReceta"
-                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200"
+                                                            checked={!!pendingRecipeData}
+                                                            className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 pointer-events-none"
                                                         />
                                                     </div>
                                                     <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colors">
@@ -681,22 +684,30 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                 )}
                                             </div>
 
-                                            {/* Botones */}
+                                            {/* Botones de acción */}
                                             <div className="flex gap-3 pt-2">
                                                 <button
                                                     type="submit"
-                                                    disabled={isFormInvalid}
-                                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${isFormInvalid
-                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                        : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
-                                                        }`}
+                                                    disabled={isFormInvalid || isLoading}
+                                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                                                        isFormInvalid || isLoading
+                                                            ? 'bg-gray-400 cursor-not-allowed'
+                                                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                                                    }`}
                                                 >
-                                                    Guardar
+                                                    {isLoading ? (
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                            Creando...
+                                                        </div>
+                                                    ) : (
+                                                        'Crear Producto'
+                                                    )}
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95"
                                                     onClick={closeModals}
+                                                    className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95"
                                                 >
                                                     Cancelar
                                                 </button>
@@ -832,38 +843,54 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                 </div>
             )}
 
-            {/* Modal de Categorías con diseño mejorado */}
+            {/* Modal de Receta */}
+            <RecipeModalForProduct
+                isOpen={isRecipeModalOpen}
+                onClose={() => {
+                    setIsRecipeModalOpen(false);
+                    setPendingRecipeData(null);
+                    if (formikSetFieldValue) {
+                        formikSetFieldValue("agregarReceta", false);
+                    }
+                }}
+                onSave={handleSaveRecipe}
+                productName={recipeProductName}
+                availableIngredients={ingredientesInsumo}
+            />
+
+            {/* Modal de Categoría */}
             {isCategoriaModalOpen && (
                 <div
                     className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4"
                     onClick={closeModals}
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-green-100"
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-green-100"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Header del modal */}
-                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-2xl">
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-t-2xl">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                                         <BsTag className="text-white text-lg" />
                                     </div>
-                                    <h2 className="text-2xl font-bold text-white">Nueva Categoría</h2>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-white">Nueva Categoría</h2>
+                                        <p className="text-green-100 text-xs">Agrega una nueva categoría al menú</p>
+                                    </div>
                                 </div>
                                 <button
                                     onClick={closeModals}
                                     className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
                                 >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </button>
                             </div>
                         </div>
 
-                        {/* Contenido del modal */}
-                        <div className="p-6">
+                        <div className="p-4">
                             <Formik
                                 initialValues={{
                                     nombre_categoria: "",
@@ -872,87 +899,87 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                 validationSchema={validationSchemaCategoria}
                                 onSubmit={async (values, { setSubmitting }) => {
                                     try {
-                                        const categoriaData = {
-                                            nombre_categoria: values.nombre_categoria.toUpperCase(),
-                                            descripcion_categoria: values.descripcion_categoria,
+                                        const categoryData = {
+                                            nombre_categoria: capitalizeFirstLetter(values.nombre_categoria),
+                                            descripcion_categoria: capitalizeFirstLetter(values.descripcion_categoria),
                                         };
-                                        await postCategoria(categoriaData);
+
+                                        await postCategoria(categoryData);
                                         setModalMessage("Categoría creada exitosamente");
                                         closeModals();
-                                        onRefresh();
+                                        await onRefresh();
                                     } catch (error) {
                                         console.error("Error al crear la categoría:", error.message);
-                                        setModalMessage(error.message || "Error al crear la categoría. Por favor, inténtalo de nuevo.");
+                                        setModalMessage("Error al crear la categoría. Inténtalo nuevamente.");
                                     } finally {
                                         setSubmitting(false);
                                     }
                                 }}
                             >
                                 {({ errors, touched, setFieldValue, values }) => (
-                                    <Form className="space-y-6">
-                                        {/* Nombre de la categoría */}
+                                    <Form className="space-y-4">
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">
                                                 Nombre de la categoría
                                             </label>
                                             <Field
                                                 name="nombre_categoria"
                                                 type="text"
-                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 uppercase"
-                                                placeholder="EJ: PIZZAS, BEBIDAS, POSTRES..."
+                                                className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                                                placeholder="Ej: Bebidas"
                                                 onChange={(e) => {
-                                                    const upperCaseValue = e.target.value.toUpperCase();
-                                                    setFieldValue("nombre_categoria", upperCaseValue);
+                                                    const capitalizedValue = capitalizeFirstLetter(e.target.value);
+                                                    setFieldValue("nombre_categoria", capitalizedValue);
                                                 }}
                                                 value={values.nombre_categoria}
-                                                style={{ textTransform: 'uppercase' }}
                                             />
                                             {errors.nombre_categoria && touched.nombre_categoria && (
-                                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                    </svg>
-                                                    {errors.nombre_categoria}
-                                                </p>
+                                                </svg>
+                                                {errors.nombre_categoria}
+                                            </p>
                                             )}
                                         </div>
 
-                                        {/* Descripción */}
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">
                                                 Descripción
                                             </label>
                                             <Field
                                                 name="descripcion_categoria"
                                                 as="textarea"
-                                                rows="4"
-                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none"
-                                                placeholder="Describe esta categoría..."
+                                                rows="3"
+                                                className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none"
+                                                placeholder="Describe la categoría..."
+                                                onChange={(e) => {
+                                                    const capitalizedValue = capitalizeFirstLetter(e.target.value);
+                                                    setFieldValue("descripcion_categoria", capitalizedValue);
+                                                }}
+                                                value={values.descripcion_categoria}
                                             />
-
-
                                             {errors.descripcion_categoria && touched.descripcion_categoria && (
                                                 <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                    </svg>
-                                                    {errors.descripcion_categoria}
-                                                </p>
+                                                </svg>
+                                                {errors.descripcion_categoria}
+                                            </p>
                                             )}
                                         </div>
 
-                                        {/* Botones */}
                                         <div className="flex gap-3 pt-2">
                                             <button
                                                 type="submit"
                                                 className="flex-1 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                                             >
-                                                Crear
+                                                Crear Categoría
                                             </button>
                                             <button
                                                 type="button"
-                                                className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95"
                                                 onClick={closeModals}
+                                                className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95"
                                             >
                                                 Cancelar
                                             </button>
@@ -964,22 +991,6 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                     </div>
                 </div>
             )}
-
-            {/* Modal de Receta */}
-            <RecipeModalForProduct
-                isOpen={isRecipeModalOpen}
-                onClose={() => {
-                    setIsRecipeModalOpen(false);
-                    setPendingRecipeData(null);
-                    // Reset the checkbox
-                    if (formikSetFieldValue) {
-                        formikSetFieldValue("agregarReceta", false);
-                    }
-                }}
-                onSave={handleSaveRecipe}
-                productName={recipeProductName}
-                availableIngredients={ingredientesInsumo} // Agregar esta prop
-            />
         </div>
     );
 }

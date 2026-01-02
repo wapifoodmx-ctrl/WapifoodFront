@@ -18,7 +18,7 @@ import Navbar from "@/dashboardComponents/navbar";
 import { menuStyles } from "@/styles/menuStyles";
 import { getColorMenu } from "@/useCases/getColorMenu";
 import { postColorMenu } from "@/useCases/postColorMenu";
-import { patchColorMenu } from "@/useCases/patchColorMenu"; // NUEVO IMPORT
+import { patchColorMenu } from "@/useCases/patchColorMenu";
 
 // Esquema base sin profileImage
 const baseSchema = Yup.object().shape({
@@ -140,11 +140,22 @@ export default function UserPage() {
   const [pinInventario, setPinInventario] = useState("");
   const [savingStyle, setSavingStyle] = useState(false);
   const [hasExistingStyle, setHasExistingStyle] = useState(false);
-  // NUEVOS ESTADOS PARA MODALES DE ESTILO
   const [showStyleSuccessModal, setShowStyleSuccessModal] = useState(false);
   const [showStyleErrorModal, setShowStyleErrorModal] = useState(false);
   const [styleModalMessage, setStyleModalMessage] = useState('');
+  
+  // NUEVOS ESTADOS PARA TOAST
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  
   const router = useRouter();
+
+  // FUNCIÓN PARA MOSTRAR TOAST
+  const showToast = (message, type = 'error') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 2000);
+  };
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -212,7 +223,7 @@ export default function UserPage() {
     try {
       // Validar tamaño antes de procesar
       if (file.size > 10 * 1024 * 1024) { // 10MB
-        alert('La imagen es demasiado grande. Por favor selecciona una imagen menor a 10MB.');
+        showToast('La imagen es demasiado grande. Por favor selecciona una imagen menor a 10MB.', 'error');
         return;
       }
 
@@ -231,7 +242,7 @@ export default function UserPage() {
       setFieldValue("profileImage", processedFile);
     } catch (error) {
       console.error('Error al procesar imagen:', error);
-      alert('Error al procesar la imagen. Inténtalo de nuevo.');
+      showToast('Error al procesar la imagen. Inténtalo de nuevo.', 'error');
     } finally {
       setProcessingImage(false);
     }
@@ -280,13 +291,13 @@ export default function UserPage() {
       
       // Mejorar manejo de errores
       if (error.message.includes('413') || error.message.includes('too large')) {
-        alert('La imagen es demasiado grande. Por favor, selecciona una imagen más pequeña.');
+        showToast('La imagen es demasiado grande. Por favor, selecciona una imagen más pequeña.', 'error');
       } else if (error.message.includes('CORS')) {
-        alert('Error de conexión. Por favor, inténtalo de nuevo.');
+        showToast('Error de conexión. Por favor, inténtalo de nuevo.', 'error');
       } else if (error.message.includes('PIN')) {
-        alert(`Error con el PIN: ${error.message}`);
+        showToast(`Error con el PIN: ${error.message}`, 'error');
       } else {
-        alert('Error al actualizar la información. Inténtalo de nuevo.');
+        showToast('Error al actualizar la información. Inténtalo de nuevo.', 'error');
       }
     } finally {
       setSubmitting(false);
@@ -392,6 +403,31 @@ export default function UserPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       {/* Navbar */}
       <Navbar />
+      
+      {/* COMPONENTE TOAST */}
+      {toast.show && (
+        <div className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none">
+          <div className={`pointer-events-auto px-6 py-4 rounded-xl shadow-2xl transform animate-scale-in ${
+            toast.type === 'error' 
+              ? 'bg-red-500 text-white' 
+              : toast.type === 'success'
+              ? 'bg-green-500 text-white'
+              : 'bg-blue-500 text-white'
+          }`}>
+            <div className="flex items-center gap-3">
+              {toast.type === 'error' && (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              {toast.type === 'success' && (
+                <FaCheckCircle className="text-2xl" />
+              )}
+              <p className="font-medium">{toast.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Contenido principal con padding-top para evitar solapamiento */}
       <div className="pt-16 p-4 pb-8">
