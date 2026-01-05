@@ -17,6 +17,7 @@ import getIngredientesInventario from "../useCases/getIngredientesInventario.js"
 import { getRecetas } from "../useCases/getRecetas";
 import { getIngredienteById } from "../useCases/getIngredienteId";
 import { getProducts } from "../useCases/getProducts";
+import Default from "@/pages/assets/img/Default.png";
 
 export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh, categories, onAvailabilityChange }) {
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);
@@ -130,7 +131,7 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
             .positive("El precio debe ser un número positivo")
             .min(0.01, "El precio debe ser mayor a 0")
             .required("El precio es obligatorio"),
-        imagen: Yup.mixed().required("La imagen del producto es obligatoria"),
+        imagen: Yup.mixed().nullable(), // Cambiar esta línea - quitar el required
     });
 
     const validationSchemaCategoria = Yup.object().shape({
@@ -314,15 +315,17 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                             category_id: values.categoria,
                                         };
 
-                                        if (!values.imagen) {
-                                            setIsLoading(false);
-                                            setModalMessage("Por favor, selecciona una imagen válida.");
-                                            setSubmitting(false);
-                                            return;
+                                        // Si no hay imagen seleccionada, usar la imagen por defecto
+                                        let imageToUpload = values.imagen;
+                                        if (!imageToUpload) {
+                                            // Convertir la imagen Default a File
+                                            const response = await fetch(Default.src || Default);
+                                            const blob = await response.blob();
+                                            imageToUpload = new File([blob], "default.png", { type: "image/png" });
                                         }
 
                                         // PASO 1: Crear el producto
-                                        const createdProduct = await createProduct(productData, values.imagen);
+                                        const createdProduct = await createProduct(productData, imageToUpload);
                                         const productId = createdProduct.id_products;
                                         const productName = createdProduct.name;
 
@@ -428,7 +431,6 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                             `Por favor revisa el sistema y verifica qué se creó correctamente. ` +
                                             `No intentes crear el producto nuevamente sin verificar primero.`
                                         );
-                                        // NO cerrar la modal en caso de error para que el usuario lea el mensaje
                                     } finally {
                                         setSubmitting(false);
                                     }
@@ -678,9 +680,9 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                     <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                        </svg>
-                                                        {errors.imagen}
-                                                    </p>
+                                                    </svg>
+                                                    {errors.imagen}
+                                                </p>
                                                 )}
                                             </div>
 

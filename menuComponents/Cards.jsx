@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import kime from "@/pages/assets/img/kime.jpeg";
+import Default from "@/pages/assets/img/Default.png";
 import { FiEdit, FiEye } from "react-icons/fi";
 import { BsTrash3 } from "react-icons/bs";
 import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
@@ -355,7 +355,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                     {/* Contenedor de imagen con overlay en hover */}
                     <div className="relative w-full h-48 overflow-hidden">
                         <Image
-                            src={product.image_url?.[0] || kime}
+                            src={product.image_url?.[0] || Default}
                             alt={product.name}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             width={300}
