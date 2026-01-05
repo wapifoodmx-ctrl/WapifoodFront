@@ -10,6 +10,7 @@ import { GoChecklist } from "react-icons/go";
 import { IoHomeOutline } from "react-icons/io5";
 import Profile from "@/pages/assets/images/Profile.jpg";
 import { getMenuStyle } from '@/styles/menuStyles';
+import Default from "@/pages/assets/img/Default.png";
 
 export default function MenuWebDinamico() {
     const router = useRouter();
@@ -58,7 +59,7 @@ export default function MenuWebDinamico() {
                     categoria: producto.nombre_categoria,
                     imagen: producto.image_url && producto.image_url.length > 0
                         ? producto.image_url[0]
-                        : null,
+                        : Default,
                     status: producto.status,
                 });
             });

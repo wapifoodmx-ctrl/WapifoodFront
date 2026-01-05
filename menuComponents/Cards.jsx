@@ -355,7 +355,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                     {/* Contenedor de imagen con overlay en hover */}
                     <div className="relative w-full h-48 overflow-hidden">
                         <Image
-                            src={product.image_url?.[0] || Default}
+                            src={product.image_url && product.image_url.length > 0 ? product.image_url[0] : Default}
                             alt={product.name}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             width={300}

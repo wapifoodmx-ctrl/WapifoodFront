@@ -26,6 +26,7 @@ import ProductDetailModal from "./ProductDetailModal";
 import ConfirmationCodeModal from "./ConfirmationCodeModal";
 import { toast } from "@/components/Toast";
 import postProcessOrder from "@/useCases/postMermas";
+import Default from "@/pages/assets/img/Default.png";
 
 const productosEstaticos = [];
 
