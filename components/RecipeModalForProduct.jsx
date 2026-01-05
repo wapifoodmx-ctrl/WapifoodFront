@@ -104,11 +104,7 @@ export default function RecipeModalForProduct({
   const [isSelectingSupplies, setIsSelectingSupplies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchInsumos();
-    }
-  }, [isOpen]);
+ 
 
   useEffect(() => {
     const fetchIngredientes = async () => {
@@ -132,16 +128,7 @@ export default function RecipeModalForProduct({
     fetchIngredientes();
   }, []);
 
-  const fetchInsumos = async () => {
-    try {
-      const result = await getIngredientesInventario();
-      if (result.success && result.data) {
-        setInsumos(result.data);
-      }
-    } catch (error) {
-      console.error('Error al cargar insumos:', error);
-    }
-  };
+
 
   const toggleUnit = useCallback((ingredientId) => {
     const currentValue = parseFloat(cantidadesInsumos[ingredientId]) || 0;
