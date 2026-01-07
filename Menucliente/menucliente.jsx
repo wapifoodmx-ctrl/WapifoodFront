@@ -24,7 +24,7 @@ import MesaSelectionModal from "./MesaSelectionModal";
 import PaymentModal from "./PaymentModal";
 import ProductDetailModal from "./ProductDetailModal";
 import ConfirmationCodeModal from "./ConfirmationCodeModal";
-import kime from "@/pages/assets/img/kime.jpeg";
+import Default from "@/pages/assets/img/Default.png";
 import postProcessOrder from "@/useCases/postMermas";
 
 
@@ -909,7 +909,7 @@ export default function MenuCliente() {
             categoria: producto.category_name || producto.nombre_categoria,
             imagen: producto.image_url && producto.image_url.length > 0
                 ? producto.image_url[0]
-                : kime,
+                : Default,
             ingredientes: producto.ingredientes || [],
             status: producto.status,
             cantidad: 1
