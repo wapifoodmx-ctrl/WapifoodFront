@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from "next/image";
+import Default from "@/public/Default.png";
 
 export default function ProductDetailModal({ isOpen, producto, onClose, onAddToCart }) {
     if (!isOpen || !producto) return null;
@@ -31,7 +32,7 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
                 <div className="p-6">
                     <div className="mb-6">
                         <Image
-                            src={producto.image || producto.imagen || '/placeholder-food.png'}
+                            src={producto.image || producto.imagen || Default.src}
                             alt={`Imagen de ${producto.nombre || producto.name}`}
                             className="w-full h-48 object-cover rounded-xl border border-green-100 shadow-sm"
                             width={400}

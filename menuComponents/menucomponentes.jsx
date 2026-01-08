@@ -17,7 +17,7 @@ import getIngredientesInventario from "../useCases/getIngredientesInventario.js"
 import { getRecetas } from "../useCases/getRecetas";
 import { getIngredienteById } from "../useCases/getIngredienteId";
 import { getProducts } from "../useCases/getProducts";
-import Default from "@/pages/assets/img/Default.png";
+import Default from "@/public/Default.png";
 
 export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh, categories, onAvailabilityChange }) {
     const [isProductoModalOpen, setIsProductoModalOpen] = useState(false);

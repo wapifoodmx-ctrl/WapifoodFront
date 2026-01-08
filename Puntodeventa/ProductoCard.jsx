@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Default from "@/public/Default.png";
 
 export default function ProductoCard({ producto, onAgregarAlCarrito, onOpenModal }) {
     const [cantidad, setCantidad] = useState(1);
@@ -14,7 +15,7 @@ export default function ProductoCard({ producto, onAgregarAlCarrito, onOpenModal
     };
 
     // Obtener la URL de la imagen correctamente
-    const imageUrl = producto.image_url?.[0] || producto.image || "/placeholder-food.jpg";
+    const imageUrl = producto.image_url?.[0] || producto.image || Default.src;
 
     return (
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-green-100 hover:border-green-300 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
@@ -106,7 +107,7 @@ export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito })
     };
 
     // Obtener la URL de la imagen correctamente
-    const imageUrl = producto.image_url?.[0] || producto.image || "/placeholder-food.jpg";
+    const imageUrl = producto.image_url?.[0] || producto.image || Default.src;
 
     return (
         <div 

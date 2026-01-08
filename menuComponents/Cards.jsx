@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import Default from "@/pages/assets/img/Default.png";
+import Default from "@/public/Default.png";
 import { FiEdit, FiEye } from "react-icons/fi";
 import { BsTrash3 } from "react-icons/bs";
 import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
@@ -131,7 +131,11 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             comentarios: inventoryFormData.comentarios
         });
 
-        // NO desmarcar el checkbox aquí, se mantiene marcado
+        // Marcar el checkbox de agregar inventario
+        if (formikSetFieldValue) {
+            formikSetFieldValue("agregarInventario", true);
+        }
+        
         setIsInventoryModalOpen(false);
         setInventoryFormData({
             cantidad: "",
@@ -143,9 +147,16 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     };
 
     const handleSaveRecipe = async (ingredients) => {
+        console.log('✅ Guardando receta personalizada con ingredientes:', ingredients);
         setPendingRecipeData(ingredients);
         setIsRecipeModalOpen(false);
-        // NO desmarcar el checkbox aquí, se mantiene marcado
+        // Marcar el checkbox de agregar receta
+        if (formikSetFieldValue) {
+            formikSetFieldValue("agregarReceta", true);
+            console.log('✅ Campo agregarReceta marcado como true');
+        } else {
+            console.log('⚠️ formikSetFieldValue no disponible');
+        }
         setModalMessage("Receta guardada. Presiona 'Guardar' para confirmar.");
     };
 
@@ -249,7 +260,12 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             }
 
             // Si hay datos de receta personalizada
+            console.log('⚠️ Verificando creación de receta personalizada');
+            console.log('pendingRecipeData:', pendingRecipeData);
+            console.log('values.agregarReceta:', values.agregarReceta);
+            
             if (pendingRecipeData && values.agregarReceta) {
+                console.log('✅ Se creará receta personalizada');
                 const recipeData = {
                     name: productName,
                     product_id: productId,
@@ -257,6 +273,8 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                 };
 
                 await postRecetas(recipeData);
+            } else {
+                console.log('⚠️ No se creará receta personalizada');
             }
 
             const successMessage = tempInventoryData && values.agregarInventario
@@ -355,7 +373,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                     {/* Contenedor de imagen con overlay en hover */}
                     <div className="relative w-full h-48 overflow-hidden">
                         <Image
-                            src={product.image_url && product.image_url.length > 0 ? product.image_url[0] : Default}
+                            src={product.image_url && product.image_url.length > 0 ? product.image_url[0] : Default.src}
                             alt={product.name}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             width={300}
@@ -535,10 +553,10 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                 }}
                             >
                                 {({ setFieldValue, values }) => {
-                                    // Guardar la función setFieldValue para usar en otros lugares
-                                    if (!formikSetFieldValue) {
+                                    // Usar useEffect para guardar setFieldValue sin causar re-render
+                                    useEffect(() => {
                                         setFormikSetFieldValue(() => setFieldValue);
-                                    }
+                                    }, [setFieldValue]);
 
                                     const isDescriptionTooLong = values.description && values.description.length > 500;
                                     const isCategoryNotSelected = !values.category_id || values.category_id === "";
@@ -639,9 +657,10 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                                     className="flex items-center gap-2 cursor-pointer group"
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
-                                                                        if (!values.agregarInventario) {
-                                                                            // Solo abrir modal si no está marcado
+                                                                        if (!tempInventoryData) {
+                                                                            // Solo abrir modal si no hay datos de inventario guardados
                                                                             setFieldValue("agregarReceta", false);
+                                                                            setPendingRecipeData(null);
                                                                             setCurrentProductName(selectedProduct.name);
                                                                             setIsInventoryModalOpen(true);
                                                                         } else {
@@ -668,8 +687,8 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
                                                                     className="flex items-center gap-2 cursor-pointer group"
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
-                                                                        if (!values.agregarReceta) {
-                                                                            // Solo abrir modal si no está marcado
+                                                                        if (!pendingRecipeData) {
+                                                                            // Solo abrir modal si no hay receta guardada
                                                                             setFieldValue("agregarInventario", false);
                                                                             setTempInventoryData(null);
                                                                             setRecipeProductName(selectedProduct.name);

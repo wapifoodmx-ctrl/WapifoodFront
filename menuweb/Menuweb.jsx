@@ -15,7 +15,7 @@ import { GoChecklist } from "react-icons/go";
 import { FaShoppingCart } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/router';
-import Default from "@/pages/assets/img/Default.png";
+import Default from "@/public/Default.png";
 import Profile from "@/pages/assets/images/Profile.jpg";
 import Burger from "@/pages/assets/img/Burger.jpg";
 import Sopadetomate from "@/pages/assets/img/sopatomate.jpg";
@@ -81,7 +81,7 @@ export default function MenuCliente() {
             categoria: producto.category_name || producto.nombre_categoria,
             imagen: producto.image_url && producto.image_url.length > 0
                 ? producto.image_url[0]
-                : Default,
+                : Default.src,
             ingredientes: producto.ingredientes || [],
             status: producto.status,
             cantidad: 1

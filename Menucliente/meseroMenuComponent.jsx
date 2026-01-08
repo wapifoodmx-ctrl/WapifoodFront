@@ -26,7 +26,7 @@ import ProductDetailModal from "./ProductDetailModal";
 import ConfirmationCodeModal from "./ConfirmationCodeModal";
 import { toast } from "@/components/Toast";
 import postProcessOrder from "@/useCases/postMermas";
-import Default from "@/pages/assets/img/Default.png";
+import Default from "@/public/Default.png";
 
 const productosEstaticos = [];
 
@@ -86,7 +86,7 @@ export default function MeseroMenuComponent() {
             precio: parseFloat(producto.price),
             price: parseFloat(producto.price),
             categoria: producto.category_name || producto.nombre_categoria || producto.categoria || "Sin categoría",
-            image: Array.isArray(producto.image_url) ? producto.image_url[0] : producto.image_url || producto.image || '/placeholder-food.png',
+            image: Array.isArray(producto.image_url) ? producto.image_url[0] : producto.image_url || producto.image || Default.src,
             descripcion: producto.description || "",
             description: producto.description || "",
             status: producto.status,
