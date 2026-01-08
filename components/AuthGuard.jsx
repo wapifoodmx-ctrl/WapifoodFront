@@ -29,6 +29,11 @@ export default function AuthGuard({ children }) {
             return true;
         }
         
+        // Verificar ruta de tickets externos /tickets/externalTicketView
+        if (pathname.startsWith('/tickets/externalTicketView')) {
+            return true;
+        }
+        
         return false;
     };
 

@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { FaCheckCircle, FaClock, FaUtensils, FaReceipt } from 'react-icons/fa';
 import { MdRestaurant } from 'react-icons/md';
@@ -15,15 +15,103 @@ export default function ExternalTicketView() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [meseroName, setMeseroName] = useState('');
+    const [previousProductsStatus, setPreviousProductsStatus] = useState({});
+    const [audioContext, setAudioContext] = useState(null);
+    
+    // useRef para mantener siempre el estado más actual
+    const previousProductsStatusRef = useRef({});
+    const isInitialLoadRef = useRef(true); // Rastrear si es la primera carga
+
+    // Inicializar AudioContext después de la primera interacción del usuario
+    useEffect(() => {
+        const initAudio = () => {
+            try {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                setAudioContext(context);
+            } catch (error) {
+                // Error silencioso
+            }
+        };
+
+        // Inicializar después de cualquier click en la página
+        const handleUserInteraction = () => {
+            if (!audioContext) {
+                initAudio();
+                document.removeEventListener('click', handleUserInteraction);
+                document.removeEventListener('touchstart', handleUserInteraction);
+            }
+        };
+
+        document.addEventListener('click', handleUserInteraction);
+        document.addEventListener('touchstart', handleUserInteraction);
+
+        return () => {
+            document.removeEventListener('click', handleUserInteraction);
+            document.removeEventListener('touchstart', handleUserInteraction);
+        };
+    }, [audioContext]);
+
+    // Función para reproducir sonido de notificación
+    const playNotificationSound = () => {
+        try {
+            let context = audioContext;
+            
+            if (!context) {
+                context = new (window.AudioContext || window.webkitAudioContext)();
+                setAudioContext(context);
+            }
+
+            if (context.state === 'suspended') {
+                context.resume();
+            }
+            
+            // Reproducir 3 beeps cortos
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    try {
+                        const oscillator = context.createOscillator();
+                        const gainNode = context.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(context.destination);
+                        
+                        oscillator.frequency.value = 1000;
+                        oscillator.type = 'square';
+                        
+                        gainNode.gain.setValueAtTime(0.8, context.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.3);
+                        
+                        oscillator.start(context.currentTime);
+                        oscillator.stop(context.currentTime + 0.3);
+                    } catch (beepError) {
+                        // Error silencioso
+                    }
+                }, i * 400);
+            }
+            
+            // Fallback: vibración en móviles
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200, 100, 200]);
+            }
+        } catch (error) {
+            // Error silencioso
+        }
+    };
+
+    // Solicitar permiso para notificaciones
+    useEffect(() => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
 
     useEffect(() => {
         if (!uuid) return;
 
         const fetchTicketData = async () => {
             try {
-                setLoading(true);
-                setError(null);
-
+                const wasInitialLoad = isInitialLoadRef.current;
+                
                 // Llamar al endpoint público (sin autenticación)
                 const endpoint = `https://api.wapifood.com/orders/${uuid}`;
                 
@@ -39,38 +127,102 @@ export default function ExternalTicketView() {
                 }
 
                 const data = await response.json();
+                
+                // Verificar cambios de estado solo si NO es la primera carga
+                if (!wasInitialLoad && data.products) {
+                    data.products.forEach(product => {
+                        const productId = product.id_orders_details;
+                        const newStatus = product.order_detail_status;
+                        const previousStatus = previousProductsStatusRef.current[productId];
+
+                        // Si el estado cambió a "Preparado" y antes no lo estaba
+                        if (newStatus === 'Preparado') {
+                            if (!previousStatus || previousStatus !== 'Preparado') {
+                                playNotificationSound();
+                                
+                                // Notificación del navegador
+                                if ('Notification' in window && Notification.permission === 'granted') {
+                                    new Notification('¡Producto listo!', {
+                                        body: `${product.product_name} está preparado`,
+                                        icon: '/favicon.ico',
+                                    });
+                                }
+                            }
+                        }
+                    });
+                    
+                    // SIEMPRE actualizar estados previos después de verificar
+                    const newProductsStatus = {};
+                    data.products.forEach(product => {
+                        newProductsStatus[product.id_orders_details] = product.order_detail_status;
+                    });
+                    previousProductsStatusRef.current = newProductsStatus;
+                    setPreviousProductsStatus(newProductsStatus);
+                } else if (wasInitialLoad && data.products) {
+                    // Primera carga - inicializar estados previos sin notificar
+                    const initialStatus = {};
+                    data.products.forEach(product => {
+                        initialStatus[product.id_orders_details] = product.order_detail_status;
+                    });
+                    previousProductsStatusRef.current = initialStatus;
+                    setPreviousProductsStatus(initialStatus);
+                    
+                    // Marcar que ya NO es la primera carga
+                    isInitialLoadRef.current = false;
+                }
+                
                 setTicketData(data);
                 
-                // Cargar información del mesero (sin autenticación requerida)
+                // Cargar información del mesero solo si hay token disponible
                 try {
-                    const meserosData = await getTicketMeserosDetails();
+                    // Verificar si hay token disponible (usuario autenticado)
+                    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
                     
-                    // Buscar la orden actual en los datos de meseros
-                    const currentOrder = meserosData.find(order => order.order_uuid === uuid);
-                    
-                    if (currentOrder && currentOrder.waiters && currentOrder.waiters.length > 0) {
-                        // Obtener el último mesero (quien finalizó la orden)
-                        const lastWaiter = currentOrder.waiters[currentOrder.waiters.length - 1];
+                    if (token) {
+                        const meserosData = await getTicketMeserosDetails();
                         
-                        // Solo mostrar si no es mesa 1 (punto de venta)
-                        if (data.mesa_number !== 1) {
-                            setMeseroName(lastWaiter.name);
+                        // Buscar la orden actual en los datos de meseros
+                        const currentOrder = meserosData.find(order => order.order_uuid === uuid);
+                        
+                        if (currentOrder && currentOrder.waiters && currentOrder.waiters.length > 0) {
+                            // Obtener el último mesero (quien finalizó la orden)
+                            const lastWaiter = currentOrder.waiters[currentOrder.waiters.length - 1];
+                            
+                            // Solo mostrar si no es mesa 1 (punto de venta)
+                            if (data.mesa_number !== 1) {
+                                setMeseroName(lastWaiter.name);
+                            }
                         }
                     }
                 } catch (meseroError) {
-                    console.log('No se pudo cargar información del mesero:', meseroError);
-                    // No mostrar error al usuario, simplemente no mostrar mesero
+                    // No mostrar error al usuario
+                }
+                
+                // Solo mostrar loading en la primera carga
+                if (wasInitialLoad) {
+                    setLoading(false);
                 }
             } catch (err) {
-                console.error('Error al cargar el ticket:', err);
                 setError('No se pudo cargar el ticket. Verifica el código QR.');
-            } finally {
                 setLoading(false);
             }
         };
 
+        // Cargar datos iniciales
+        setLoading(true);
+        setError(null);
         fetchTicketData();
-    }, [uuid]);
+
+        // Configurar polling cada 60 segundos
+        const pollInterval = setInterval(() => {
+            fetchTicketData();
+        }, 60000);
+
+        // Limpiar intervalo al desmontar
+        return () => {
+            clearInterval(pollInterval);
+        };
+    }, [uuid]); // Solo depender de uuid
 
     // Calcular descuentos por producto
     const calculateProductDiscount = (product) => {
@@ -278,14 +430,27 @@ export default function ExternalTicketView() {
                         <div className="space-y-3">
                             {ticketData.products?.map((product, index) => {
                                 const discountInfo = calculateProductDiscount(product);
+                                const isPrepared = product.order_detail_status === 'Preparado';
                                 
                                 return (
-                                    <div key={index} className="bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-xl p-4 transition-transform hover:scale-[1.02]">
+                                    <div key={index} className={`bg-gradient-to-r border rounded-xl p-4 transition-all duration-300 ${
+                                        isPrepared 
+                                            ? 'from-green-50 to-emerald-50 border-green-300 shadow-md' 
+                                            : 'from-gray-50 to-white border-gray-100 hover:scale-[1.02]'
+                                    }`}>
                                         <div className="flex justify-between items-start mb-2">
                                             <div className="flex-1">
-                                                <h3 className="font-bold text-gray-800 text-base mb-1">
-                                                    {product.product_name}
-                                                </h3>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h3 className="font-bold text-gray-800 text-base">
+                                                        {product.product_name}
+                                                    </h3>
+                                                    {isPrepared && (
+                                                        <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full font-semibold flex items-center gap-1 animate-pulse">
+                                                            <FaCheckCircle className="text-xs" />
+                                                            Listo
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
                                                         x{product.quantity}

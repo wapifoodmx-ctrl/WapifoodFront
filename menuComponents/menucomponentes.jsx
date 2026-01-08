@@ -103,9 +103,15 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
     };
 
     const handleSaveRecipe = async (ingredients) => {
+        console.log('📝 Receta recibida:', ingredients);
         setPendingRecipeData(ingredients);
         setIsRecipeModalOpen(false);
-        // NO desmarcar el checkbox aquí, se mantiene marcado
+        
+        // Marcar el checkbox como checked
+        if (formikSetFieldValue) {
+            formikSetFieldValue("agregarReceta", true);
+        }
+        
         setModalMessage("Receta guardada. Presiona 'Guardar' para confirmar el producto con la receta.");
     };
 
@@ -389,13 +395,22 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
 
                                         // PASO 3: Si hay datos de receta personalizada
                                         if (pendingRecipeData && values.agregarReceta) {
+                                            console.log('📋 Creando receta personalizada...');
+                                            console.log('Datos de receta:', pendingRecipeData);
+                                            console.log('Product ID:', productId);
+                                            console.log('Product Name:', productName);
+                                            
+                                            setLoadingMessage("Creando receta...");
+                                            
                                             const customRecipeData = {
                                                 name: productName,
                                                 product_id: productId,
                                                 ingredients: pendingRecipeData
                                             };
 
-                                            await postRecetas(customRecipeData);
+                                            console.log('Payload de receta:', customRecipeData);
+                                            const resultReceta = await postRecetas(customRecipeData);
+                                            console.log('Resultado de crear receta:', resultReceta);
 
                                             // Verificar que la receta se creó
                                             const recetasVerificacionCustom = await getRecetas();
@@ -406,6 +421,11 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                             if (!recetaCreada) {
                                                 throw new Error("La receta personalizada no se creó correctamente. Verifica en recetas.");
                                             }
+                                            console.log('✅ Receta verificada:', recetaCreada);
+                                        } else {
+                                            console.log('⚠️ No se creará receta personalizada');
+                                            console.log('pendingRecipeData:', pendingRecipeData);
+                                            console.log('values.agregarReceta:', values.agregarReceta);
                                         }
 
                                         const successMessage = tempInventoryData && values.agregarInventario
@@ -553,13 +573,11 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         if (!values.agregarReceta) {
-                                                            // Solo abrir modal si no está marcado
-                                                            setFieldValue("agregarInventario", false);
-                                                            setTempInventoryData(null);
+                                                            // Abrir modal de receta
                                                             setRecipeProductName(values.nombre || "Producto");
                                                             setIsRecipeModalOpen(true);
                                                         } else {
-                                                            // Desmarcar y limpiar datos
+                                                            // Desmarcar y limpiar datos de receta
                                                             setFieldValue("agregarReceta", false);
                                                             setPendingRecipeData(null);
                                                         }

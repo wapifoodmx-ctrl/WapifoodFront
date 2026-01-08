@@ -44,7 +44,7 @@ export default function VistaCocina() {
     const [tablesData, setTablesData] = useState(null);
 
     // Estado para confirmación de cancelar orden finalizada
-    const [showConfirmCancelFinalized, setShowConfirmCancelFinalized] = useState(false);
+    const [showConfirmCancelFinalizado, setShowConfirmCancelFinalizado] = useState(false);
     const [ordenFinalizadaParaCancelar, setOrdenFinalizadaParaCancelar] = useState(null);
 
     const fetchTablesData = async () => {
