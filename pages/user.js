@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import UserPage from "@/user/userpage";
+import ChatBot from "@/components/ChatBot";
 
 export default function User() {
     return (
@@ -129,6 +130,9 @@ export default function User() {
                     animation-delay: 150ms;
                 }
             `}</style>
+            
+            {/* ChatBot */}
+            <ChatBot viewName="user" />
         </div>
         </>
     );

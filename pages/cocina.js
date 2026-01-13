@@ -2,6 +2,7 @@ import Head from "next/head";
 import Navbar from "@/dashboardComponents/navbar";
 import VistaCocina from "@/pages/cocina/VistaCocina";
 import { FaKitchenSet } from "react-icons/fa6";
+import ChatBot from "@/components/ChatBot";
 
 export default function Cocina() {
     return (
@@ -142,6 +143,9 @@ export default function Cocina() {
                         animation-delay: 150ms;
                     }
                 `}</style>
+                
+                {/* ChatBot */}
+                <ChatBot viewName="cocina" />
             </div>
         </>
     );

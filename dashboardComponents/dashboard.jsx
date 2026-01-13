@@ -3,6 +3,7 @@ import Navbar from './navbar';
 import MainContentDasboard from './mainContentDasboard';
 import Pedidos from './pedidos';
 import Ventas from './ventas';
+import ChatBot from '@/components/ChatBot';
 
 export default function Dashboard2() {
     return (
@@ -120,6 +121,9 @@ export default function Dashboard2() {
                     animation-delay: 150ms;
                 }
             `}</style>
+            
+            {/* ChatBot */}
+            <ChatBot viewName="dashboard" />
         </div>
     );
 }

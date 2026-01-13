@@ -7,6 +7,7 @@ import { getProducts } from "@/useCases/getProducts";
 import { getCategoria } from "@/useCases/getCategoria";
 import { checkPayment } from "@/useCases/checkPayment";
 import { useRouter } from "next/router";
+import ChatBot from "@/components/ChatBot";
 
 export default function Menu() {
   const router = useRouter();
@@ -466,6 +467,9 @@ export default function Menu() {
               animation-delay: 150ms;
             }
           `}</style>
+          
+          {/* ChatBot */}
+          <ChatBot viewName="productos" />
         </div>
       )}
     </>

@@ -1,6 +1,7 @@
 import Head from "next/head";
 import Navbar from "@/dashboardComponents/navbar";
 import PlanDeVentas from "@/planesdeventa/planesdeventa";
+import ChatBot from "@/components/ChatBot";
 
 export default function Payments() {
     return (
@@ -120,6 +121,9 @@ export default function Payments() {
                     animation-delay: 150ms;
                 }
             `}</style>
+            
+            {/* ChatBot */}
+            <ChatBot viewName="payments" />
         </div>
         </>
     );

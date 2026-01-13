@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Navbar from "@/dashboardComponents/navbar";
 import Ticketview from "./tickets/Ticketview";
+import ChatBot from "@/components/ChatBot";
 
 export default function Tickets() {
     return (
@@ -118,6 +119,9 @@ export default function Tickets() {
                     animation-delay: 150ms;
                 }
             `}</style>
+            
+            {/* ChatBot */}
+            <ChatBot viewName="tickets" />
         </div>
         </>
     );

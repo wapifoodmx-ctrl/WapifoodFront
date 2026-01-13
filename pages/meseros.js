@@ -15,6 +15,7 @@ import AddMeseroModal from "@/Meseros/AddMeseroModal";
 import EditMeseroModal from "@/Meseros/EditMeseroModal";
 import DeleteMeseroModal from "@/Meseros/DeleteMeseroModal";
 import { toast } from "@/components/Toast";
+import ChatBot from "@/components/ChatBot";
 
 export default function Meseros() {
   const router = useRouter();
@@ -385,6 +386,9 @@ export default function Meseros() {
           onConfirm={handleConfirmDelete}
           mesero={meseroToDelete}
         />
+        
+        {/* ChatBot */}
+        <ChatBot viewName="meseros" />
       </section>
     </>
   );

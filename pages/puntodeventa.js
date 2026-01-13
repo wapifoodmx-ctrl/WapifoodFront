@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Pntoventa from "@/Puntodeventa/pntoventa";
+import ChatBot from "@/components/ChatBot";
 
 export default function PuntoDeVenta() {
   return (
@@ -111,6 +112,9 @@ export default function PuntoDeVenta() {
           animation-delay: 150ms;
         }
       `}</style>
+      
+      {/* ChatBot */}
+      <ChatBot viewName="puntodeventa" />
     </div>
     </>
   );
