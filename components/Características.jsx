@@ -113,22 +113,22 @@ export default function Características() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12">
-                    <div className="text-center p-6">
-                        <div className="text-4xl font-extrabold text-green-600 mb-1">0%</div>
-                        <div className="text-gray-600 text-sm">Comisiones por venta</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-12">
+                    <div className="text-center p-4 md:p-6 bg-white rounded-xl shadow-sm">
+                        <div className="text-3xl md:text-4xl font-medium text-green-600 mb-1">0%</div>
+                        <div className="text-gray-600 text-xs md:text-sm">Comisiones por venta</div>
                     </div>
-                    <div className="text-center p-6">
-                        <div className="text-4xl font-extrabold text-green-600 mb-1">GRATIS</div>
-                        <div className="text-gray-600 text-sm">soporte técnico con su suscripción</div>
+                    <div className="text-center p-4 md:p-6 bg-white rounded-xl shadow-sm">
+                        <div className="text-3xl md:text-4xl font-medium text-green-600 mb-1">GRATIS</div>
+                        <div className="text-gray-600 text-xs md:text-sm">Soporte técnico con su suscripción</div>
                     </div>
-                    <div className="text-center p-6">
-                        <div className="text-4xl font-extrabold text-green-600 mb-1">5 min</div>
-                        <div className="text-gray-600 text-sm">Para configurar</div>
+                    <div className="text-center p-4 md:p-6 bg-white rounded-xl shadow-sm">
+                        <div className="text-3xl md:text-4xl font-medium text-green-600 mb-1">5 min</div>
+                        <div className="text-gray-600 text-xs md:text-sm">Para configurar</div>
                     </div>
-                    <div className="text-center p-6">
-                        <div className="text-4xl font-extrabold text-green-600 mb-1">Paquetes</div>
-                        <div className="text-gray-600 text-sm">Para todos los restaurantes</div>
+                    <div className="text-center p-4 md:p-6 bg-white rounded-xl shadow-sm">
+                        <div className="text-3xl md:text-4xl font-medium text-green-600 mb-1">Paquetes</div>
+                        <div className="text-gray-600 text-xs md:text-sm">Para todos los restaurantes</div>
                     </div>
                 </div>
             </div>

@@ -15,69 +15,69 @@ export default function PaginaWeb() {
     ];
 
     return (
-        <main className="bg-gradient-to-br from-green-200 via-emerald-100 to-teal-100 min-h-screen flex items-center justify-center py-16">
-            <section className="flex flex-col md:flex-row items-center justify-center w-full px-4 md:gap-16 md:px-16 max-w-7xl mx-auto" id='menudigital'>
+        <main className="bg-gradient-to-br from-green-200 via-emerald-100 to-teal-100 min-h-screen flex items-center justify-center py-8 md:py-16 px-4">
+            <section className="flex flex-col lg:flex-row items-center justify-center w-full gap-8 md:gap-12 lg:gap-16 max-w-7xl mx-auto" id='menudigital'>
                 {/* Content */}
-                <div className="w-full md:w-1/2 flex flex-col justify-center items-start mb-10 md:mb-0">
+                <div className="w-full lg:w-1/2 flex flex-col justify-center items-start">
                     <span className="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold mb-4">
                         📱 Menú Digital
                     </span>
-                    <h2 className="text-4xl md:text-5xl font-extrabold text-green-800 drop-shadow-lg mb-4 leading-tight">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-green-800 drop-shadow-lg mb-4 leading-tight">
                         Tu menú digital <span className="bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">automáticamente</span>
                     </h2>
-                    <p className="text-green-700 text-lg md:text-xl mb-6 font-medium max-w-lg">
+                    <p className="text-green-700 text-base sm:text-lg lg:text-xl mb-6 font-medium max-w-lg">
                         Solo agrega tus productos y categorías. WapiFood genera automáticamente un menú digital profesional que tus clientes pueden ver desde cualquier celular.
                     </p>
                     
                     {/* Features Grid */}
-                    <div className="grid grid-cols-2 gap-4 w-full mb-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 w-full mb-6 md:mb-8">
                         {features.map((feature, index) => (
-                            <div key={index} className="flex items-start gap-3 bg-white/60 backdrop-blur-sm p-3 rounded-xl border border-green-100">
-                                <div className="text-emerald-600 mt-1">
+                            <div key={index} className="flex items-start gap-2 md:gap-3 bg-white/60 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-green-100 hover:shadow-md transition-shadow">
+                                <div className="text-emerald-600 mt-1 flex-shrink-0">
                                     {feature.icon}
                                 </div>
-                                <div>
-                                    <h4 className="font-semibold text-gray-800 text-sm">{feature.title}</h4>
-                                    <p className="text-gray-600 text-xs">{feature.description}</p>
+                                <div className="min-w-0">
+                                    <h4 className="font-semibold text-gray-800 text-sm md:text-base">{feature.title}</h4>
+                                    <p className="text-gray-600 text-xs md:text-sm">{feature.description}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
 
                     {/* CTA */}
-                    <div className="flex flex-col sm:flex-row gap-4 w-full">
-                        <div className="flex items-center gap-2 text-green-700 text-sm">
-                            <FaCheck className="text-emerald-500" size={14} />
+                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full">
+                        <div className="flex items-center gap-2 text-green-700 text-sm md:text-base">
+                            <FaCheck className="text-emerald-500 flex-shrink-0" size={14} />
                             <span>Incluido en todos los planes</span>
                         </div>
-                        <div className="flex items-center gap-2 text-green-700 text-sm">
-                            <FaCheck className="text-emerald-500" size={14} />
+                        <div className="flex items-center gap-2 text-green-700 text-sm md:text-base">
+                            <FaCheck className="text-emerald-500 flex-shrink-0" size={14} />
                             <span>Sin límite de productos</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Image */}
-                <div className="w-full md:w-1/2 flex flex-col items-center justify-center relative">
+                <div className="w-full lg:w-1/2 flex flex-col items-center justify-center relative mt-8 lg:mt-0 pb-12 md:pb-8">
                     <div className="absolute -top-4 -right-4 w-32 h-32 bg-blue-300/30 rounded-full blur-2xl"></div>
                     <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-emerald-300/30 rounded-full blur-2xl"></div>
                     
                     <Image 
                         src={MenúDigital} 
-                        className="hidden md:block shadow-2xl rounded-2xl border-4 border-green-200 md:max-w-[450px] lg:max-w-[550px] transition-all duration-300 hover:scale-105 relative z-10"
+                        className="hidden lg:block shadow-2xl rounded-2xl border-4 border-green-200 max-w-[400px] xl:max-w-[500px] transition-all duration-300 hover:scale-105 relative z-10 w-full h-auto"
                         alt="Menú Digital WapiFood - Vista en celular"
                         priority
                     />
                     <Image 
                         src={MenúDigital}
-                        className="block md:hidden h-[350px] w-[90vw] max-w-[375px] shadow-2xl rounded-2xl border-4 border-emerald-200 transition-all duration-300 hover:scale-105"
+                        className="block lg:hidden w-full max-w-[350px] md:max-w-[400px] h-auto shadow-2xl rounded-2xl border-4 border-emerald-200 transition-all duration-300 hover:scale-105 relative z-10"
                         alt="Menú Digital WapiFood - Vista móvil"
                         priority
                     />
                     
                     {/* Floating badge */}
-                    <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-lg border border-green-100 z-20">
-                        <span className="text-green-700 font-semibold text-sm">🎨 Elige alguno de nuestros diseños para tu menú digital</span>
+                    <div className="absolute -bottom-2 md:-bottom-4 left-1/2 transform -translate-x-1/2 bg-white px-3 md:px-6 py-2 md:py-3 rounded-full shadow-lg border border-green-100 z-20 max-w-[90%] md:max-w-none">
+                        <span className="text-green-700 font-semibold text-xs md:text-sm text-center block">🎨 Elige alguno de nuestros diseños para tu menú digital</span>
                     </div>
                 </div>
             </section>
