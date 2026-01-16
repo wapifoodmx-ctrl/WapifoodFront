@@ -116,7 +116,7 @@ export default function ChatBot({ viewName = 'general' }) {
             {/* Botón flotante */}
             <button
                 onClick={handleToggleChat}
-                className={`fixed bottom-6 left-6 z-50 p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 ${
+                className={`fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-50 p-3 sm:p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 ${
                     hasActiveSubscription 
                         ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700' 
                         : 'bg-gray-400 cursor-not-allowed'
@@ -124,47 +124,47 @@ export default function ChatBot({ viewName = 'general' }) {
                 title={hasActiveSubscription ? 'Abrir asistente WapiFood' : 'Necesitas suscripción activa'}
             >
                 {isOpen ? (
-                    <IoClose className="text-white text-2xl" />
+                    <IoClose className="text-white text-xl sm:text-2xl" />
                 ) : (
-                    <IoChatbubbleEllipsesOutline className="text-white text-2xl" />
+                    <IoChatbubbleEllipsesOutline className="text-white text-xl sm:text-2xl" />
                 )}
             </button>
 
             {/* Ventana del chat */}
             {isOpen && (
-                <div className="fixed bottom-24 left-6 z-50 w-96 h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col border border-gray-200 overflow-hidden">
+                <div className="fixed inset-x-0 bottom-0 left-0 sm:bottom-24 sm:left-6 sm:inset-x-auto z-50 w-full sm:w-96 h-[85vh] landscape:h-[90vh] sm:h-[600px] bg-white sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col border border-gray-200 overflow-hidden">
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white flex items-center justify-between">
+                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-2 landscape:p-2.5 sm:p-4 text-white flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <IoSparkles className="text-xl" />
+                            <IoSparkles className="text-base landscape:text-lg sm:text-xl" />
                             <div>
-                                <h3 className="font-bold text-lg">Asistente WapiFood</h3>
-                                <p className="text-xs text-green-100">Siempre listo para ayudarte</p>
+                                <h3 className="font-bold text-sm landscape:text-base sm:text-lg">Asistente WapiFood</h3>
+                                <p className="text-xs landscape:hidden sm:block text-green-100">Siempre listo para ayudarte</p>
                             </div>
                         </div>
                         <button 
                             onClick={handleToggleChat}
                             className="hover:bg-white/20 rounded-full p-1 transition-colors"
                         >
-                            <IoClose className="text-2xl" />
+                            <IoClose className="text-lg landscape:text-xl sm:text-2xl" />
                         </button>
                     </div>
 
                     {/* Mensajes */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                    <div className="flex-1 overflow-y-auto p-2 landscape:p-2.5 sm:p-4 space-y-2 landscape:space-y-2.5 sm:space-y-4 bg-gray-50">
                         {messages.map((message, index) => (
                             <div
                                 key={index}
                                 className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div
-                                    className={`max-w-[80%] p-3 rounded-2xl ${
+                                    className={`max-w-[85%] sm:max-w-[80%] p-2.5 sm:p-3 rounded-2xl ${
                                         message.type === 'user'
                                             ? 'bg-green-500 text-white rounded-br-none'
                                             : 'bg-white text-gray-800 shadow-sm rounded-bl-none border border-gray-200'
                                     }`}
                                 >
-                                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                                    <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
                                     <span className={`text-xs mt-1 block ${
                                         message.type === 'user' ? 'text-green-100' : 'text-gray-400'
                                     }`}>
@@ -179,7 +179,7 @@ export default function ChatBot({ viewName = 'general' }) {
                         
                         {isLoading && (
                             <div className="flex justify-start">
-                                <div className="bg-white p-3 rounded-2xl rounded-bl-none shadow-sm border border-gray-200">
+                                <div className="bg-white p-2.5 sm:p-3 rounded-2xl rounded-bl-none shadow-sm border border-gray-200">
                                     <div className="flex gap-1">
                                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -194,14 +194,14 @@ export default function ChatBot({ viewName = 'general' }) {
 
                     {/* Preguntas sugeridas */}
                     {messages.length <= 1 && (
-                        <div className="px-4 py-2 border-t border-gray-200 bg-white">
-                            <p className="text-xs text-gray-500 mb-2 font-semibold">Preguntas frecuentes:</p>
-                            <div className="flex flex-wrap gap-2">
+                        <div className="px-2 landscape:px-3 sm:px-4 py-1.5 landscape:py-2 sm:py-2 border-t border-gray-200 bg-white">
+                            <p className="text-xs text-gray-500 mb-1.5 landscape:mb-2 sm:mb-2 font-semibold">Preguntas frecuentes:</p>
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                 {suggestedQuestions.slice(0, 3).map((question, index) => (
                                     <button
                                         key={index}
                                         onClick={() => handleSuggestedQuestion(question)}
-                                        className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-full hover:bg-green-100 transition-colors border border-green-200"
+                                        className="text-xs bg-green-50 text-green-700 px-2.5 sm:px-3 py-1.5 rounded-full hover:bg-green-100 transition-colors border border-green-200"
                                     >
                                         {question}
                                     </button>
@@ -211,7 +211,7 @@ export default function ChatBot({ viewName = 'general' }) {
                     )}
 
                     {/* Input */}
-                    <div className="p-4 border-t border-gray-200 bg-white">
+                    <div className="p-2 landscape:p-2.5 sm:p-4 border-t border-gray-200 bg-white safe-area-bottom">
                         <div className="flex gap-2">
                             <input
                                 type="text"
@@ -219,15 +219,15 @@ export default function ChatBot({ viewName = 'general' }) {
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyPress={handleKeyPress}
                                 placeholder="Escribe tu pregunta..."
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="flex-1 px-3 sm:px-4 py-1.5 landscape:py-2 sm:py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 disabled={isLoading}
                             />
                             <button
                                 onClick={() => handleSendMessage()}
                                 disabled={!inputValue.trim() || isLoading}
-                                className="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                             >
-                                <IoSend className="text-xl" />
+                                <IoSend className="text-lg sm:text-xl" />
                             </button>
                         </div>
                     </div>
