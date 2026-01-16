@@ -116,7 +116,7 @@ export default function ChatBot({ viewName = 'general' }) {
             {/* Botón flotante */}
             <button
                 onClick={handleToggleChat}
-                className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 ${
+                className={`fixed bottom-6 left-6 z-50 p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 ${
                     hasActiveSubscription 
                         ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700' 
                         : 'bg-gray-400 cursor-not-allowed'
@@ -132,7 +132,7 @@ export default function ChatBot({ viewName = 'general' }) {
 
             {/* Ventana del chat */}
             {isOpen && (
-                <div className="fixed bottom-24 right-6 z-50 w-96 h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col border border-gray-200 overflow-hidden">
+                <div className="fixed bottom-24 left-6 z-50 w-96 h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col border border-gray-200 overflow-hidden">
                     {/* Header */}
                     <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white flex items-center justify-between">
                         <div className="flex items-center gap-2">
