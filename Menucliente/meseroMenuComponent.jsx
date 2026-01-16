@@ -886,7 +886,13 @@ export default function MeseroMenuComponent() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             {/* Header */}
-            <header className="sticky top-0 z-50">
+            <header 
+                className="sticky top-0 z-50"
+                style={{
+                    visibility: modalOpen ? 'hidden' : 'visible',
+                    zIndex: modalOpen ? -1 : 50
+                }}
+            >
                 <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
                         <div className="flex items-center gap-2">
@@ -932,7 +938,7 @@ export default function MeseroMenuComponent() {
                             {/* Botón logout */}
                             <button
                                 onClick={cerrarSesionMesero}
-                                className="hidden sm:flex items-center gap-1 bg-red-500/80 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition-colors text-sm"
+                                className="hidden sm:flex items-center gap-1 bg-red-500/80 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition-colores text-sm"
                                 title="Cerrar Sesión"
                             >
                                 <IoLogOutOutline size={18} />
@@ -961,6 +967,10 @@ export default function MeseroMenuComponent() {
                     transition-transform duration-300 ease-in-out menu-container z-[60]
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
+                style={{
+                    visibility: modalOpen ? 'hidden' : 'visible',
+                    zIndex: modalOpen ? -1 : 60
+                }}
             >
                 <ul className="flex flex-col mt-16 p-4 text-xl">
                     <p className="text-green-700 font-bold mb-2">Categorías</p>
@@ -993,6 +1003,10 @@ export default function MeseroMenuComponent() {
                 <div
                     className="fixed inset-0 bg-black/20 z-40"
                     onClick={() => setIsOpen(false)}
+                    style={{
+                        visibility: modalOpen ? 'hidden' : 'visible',
+                        zIndex: modalOpen ? -1 : 40
+                    }}
                 />
             )}
 
@@ -1000,8 +1014,8 @@ export default function MeseroMenuComponent() {
             <div
                 className="sticky top-16 z-30 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6"
                 style={{
-                    visibility: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal) ? 'hidden' : 'visible',
-                    zIndex: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal) ? -1 : 30
+                    visibility: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalOpen) ? 'hidden' : 'visible',
+                    zIndex: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalOpen) ? -1 : 30
                 }}
             >
                 <div className="max-w-4xl mx-auto">

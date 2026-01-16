@@ -1002,7 +1002,7 @@ export default function UserPage() {
                         </label>
                         
                         <Field 
-                          type="text" 
+                          type="password" 
                           id="confirmationCode" 
                           name="confirmationCode" 
                           placeholder="Ej: 1234"
@@ -1019,7 +1019,7 @@ export default function UserPage() {
                         <p className="text-gray-500 text-xs mt-1">4 números del 0 al 9 (requerido)</p>
                       </div>
 
-                      {/* PIN (Inventario) - MODIFICADO */}
+                      {/* PIN (Inventario) */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="pinInventory">
                           PIN (Inventario) <span className="text-red-500">*</span>
@@ -1034,7 +1034,7 @@ export default function UserPage() {
                             <FaLock className="text-purple-500 text-lg" />
                           </div>
                           <Field 
-                            type="text" 
+                            type="password" 
                             id="pinInventory" 
                             name="pinInventory" 
                             placeholder="Ej: 5678"

@@ -232,7 +232,7 @@ export default function MenuCliente() {
                             return;
                         }
 
-                        // *** VERIFICACIÓN: Detectar orden finalizada (pagada desde otro dispositivo) ***
+                        // *** VERIFICACIÓN: Detectar orden finalizada (pagada desde mesero u otro dispositivo) ***
                         if (ticketData.order_status === "Finalizado") {
                             // console.log('Orden finalizada detectada (pagada desde mesero u otro dispositivo)');
 
@@ -1314,7 +1314,13 @@ export default function MenuCliente() {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             {isAuthenticated && (
                 <>
-                    <header className="sticky top-0 z-50">
+                    <header 
+                        className="sticky top-0 z-50"
+                        style={{
+                            visibility: modalOpen ? 'hidden' : 'visible',
+                            zIndex: modalOpen ? -1 : 50
+                        }}
+                    >
                         <nav className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-4 shadow-lg">
                             <div className="flex items-center max-w-7xl mx-auto justify-between">
                                 <div className="flex items-center">
@@ -1351,10 +1357,14 @@ export default function MenuCliente() {
 
                     <div
                         className={`
-                    fixed top-0 left-0 h-full w-64 bg-gradient-to-br from-green-100 to-emerald-100 shadow-2xl border-r border-green-200
-                    transition-transform duration-300 ease-in-out menu-container z-[60]
-                    ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-                `}
+                fixed top-0 left-0 h-full w-64 bg-gradient-to-br from-green-100 to-emerald-100 shadow-2xl border-r border-green-200
+                transition-transform duration-300 ease-in-out menu-container z-[60]
+                ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}
+                        style={{
+                            visibility: modalOpen ? 'hidden' : 'visible',
+                            zIndex: modalOpen ? -1 : 60
+                        }}
                     >
                         <ul className="flex flex-col mt-16 p-4 text-xl">
                             <p className="text-green-700 font-bold mb-2">Menú principal</p>
@@ -1379,6 +1389,10 @@ export default function MenuCliente() {
                         <div
                             className="fixed inset-0 bg-black/20 z-40"
                             onClick={() => setIsOpen(false)}
+                            style={{
+                                visibility: modalOpen ? 'hidden' : 'visible',
+                                zIndex: modalOpen ? -1 : 40
+                            }}
                         />
                     )}
                 </>
@@ -1387,8 +1401,8 @@ export default function MenuCliente() {
             <div
                 className="sticky top-16 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6"
                 style={{
-                    visibility: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? 'hidden' : 'visible',
-                    zIndex: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen) ? -1 : 30
+                    visibility: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen || modalOpen) ? 'hidden' : 'visible',
+                    zIndex: (modalMesaOpen || carritoModalOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || loginModalOpen || modalOpen) ? -1 : 30
                 }}
             >
                 <div className="max-w-4xl mx-auto">
