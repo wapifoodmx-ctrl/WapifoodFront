@@ -373,7 +373,7 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
                                         <p className="text-sm text-gray-500 mb-2">Código QR del ticket</p>
                                         <div className="justify-center cm-qr inline-block">
                                             <QRCodeCanvas
-                                                value={`http://192.168.1.71:3000/tickets/externalTicketView?uuid=${ticketData.order_uuid}`}
+                                                value={`https://wapifood.com/tickets/externalTicketView?uuid=${ticketData.order_uuid}`}
                                                 size={150}
                                                 level="M"
                                                 includeMargin={true}
