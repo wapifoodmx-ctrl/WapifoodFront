@@ -228,7 +228,7 @@ export default function PlanDeVentas() {
                                                 {/* Precio */}
                                                 <div className="mb-4">
                                                     <div className="flex items-center justify-center gap-2 mb-2">
-                                                        <span className="text-lg text-gray-400 line-through">$150</span>
+                                                        <span className="text-lg text-gray-400 line-through">$400</span>
                                                         <div className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
                                                             90% OFF
                                                         </div>
