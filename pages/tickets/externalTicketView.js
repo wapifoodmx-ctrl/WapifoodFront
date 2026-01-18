@@ -6,14 +6,14 @@ import { MdRestaurant } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { QRCodeCanvas } from 'qrcode.react';
 import { getTicketMeserosDetails } from '../../useCases/getTicketMeserosDetails';
+import { toast } from '../../components/Toast';
+import ToastContainer from '../../components/Toast';
 
 export default function ExternalTicketView() {
     const router = useRouter();
     const { uuid } = router.query;
     
     const [ticketData, setTicketData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [meseroName, setMeseroName] = useState('');
     const [previousProductsStatus, setPreviousProductsStatus] = useState({});
     const [audioContext, setAudioContext] = useState(null);
@@ -21,6 +21,7 @@ export default function ExternalTicketView() {
     // useRef para mantener siempre el estado más actual
     const previousProductsStatusRef = useRef({});
     const isInitialLoadRef = useRef(true); // Rastrear si es la primera carga
+    const hasValidDataRef = useRef(false); // Rastrear si alguna vez hemos tenido datos válidos
 
     // Inicializar AudioContext después de la primera interacción del usuario
     useEffect(() => {
@@ -115,18 +116,30 @@ export default function ExternalTicketView() {
                 // Llamar al endpoint público (sin autenticación)
                 const endpoint = `https://api.wapifood.com/orders/${uuid}`;
                 
+                // Agregar timeout de 15 segundos para evitar que se quede colgado en móviles
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
                 const response = await fetch(endpoint, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
 
                 if (!response.ok) {
-                    throw new Error('No se pudo cargar el ticket');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const data = await response.json();
+                
+                // Validar que la respuesta tenga la estructura esperada
+                if (!data || typeof data !== 'object') {
+                    throw new Error('Respuesta inválida del servidor');
+                }
                 
                 // Verificar cambios de estado solo si NO es la primera carga
                 if (!wasInitialLoad && data.products) {
@@ -171,7 +184,15 @@ export default function ExternalTicketView() {
                     isInitialLoadRef.current = false;
                 }
                 
-                setTicketData(data);
+                // Actualizar ticketData de forma segura
+                setTicketData(prevData => {
+                    // Si es la misma estructura, React podría no re-renderizar
+                    // así que creamos un nuevo objeto para forzar el update
+                    return { ...data };
+                });
+                
+                // Marcar que tenemos datos válidos
+                hasValidDataRef.current = true;
                 
                 // Cargar información del mesero solo si hay token disponible
                 try {
@@ -198,19 +219,24 @@ export default function ExternalTicketView() {
                     // No mostrar error al usuario
                 }
                 
-                // Solo mostrar loading en la primera carga
+                // Marcar que ya no es la primera carga después de obtener datos
                 if (wasInitialLoad) {
-                    setLoading(false);
+                    isInitialLoadRef.current = false;
                 }
             } catch (err) {
-                setError('No se pudo cargar el ticket. Verifica el código QR.');
-                setLoading(false);
+                // Mostrar toast con el error
+                if (isInitialLoadRef.current) {
+                    // Primera carga falló, mostrar toast
+                    toast.error('No se pudo cargar el ticket. Reintentando...');
+                    isInitialLoadRef.current = false;
+                } else {
+                    // Actualización falló, mostrar toast pero mantener datos anteriores
+                    toast.warning('Error al actualizar. Mostrando última versión conocida.');
+                }
             }
         };
 
         // Cargar datos iniciales
-        setLoading(true);
-        setError(null);
         fetchTicketData();
 
         // Configurar polling cada 60 segundos
@@ -272,7 +298,8 @@ export default function ExternalTicketView() {
         return String(method).charAt(0).toUpperCase() + String(method).slice(1);
     };
 
-    if (loading) {
+    // Solo mostrar loading si no hay datos válidos aún
+    if (!ticketData && !hasValidDataRef.current) {
         return (
             <>
                 <Head>
@@ -285,32 +312,7 @@ export default function ExternalTicketView() {
                         <p className="text-gray-600 font-medium">Cargando tu ticket...</p>
                     </div>
                 </div>
-            </>
-        );
-    }
-
-    if (error || !ticketData) {
-        return (
-            <>
-                <Head>
-                    <title>Error al cargar ticket | WapiFood</title>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-                </Head>
-                <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <IoClose className="text-red-600 text-3xl" />
-                        </div>
-                        <h1 className="text-2xl font-bold text-gray-800 mb-2">Error</h1>
-                        <p className="text-gray-600 mb-6">{error || 'No se pudo cargar el ticket'}</p>
-                        <button
-                            onClick={() => router.push('/')}
-                            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-                        >
-                            Volver al inicio
-                        </button>
-                    </div>
-                </div>
+                <ToastContainer />
             </>
         );
     }
@@ -521,7 +523,7 @@ export default function ExternalTicketView() {
                         <h3 className="text-lg font-bold text-gray-800 mb-4">Código del ticket</h3>
                         <div className="bg-gray-50 inline-block p-4 rounded-xl">
                             <QRCodeCanvas
-                                value={ticketData.order_uuid}
+                                value={`${window.location.origin}/tickets/externalTicketView?uuid=${ticketData.order_uuid}`}
                                 size={200}
                                 level="M"
                                 includeMargin={true}
@@ -544,6 +546,9 @@ export default function ExternalTicketView() {
                     </div>
                 </div>
             </div>
+
+            {/* Toast Container */}
+            <ToastContainer />
 
             <style jsx global>{`
                 body {
