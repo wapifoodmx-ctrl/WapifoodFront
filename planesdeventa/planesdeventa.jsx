@@ -72,7 +72,7 @@ export default function PlanDeVentas() {
                 { icon: <GiCook size={18} />, text: "Gestión de Cocina casi en tiempo real" },
                 { icon: <MdOutlineTableRestaurant size={18} />, text: "15 Mesas para tu negocio" },
                 { icon: <MdOutlineInventory2 size={18} />, text: "Control de Inventario" },
-                { icon: <FaUserTie size={18} />, text: "10 Meseros" },
+                { icon: <FaUserTie size={18} />, text: "5 Meseros" },
             ]
         },
         {
