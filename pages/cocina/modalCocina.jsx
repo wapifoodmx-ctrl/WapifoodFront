@@ -135,10 +135,11 @@ export default function ModalCocina({
                                                     <span className="bg-white px-2 py-1 rounded border text-sm font-semibold">
                                                         X{product.quantity}
                                                     </span>
-                                                    {/* Botones para comandas pendientes */}
+                                                    {/* Botones para comandas pendientes - Ocultar para Mesa 1 */}
                                                     {(selectedTable.type === 'pending' || selectedTable.type === undefined) &&
                                                         product.status !== 'Cancelado' &&
-                                                        product.status !== 'Preparado' && (
+                                                        product.status !== 'Preparado' &&
+                                                        selectedTable.tableNumber !== 1 && (
                                                             <>
                                                                 <button
                                                                     className="p-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full shadow hover:scale-110 transition-all"
