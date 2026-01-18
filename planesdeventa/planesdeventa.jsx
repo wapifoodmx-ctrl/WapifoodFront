@@ -219,7 +219,7 @@ export default function PlanDeVentas() {
                                             </div>
                                         </div>
 
-                                        <div className="p-6 md:p-8 flex flex-col h-full">
+                                        <div className="p-6 md:p-8 pt-10 md:pt-12 flex flex-col h-full">
                                             {/* Header del plan */}
                                             <div className="text-center mb-6">
                                                 <h5 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Plan Ventas</h5>

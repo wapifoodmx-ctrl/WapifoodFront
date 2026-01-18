@@ -70,6 +70,54 @@ export default function Payments() {
                         </div>
                     </div>
                     
+                    {/* Sección de descarga de APK */}
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                        <div className="bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl shadow-2xl p-6 sm:p-8 animate-fade-in-up delay-150">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                                {/* Texto informativo */}
+                                <div className="text-white text-center md:text-left">
+                                    <h3 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center justify-center md:justify-start gap-2">
+                                        <span>📱</span>
+                                        Descarga nuestra APK
+                                    </h3>
+                                    <p className="text-green-100 text-sm sm:text-base">
+                                        Gestiona tu negocio desde cualquier dispositivo móvil
+                                    </p>
+                                </div>
+
+                                {/* Botones de descarga */}
+                                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                                    {/* Botón descarga directa */}
+                                    <a
+                                        href="/APK/Wapifood.apk"
+                                        download="Wapifood.apk"
+                                        className="group relative px-6 py-3 bg-white text-green-600 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 overflow-hidden"
+                                    >
+                                        <span className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 opacity-0 group-hover:opacity-10 transition-opacity"></span>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        <span>Descargar APK</span>
+                                    </a>
+
+                                    {/* Botón Google Drive */}
+                                    <a
+                                        href="https://drive.google.com/drive/folders/1n4T4Xh6EuLMwIy1qcF_luqR0DYunSQQB?usp=sharing"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group relative px-6 py-3 bg-white/10 backdrop-blur-sm text-white border-2 border-white/30 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl hover:bg-white/20 flex items-center justify-center gap-2 overflow-hidden"
+                                    >
+                                        <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></span>
+                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 110-12.064c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0012.545 2C7.021 2 2.543 6.477 2.543 12s4.478 10 10.002 10c8.396 0 10.249-7.85 9.426-11.748l-9.426-.013z"/>
+                                        </svg>
+                                        <span>Ver en Drive</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Contenido de los planes */}
                     <div className="animate-fade-in-up delay-200">
                         <PlanDeVentas />
