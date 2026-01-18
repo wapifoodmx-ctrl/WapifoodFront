@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { FaCheckCircle, FaClock, FaUtensils, FaReceipt } from 'react-icons/fa';
 import { MdRestaurant } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
+import { GoChecklist } from 'react-icons/go';
 import { QRCodeCanvas } from 'qrcode.react';
 import { getTicketMeserosDetails } from '../../useCases/getTicketMeserosDetails';
 import { toast } from '../../components/Toast';
@@ -329,16 +330,24 @@ export default function ExternalTicketView() {
                 {/* Header con gradiente */}
                 <div className="bg-gradient-to-r from-green-600 to-green-700 text-white py-6 px-4 shadow-lg sticky top-0 z-10">
                     <div className="max-w-2xl mx-auto">
-                        <div className="flex items-center justify-between mb-2">
-                            <h1 className="text-2xl font-bold flex items-center gap-2">
-                                <FaReceipt className="text-xl" />
-                                {ticketData.restaurant_name || 'WapiFood'}
+                        {/* Logo WapiFood */}
+                        <div className="flex items-center justify-center mb-4">
+                            <GoChecklist className="text-yellow-300 drop-shadow-lg text-3xl sm:text-4xl" />
+                            <h1 className="text-2xl sm:text-3xl font-bold ml-2 bg-gradient-to-r from-yellow-300 via-green-100 to-white bg-clip-text text-transparent">
+                                WapiFood
                             </h1>
+                        </div>
+                        
+                        <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                                <FaReceipt className="text-base sm:text-lg" />
+                                {ticketData.restaurant_name || 'Restaurante'}
+                            </h2>
                             <div className="bg-white text-green-700 px-3 py-1 rounded-full text-sm font-bold">
                                 #{ticketData.ticket_number || 'N/A'}
                             </div>
                         </div>
-                        <p className="text-green-100 text-sm">
+                        <p className="text-green-100 text-xs sm:text-sm">
                             Ticket de compra - {new Date(ticketData.date_time).toLocaleDateString('es-MX', {
                                 weekday: 'long',
                                 year: 'numeric',
