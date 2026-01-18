@@ -60,7 +60,7 @@ export default function PlanDeVentas() {
             category: "mensual",
             specs: {
                 mesas: 15,
-                meseros: 10,
+                meseros: 5,
                 apk: true,
             },
             features: [
@@ -87,7 +87,7 @@ export default function PlanDeVentas() {
             category: "mensual",
             specs: {
                 mesas: 25,
-                meseros: 5,
+                meseros: 10,
                 apk: true,
             },
             features: [
