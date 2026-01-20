@@ -33,7 +33,7 @@ export default function PlanDeVentas() {
             popular: false,
             category: "mensual",
             specs: {
-                mesas: 1,
+                mesas: 3,
                 meseros: 2,
                 apk: true,
             },
@@ -115,7 +115,7 @@ export default function PlanDeVentas() {
             category: "anual",
             savings: "Ahorras $800",
             specs: {
-                mesas: 1,
+                mesas: 3,
                 meseros: 2,
                 apk: true,
             },
@@ -244,8 +244,8 @@ export default function PlanDeVentas() {
                                             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 mb-6">
                                                 <div className="grid grid-cols-3 gap-2 text-center">
                                                     <div>
-                                                        <div className="text-2xl font-bold text-green-600">1</div>
-                                                        <div className="text-xs text-gray-600">Mesa</div>
+                                                        <div className="text-2xl font-bold text-green-600">3</div>
+                                                        <div className="text-xs text-gray-600">Mesas</div>
                                                     </div>
                                                     <div>
                                                         <div className="text-2xl font-bold text-green-600">2</div>

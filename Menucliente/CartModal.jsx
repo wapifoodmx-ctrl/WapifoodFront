@@ -11,6 +11,8 @@ export default function CartModal({
     mensajeError,
     isCreatingOrder,
     ordenActiva,
+    descuentoOrden,  // AÑADIR esta prop
+    setDescuentoOrden,  // AÑADIR esta prop
     onClose, 
     onUpdateQuantity, 
     onRemoveItem, 
@@ -25,7 +27,8 @@ export default function CartModal({
     const [productoDescuento, setProductoDescuento] = useState(null);
     const [tipoDescuento, setTipoDescuento] = useState('porcentaje');
     const [valorDescuento, setValorDescuento] = useState('');
-    const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
+    // ELIMINAR esta línea porque ahora viene como prop:
+    // const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
     const [modalDescuentoOrdenOpen, setModalDescuentoOrdenOpen] = useState(false);
     const [errorDescuento, setErrorDescuento] = useState('');
 

@@ -1197,6 +1197,9 @@ export default function MenuCliente() {
                 setHistorialPedidos([]);
                 setOrdenActiva(null);
                 setTotalFinal(0);
+                // AGREGAR ESTA LÍNEA: Resetear descuento de orden
+                setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
+                
                 localStorage.removeItem("ordenActiva1");
                 localStorage.removeItem("historialPedidos1");
                 localStorage.removeItem("carrito1");
@@ -1725,8 +1728,8 @@ export default function MenuCliente() {
                     }}
                     onRealizarPedido={realizarPedido}
                     onTerminarOrden={terminarOrden}
-                    onUpdateCart={setCarrito}
-                    getCodigoConfirmacion={getCodigoConfirmacion} // Agregar esta línea
+                    onUpdateCart={handleUpdateCart}
+                    getCodigoConfirmacion={getCodigoConfirmacion}
                 />
 
                 <PaymentModal

@@ -18,7 +18,7 @@ import { getTicket } from "@/useCases/getTicket";
 import { getLatestOrdersByPlan } from "@/useCases/getLatestOrdersByPlan";
 import { vincularMeseroOrden } from "@/useCases/vincularMeseroOrden";
 import ProductCard from "./ ProductCard";
-import CartModal from "./CartModal";
+import CartModalMesero from "./CartModalMesero"; // ← CAMBIO AQUÍ
 import LoginMeseroModal from "./LoginMeseroModal";
 import MeseroMesaSelectionModal from "./MeseroMesaSelectionModal";
 import PaymentModal from "./PaymentModal";
@@ -62,6 +62,7 @@ export default function MeseroMenuComponent() {
     const [showTicketModal, setShowTicketModal] = useState(false);
     const [completedOrderUuid, setCompletedOrderUuid] = useState(null);
     const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
+
     const [modalConfirmacionCodigoOpen, setModalConfirmacionCodigoOpen] = useState(false);
     const [codigoConfirmacionEsperado, setCodigoConfirmacionEsperado] = useState('');
     const [isValidandoCode, setIsValidandoCode] = useState(false);
@@ -559,8 +560,8 @@ export default function MeseroMenuComponent() {
         closeModal();
     };
 
-    // Realizar pedido
-    const realizarPedido = async () => {
+    // Realizar pedido - actualizar para manejar descuentos
+    const realizarPedido = async (descuentosData) => {
         if (carrito.length === 0) {
             toast.warning("El carrito está vacío");
             return;
@@ -576,24 +577,32 @@ export default function MeseroMenuComponent() {
         setMensajeError("");
 
         try {
-            const productosParaEnviar = carrito.map((item, index) => {
+            // Preparar productos con descuentos individuales
+            const productosParaEnviar = carrito.map((item) => {
+                const descuentoProducto = item.descuento && item.descuento.valor !== '' && item.descuento.valor !== '0'
+                    ? { tipo: item.descuento.tipo, valor: item.descuento.valor, aplicado: true }
+                    : { tipo: 'porcentaje', valor: '', aplicado: false };
+
                 return {
                     id: item.id_products,
                     id_products: item.id_products,
                     cantidad: item.cantidad,
                     precio: item.precio,
-                    descuento: { tipo: 'porcentaje', valor: '', aplicado: false }
+                    descuento: descuentoProducto
                 };
             });
 
             // Preparar UUID si existe orden activa
             const orderUuid = (ordenActiva && ordenActiva.order_uuid) ? ordenActiva.order_uuid : null;
 
+            // Usar descuentoOrden desde el estado si existe, sino usar el valor por defecto
+            const descuentoOrdenFinal = descuentosData?.descuentoOrden || descuentoOrden;
+
             const response = await createSimpleClientOrder(
                 productosParaEnviar,
                 parseInt(numeroMesa),
                 orderUuid,
-                descuentoOrden
+                descuentoOrdenFinal
             );
 
             if (!response || !response.order_uuid) {
@@ -612,11 +621,6 @@ export default function MeseroMenuComponent() {
                 } catch (error) {
                     console.warn('Error al vincular mesero (continuando):', error);
                 }
-            } else {
-                console.warn('No se puede vincular mesero - Datos faltantes:', {
-                    meseroData,
-                    uuid: meseroData?.uuid
-                });
             }
 
             // Actualizar o crear orden activa
@@ -656,7 +660,7 @@ export default function MeseroMenuComponent() {
             setCarrito([]);
             setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
             await cargarTotalFinal(response.order_uuid);
-            await cargarOrdenesActivas(); // Actualizar lista de órdenes
+            await cargarOrdenesActivas();
 
             toast.success("¡Orden enviada exitosamente!");
 
@@ -779,6 +783,9 @@ export default function MeseroMenuComponent() {
                 localStorage.removeItem("ordenActiva_mesero");
                 localStorage.removeItem("historialPedidos_mesero");
                 localStorage.removeItem("carrito_mesero");
+
+                // AGREGAR ESTA LÍNEA: Resetear descuento de orden
+                setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
 
                 setModalTotalOpen(false);
                 setModalConfirmacionCodigoOpen(false);
@@ -1118,7 +1125,7 @@ export default function MeseroMenuComponent() {
                     meseroName={meseroData?.name}
                 />
 
-                <CartModal
+                <CartModalMesero
                     isOpen={carritoModalOpen}
                     carrito={carrito}
                     historialPedidos={historialPedidos}
@@ -1145,11 +1152,11 @@ export default function MeseroMenuComponent() {
                     }}
                     onRealizarPedido={realizarPedido}
                     onTerminarOrden={terminarOrden}
-                    onUpdateCart={setCarrito}
+                    onUpdateCart={handleUpdateCart}
                     getCodigoConfirmacion={getCodigoConfirmacion}
                     visibilityStyle={{
-                        visibility: (modalMesaOpen || modalTotalOpen || showTicketModal) ? 'hidden' : 'visible',
-                        zIndex: (modalMesaOpen || modalTotalOpen || showTicketModal) ? -1 : 99999
+                        visibility: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || modalOrdenesActivasOpen) ? 'hidden' : 'visible',
+                        zIndex: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || modalOrdenesActivasOpen) ? -1 : 99999
                     }}
                 />
 
