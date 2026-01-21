@@ -560,6 +560,11 @@ export default function MeseroMenuComponent() {
         closeModal();
     };
 
+    // Actualizar carrito (usado por CartModalMesero para aplicar descuentos)
+    const handleUpdateCart = (carritoActualizado) => {
+        setCarrito(carritoActualizado);
+    };
+
     // Realizar pedido - actualizar para manejar descuentos
     const realizarPedido = async (descuentosData) => {
         if (carrito.length === 0) {
@@ -595,8 +600,14 @@ export default function MeseroMenuComponent() {
             // Preparar UUID si existe orden activa
             const orderUuid = (ordenActiva && ordenActiva.order_uuid) ? ordenActiva.order_uuid : null;
 
-            // Usar descuentoOrden desde el estado si existe, sino usar el valor por defecto
-            const descuentoOrdenFinal = descuentosData?.descuentoOrden || descuentoOrden;
+            // CORRECCIÓN: Asegurarse de que descuentoOrdenFinal tenga la estructura correcta
+            const descuentoOrdenFinal = descuentosData?.descuentoOrden && descuentosData.descuentoOrden.aplicado
+                ? descuentosData.descuentoOrden
+                : descuentoOrden.aplicado
+                ? descuentoOrden
+                : { tipo: 'porcentaje', valor: '', aplicado: false };
+
+            console.log('🔍 Descuento de orden que se enviará a la API:', descuentoOrdenFinal);
 
             const response = await createSimpleClientOrder(
                 productosParaEnviar,
@@ -1155,8 +1166,8 @@ export default function MeseroMenuComponent() {
                     onUpdateCart={handleUpdateCart}
                     getCodigoConfirmacion={getCodigoConfirmacion}
                     visibilityStyle={{
-                        visibility: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || modalOrdenesActivasOpen) ? 'hidden' : 'visible',
-                        zIndex: (modalMesaOpen || modalTotalOpen || showTicketModal || modalCambioMesaOpen || modalOrdenesActivasOpen) ? -1 : 99999
+                        visibility: (modalMesaOpen || modalTotalOpen || showTicketModal || modalOpen) ? 'hidden' : 'visible',
+                        zIndex: (modalMesaOpen || modalTotalOpen || showTicketModal || modalOpen) ? -1 : 99999
                     }}
                 />
 

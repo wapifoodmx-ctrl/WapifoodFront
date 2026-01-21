@@ -232,8 +232,14 @@ export default function CartModal({
             return;
         }
 
-        // Aplicar directamente sin pedir código
-        setDescuentoOrden(prev => ({ ...prev, aplicado: true }));
+        // CORRECCIÓN: Aplicar el descuento llamando a setDescuentoOrden (que es la prop)
+        // y asegurándose de que se marque como aplicado
+        setDescuentoOrden({
+            tipo: descuentoOrden.tipo,
+            valor: descuentoOrden.valor,
+            aplicado: true  // ✅ Marcar explícitamente como aplicado
+        });
+        
         setModalDescuentoOrdenOpen(false);
         setErrorDescuento('');
     };
@@ -298,11 +304,18 @@ export default function CartModal({
                     ? `${item.descuento.valor}%` 
                     : item.descuento.valor;
             }).join(','),
+            // CORRECCIÓN: Enviar el objeto descuentoOrden completo
             descuentoOrden: descuentoOrden.aplicado && descuentoOrden.valor !== '' && descuentoOrden.valor !== '0'
-                ? (descuentoOrden.tipo === 'porcentaje' 
-                    ? `${descuentoOrden.valor}%` 
-                    : descuentoOrden.valor)
-                : '0'
+                ? {
+                    tipo: descuentoOrden.tipo,
+                    valor: descuentoOrden.valor,
+                    aplicado: true
+                }
+                : {
+                    tipo: 'porcentaje',
+                    valor: '',
+                    aplicado: false
+                }
         };
     };
 
