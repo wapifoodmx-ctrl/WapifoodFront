@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { GoChecklist } from "react-icons/go";
 import { useRouter } from 'next/router';
-import { MdSpaceDashboard } from "react-icons/md";
+import { MdSpaceDashboard, MdMonitor } from "react-icons/md";
 import { LuPizza } from "react-icons/lu";
 import { FiShoppingBag } from "react-icons/fi";
 import { FcSalesPerformance } from "react-icons/fc";
@@ -95,6 +95,7 @@ export default function Navbar() {
     const recetas = () => router.push('/recetas');
     const inventarios = () => router.push('/inventarios');
     const meseros = () => router.push('/meseros');
+    const pantallas = () => router.push('/pantallas');
     // Agregar la función para payments
     const opcionesDePago = () => router.push('/payments');
 
@@ -206,6 +207,12 @@ export default function Navbar() {
             title: "Punto de venta",
             href: "#",
             icon: <FcSalesPerformance className="h-full w-[24px]" />,
+            requiresSubscription: true,
+        },
+        Pantallas: {
+            title: "Pantallas",
+            href: "#",
+            icon: <MdMonitor className="h-full w-[24px]" />,
             requiresSubscription: true,
         },
     };
@@ -403,6 +410,10 @@ export default function Navbar() {
         handleRestrictedClick(meseros);
     };
 
+    const handlePantallasClick = () => {
+        handleRestrictedClick(pantallas);
+    };
+
     // Verificar si estamos en la página del punto de venta
     const isPointOfSalePage = router.pathname === '/puntodeventa';
 
@@ -575,6 +586,13 @@ export default function Navbar() {
                                             <button
                                                 className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
                                                 onClick={() => handleRestrictedClick(puntoDeVenta)}
+                                            >
+                                                <span className="self-center">{menu[item].icon}</span> {menu[item].title}
+                                            </button>
+                                        ) : item === "Pantallas" ? (
+                                            <button
+                                                className={getMenuItemClasses(item) + "from-green-100 to-emerald-100 rounded-xl px-4 py-1 hover:scale-105 transition-all duration-200"}
+                                                onClick={handlePantallasClick}
                                             >
                                                 <span className="self-center">{menu[item].icon}</span> {menu[item].title}
                                             </button>
