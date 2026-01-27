@@ -253,7 +253,7 @@ export default function MenuWebDinamico() {
                 style === 'tokyo' 
                     ? 'bg-slate-800/80 border-pink-500/30' 
                     : 'bg-white/80'
-            } backdrop-blur-sm flex px-4 py-6 rounded-2xl border ${currentStyle.colors.cardBorder} relative z-10 ${
+            } backdrop-blur-sm flex px-4 py-6 rounded-2xl border ${currentStyle.colors.cardBorder} relative  ${
                 style === 'tokyo' ? currentStyle.colors.cardGlow : ''
             } ${restauranteInfo?.image && esValorValido(restauranteInfo.image) 
                     ? 'h-70' 
@@ -332,7 +332,7 @@ export default function MenuWebDinamico() {
             </div>
 
             {/* Buscador remodelado */}
-            <div className="sticky top-16 z-30 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6">
+            <div className={`sticky top-16 z-50 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6 transition-opacity duration-200 ${modalOpen ? 'hidden' : ''}`}>
                 <div className="max-w-4xl mx-auto">
                     <div className="relative">
                     <input
@@ -383,7 +383,7 @@ export default function MenuWebDinamico() {
             {/* Modal de producto remodelado */}
             {modalOpen && productoSeleccionado && (
                 <div
-                    className="fixed inset-0 flex justify-center items-center z-50 bg-black/40 backdrop-blur-sm animate-fadeIn"
+                    className="fixed inset-0 flex justify-center items-center z-[999999] bg-black/40 backdrop-blur-sm animate-fadeIn"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {
                             closeModal();
