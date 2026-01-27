@@ -10,14 +10,14 @@ export const TICKET_SIZES = {
         leftMargin: 2,
         rightMargin: 2,
         fontSize: {
-            header: 10,
-            normal: 6,
-            small: 5,
-            total: 8
+            header: 12,
+            normal: 7,
+            small: 6,
+            total: 10
         },
-        productNameWidth: 28,
-        qtyPosition: 32,
-        pricePosition: 38
+        productNameWidth: 22,
+        qtyPosition: 28,
+        pricePosition: 46
     },
     STANDARD_80: {
         name: '80mm (Estándar)',
@@ -26,14 +26,14 @@ export const TICKET_SIZES = {
         leftMargin: 3,
         rightMargin: 3,
         fontSize: {
-            header: 12,
+            header: 14,
             normal: 8,
-            small: 6,
-            total: 10
+            small: 7,
+            total: 12
         },
-        productNameWidth: 42,
-        qtyPosition: 48,
-        pricePosition: 57
+        productNameWidth: 32,
+        qtyPosition: 40,
+        pricePosition: 68
     },
     LARGE_110: {
         name: '110mm (Grande)',
@@ -42,14 +42,14 @@ export const TICKET_SIZES = {
         leftMargin: 5,
         rightMargin: 5,
         fontSize: {
-            header: 14,
+            header: 16,
             normal: 9,
-            small: 7,
-            total: 12
+            small: 8,
+            total: 14
         },
-        productNameWidth: 60,
-        qtyPosition: 70,
-        pricePosition: 83
+        productNameWidth: 45,
+        qtyPosition: 58,
+        pricePosition: 95
     }
 };
 
@@ -60,6 +60,7 @@ export const TICKET_SIZES = {
  * @returns {void}
  */
 export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
+    console.log(ticketData)
     try {
         // Obtener configuración del tamaño seleccionado
         const sizeConfig = TICKET_SIZES[sizeKey] || TICKET_SIZES.STANDARD_80;
@@ -80,12 +81,13 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         // ==== HEADER ====
         pdf.setFontSize(sizeConfig.fontSize.header);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('WapiFood', pageWidth / 2, yPos, { align: 'center' });
+        const restaurantName = ticketData.restaurant_name || ticketData.nombre_restaurante || 'WapiFood';
+        pdf.text(restaurantName, pageWidth / 2, yPos, { align: 'center' });
         yPos += 5;
 
         pdf.setFontSize(sizeConfig.fontSize.small);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('Sistema para restaurantes', pageWidth / 2, yPos, { align: 'center' });
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Ticket de Compra', pageWidth / 2, yPos, { align: 'center' });
         yPos += 8;
 
         // Línea separadora
@@ -101,7 +103,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         yPos += 5;
 
         pdf.setFontSize(sizeConfig.fontSize.normal);
-        pdf.setFont('helvetica', 'normal');
+        pdf.setFont('helvetica', 'bold');
 
         // Fecha y hora
         const fecha = ticketData.fecha || new Date().toLocaleDateString('es-MX');
@@ -113,6 +115,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
 
         // Número de mesa (si existe)
         if (ticketData.numero_mesa) {
+            pdf.setFont('helvetica', 'bold');
             pdf.text(`Mesa: ${ticketData.numero_mesa}`, leftMargin, yPos);
             yPos += 3;
         }
@@ -140,15 +143,15 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         if (pageWidth >= 110) {
             // Ticket grande (110mm) - más espacio entre columnas
             colCantidad = pageWidth - rightMargin - 35; // 35mm desde el borde derecho
-            colPrecio = pageWidth - rightMargin - 15; // 15mm desde el borde derecho
+            colPrecio = pageWidth - rightMargin - 10; // 15mm desde el borde derecho
         } else if (pageWidth >= 80) {
             // Ticket estándar (80mm)
             colCantidad = pageWidth - rightMargin - 24; // 24mm desde el borde derecho
-            colPrecio = pageWidth - rightMargin - 12; // 12mm desde el borde derecho
+            colPrecio = pageWidth - rightMargin - 7; // 12mm desde el borde derecho
         } else {
             // Ticket pequeño (58mm)
             colCantidad = pageWidth - rightMargin - 20; // 20mm desde el borde derecho
-            colPrecio = pageWidth - rightMargin - 10; // 10mm desde el borde derecho
+            colPrecio = pageWidth - rightMargin - 5; // 10mm desde el borde derecho
         }
 
         pdf.text('Producto', colProducto, yPos);
@@ -159,7 +162,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         pdf.line(leftMargin, yPos, pageWidth - rightMargin, yPos);
         yPos += 3;
 
-        pdf.setFont('helvetica', 'normal');
+        pdf.setFont('helvetica', 'bold');
 
         // Parsear productos
         let productos = [];
@@ -197,6 +200,7 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
                     nombreDisplay += '...';
                 }
 
+                pdf.setFont('helvetica', 'bold');
                 pdf.text(nombreDisplay, colProducto, yPos);
                 pdf.text(cantidad.toString(), colCantidad, yPos, { align: 'center' });
                 pdf.text(`$${subtotal.toFixed(2)}`, colPrecio, yPos, { align: 'right' });
@@ -240,27 +244,27 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         yPos += 4;
 
         // ==== TOTALES ====
-        pdf.setFont('helvetica', 'normal');
+        pdf.setFont('helvetica', 'bold');
         const total = parseFloat(ticketData.total || 0);
 
         // Subtotal (si existe descuento total)
         if (ticketData.subtotal && ticketData.descuento_total) {
             pdf.text('Subtotal:', leftMargin, yPos);
-            pdf.text(`$${parseFloat(ticketData.subtotal).toFixed(2)}`, sizeConfig.pricePosition, yPos);
+            pdf.text(`$${parseFloat(ticketData.subtotal).toFixed(2)}`, colPrecio, yPos, { align: 'right' });
             yPos += 3;
         }
 
         // Descuento total (si existe)
         if (ticketData.descuento_total && parseFloat(ticketData.descuento_total) > 0) {
             pdf.text('Descuento:', leftMargin, yPos);
-            pdf.text(`-$${parseFloat(ticketData.descuento_total).toFixed(2)}`, sizeConfig.pricePosition, yPos);
+            pdf.text(`-$${parseFloat(ticketData.descuento_total).toFixed(2)}`, colPrecio, yPos, { align: 'right' });
             yPos += 3;
         }
 
         // Propina (si existe)
         if (ticketData.propina && parseFloat(ticketData.propina) > 0) {
             pdf.text('Propina:', leftMargin, yPos);
-            pdf.text(`$${parseFloat(ticketData.propina).toFixed(2)}`, sizeConfig.pricePosition, yPos);
+            pdf.text(`$${parseFloat(ticketData.propina).toFixed(2)}`, colPrecio, yPos, { align: 'right' });
             yPos += 3;
         }
 
@@ -268,13 +272,13 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         pdf.setFontSize(sizeConfig.fontSize.total);
         pdf.setFont('helvetica', 'bold');
         pdf.text('TOTAL:', leftMargin, yPos);
-        pdf.text(`$${total.toFixed(2)}`, sizeConfig.pricePosition, yPos);
+        pdf.text(`$${total.toFixed(2)}`, colPrecio, yPos, { align: 'right' });
         yPos += 6;
 
         // ==== MÉTODO DE PAGO ====
         if (ticketData.metodo_pago) {
             pdf.setFontSize(sizeConfig.fontSize.normal);
-            pdf.setFont('helvetica', 'normal');
+            pdf.setFont('helvetica', 'bold');
             pdf.text(`Pago: ${ticketData.metodo_pago}`, pageWidth / 2, yPos, { align: 'center' });
             yPos += 5;
         }
@@ -282,8 +286,8 @@ export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
         // ==== MESERO QUE ATENDIÓ ====
         if (ticketData.mesero) {
             pdf.setFontSize(sizeConfig.fontSize.normal);
-            pdf.setFont('helvetica', 'italic');
-            pdf.text(`Le atendio: ${ticketData.mesero}`, pageWidth / 2, yPos, { align: 'center' });
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`Le atendió: ${ticketData.mesero}`, pageWidth / 2, yPos, { align: 'center' });
             yPos += 5;
         }
 

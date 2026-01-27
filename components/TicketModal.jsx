@@ -134,6 +134,7 @@ export default function TicketModal({ isOpen, onClose, orderUuid }) {
         const pdfData = {
             id_pedidos: ticketData.order_id,
             ticket_number: ticketData.ticket_number,
+            restaurant_name: ticketData.restaurant_name,
             fecha: new Date(ticketData.date_time).toLocaleDateString('es-MX'),
             hora: new Date(ticketData.date_time).toLocaleTimeString('es-MX'),
             numero_mesa: ticketData.mesa_number,
