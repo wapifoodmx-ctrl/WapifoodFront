@@ -60,7 +60,6 @@ export const TICKET_SIZES = {
  * @returns {void}
  */
 export const generateTicketPDF = (ticketData, sizeKey = 'STANDARD_80') => {
-    console.log(ticketData)
     try {
         // Obtener configuración del tamaño seleccionado
         const sizeConfig = TICKET_SIZES[sizeKey] || TICKET_SIZES.STANDARD_80;
