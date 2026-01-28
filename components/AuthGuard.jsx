@@ -14,6 +14,8 @@ export default function AuthGuard({ children }) {
         '/terminosyCondiciones',
         '/clientmenu',
         '/meseroMenu',
+        '/kiosko',
+        '/pantallasExternal',
         '/',
     ];
 

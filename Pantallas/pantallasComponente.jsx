@@ -3,7 +3,11 @@ import { getProducts } from "@/useCases/getProducts";
 import { getCategoria } from "@/useCases/getCategoria";
 import crearListaProductos from "@/useCases/crearListaProductos";
 import getListaProductos from "@/useCases/getListaProductos";
+import actualizarListaProductos from "@/useCases/actualizarListaProductos";
 import { IoEyeOutline } from "react-icons/io5";
+import { GoChecklist } from "react-icons/go";
+import { IoTrashOutline } from "react-icons/io5";
+import ToastContainer, { toast } from "@/components/Toast";
 
 export default function PantallasComponente() {
     const [products, setProducts] = useState([]);
@@ -18,6 +22,7 @@ export default function PantallasComponente() {
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [customList, setCustomList] = useState([]);
     const [isEditing, setIsEditing] = useState(false);
+    const [showListModal, setShowListModal] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -64,7 +69,11 @@ export default function PantallasComponente() {
         const selectedOk = !showSelectedOnly || selectedKeys.includes(key);
         const availabilityOk = !availableOnly || p.status === 'activo';
         const categoryOk = selectedCategory === 'Todos' || p.category_name === selectedCategory;
-        return selectedOk && availabilityOk && categoryOk;
+        
+        // Ocultar productos que ya están en la lista personalizada
+        const notInCustomList = !customList.some(item => item.id_products === p.id_products);
+        
+        return selectedOk && availabilityOk && categoryOk && notInCustomList;
     });
 
     const filteredCategories = categories.filter(category =>
@@ -74,7 +83,7 @@ export default function PantallasComponente() {
     const handleSaveList = async () => {
         const productIds = selectedList.map(item => item.id_products).filter(Boolean);
         if (productIds.length === 0) {
-            alert('No hay productos seleccionados para guardar');
+            toast.warning('No hay productos seleccionados para guardar');
             return;
         }
         try {
@@ -89,14 +98,49 @@ export default function PantallasComponente() {
             setCustomList(updatedList || []);
             setIsEditing(false);
             
-            alert('Lista guardada exitosamente');
+            toast.success('Lista guardada exitosamente');
         } catch (error) {
-            alert(`Error al guardar la lista: ${error.message}`);
+            toast.error(`Error al guardar la lista: ${error.message}`);
         }
     };
 
     const handleEditClick = () => {
         setIsEditing(true);
+    };
+
+    const handleRemoveFromList = async (productId) => {
+        try {
+            // Filtrar el producto a eliminar
+            const remainingProductIds = customList
+                .filter(item => item.id_products !== productId)
+                .map(item => item.id_products);
+            
+            // Actualizar la lista en el servidor
+            await actualizarListaProductos(remainingProductIds);
+            
+            // Actualizar la lista local
+            const updatedList = await getListaProductos();
+            setCustomList(updatedList || []);
+            
+            toast.success('Producto eliminado de la lista');
+        } catch (error) {
+            toast.error('Error al eliminar el producto de la lista');
+        }
+    };
+
+    const handleDeleteList = async () => {
+        try {
+            // Enviar array con 0 para eliminar toda la lista
+            await actualizarListaProductos([0]);
+            
+            // Limpiar la lista local
+            setCustomList([]);
+            setShowListModal(false);
+            
+            toast.success('Lista eliminada exitosamente');
+        } catch (error) {
+            toast.error('Error al eliminar la lista');
+        }
     };
 
     const renderCards = () => (
@@ -121,6 +165,13 @@ export default function PantallasComponente() {
                                 </svg>
                             </div>
                         )}
+                        {product.status !== 'activo' && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <div className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow">
+                                    No Disponible
+                                </div>
+                            </div>
+                        )}
                         <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
                             <input
                                 type="checkbox"
@@ -130,7 +181,7 @@ export default function PantallasComponente() {
                             />
                         </div>
                         <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-green-700 shadow-sm">
-                            {product.category_name || 'Sin categoría'}
+                            {product.nombre_categoria || 'Sin categoría'}
                         </div>
                     </div>
 
@@ -147,7 +198,7 @@ export default function PantallasComponente() {
                             ${parseFloat(product.price).toFixed(2)}
                         </span>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${product.status === 'activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {product.status === 'activo' ? 'Disponible' : 'Agotado'}
+                            {product.status === 'activo' ? 'Disponible' : 'No disponible'}
                         </span>
                     </div>
                 </div>
@@ -170,7 +221,7 @@ export default function PantallasComponente() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {filteredProducts.map((product, idx) => (
-                            <tr key={product.id_products ?? product.id ?? `${product.name}-${idx}`} className="hover:bg-gray-50 transition-colors">
+                            <tr key={product.id_products ?? product.id ?? `${product.name}-${idx}`} className={`hover:bg-gray-50 transition-colors ${product.status !== 'activo' ? 'opacity-60' : ''}`}>
                                 <td className="px-4 py-4 whitespace-nowrap">
                                     <input
                                         type="checkbox"
@@ -181,9 +232,14 @@ export default function PantallasComponente() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
-                                        <div className="h-10 w-10 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                        <div className="h-10 w-10 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 relative">
                                             {getImageUrl(product) ? (
-                                                <img className="h-10 w-10 object-cover" src={getImageUrl(product)} alt="" />
+                                                <>
+                                                    <img className="h-10 w-10 object-cover" src={getImageUrl(product)} alt="" />
+                                                    {product.status !== 'activo' && (
+                                                        <div className="absolute inset-0 bg-black/60"></div>
+                                                    )}
+                                                </>
                                             ) : (
                                                 <div className="h-full w-full flex items-center justify-center text-gray-400">
                                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +264,7 @@ export default function PantallasComponente() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === 'activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                        {product.status === 'activo' ? 'Disponible' : 'Agotado'}
+                                        {product.status === 'activo' ? 'Disponible' : 'No disponible'}
                                     </span>
                                 </td>
                             </tr>
@@ -248,37 +304,51 @@ export default function PantallasComponente() {
                                 </div>
 
                                 {/* Controles */}
-                                <div className="flex items-center gap-3">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                                     <button
                                         onClick={() => setViewMode(viewMode === 'cards' ? 'list' : 'cards')}
-                                        className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm sm:text-base"
                                     >
-                                        <IoEyeOutline className="text-xl" />
-                                        <span>{viewMode === 'cards' ? 'Ver Lista' : 'Ver Tarjetas'}</span>
+                                        <IoEyeOutline className="text-lg sm:text-xl" />
+                                        <span className="hidden sm:inline">{viewMode === 'cards' ? 'Ver Lista' : 'Ver Tarjetas'}</span>
+                                        <span className="sm:hidden">{viewMode === 'cards' ? 'Lista' : 'Tarjetas'}</span>
                                     </button>
-                                    <label className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl">
+                                    {customList.length > 0 && (
+                                        <button
+                                            onClick={() => setShowListModal(true)}
+                                            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm sm:text-base"
+                                        >
+                                            <GoChecklist className="text-lg sm:text-xl" />
+                                            <span className="hidden sm:inline">Ver lista ({customList.length})</span>
+                                            <span className="sm:hidden">Lista ({customList.length})</span>
+                                        </button>
+                                    )}
+                                    <label className="inline-flex items-center gap-2 px-2 sm:px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm">
                                         <input
                                             type="checkbox"
                                             className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
                                             checked={availableOnly}
                                             onChange={(e) => setAvailableOnly(e.target.checked)}
                                         />
-                                        <span className="text-sm text-gray-700">Solo disponibles</span>
+                                        <span className="text-gray-700 hidden sm:inline">Solo disponibles</span>
+                                        <span className="text-gray-700 sm:hidden">Disponibles</span>
                                     </label>
-                                    <label className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl">
+                                    <label className="inline-flex items-center gap-2 px-2 sm:px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm">
                                         <input
                                             type="checkbox"
                                             className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
                                             checked={showSelectedOnly}
                                             onChange={(e) => setShowSelectedOnly(e.target.checked)}
                                         />
-                                        <span className="text-sm text-gray-700">Solo seleccionados</span>
+                                        <span className="text-gray-700 hidden sm:inline">Solo seleccionados</span>
+                                        <span className="text-gray-700 sm:hidden">Seleccionados</span>
                                     </label>
                                     <button
                                         onClick={handleSaveList}
-                                        className="px-4 py-2 bg-green-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                        className="px-3 sm:px-4 py-2 bg-green-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:bg-green-700 text-sm sm:text-base"
                                     >
-                                        Guardar lista
+                                        <span className="hidden sm:inline">Guardar lista</span>
+                                        <span className="sm:hidden">Guardar</span>
                                     </button>
                                 </div>
                             </div>
@@ -356,93 +426,7 @@ export default function PantallasComponente() {
                             </div>
                         </div>
 
-                        {/* Lista personalizada de productos */}
-                        {customList.length > 0 && (
-                            <div className="mb-8 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-lg font-bold text-gray-800">Lista personalizada de productos</h3>
-                                        <p className="text-sm text-gray-500 mt-1">{customList.length} producto{customList.length !== 1 ? 's' : ''} en la lista</p>
-                                    </div>
-                                    {!isEditing && (
-                                        <button
-                                            onClick={handleEditClick}
-                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:bg-blue-700"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                            Editar
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {customList.map((item) => (
-                                        <div key={item.id_products || item.id} className="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-100">
-                                            <div className="h-16 w-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                                {item.image_url ? (
-                                                    <img 
-                                                        src={Array.isArray(item.image_url) ? item.image_url[0] : item.image_url} 
-                                                        alt={item.name} 
-                                                        className="h-full w-full object-cover" 
-                                                    />
-                                                ) : (
-                                                    <div className="h-full w-full flex items-center justify-center text-gray-400">
-                                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                        </svg>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
-                                                <p className="text-xs text-gray-500 truncate">{item.category_name || 'Sin categoría'}</p>
-                                                <p className="text-sm font-bold text-green-600 mt-1">${parseFloat(item.price).toFixed(2)}</p>
-                                            </div>
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${item.status === 'activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                {item.status === 'activo' ? 'Disponible' : 'Agotado'}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {selectedList.length > 0 && (
-                            <div className="mb-6 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                                <div className="flex items-center justify-between mb-3">
-                                    <p className="text-sm font-semibold text-gray-700">Lista de productos seleccionados ({selectedList.length})</p>
-                                    <button
-                                        onClick={clearSelection}
-                                        className="text-sm px-3 py-1 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
-                                    >
-                                        Vaciar lista
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {selectedList.map((item) => (
-                                        <div key={getProductKey(item)} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-md overflow-hidden bg-gray-100">
-                                                    <img src={getImageUrl(item)} alt="" className="h-full w-full object-cover" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-800">{item.name}</p>
-                                                    <p className="text-xs text-gray-500">${parseFloat(item.price).toFixed(2)}</p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => toggleSelect(item)}
-                                                className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
-                                            >
-                                                Quitar
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
+                       
                         {loading ? (
                             <div className="flex justify-center items-center h-64">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
@@ -468,6 +452,109 @@ export default function PantallasComponente() {
                     </div>
                 </div>
             </main>
+
+            {/* Modal de lista de productos seleccionados */}
+            {showListModal && (
+                <div 
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setShowListModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header del modal */}
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6 text-white">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                    <GoChecklist className="text-2xl sm:text-3xl" />
+                                    <div>
+                                        <h2 className="text-lg sm:text-2xl font-bold">Lista de productos para pantallas</h2>
+                                        <p className="text-green-100 text-xs sm:text-sm mt-1">{customList.length} producto{customList.length !== 1 ? 's' : ''} en la lista</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowListModal(false)}
+                                    className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+                                >
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Contenido del modal */}
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                                {customList.map((item) => (
+                                    <div 
+                                        key={getProductKey(item)} 
+                                        className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-3 sm:p-4 border border-gray-200 hover:shadow-md transition-all duration-200"
+                                    >
+                                        <div className="flex gap-3 sm:gap-4">
+                                            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative">
+                                                <img 
+                                                    src={getImageUrl(item)} 
+                                                    alt={item.name} 
+                                                    className="h-full w-full object-cover" 
+                                                />
+                                                {item.status !== 'activo' && (
+                                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                                        <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                                                            No Disponible
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1 line-clamp-1">{item.name}</h3>
+                                                <p className="text-xs sm:text-sm text-gray-500 mb-2 line-clamp-2">{item.description}</p>
+                                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-xs text-gray-500">{item.nombre_categoria || 'Sin categoría'}</span>
+                                                        <span className="text-base sm:text-lg font-bold text-green-600">${parseFloat(item.price).toFixed(2)}</span>
+                                                    </div>
+                                                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${item.status === 'activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                        {item.status === 'activo' ? 'Disponible' : 'No disponible'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleRemoveFromList(item.id_products)}
+                                            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium"
+                                        >
+                                            <IoTrashOutline className="w-4 h-4" />
+                                            Quitar de la lista
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Footer del modal */}
+                        <div className="bg-gray-50 p-4 sm:p-6 border-t border-gray-200">
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
+                                <button
+                                    onClick={handleDeleteList}
+                                    className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-medium text-sm sm:text-base"
+                                >
+                                    <IoTrashOutline className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    Eliminar lista
+                                </button>
+                                <button
+                                    onClick={() => setShowListModal(false)}
+                                    className="px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:bg-green-700 text-sm sm:text-base"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <ToastContainer />
         </div>
     );
 }

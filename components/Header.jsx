@@ -19,6 +19,10 @@ export default function Header() {
     router.push('/resetLink');
   };
 
+  const menuPantallas = () => {
+    router.push('/pantallasExternal');
+  };
+
   // Función para manejar la navegación a secciones de la página principal
   const navigateToSection = (sectionId) => {
     if (router.pathname === '/') {

@@ -4,7 +4,7 @@ import Menu from '@/pages/assets/img/menu.png'
 import Menuuwu from '@/pages/assets/img/Menuuwu.png'
 import Menu2 from '@/pages/assets/images/Menu2.png'
 import { HiOutlineSparkles, HiOutlineChartBar, HiOutlineClipboardList } from "react-icons/hi"
-import { MdOutlineRestaurantMenu, MdOutlinePointOfSale } from "react-icons/md"
+import { MdOutlineRestaurantMenu, MdOutlinePointOfSale, MdScreenShare, MdComputer } from "react-icons/md"
 import { FaUserTie } from "react-icons/fa"
 
 export default function Main() {
@@ -94,6 +94,24 @@ export default function Main() {
                             Menú Mesero
                         </button>
                     </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-lg mt-2">
+                        <button 
+                            className="flex-1 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold shadow-md shadow-green-500/20 p-3 text-base sm:text-lg hover:scale-105 hover:from-green-600 hover:to-emerald-600 transition-all duration-200 border border-green-400 flex items-center justify-center gap-2"
+                            onClick={() => router.push('/pantallasExternal')}
+                        >
+                            <MdScreenShare size={22} />
+                            Pantallas
+                        </button>
+                        <button 
+                            className="flex-1 rounded-xl bg-gradient-to-r from-white to-green-50 text-green-700 font-semibold shadow-md p-3 text-base sm:text-lg hover:scale-105 hover:bg-green-100 transition-all duration-200 border-2 border-green-300 flex items-center justify-center gap-2"
+                            onClick={() => router.push('/kiosko')}
+                        >
+                            <MdComputer size={22} />
+                            Kiosko
+                        </button>
+                    </div>
+                    
                     
                     {/* Trust indicators */}
                     <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-6 mt-8 text-green-600 text-sm pb-4">
