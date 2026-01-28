@@ -1,11 +1,48 @@
 import { IoClose, IoAddOutline } from "react-icons/io5";
 import { useState, useCallback, useRef, useMemo, memo } from "react";
 
-// Mover QuantityInput fuera del componente principal y usar memo
-const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCantidadChange, toggleUnit, className = "" }) => {
+// Modificar el componente QuantityInput para manejar diferentes unidades
+
+const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCantidadChange, toggleUnit, className = "", insumo }) => {
   const inputRef = useRef(null);
-  const isKg = unitsInKg[ingredientId];
+  
+  // Determinar el tipo de unidad del insumo
+  const unitType = useMemo(() => {
+    if (!insumo || !insumo.unit) return null;
+    
+    const unit = insumo.unit.toLowerCase();
+    
+    // Unidades de peso
+    if (unit.includes('g') || unit.includes('gramo') || unit.includes('kilo') || unit.includes('kg')) {
+      return 'weight';
+    }
+    // Unidades de volumen
+    if (unit.includes('ml') || unit.includes('mililitro') || unit.includes('l') || unit.includes('litro')) {
+      return 'volume';
+    }
+    // Unidades de cantidad
+    if (unit.includes('pz') || unit.includes('pieza') || unit.includes('unidad') || unit.includes('ud')) {
+      return 'quantity';
+    }
+    
+    return null;
+  }, [insumo]);
+  
+  const isLargeUnit = unitsInKg[ingredientId];
   const currentValue = cantidadesInsumos[ingredientId] || '';
+  
+  // Obtener las unidades según el tipo
+  const getUnits = () => {
+    if (unitType === 'weight') {
+      return { small: 'g', large: 'kg' };
+    }
+    if (unitType === 'volume') {
+      return { small: 'ml', large: 'L' };
+    }
+    return null; // No hay conversión para cantidades
+  };
+  
+  const units = getUnits();
   
   const handleChange = (e) => {
     let value = e.target.value;
@@ -15,17 +52,12 @@ const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCant
       return;
     }
 
-    // Soporte para coma como separador decimal
     value = value.replace(',', '.');
 
-    // Permitir números con decimales
     if (/^\d*\.?\d*$/.test(value)) {
-      const isKg = unitsInKg[ingredientId];
-
-      // Validar decimales según la unidad
       if (value.includes('.')) {
         const [, decimals = ''] = value.split('.');
-        const maxDecimals = isKg ? 3 : 2;
+        const maxDecimals = isLargeUnit ? 3 : 2;
         if (decimals.length > maxDecimals) return;
       }
 
@@ -62,7 +94,7 @@ const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCant
     e.preventDefault();
     e.stopPropagation();
     
-    toggleUnit(ingredientId);
+    toggleUnit(ingredientId, unitType);
     
     setTimeout(() => {
       if (inputRef.current) {
@@ -70,6 +102,31 @@ const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCant
       }
     }, 0);
   };
+  
+  // Si no hay conversión disponible, solo mostrar el input sin botón
+  if (!units) {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="relative flex-1">
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="decimal"
+            placeholder="0"
+            value={currentValue}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            className={`w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 pr-8 ${className}`}
+            autoComplete="off"
+            maxLength="10"
+          />
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-600 pointer-events-none select-none">
+            {insumo?.unit || ''}
+          </span>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="flex items-center gap-1">
@@ -82,21 +139,21 @@ const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCant
           value={currentValue}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          className={`w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 pr-6 ${className}`}
+          className={`w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 pr-10 ${className}`}
           autoComplete="off"
           maxLength="10"
         />
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-600 pointer-events-none select-none">
-          {isKg ? 'kg' : 'g'}
+          {isLargeUnit ? units.large : units.small}
         </span>
       </div>
       <button
         onClick={handleToggleUnit}
         type="button"
         className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs font-semibold transition-colors flex-shrink-0"
-        title={isKg ? "Convertir a gramos" : "Convertir a kilos"}
+        title={isLargeUnit ? `Convertir a ${units.small}` : `Convertir a ${units.large}`}
       >
-        {isKg ? 'g' : 'kg'}
+        {isLargeUnit ? units.small : units.large}
       </button>
     </div>
   );
@@ -122,21 +179,33 @@ export default function AddRecipeModal({
 }) {
   const [unitsInKg, setUnitsInKg] = useState({});
 
-  const toggleUnit = useCallback((ingredientId) => {
+  const toggleUnit = useCallback((ingredientId, unitType) => {
     const currentValue = parseFloat(cantidadesInsumos[ingredientId]) || 0;
-    const isCurrentlyKg = unitsInKg[ingredientId];
+    const isCurrentlyLarge = unitsInKg[ingredientId];
 
-    if (isCurrentlyKg) {
-      const gramos = currentValue * 1000;
-      onCantidadChange(ingredientId, gramos.toString());
-    } else {
-      const kilos = currentValue / 1000;
-      onCantidadChange(ingredientId, kilos.toFixed(3));
+    if (unitType === 'weight') {
+      // Conversión kg <-> g
+      if (isCurrentlyLarge) {
+        const gramos = currentValue * 1000;
+        onCantidadChange(ingredientId, gramos.toString());
+      } else {
+        const kilos = currentValue / 1000;
+        onCantidadChange(ingredientId, kilos.toFixed(3));
+      }
+    } else if (unitType === 'volume') {
+      // Conversión L <-> ml
+      if (isCurrentlyLarge) {
+        const mililitros = currentValue * 1000;
+        onCantidadChange(ingredientId, mililitros.toString());
+      } else {
+        const litros = currentValue / 1000;
+        onCantidadChange(ingredientId, litros.toFixed(3));
+      }
     }
 
     setUnitsInKg(prev => ({
       ...prev,
-      [ingredientId]: !isCurrentlyKg
+      [ingredientId]: !isCurrentlyLarge
     }));
   }, [cantidadesInsumos, unitsInKg, onCantidadChange]);
 
@@ -274,6 +343,7 @@ export default function AddRecipeModal({
                             unitsInKg={unitsInKg}
                             onCantidadChange={onCantidadChange}
                             toggleUnit={toggleUnit}
+                            insumo={insumo}
                           />
                         </div>
                         <button
@@ -385,6 +455,7 @@ export default function AddRecipeModal({
                           onCantidadChange={onCantidadChange}
                           toggleUnit={toggleUnit}
                           className="text-xs py-1.5"
+                          insumo={insumo}
                         />
                       </div>
                       <button
