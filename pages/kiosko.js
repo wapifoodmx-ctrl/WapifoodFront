@@ -380,10 +380,10 @@ export default function Kiosko() {
 
             {/* Contenido del Kiosko - Solo visible si está autenticado */}
             {isAuthenticated && (
-            <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
+            <div className={`bg-gradient-to-br from-green-50 via-white to-emerald-50 ${isFullscreen ? 'min-h-screen h-screen overflow-y-auto' : 'min-h-screen'}`}>
                 {/* Header */}
                 <header className="bg-gradient-to-r from-green-500 via-emerald-400 to-teal-400 text-white p-6 shadow-2xl sticky top-0 z-40">
-                    <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    <div className={`mx-auto flex items-center justify-between ${isFullscreen ? 'max-w-full px-6' : 'max-w-7xl'}`}>
                         <div className="flex items-center gap-4">
                             <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
                                 <FaShoppingCart size={32} className="text-yellow-300" />
@@ -413,7 +413,7 @@ export default function Kiosko() {
                     </div>
                 )}
 
-                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                <div className={`mx-auto p-4 md:p-6 ${isFullscreen ? 'max-w-full h-full' : 'max-w-7xl'}`}>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Panel de productos */}
                         <div className="lg:col-span-2 space-y-6">
@@ -476,7 +476,7 @@ export default function Kiosko() {
                                 onTouchStart={handleTouchStart}
                                 onTouchMove={handleTouchMove}
                                 onTouchEnd={handleMouseUp}
-                                className={`grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto pr-2 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+                                className={`grid grid-cols-2 md:grid-cols-3 gap-4 overflow-y-auto pr-2 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'} ${isFullscreen ? 'max-h-[calc(100vh-280px)]' : 'max-h-[600px]'}`}
                                 style={{ scrollBehavior: isDragging ? 'auto' : 'smooth' }}
                             >
                                 {productosFiltrados.map((producto) => (
@@ -551,7 +551,7 @@ export default function Kiosko() {
                                     </span>
                                 </div>
 
-                                <div className="space-y-3 max-h-96 overflow-y-auto mb-6">
+                                <div className={`space-y-3 overflow-y-auto mb-6 ${isFullscreen ? 'max-h-[calc(100vh-400px)]' : 'max-h-96'}`}>
                                     {carrito.length === 0 ? (
                                         <p className="text-gray-400 text-center py-8">
                                             Tu carrito está vacío
