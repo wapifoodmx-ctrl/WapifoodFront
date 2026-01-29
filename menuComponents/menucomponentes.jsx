@@ -948,8 +948,8 @@ export default function MenuComponentes({ onSearch, onCategoryChange, onRefresh,
                                                 className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                                                 placeholder="Ej: Bebidas"
                                                 onChange={(e) => {
-                                                    const capitalizedValue = capitalizeFirstLetter(e.target.value);
-                                                    setFieldValue("nombre_categoria", capitalizedValue);
+                                                    const uppercaseValue = e.target.value.toUpperCase();
+                                                    setFieldValue("nombre_categoria", uppercaseValue);
                                                 }}
                                                 value={values.nombre_categoria}
                                             />
