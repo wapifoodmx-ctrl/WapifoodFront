@@ -63,6 +63,16 @@ export default function ModalCocina({
                         <div className="flex items-center mb-6 gap-3">
                             <MdTableBar className="text-3xl text-green-600" />
                             <h2 className="text-2xl font-bold text-gray-800">Mesa {selectedTable.tableNumber}</h2>
+                            {selectedTable.ticketNumber && (
+                                <span className={`px-2 py-1 text-sm rounded font-semibold border
+                                    ${selectedTable.type === 'pending' ? 'bg-blue-50 text-blue-700 border-blue-200' : ''}
+                                    ${selectedTable.type === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : ''}
+                                    ${selectedTable.type === 'finished' ? 'bg-gray-50 text-gray-800 border-gray-300' : ''}
+                                    ${selectedTable.type === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' : ''}
+                                `}>
+                                    #{selectedTable.ticketNumber}
+                                </span>
+                            )}
                             <span className={`ml-2 px-2 py-1 text-xs rounded font-semibold
                                 ${selectedTable.type === 'finished'
                                     ? "bg-gray-100 text-gray-800"

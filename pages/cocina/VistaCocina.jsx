@@ -193,7 +193,8 @@ export default function VistaCocina() {
                             orders: [],
                             type: 'pending',
                             orderId: order.id_orders,
-                            orderUuid: order.order_uuid
+                            orderUuid: order.order_uuid,
+                            ticketNumber: order.ticket_number
                         };
                     }
 
@@ -225,7 +226,8 @@ export default function VistaCocina() {
                             orders: [],
                             type: 'completed',
                             orderId: order.id_orders,
-                            orderUuid: order.order_uuid
+                            orderUuid: order.order_uuid,
+                            ticketNumber: order.ticket_number
                         };
                     }
 
@@ -256,7 +258,8 @@ export default function VistaCocina() {
                             orders: [],
                             type: 'finished',
                             orderId: order.id_orders,
-                            orderUuid: order.order_uuid
+                            orderUuid: order.order_uuid,
+                            ticketNumber: order.ticket_number
                         };
                     }
 
@@ -293,7 +296,8 @@ export default function VistaCocina() {
                         orders: [],
                         type: 'cancelled',
                         orderId: order.id_orders,
-                        orderUuid: order.order_uuid
+                        orderUuid: order.order_uuid,
+                        ticketNumber: order.ticket_number
                     };
                 }
 
@@ -991,6 +995,16 @@ export default function VistaCocina() {
                                                 <div className="flex items-center mb-2 gap-2">
                                                     <MdTableBar className="text-xl text-green-600" />
                                                     <p className="font-bold text-base">Mesa {table.tableNumber}</p>
+                                                    {table.ticketNumber && (
+                                                        <span className={`px-2 py-0.5 text-xs rounded font-semibold border
+                                                            ${table.type === 'pending' ? 'bg-blue-50 text-blue-700 border-blue-200' : ''}
+                                                            ${table.type === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : ''}
+                                                            ${table.type === 'finished' ? 'bg-gray-50 text-gray-800 border-gray-300' : ''}
+                                                            ${table.type === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' : ''}
+                                                        `}>
+                                                            #{table.ticketNumber}
+                                                        </span>
+                                                    )}
                                                     <GoDotFill className={`text-sm ${table.type === 'pending' ? 'text-blue-800' : ''} ${table.type === 'completed' ? 'text-green-600' : ''} ${table.type === 'finished' ? 'text-gray-600' : ''} ${table.type === 'cancelled' ? 'text-red-600' : ''}`} />
                                                     {!table.isEmpty && (
                                                         <span className={`px-2 py-0.5 text-xs rounded font-semibold
@@ -1094,6 +1108,11 @@ export default function VistaCocina() {
                                             <div className="flex items-center mb-4">
                                                 <MdTableBar className="text-xl text-green-500 mr-2" />
                                                 <p className="font-bold text-lg">Mesa {table.tableNumber}</p>
+                                                {table.ticketNumber && (
+                                                    <span className="ml-2 px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded font-semibold border border-blue-200">
+                                                        #{table.ticketNumber}
+                                                    </span>
+                                                )}
                                             </div>
                                             <button
                                                 onClick={() => table.type === 'unavailable' ? handleReleaseTable(table.tableNumber) : null}
@@ -1130,6 +1149,11 @@ export default function VistaCocina() {
                                                     <div className="flex items-center mb-2">
                                                         <MdTableBar className="text-lg mr-2" />
                                                         <p className="font-bold text-base">Mesa {table.tableNumber}</p>
+                                                        {table.ticketNumber && (
+                                                            <span className="ml-2 px-2 py-0.5 text-xs bg-green-50 text-green-700 rounded font-semibold border border-green-200">
+                                                                #{table.ticketNumber}
+                                                            </span>
+                                                        )}
                                                         <GoDotFill className="text-green-600 mx-1 text-sm" />
                                                         <span className="px-1.5 py-0.5 text-xs bg-green-100 text-green-800 rounded">
                                                             Preparado
@@ -1197,6 +1221,11 @@ export default function VistaCocina() {
                                                     <div className="flex items-center mb-2">
                                                         <MdTableBar className="text-lg mr-2" />
                                                         <p className="font-bold text-base">Mesa {table.tableNumber}</p>
+                                                        {table.ticketNumber && (
+                                                            <span className="ml-2 px-2 py-0.5 text-xs bg-gray-50 text-gray-800 rounded font-semibold border border-gray-300">
+                                                                #{table.ticketNumber}
+                                                            </span>
+                                                        )}
                                                         <GoDotFill className="text-gray-600 mx-1 text-sm" />
                                                         <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 rounded">
                                                             Finalizado
@@ -1265,6 +1294,11 @@ export default function VistaCocina() {
                                                     <div className="flex items-center mb-2">
                                                         <MdTableBar className="text-lg mr-2" />
                                                         <p className="font-bold text-base">Mesa {table.tableNumber}</p>
+                                                        {table.ticketNumber && (
+                                                            <span className="ml-2 px-2 py-0.5 text-xs bg-red-50 text-red-700 rounded font-semibold border border-red-200">
+                                                                #{table.ticketNumber}
+                                                            </span>
+                                                        )}
                                                         <GoDotFill className="text-red-600 mx-1 text-sm" />
                                                         <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-800 rounded">
                                                             Cancelado
