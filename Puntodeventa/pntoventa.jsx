@@ -7,7 +7,7 @@ import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { FaShoppingCart } from "react-icons/fa";
 import { FaPercent, FaDollarSign } from "react-icons/fa";
 import { getProducts } from "@/useCases/getProducts";
-import { createSimpleOrder } from "@/useCases/OrderPntoVenta";
+import { puntoVentaPostOrder } from "@/useCases/puntoVentaPostOrder";
 import { endOrderPuntoDeVenta } from "@/useCases/endOrderPuntoDeVenta";
 import { checkPayment } from "@/useCases/checkPayment";
 import TicketModal from "@/components/TicketModal";
@@ -344,41 +344,31 @@ export default function Pntoventa() {
         setMensajeError("");
 
         try {
-            const response = await createSimpleOrder(
+            // Paso 1: Crear la orden con puntoVentaPostOrder (devuelve ticket_number)
+            const response = await puntoVentaPostOrder(
                 pedidosPendientes.map(item => ({
                     id: item.id_products,
                     cantidad: item.cantidad,
                     descuento: item.descuento
                 })),
-                null,
                 descuentoOrden.aplicado ? descuentoOrden : null,
                 metodoPago
             );
 
-            // Guardar el UUID de la orden para usarlo en la petición de inventario
+            // Guardar el UUID de la orden
             const orderUuid = response.order_uuid;
             setCurrentOrderUuid(orderUuid);
 
+            // Verificar si cocina está habilitada
             const cocinaEnabled = localStorage.getItem('cocinaSwitch');
             const switchEnabled = cocinaEnabled ? JSON.parse(cocinaEnabled) : false;
 
+            // Paso 2: Cambiar el estado de la orden según el switch de cocina
             const orderStatus = switchEnabled ? 'PuntoDeVenta' : 'Finalizado';
+            await endOrderPuntoDeVenta(orderUuid, metodoPago, orderStatus);
 
-            const pagoResponse = await endOrderPuntoDeVenta(
-                orderUuid,
-                metodoPago,
-                orderStatus,
-                pedidosPendientes.map(item => ({
-                    id: item.id_products,
-                    cantidad: item.cantidad,
-                    descuento: item.descuento
-                })),
-                descuentoOrden.aplicado ? descuentoOrden : null
-            );
-
-            if (pagoResponse && (pagoResponse.success !== false)) {
-                // Inventario logic removed
-
+            if (response && response.order_uuid) {
+                // Limpiar estados
                 setPedidosPendientes([]);
                 localStorage.removeItem("pedidosPendientes");
                 localStorage.removeItem("carrito");
@@ -394,6 +384,7 @@ export default function Pntoventa() {
 
                 setMensajeError(mensajeExito);
 
+                // Mostrar ticket si está habilitado
                 const ticketsEnabled = localStorage.getItem('tickets');
                 if (ticketsEnabled === 'true') {
                     setCompletedOrderUuid(orderUuid);
@@ -408,7 +399,7 @@ export default function Pntoventa() {
                 return orderUuid;
 
             } else {
-                throw new Error(pagoResponse?.message || 'La API indicó que el pago no se pudo procesar');
+                throw new Error(response?.message || 'La API indicó que el pago no se pudo procesar');
             }
 
         } catch (error) {
