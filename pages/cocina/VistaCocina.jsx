@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { GoDotFill } from "react-icons/go";
 import { MdTableBar } from "react-icons/md";
@@ -46,6 +46,99 @@ export default function VistaCocina() {
     // Estado para confirmación de cancelar orden finalizada
     const [showConfirmCancelFinalizado, setShowConfirmCancelFinalizado] = useState(false);
     const [ordenFinalizadaParaCancelar, setOrdenFinalizadaParaCancelar] = useState(null);
+
+    // Estado para el sistema de notificación sonora
+    const [previousOrderCount, setPreviousOrderCount] = useState(0);
+    const [audioEnabled, setAudioEnabled] = useState(false);
+    const audioContextRef = useRef(null);
+    const previousOrderCountRef = useRef(0); // Usar ref para evitar problemas de closure
+    const audioEnabledRef = useRef(false); // Ref para audioEnabled también
+    const isFirstLoadRef = useRef(true); // Bandera para saber si es la primera carga
+
+    // Inicializar AudioContext con la primera interacción del usuario
+    const initializeAudio = () => {
+        try {
+            if (!audioContextRef.current) {
+                audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // Si el contexto está suspendido, reactivarlo
+            if (audioContextRef.current.state === 'suspended') {
+                audioContextRef.current.resume().then(() => {
+                    audioEnabledRef.current = true;
+                    setAudioEnabled(true);
+                });
+            } else {
+                audioEnabledRef.current = true;
+                setAudioEnabled(true);
+            }
+        } catch (error) {
+            console.error('Error al inicializar audio:', error);
+        }
+    };
+
+    // Función para reproducir el sonido de notificación
+    const playNotificationSound = () => {
+        playGeneratedSound();
+    };
+
+    // Función para generar un sonido de notificación con Web Audio API
+    const playGeneratedSound = () => {
+        try {
+            // Crear AudioContext si no existe
+            if (!audioContextRef.current) {
+                audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const audioContext = audioContextRef.current;
+            
+            // Reactivar si está suspendido
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            // Primer tono (más agudo)
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 880; // La 5 (A5)
+            oscillator.type = 'sine';
+            
+            const now = audioContext.currentTime;
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.4, now + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            
+            oscillator.start(now);
+            oscillator.stop(now + 0.2);
+            
+            // Segundo tono (más grave) - ding dong
+            setTimeout(() => {
+                const oscillator2 = audioContext.createOscillator();
+                const gainNode2 = audioContext.createGain();
+                
+                oscillator2.connect(gainNode2);
+                gainNode2.connect(audioContext.destination);
+                
+                oscillator2.frequency.value = 660; // Mi 5 (E5)
+                oscillator2.type = 'sine';
+                
+                const now2 = audioContext.currentTime;
+                gainNode2.gain.setValueAtTime(0, now2);
+                gainNode2.gain.linearRampToValueAtTime(0.4, now2 + 0.01);
+                gainNode2.gain.exponentialRampToValueAtTime(0.01, now2 + 0.3);
+                
+                oscillator2.start(now2);
+                oscillator2.stop(now2 + 0.3);
+            }, 120);
+            
+        } catch (error) {
+            console.error('❌ Error al generar sonido:', error);
+        }
+    };
 
     const fetchTablesData = async () => {
         try {
@@ -268,6 +361,27 @@ export default function VistaCocina() {
             setCancelledTables(cancelledTables);
             setFinishedTables(finishedTables);
 
+            // Detectar nuevas órdenes y reproducir sonido
+            const currentPendingCount = pendingTables.filter(t => !t.isEmpty).length;
+            const previousCount = previousOrderCountRef.current;
+            
+            // Si es la primera carga, solo inicializar
+            if (isFirstLoadRef.current) {
+                previousOrderCountRef.current = currentPendingCount;
+                setPreviousOrderCount(currentPendingCount);
+                isFirstLoadRef.current = false;
+            } else if (currentPendingCount > previousCount) {
+                // Hay nuevas órdenes, reproducir sonido
+                previousOrderCountRef.current = currentPendingCount;
+                setPreviousOrderCount(currentPendingCount);
+                playNotificationSound();
+                toast.success('¡Nueva orden recibida!');
+            } else if (currentPendingCount < previousCount) {
+                // Las órdenes disminuyeron (se completaron o cancelaron), actualizar contador
+                previousOrderCountRef.current = currentPendingCount;
+                setPreviousOrderCount(currentPendingCount);
+            }
+
         } catch (err) {
             setError(err.message);
             console.error("Error al cargar las órdenes:", err);
@@ -282,6 +396,27 @@ export default function VistaCocina() {
             fetchTablesData();
         }, 30000);
         return () => clearInterval(interval);
+    }, []);
+
+    // Inicializar audio con la primera interacción del usuario
+    useEffect(() => {
+        const handleFirstInteraction = () => {
+            initializeAudio();
+            // Remover listeners después de la primera interacción
+            document.removeEventListener('click', handleFirstInteraction);
+            document.removeEventListener('touchstart', handleFirstInteraction);
+            document.removeEventListener('keydown', handleFirstInteraction);
+        };
+
+        document.addEventListener('click', handleFirstInteraction);
+        document.addEventListener('touchstart', handleFirstInteraction);
+        document.addEventListener('keydown', handleFirstInteraction);
+
+        return () => {
+            document.removeEventListener('click', handleFirstInteraction);
+            document.removeEventListener('touchstart', handleFirstInteraction);
+            document.removeEventListener('keydown', handleFirstInteraction);
+        };
     }, []);
 
     // Agregar este nuevo useEffect para el contador
@@ -646,6 +781,22 @@ export default function VistaCocina() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 relative">
+            {/* Indicador de audio */}
+            <div className="fixed top-20 right-4 z-50">
+                <div 
+                    className={`flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition-all duration-300 ${
+                        audioEnabled 
+                            ? 'bg-green-500 text-white' 
+                            : 'bg-yellow-500 text-white animate-pulse'
+                    }`}
+                    onClick={audioEnabled ? null : initializeAudio}
+                    style={{ cursor: audioEnabled ? 'default' : 'pointer' }}
+                    title={audioEnabled ? 'Audio activo' : 'Click para activar audio'}
+                >
+                    <span className="text-xl">{audioEnabled ? '🔔' : '🔇'}</span>
+                </div>
+            </div>
+            
             {/* Fondo decorativo */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-16 left-8 w-32 h-32 bg-green-100 rounded-full opacity-30 blur-xl animate-pulse"></div>
@@ -826,7 +977,7 @@ export default function VistaCocina() {
                                 )}
                                 {allActiveTables.map((table) => (
                                     <div
-                                        key={`table-${table.tableNumber}`}
+                                        key={`table-${table}`}
                                         className={`cursor-pointer transition-transform hover:scale-105 ${table.isEmpty ? 'opacity-30' : ''}`}
                                         onClick={() => openTableDetail(table)}
                                     >
@@ -1164,6 +1315,7 @@ export default function VistaCocina() {
                     )}
                 </div>
             </div>
+
             {/* Estilos extra para animaciones */}
             <style jsx>{`
                 .delay-500 { animation-delay: 500ms; }
