@@ -4,8 +4,8 @@
  */
 export async function getTicketMeserosDetails() {
     try {
-        // Obtener el token del localStorage o sessionStorage
-        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+        // Obtener el token del localStorage o sessionStorage (incluyendo kioskoToken)
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token") || localStorage.getItem("kioskoToken") || sessionStorage.getItem("kioskoToken");
 
         if (!token) {
             throw new Error("No se encontró el token de autenticación. Por favor, inicia sesión.");

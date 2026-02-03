@@ -1,5 +1,5 @@
 export async function kioskoPostOrder(productIds, quantities, metodoPago = 'efectivo') {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('kioskoToken') || sessionStorage.getItem('kioskoToken');
     
     if (!token) {
         throw new Error('No se encontró el token de autenticación');

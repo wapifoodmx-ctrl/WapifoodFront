@@ -59,6 +59,11 @@ export default function Kiosko() {
             setProductosFiltrados(data);
         } catch (error) {
             console.error("Error al obtener los productos:", error.message);
+            
+            // Si el error es de autenticación, limpiar tokens y mostrar login
+            if (error.message.includes('token') || error.message.includes('autenticación') || error.message.includes('401')) {
+                handleLogout();
+            }
             setProductos([]);
         }
     };
@@ -283,6 +288,12 @@ export default function Kiosko() {
             vaciarCarrito();
         } catch (error) {
             console.error("Error al procesar la orden:", error);
+            
+            // Si el error es de autenticación, limpiar tokens y mostrar login
+            if (error.message.includes('token') || error.message.includes('autenticación') || error.message.includes('401')) {
+                handleLogout();
+            }
+            
             setMensajeError(error.message || "Error al procesar la orden");
             setTimeout(() => setMensajeError(""), 5000);
         } finally {
