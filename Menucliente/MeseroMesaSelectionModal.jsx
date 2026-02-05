@@ -158,7 +158,9 @@ export default function MeseroMesaSelectionModal({
                                                 className={`text-4xl ${isOcupada ? 'text-orange-500' : 'text-green-500'}`}
                                             />
                                             <div className="text-center">
-                                                <p className="font-bold text-lg">Mesa {mesa.numero}</p>
+                                                <p className="font-bold text-lg">
+                                                    {mesa.numero === 1 ? 'Punto de venta' : `Mesa ${mesa.numero}`}
+                                                </p>
                                                 <p className={`text-sm font-semibold ${isOcupada ? 'text-orange-600' : 'text-green-600'}`}>
                                                     {estado}
                                                 </p>

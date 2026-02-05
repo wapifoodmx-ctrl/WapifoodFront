@@ -169,9 +169,8 @@ export default function MeseroMenuComponent() {
     const cargarOrdenesActivas = async () => {
         try {
             const ordenes = await getLatestOrdersByPlan();
-            // Filtrar órdenes excluyendo la mesa 1 (punto de venta)
-            const ordenesFiltradas = ordenes.filter(orden => orden.mesa_number !== 1);
-            setOrdenesActivas(ordenesFiltradas);
+            // Incluir todas las órdenes, incluyendo mesa 1 (punto de venta)
+            setOrdenesActivas(ordenes);
         } catch (error) {
             console.error('Error al cargar órdenes activas:', error);
         }
@@ -185,10 +184,11 @@ export default function MeseroMenuComponent() {
 
             if (mesasData && mesasData.table_status) {
                 const mesasArray = Object.entries(mesasData.table_status)
-                    .filter(([numero]) => parseInt(numero) !== 1) // Excluir mesa 1
                     .map(([numero, estado]) => ({
                         numero: parseInt(numero),
-                        estado: estado
+                        estado: estado,
+                        // Identificar si es la mesa 1 para mostrarla como "Punto de venta"
+                        esPuntoVenta: parseInt(numero) === 1
                     }))
                     .sort((a, b) => a.numero - b.numero);
 
@@ -937,7 +937,7 @@ export default function MeseroMenuComponent() {
                                 >
                                     <MdTableRestaurant className="text-green-600" size={20} />
                                     <span className="text-sm font-medium text-green-800">
-                                        Mesa {numeroMesa}
+                                        {numeroMesa === 1 ? 'Punto de venta' : `Mesa ${numeroMesa}`}
                                     </span>
                                 </div>
                             ) : (
