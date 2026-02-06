@@ -7,6 +7,7 @@ import { MdTableRestaurant } from "react-icons/md";
 import { MdFullscreen, MdFullscreenExit } from "react-icons/md";
 import { HiMagnifyingGlass } from "react-icons/hi2";
 import { getProducts } from "@/useCases/getProducts";
+import { getRecetas } from '@/useCases/getRecetas';
 import { loginUser } from '@/useCases/login';
 import { createSimpleClientOrder } from "@/useCases/orderClientMenu";
 import { getFinalOrder } from "@/useCases/getfinalOrderId";
@@ -916,9 +917,44 @@ export default function MenuCliente() {
         }));
     };
 
-    const openModal = (producto) => {
-        setProductoSeleccionado(producto);
-        setModalOpen(true);
+    const openModal = async (producto) => {
+        try {
+            // Intentamos obtener las recetas desde la API y vincular por product_id
+            let productoConIngredientes = { ...producto };
+
+            try {
+                const recetas = await getRecetas();
+
+                if (Array.isArray(recetas) && recetas.length > 0) {
+                    // Buscar receta que coincida con el id del producto
+                    const productId = producto.id_products || producto.id || producto.id_products;
+                    const recetaMatch = recetas.find(r => {
+                        // Algunos objetos usan product_id o productId
+                        return r.product_id === productId || r.productId === productId || r.product_id === Number(productId);
+                    });
+
+                    if (recetaMatch && Array.isArray(recetaMatch.ingredients)) {
+                        // Normalizar a un array de strings con el nombre del ingrediente
+                        const ingredientes = recetaMatch.ingredients.map(ing => {
+                            return ing.name || ing.ingredient_name || ing.ingredient?.name || ing.ingredient_name || ing.name_ingredient || String(ing.id_ingredient || ing.id || ing).toString();
+                        }).filter(Boolean);
+
+                        productoConIngredientes = { ...productoConIngredientes, ingredientes };
+                    }
+                }
+            } catch (err) {
+                // Si falla la obtención de recetas, no bloqueamos la apertura del modal
+                console.error('No se pudo cargar recetas para el producto:', err);
+            }
+
+            setProductoSeleccionado(productoConIngredientes);
+            setModalOpen(true);
+        } catch (error) {
+            console.error('Error al abrir modal de producto:', error);
+            // Fallback: abrir modal sin ingredientes
+            setProductoSeleccionado(producto);
+            setModalOpen(true);
+        }
     };
 
     const closeModal = () => {
