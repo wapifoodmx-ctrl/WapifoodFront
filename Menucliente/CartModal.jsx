@@ -11,8 +11,8 @@ export default function CartModal({
     mensajeError,
     isCreatingOrder,
     ordenActiva,
-    descuentoOrden,  // AÑADIR esta prop
-    setDescuentoOrden,  // AÑADIR esta prop
+    descuentoOrden,
+    setDescuentoOrden,
     onClose, 
     onUpdateQuantity, 
     onRemoveItem, 
@@ -27,12 +27,11 @@ export default function CartModal({
     const [productoDescuento, setProductoDescuento] = useState(null);
     const [tipoDescuento, setTipoDescuento] = useState('porcentaje');
     const [valorDescuento, setValorDescuento] = useState('');
-    // ELIMINAR esta línea porque ahora viene como prop:
-    // const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
     const [modalDescuentoOrdenOpen, setModalDescuentoOrdenOpen] = useState(false);
     const [errorDescuento, setErrorDescuento] = useState('');
-
-    // Nuevos estados para el modal de confirmación
+    const [comentarioOrden, setComentarioOrden] = useState('');
+    
+    // Estados para el modal de confirmación de código
     const [modalConfirmacionDescuentoOpen, setModalConfirmacionDescuentoOpen] = useState(false);
     const [codigoConfirmacionDescuento, setCodigoConfirmacionDescuento] = useState('');
     const [codigoEsperadoDescuento, setCodigoEsperadoDescuento] = useState('');
@@ -461,16 +460,16 @@ export default function CartModal({
                                 </span>
                             </div>
                             {/* Botón de descuento general */}
-                            <div className="pt-2 border-t border-green-200">
+                            <div className="pt-2 border-t border-green-200 space-y-3">
                                 <button onClick={() => {
                                     setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
                                     setErrorDescuento('');
                                     setModalDescuentoOrdenOpen(true);
-                                }} className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 lg:py-3 rounded-lg text-xs sm:text-sm lg:text-base font-medium transition-colores">
+                                }} className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 lg:py-3 rounded-lg text-xs sm:text-sm lg:text-base font-medium transition-colors">
                                     {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Aplicar Descuento General'}
                                 </button>
                                 {descuentoOrden.aplicado && (
-                                    <div className="mt-2 flex justify-between items-center text-xs sm:text-sm lg:text-base">
+                                    <div className="flex justify-between items-center text-xs sm:text-sm lg:text-base">
                                         <span className="text-green-700">
                                             Dto. aplicado: {descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}
                                         </span>
@@ -478,6 +477,36 @@ export default function CartModal({
                                             Quitar
                                         </button>
                                     </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Input de comentarios - Ahora fuera de la sección de descuento */}
+                    {carrito.length > 0 && (
+                        <div className="bg-white rounded-xl p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 border-2 border-gray-200">
+                            <label className="block text-xs sm:text-sm lg:text-base font-semibold text-gray-800 mb-2">
+                                💬 Comentarios para la orden
+                            </label>
+                            <textarea
+                                value={comentarioOrden}
+                                onChange={(e) => setComentarioOrden(e.target.value)}
+                                placeholder="Ej: Sin cebolla en todos los platillos, mesa cerca de la ventana..."
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 outline-none transition-all duration-200 resize-none text-xs sm:text-sm text-gray-700 placeholder-gray-400"
+                                rows="3"
+                                maxLength="200"
+                            />
+                            <div className="flex justify-between items-center mt-1">
+                                <span className="text-xs text-gray-500">
+                                    {comentarioOrden.length}/200 caracteres
+                                </span>
+                                {comentarioOrden && (
+                                    <button
+                                        onClick={() => setComentarioOrden('')}
+                                        className="text-xs text-red-600 hover:text-red-800 transition-colors"
+                                    >
+                                        Limpiar
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -881,16 +910,13 @@ export default function CartModal({
                                     const value = e.target.value;
                                     if (/^\d{0,4}$/.test(value)) {
                                         setCodigoConfirmacionDescuento(value);
-                                        if (errorCodigoDescuento) {
-                                            setErrorCodigoDescuento('');
-                                        }
+                                        if (errorCodigoDescuento) setErrorCodigoDescuento('');
                                     }
                                 }}
-                                placeholder="****"
+                                className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all duration-200 text-center text-2xl tracking-widest font-mono"
+                                placeholder="0000"
                                 maxLength="4"
-                                className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all duration-200 text-center text-2xl font-mono tracking-widest"
                                 autoFocus
-                                disabled={isValidandoCodigoDescuento}
                             />
                         </div>
 
@@ -898,34 +924,19 @@ export default function CartModal({
                             <button 
                                 type="button"
                                 onClick={validarCodigoYAplicarDescuento}
-                                disabled={codigoConfirmacionDescuento.length !== 4 || isValidandoCodigoDescuento}
-                                className={`w-full px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                                    codigoConfirmacionDescuento.length === 4 && !isValidandoCodigoDescuento
-                                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
-                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                }`}
+                                disabled={codigoConfirmacionDescuento.length !== 4}
+                                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                             >
-                                {isValidandoCodigoDescuento ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <svg className="animate-spin h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                        </svg>
-                                        Validando...
-                                    </span>
-                                ) : '✓ Confirmar y Aplicar'}
+                                Confirmar
                             </button>
                             <button 
                                 type="button"
                                 onClick={cerrarModalConfirmacionDescuento}
                                 disabled={isValidandoCodigoDescuento}
-                                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colores disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Cancelar
                             </button>
-                        </div>
-
-                        <div className="mt-4 text-center text-xs text-gray-500">
-                            El código de autorización es necesario para aplicar descuentos
                         </div>
                     </div>
                 </div>

@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from "next/image";
 import Default from "@/public/Default.png";
 
 export default function ProductDetailModal({ isOpen, producto, onClose, onAddToCart }) {
+    const [comentario, setComentario] = useState('');
+
     if (!isOpen || !producto) return null;
+
+    const handleAddToCart = () => {
+        onAddToCart(producto, 0, comentario);
+        setComentario('');
+    };
 
     return (
         <div
@@ -84,11 +91,27 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
                         </button>
                     </div>
 
+                    <div className="mb-6">
+                        <label htmlFor="comentario" className="block text-sm font-semibold text-gray-800 mb-2">
+                            Comentarios adicionales
+                        </label>
+                        <textarea
+                            id="comentario"
+                            value={comentario}
+                            onChange={(e) => setComentario(e.target.value)}
+                            placeholder="Ej: Sin cebolla, extra salsa..."
+                            className="w-full px-4 py-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                            rows="3"
+                            maxLength="200"
+                        />
+                        <p className="text-xs text-gray-500 mt-1 text-right">
+                            {comentario.length}/200 caracteres
+                        </p>
+                    </div>
+
                     <button
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
-                        onClick={() => {
-                            onAddToCart(producto);
-                        }}
+                        onClick={handleAddToCart}
                     >
                         🛒 Agregar al carrito
                     </button>
