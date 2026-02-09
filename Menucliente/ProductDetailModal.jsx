@@ -4,13 +4,30 @@ import Default from "@/public/Default.png";
 
 export default function ProductDetailModal({ isOpen, producto, onClose, onAddToCart }) {
     const [comentario, setComentario] = useState('');
+    const [ingredientesExcluidos, setIngredientesExcluidos] = useState([]);
 
     if (!isOpen || !producto) return null;
 
     const handleAddToCart = () => {
-        onAddToCart(producto, 0, comentario);
+        onAddToCart(producto, 0, comentario, ingredientesExcluidos);
         setComentario('');
+        setIngredientesExcluidos([]);
     };
+
+    const toggleIngrediente = (ingrediente) => {
+        setIngredientesExcluidos(prev => 
+            prev.includes(ingrediente)
+                ? prev.filter(i => i !== ingrediente)
+                : [...prev, ingrediente]
+        );
+    };
+
+    // Normalizar ingredientes - pueden venir como array o string separado por comas
+    const ingredientes = Array.isArray(producto.ingredientes) 
+        ? producto.ingredientes 
+        : typeof producto.ingredientes === 'string' 
+            ? producto.ingredientes.split(',').map(i => i.trim()).filter(i => i)
+            : [];
 
     return (
         <div
@@ -18,6 +35,8 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
             onClick={(e) => {
                 if (e.target === e.currentTarget) {
                     onClose();
+                    setComentario('');
+                    setIngredientesExcluidos([]);
                 }
             }}
         >
@@ -26,7 +45,11 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold text-white">{producto.nombre || producto.name}</h2>
                         <button
-                            onClick={onClose}
+                            onClick={() => {
+                                onClose();
+                                setComentario('');
+                                setIngredientesExcluidos([]);
+                            }}
                             className="text-white hover:text-gray-200 transition-colores"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,13 +75,21 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
                         <p className="text-gray-600 leading-relaxed">{producto.descripcion || producto.description}</p>
                     </div>
 
-                    {producto.ingredientes && producto.ingredientes.length > 0 && (
+                    {ingredientes.length > 0 && (
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-2">Personalizar</h3>
                             <div className="space-y-2">
-                                {producto.ingredientes.map((ingrediente, index) => (
-                                    <label key={index} className="flex items-center py-2 px-4 bg-green-50 rounded-lg border border-green-100">
-                                        <input type="checkbox" className="w-4 h-4 text-green-600 rounded border-green-300 focus:ring-green-500" />
+                                {ingredientes.map((ingrediente, index) => (
+                                    <label 
+                                        key={index} 
+                                        className="flex items-center py-2 px-4 bg-green-50 rounded-lg border border-green-100 cursor-pointer hover:bg-green-100 transition-colors"
+                                    >
+                                        <input 
+                                            type="checkbox" 
+                                            className="w-4 h-4 text-green-600 rounded border-green-300 focus:ring-green-500 cursor-pointer" 
+                                            checked={ingredientesExcluidos.includes(ingrediente)}
+                                            onChange={() => toggleIngrediente(ingrediente)}
+                                        />
                                         <span className="ml-3 text-gray-700">Sin {ingrediente}</span>
                                     </label>
                                 ))}
@@ -70,7 +101,7 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
                         <div className="text-center">
                             <p className="text-lg text-green-700 mb-1">Precio:</p>
                             <p className="text-2xl font-bold text-green-600">
-                                ${((producto.cantidad || 1) * (producto.precio || 0)).toFixed(2)}
+                                ${((producto.cantidad || 1) * (producto.precio || producto.price || 0)).toFixed(2)}
                             </p>
                         </div>
                     </div>

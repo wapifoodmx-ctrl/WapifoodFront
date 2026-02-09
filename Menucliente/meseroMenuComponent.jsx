@@ -5,6 +5,7 @@ import { FaShoppingCart, FaUser } from "react-icons/fa";
 import { MdTableRestaurant } from "react-icons/md";
 import { HiMagnifyingGlass } from "react-icons/hi2";
 import { getProducts } from "@/useCases/getProducts";
+import { getRecetas } from "@/useCases/getRecetas"; // ← AGREGAR ESTA LÍNEA
 import { loginMesero } from '@/useCases/loginMesero';
 import { createSimpleClientOrder } from "@/useCases/orderClientMenu";
 import { getFinalOrder } from "@/useCases/getfinalOrderId";
@@ -18,7 +19,7 @@ import { getTicket } from "@/useCases/getTicket";
 import { getLatestOrdersByPlan } from "@/useCases/getLatestOrdersByPlan";
 import { vincularMeseroOrden } from "@/useCases/vincularMeseroOrden";
 import ProductCard from "./ ProductCard";
-import CartModalMesero from "./CartModalMesero"; // ← CAMBIO AQUÍ
+import CartModalMesero from "./CartModalMesero";
 import LoginMeseroModal from "./LoginMeseroModal";
 import MeseroMesaSelectionModal from "./MeseroMesaSelectionModal";
 import PaymentModal from "./PaymentModal";
@@ -535,14 +536,54 @@ export default function MeseroMenuComponent() {
         setProductosFiltrados(productosFiltrados);
     }, [categoriaSeleccionada, busqueda, productos]);
 
-    const abrirModal = (producto) => {
-        setProductoSeleccionado({
-            ...producto,
-            cantidad: 1,
-            comentario: "",
-            ingredientesExcluidos: [],
-        });
-        setModalOpen(true);
+    const abrirModal = async (producto) => {
+        try {
+            // Intentamos obtener las recetas desde la API y vincular por product_id
+            let productoConIngredientes = { ...producto };
+
+            try {
+                const recetas = await getRecetas();
+
+                if (Array.isArray(recetas) && recetas.length > 0) {
+                    // Buscar receta que coincida con el id del producto
+                    const productId = producto.id_products || producto.id || producto.id_products;
+                    const recetaMatch = recetas.find(r => {
+                        // Algunos objetos usan product_id o productId
+                        return r.product_id === productId || r.productId === productId || r.product_id === Number(productId);
+                    });
+
+                    if (recetaMatch && Array.isArray(recetaMatch.ingredients)) {
+                        // Normalizar a un array de strings con el nombre del ingrediente
+                        const ingredientes = recetaMatch.ingredients.map(ing => {
+                            return ing.name || ing.ingredient_name || ing.ingredient?.name || ing.ingredient_name || ing.name_ingredient || String(ing.id_ingredient || ing.id || ing).toString();
+                        }).filter(Boolean);
+
+                        productoConIngredientes = { ...productoConIngredientes, ingredientes };
+                    }
+                }
+            } catch (err) {
+                // Si falla la obtención de recetas, no bloqueamos la apertura del modal
+                console.error('No se pudo cargar recetas para el producto:', err);
+            }
+
+            setProductoSeleccionado({
+                ...productoConIngredientes,
+                cantidad: 1,
+                comentario: "",
+                ingredientesExcluidos: [],
+            });
+            setModalOpen(true);
+        } catch (error) {
+            console.error('Error al abrir modal de producto:', error);
+            // Fallback: abrir modal sin ingredientes
+            setProductoSeleccionado({
+                ...producto,
+                cantidad: 1,
+                comentario: "",
+                ingredientesExcluidos: [],
+            });
+            setModalOpen(true);
+        }
     };
 
     const closeModal = () => {

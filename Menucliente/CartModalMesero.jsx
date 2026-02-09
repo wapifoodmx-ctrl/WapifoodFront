@@ -11,8 +11,8 @@ export default function CartModal({
     mensajeError,
     isCreatingOrder,
     ordenActiva,
-    descuentoOrden,  // AÑADIR esta prop
-    setDescuentoOrden,  // AÑADIR esta prop
+    descuentoOrden,
+    setDescuentoOrden,
     onClose, 
     onUpdateQuantity, 
     onRemoveItem, 
@@ -27,12 +27,10 @@ export default function CartModal({
     const [productoDescuento, setProductoDescuento] = useState(null);
     const [tipoDescuento, setTipoDescuento] = useState('porcentaje');
     const [valorDescuento, setValorDescuento] = useState('');
-    // ELIMINAR esta línea porque ahora viene como prop:
-    // const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
     const [modalDescuentoOrdenOpen, setModalDescuentoOrdenOpen] = useState(false);
     const [errorDescuento, setErrorDescuento] = useState('');
+    const [comentarioOrden, setComentarioOrden] = useState('');
 
-    // Nuevos estados para el modal de confirmación
     const [modalConfirmacionDescuentoOpen, setModalConfirmacionDescuentoOpen] = useState(false);
     const [codigoConfirmacionDescuento, setCodigoConfirmacionDescuento] = useState('');
     const [codigoEsperadoDescuento, setCodigoEsperadoDescuento] = useState('');
@@ -479,6 +477,36 @@ export default function CartModal({
                                             Quitar
                                         </button>
                                     </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Input de comentarios - Ahora fuera de la sección de descuento */}
+                    {carrito.length > 0 && (
+                        <div className="bg-white rounded-xl p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 border-2 border-gray-200">
+                            <label className="block text-xs sm:text-sm lg:text-base font-semibold text-gray-800 mb-2">
+                                💬 Comentarios para la orden
+                            </label>
+                            <textarea
+                                value={comentarioOrden}
+                                onChange={(e) => setComentarioOrden(e.target.value)}
+                                placeholder="Ej: Sin cebolla en todos los platillos, mesa cerca de la ventana..."
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 outline-none transition-all duration-200 resize-none text-xs sm:text-sm text-gray-700 placeholder-gray-400"
+                                rows="3"
+                                maxLength="200"
+                            />
+                            <div className="flex justify-between items-center mt-1">
+                                <span className="text-xs text-gray-500">
+                                    {comentarioOrden.length}/200 caracteres
+                                </span>
+                                {comentarioOrden && (
+                                    <button
+                                        onClick={() => setComentarioOrden('')}
+                                        className="text-xs text-red-600 hover:text-red-800 transition-colors"
+                                    >
+                                        Limpiar
+                                    </button>
                                 )}
                             </div>
                         </div>
