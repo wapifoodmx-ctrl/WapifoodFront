@@ -9,11 +9,22 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
     if (!isOpen || !producto) return null;
 
     const handleAddToCart = () => {
-        // Cuando llamamos desde la modal queremos que el wrapper padre trate esto
-        // como una acción de "agregar" (no un incremento). Pasamos `undefined`
-        // como segundo parámetro para que el padre no lo considere un incremento
-        // y además le enviamos el comentario y las exclusiones.
-        onAddToCart(producto, undefined, comentario, ingredientesExcluidos);
+        // Combinar ingredientes excluidos con el comentario manual
+        let comentarioFinal = '';
+        
+        if (ingredientesExcluidos.length > 0) {
+            comentarioFinal = ingredientesExcluidos.map(ing => `Sin ${ing}`).join(', ');
+        }
+        
+        if (comentario.trim() !== '') {
+            if (comentarioFinal !== '') {
+                comentarioFinal += ', ' + comentario.trim();
+            } else {
+                comentarioFinal = comentario.trim();
+            }
+        }
+        
+        onAddToCart(producto, undefined, comentarioFinal, ingredientesExcluidos);
         setComentario('');
         setIngredientesExcluidos([]);
     };
@@ -86,7 +97,7 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
                                 {ingredientes.map((ingrediente, index) => (
                                     <label 
                                         key={index} 
-                                        className="flex items-center py-2 px-4 bg-green-50 rounded-lg border border-green-100 cursor-pointer hover:bg-green-100 transition-colors"
+                                        className="flex items-center py-2 px-4 bg-green-50 rounded-lg border border-green-100 cursor-pointer hover:bg-green-100 transition-colores"
                                     >
                                         <input 
                                             type="checkbox" 

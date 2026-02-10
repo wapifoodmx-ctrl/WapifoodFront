@@ -10,6 +10,7 @@ import { getProducts } from "@/useCases/getProducts";
 import { getRecetas } from '@/useCases/getRecetas';
 import { loginUser } from '@/useCases/login';
 import { createSimpleClientOrder } from "@/useCases/orderClientMenu";
+import postOrderComment from "@/useCases/postComentario";
 import { getFinalOrder } from "@/useCases/getfinalOrderId";
 import { getTables } from "@/useCases/getTables";
 import { updateTableStatus } from "@/useCases/tablesStatus";
@@ -963,32 +964,41 @@ export default function MenuCliente() {
     };
 
     const agregarAlCarrito = (producto, comentario = "", ingredientesExcluidos = []) => {
-        const ingredientesExcluidosModal = producto.ingredientes && producto.ingredientes.length > 0
-            ? Array.from(
-                document.querySelectorAll('input[type="checkbox"]:checked')
-            ).map((checkbox) => checkbox.nextSibling.textContent.replace("Sin ", "").trim())
-            : ingredientesExcluidos;
-
         const productoConExclusiones = {
             ...producto,
-            id: `${producto.id || producto.id_products}-${ingredientesExcluidosModal.join(",")}-${comentario}`,
+            id: `${producto.id || producto.id_products}-${Date.now()}`,
             id_products: producto.id_products || producto.id,
-            ingredientesExcluidos: ingredientesExcluidosModal,
-            comentario: comentario,
+            ingredientesExcluidos: ingredientesExcluidos || [],
+            comentario: comentario || "",
         };
 
         setCarrito((prevCarrito) => {
             const existingItemIndex = prevCarrito.findIndex(
-                (item) => item.id === productoConExclusiones.id
+                (item) => 
+                    (item.id_products === productoConExclusiones.id_products) &&
+                    (item.comentario === productoConExclusiones.comentario) &&
+                    (JSON.stringify(item.ingredientesExcluidos) === JSON.stringify(productoConExclusiones.ingredientesExcluidas))
             );
 
+            let nuevoCarrito;
             if (existingItemIndex !== -1) {
                 const updatedCarrito = [...prevCarrito];
                 updatedCarrito[existingItemIndex].cantidad += (producto.cantidad || 1);
-                return updatedCarrito;
+                nuevoCarrito = updatedCarrito;
             } else {
-                return [...prevCarrito, { ...productoConExclusiones, cantidad: producto.cantidad || 1 }];
+                nuevoCarrito = [...prevCarrito, { ...productoConExclusiones, cantidad: producto.cantidad || 1 }];
             }
+            
+            // Guardar en localStorage
+            localStorage.setItem("carrito_comentarios", JSON.stringify(nuevoCarrito));
+            
+            console.log('🛒 Producto agregado al carrito:', {
+                nombre: productoConExclusiones.nombre,
+                comentario: productoConExclusiones.comentario,
+                ingredientesExcluidos: productoConExclusiones.ingredientesExcluidos
+            });
+            
+            return nuevoCarrito;
         });
 
         closeModal();
@@ -1050,6 +1060,8 @@ export default function MenuCliente() {
                 descuentoOrdenAPI
             );
 
+            console.log('✅ Respuesta de createSimpleClientOrder:', response);
+
             if (!ordenActiva && numeroMesa) {
                 try {
                     await updateTableStatus(parseInt(numeroMesa), 'Ocupado');
@@ -1082,6 +1094,65 @@ export default function MenuCliente() {
                     fecha_orden: response.date_time
                 })),
             ]);
+
+            // *** ENVIAR COMENTARIOS A LA API ***
+            try {
+                // Obtener el comentario general del localStorage (desde CartModal)
+                const comentarioGeneral = localStorage.getItem("comentario_orden_general") || "";
+                
+                // Construir el array de details_comments
+                const detailsComments = [];
+                
+                console.log('📦 Carrito actual:', carrito);
+                console.log('📦 Respuesta API products:', response.products);
+
+                // Mapear los productos del carrito con los id_orders_details de la respuesta
+                if (response.products && Array.isArray(response.products)) {
+                    carrito.forEach((carritoItem, index) => {
+                        // Buscar el producto correspondiente en la respuesta de la API
+                        const productResponse = response.products[index];
+                        
+                        if (productResponse && carritoItem.comentario && carritoItem.comentario.trim() !== '') {
+                            console.log(`✅ Agregando comentario para producto ${index}:`, {
+                                id_orders_details: productResponse.id_orders_details,
+                                comment: carritoItem.comentario.trim()
+                            });
+                            
+                            detailsComments.push({
+                                id_orders_details: productResponse.id_orders_details,
+                                comment: carritoItem.comentario.trim()
+                            });
+                        } else {
+                            console.log(`⚠️ Producto ${index} sin comentario o sin id_orders_details`);
+                        }
+                    });
+                }
+
+                console.log('📝 Comentario general:', comentarioGeneral);
+                console.log('📝 Details comments:', detailsComments);
+
+                // Solo enviar si hay comentarios (general o por producto)
+                if (comentarioGeneral.trim() !== '' || detailsComments.length > 0) {
+                    const commentData = {
+                        general_comment: comentarioGeneral.trim(),
+                        details_comments: detailsComments
+                    };
+
+                    console.log('📤 Enviando comentarios a la API:', commentData);
+                    const commentResponse = await postOrderComment(response.order_uuid, commentData);
+                    console.log('✅ Comentarios enviados exitosamente:', commentResponse);
+                } else {
+                    console.log('ℹ️ No hay comentarios para enviar');
+                }
+
+                // Limpiar localStorage de comentarios
+                localStorage.removeItem("carrito_comentarios");
+                localStorage.removeItem("comentario_orden_general");
+            } catch (commentError) {
+                console.error('⚠️ Error al enviar comentarios:', commentError);
+                console.error('⚠️ Detalles del error:', commentError.message);
+                // No detenemos el flujo si falla el envío de comentarios
+            }
 
             setCarrito([]);
             setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
@@ -1842,7 +1913,12 @@ export default function MenuCliente() {
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                                                         </svg>
                                                     </div>
-                                                    <h4 className="text-lg font-bold text-red-800">
+                                                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                        </svg>
+                                                    </div>
+                                                                                                                <h4 className="text-lg font-bold text-red-800">
                                                         {producto.cantidad} x {producto.nombre}
                                                     </h4>
                                                 </div>

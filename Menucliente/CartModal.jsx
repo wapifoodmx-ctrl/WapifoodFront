@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaShoppingCart, FaPercent, FaDollarSign } from "react-icons/fa";
 import { IoTrashOutline, IoClose } from "react-icons/io5";
 import { MdShoppingCart } from "react-icons/md";
@@ -39,6 +39,21 @@ export default function CartModal({
     const [isValidandoCodigoDescuento, setIsValidandoCodigoDescuento] = useState(false);
     const [tipoDescuentoEnProceso, setTipoDescuentoEnProceso] = useState(null);
 
+    // *** MOVER LOS useEffect AQUÍ, ANTES DEL RETURN ***
+    // Guardar comentario general en localStorage cuando cambie
+    useEffect(() => {
+        localStorage.setItem("comentario_orden_general", comentarioOrden);
+    }, [comentarioOrden]);
+
+    // Cargar comentario general del localStorage al abrir el modal
+    useEffect(() => {
+        if (isOpen) {
+            const comentarioGuardado = localStorage.getItem("comentario_orden_general") || "";
+            setComentarioOrden(comentarioGuardado);
+        }
+    }, [isOpen]);
+
+    // *** AHORA SÍ HACER EL RETURN ***
     if (!isOpen) return null;
 
     // Función para calcular precio con descuento de un producto

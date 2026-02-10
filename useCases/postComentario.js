@@ -4,7 +4,7 @@
  * @param {object} commentData - Datos del comentario a enviar
  * @returns {Promise<object>} - Respuesta de la API
  */
-async function postOrderComment(orderUuid, commentData) {
+export default async function postOrderComment(orderUuid, commentData) {
   try {
     // Intentar obtener el token del localStorage primero, luego sessionStorage
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
