@@ -1228,14 +1228,14 @@ export default function MeseroMenuComponent() {
                     isOpen={modalOpen}
                     producto={productoSeleccionado}
                     onClose={closeModal}
-                    onAddToCart={(prod, incremento) => {
+                    onAddToCart={(prod, incremento, comentario, ingredientesExcluidos) => {
                         if (incremento !== undefined) {
                             setProductoSeleccionado({
                                 ...prod,
                                 cantidad: Math.max((prod.cantidad || 1) + incremento, 1),
                             });
                         } else {
-                            agregarAlCarrito(prod);
+                            agregarAlCarrito(prod, comentario, ingredientesExcluidos);
                         }
                     }}
                 />

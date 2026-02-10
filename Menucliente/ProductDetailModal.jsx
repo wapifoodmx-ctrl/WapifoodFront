@@ -9,7 +9,11 @@ export default function ProductDetailModal({ isOpen, producto, onClose, onAddToC
     if (!isOpen || !producto) return null;
 
     const handleAddToCart = () => {
-        onAddToCart(producto, 0, comentario, ingredientesExcluidos);
+        // Cuando llamamos desde la modal queremos que el wrapper padre trate esto
+        // como una acción de "agregar" (no un incremento). Pasamos `undefined`
+        // como segundo parámetro para que el padre no lo considere un incremento
+        // y además le enviamos el comentario y las exclusiones.
+        onAddToCart(producto, undefined, comentario, ingredientesExcluidos);
         setComentario('');
         setIngredientesExcluidos([]);
     };
