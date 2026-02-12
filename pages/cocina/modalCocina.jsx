@@ -2,8 +2,9 @@ import { useRef, useState } from "react";
 import { FaTrashAlt, FaTimes, FaPlus, FaCheck, FaUndo } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
 import { MdTableBar } from "react-icons/md";
-import { BsClock, BsThreeDotsVertical } from "react-icons/bs";
+import { BsClock, BsThreeDotsVertical, BsChatLeftTextFill, BsChatText } from "react-icons/bs";
 import { LuCalendarDays } from "react-icons/lu";
+import { HiOutlineChatAlt2 } from "react-icons/hi";
 import postProcessOrder from "../../useCases/postMermas.js";
 import { getTicket } from "../../useCases/getTicket.js";
 
@@ -24,7 +25,8 @@ export default function ModalCocina({
     handleCancelProduct,
     handleMarkProductPrepared,
     handleUndoProductToPending,
-    handleFinalizeCompletedOrder
+    handleFinalizeCompletedOrder,
+    orderComments
 }) {
     const dropdownRef = useRef(null);
     const buttonRef = useRef(null);
@@ -189,6 +191,77 @@ export default function ModalCocina({
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* Sección de Comentarios del Cliente */}
+                                {orderComments && (orderComments.general_comment || (orderComments.details_comments && orderComments.details_comments.length > 0)) && (
+                                    <div className="mb-6">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <HiOutlineChatAlt2 className="text-xl text-yellow-600" />
+                                            <h3 className="text-lg font-bold text-gray-800">Comentarios del Cliente</h3>
+                                        </div>
+                                        
+                                        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200 shadow-sm space-y-4">
+                                            {/* Comentario General */}
+                                            {orderComments.general_comment && orderComments.general_comment.trim() !== '' && (
+                                                <div className="bg-white rounded-lg p-4 border-l-4 border-yellow-400 shadow-sm">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <BsChatLeftTextFill className="text-yellow-500" />
+                                                        <span className="font-semibold text-yellow-700 text-sm uppercase tracking-wide">Comentario General</span>
+                                                    </div>
+                                                    <p className="text-gray-700 text-base leading-relaxed">
+                                                        {orderComments.general_comment}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Comentarios por Producto */}
+                                            {orderComments.details_comments && orderComments.details_comments.length > 0 && (
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <BsChatText className="text-orange-500" />
+                                                        <span className="font-semibold text-orange-700 text-sm uppercase tracking-wide">Comentarios por Producto</span>
+                                                    </div>
+                                                    <div className="grid gap-2">
+                                                        {orderComments.details_comments.map((detail, idx) => {
+                                                            // Buscar el producto correspondiente en la orden
+                                                            const product = selectedTable.products.find(p => 
+                                                                p.id === detail.id_orders_details || 
+                                                                p.id_orders_details === detail.id_orders_details
+                                                            );
+                                                            
+                                                            // Solo mostrar si el producto está en la vista actual o si es comanda finalizada
+                                                            const shouldShow = selectedTable.type === 'finished' || 
+                                                                selectedTable.type === 'cancelled' || 
+                                                                product;
+                                                            
+                                                            if (!shouldShow || !detail.comment || detail.comment.trim() === '') return null;
+                                                            
+                                                            return (
+                                                                <div key={idx} className="bg-white rounded-lg p-3 border-l-4 border-orange-400 shadow-sm">
+                                                                    <div className="flex items-start gap-3">
+                                                                        <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                                                            <span className="text-orange-600 text-xs font-bold">{idx + 1}</span>
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            {product && (
+                                                                                <p className="font-semibold text-gray-800 text-sm truncate mb-1">
+                                                                                    {product.name}
+                                                                                </p>
+                                                                            )}
+                                                                            <p className="text-gray-600 text-sm leading-relaxed">
+                                                                                {detail.comment}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Solo mostrar botones si hay productos que se pueden actualizar */}
                                 {selectedTable.type === 'pending' && selectedTable.products.some(product =>

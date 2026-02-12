@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { GoDotFill } from "react-icons/go";
 import { MdTableBar } from "react-icons/md";
-import { BsClock } from "react-icons/bs";
+import { BsClock, BsChatLeftTextFill } from "react-icons/bs";
 import { LuCalendarDays } from "react-icons/lu";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { getTables } from "../../useCases/getTables.js";
@@ -13,6 +13,7 @@ import { endPuntoDeVenta } from "../../useCases/endPuntoDeVenta.js";
 import { updateTableStatus } from "../../useCases/tablesStatus.js";
 import { getTicket } from "../../useCases/getTicket.js";
 import postProcessOrder from "../../useCases/postMermas.js";
+import { getOrderComments } from "../../useCases/getComentario.js";
 import { toast } from "@/components/Toast";
 import ModalCocina from "./modalCocina.jsx";
 
@@ -54,6 +55,9 @@ export default function VistaCocina() {
     const previousOrderCountRef = useRef(0); // Usar ref para evitar problemas de closure
     const audioEnabledRef = useRef(false); // Ref para audioEnabled también
     const isFirstLoadRef = useRef(true); // Bandera para saber si es la primera carga
+
+    // Estado para comentarios de órdenes
+    const [orderComments, setOrderComments] = useState({}); // { orderUuid: { general_comment, details_comments, hasUnread } }
 
     // Inicializar AudioContext con la primera interacción del usuario
     const initializeAudio = () => {
@@ -138,6 +142,34 @@ export default function VistaCocina() {
         } catch (error) {
             console.error('❌ Error al generar sonido:', error);
         }
+    };
+
+    // Función para cargar comentarios de una orden
+    const fetchOrderComments = async (orderUuid) => {
+        try {
+            const comments = await getOrderComments(orderUuid);
+            return comments;
+        } catch (error) {
+            console.error(`Error al obtener comentarios de orden ${orderUuid}:`, error);
+            return null;
+        }
+    };
+
+    // Función para marcar comentarios como leídos
+    const markCommentsAsRead = (orderUuid) => {
+        setOrderComments(prev => ({
+            ...prev,
+            [orderUuid]: { ...prev[orderUuid], hasUnread: false }
+        }));
+    };
+
+    // Función para verificar si una orden tiene comentarios
+    const hasComments = (commentsData) => {
+        if (!commentsData) return false;
+        const hasGeneral = commentsData.general_comment && commentsData.general_comment.trim() !== '';
+        const hasDetails = commentsData.details_comments && commentsData.details_comments.length > 0 && 
+            commentsData.details_comments.some(c => c.comment && c.comment.trim() !== '');
+        return hasGeneral || hasDetails;
     };
 
     const fetchTablesData = async () => {
@@ -364,6 +396,77 @@ export default function VistaCocina() {
             setCompletedTables(completedTables);
             setCancelledTables(cancelledTables);
             setFinishedTables(finishedTables);
+
+            // Cargar comentarios de todas las órdenes activas
+            const allActiveOrderUuids = new Set();
+            [...pendingTables, ...completedTables, ...finishedTables].forEach(table => {
+                if (table.orderUuid) {
+                    allActiveOrderUuids.add(table.orderUuid);
+                }
+            });
+
+            // Cargar comentarios en paralelo para todas las órdenes
+            const commentPromises = Array.from(allActiveOrderUuids).map(async (orderUuid) => {
+                const comments = await fetchOrderComments(orderUuid);
+                return { orderUuid, comments };
+            });
+
+            const commentsResults = await Promise.all(commentPromises);
+            
+            // Actualizar estado de comentarios detectando nuevos comentarios
+            setOrderComments(prev => {
+                const newOrderComments = {};
+                commentsResults.forEach(({ orderUuid, comments }) => {
+                    if (comments && hasComments(comments)) {
+                        const prevComments = prev[orderUuid];
+                        
+                        // Detectar si hay nuevos comentarios comparando con los previos
+                        let hasNewComments = false;
+                        
+                        if (!prevComments) {
+                            // Es una orden nueva con comentarios
+                            hasNewComments = true;
+                        } else {
+                            // Verificar si el comentario general cambió
+                            const prevGeneral = prevComments.general_comment || '';
+                            const newGeneral = comments.general_comment || '';
+                            if (newGeneral !== prevGeneral && newGeneral.trim() !== '') {
+                                hasNewComments = true;
+                            }
+                            
+                            // Verificar si hay nuevos comentarios de productos
+                            const prevDetailsCount = prevComments.details_comments?.length || 0;
+                            const newDetailsCount = comments.details_comments?.length || 0;
+                            if (newDetailsCount > prevDetailsCount) {
+                                hasNewComments = true;
+                            }
+                            
+                            // También verificar si algún comentario de detalle cambió
+                            if (!hasNewComments && comments.details_comments) {
+                                comments.details_comments.forEach((newDetail) => {
+                                    const prevDetail = prevComments.details_comments?.find(
+                                        d => d.id_orders_details === newDetail.id_orders_details
+                                    );
+                                    if (!prevDetail && newDetail.comment && newDetail.comment.trim() !== '') {
+                                        hasNewComments = true;
+                                    } else if (prevDetail && newDetail.comment !== prevDetail.comment && newDetail.comment && newDetail.comment.trim() !== '') {
+                                        hasNewComments = true;
+                                    }
+                                });
+                            }
+                        }
+                        
+                        // Si hay nuevos comentarios, marcar como no leído
+                        // Si no hay nuevos comentarios, mantener el estado previo
+                        const wasRead = prevComments?.hasUnread === false;
+                        newOrderComments[orderUuid] = {
+                            ...comments,
+                            hasUnread: hasNewComments ? true : !wasRead
+                        };
+                    }
+                });
+                return newOrderComments;
+            });
 
             // Detectar nuevas órdenes y reproducir sonido
             const currentPendingCount = pendingTables.filter(t => !t.isEmpty).length;
@@ -883,6 +986,7 @@ export default function VistaCocina() {
                     handleMarkProductPrepared={handleMarkProductPrepared}
                     handleUndoProductToPending={handleUndoProductToPending}
                     handleFinalizeCompletedOrder={handleFinalizeCompletedOrder}
+                    orderComments={selectedTable?.orderUuid ? orderComments[selectedTable.orderUuid] : null}
                 />
 
                 {/* Modal de confirmación para cancelar orden finalizada */}
@@ -982,17 +1086,31 @@ export default function VistaCocina() {
                                 {allActiveTables.map((table) => (
                                     <div
                                         key={`table-${table}`}
-                                        className={`cursor-pointer transition-transform hover:scale-105 ${table.isEmpty ? 'opacity-30' : ''}`}
-                                        onClick={() => openTableDetail(table)}
+                                        className={`cursor-pointer transition-transform hover:scale-105 ${table.isEmpty ? 'opacity-30' : ''} ${orderComments[table.orderUuid]?.hasUnread ? 'comment-notification' : ''}`}
+                                        onClick={() => {
+                                            if (table.orderUuid && orderComments[table.orderUuid]) {
+                                                markCommentsAsRead(table.orderUuid);
+                                            }
+                                            openTableDetail(table);
+                                        }}
                                     >
-                                        <div className={`border-l-8 rounded-2xl shadow-xl bg-white h-44 flex flex-col transition-all duration-300
+                                        <div className={`border-l-8 rounded-2xl shadow-xl bg-white h-44 flex flex-col transition-all duration-300 relative
                                             ${table.type === 'pending' || table.isEmpty ? 'border-green-400' : ''}
                                             ${table.type === 'completed' ? 'border-emerald-400' : ''}
                                             ${table.type === 'finished' ? 'border-gray-400' : ''}
                                             ${table.type === 'cancelled' ? 'border-red-400' : ''}
+                                            ${orderComments[table.orderUuid]?.hasUnread ? 'ring-2 ring-yellow-400 ring-offset-2' : ''}
                                         `}>
+                                            {/* Indicador de comentarios */}
+                                            {orderComments[table.orderUuid] && hasComments(orderComments[table.orderUuid]) && (
+                                                <div className={`absolute -top-2 -right-2 z-10 ${orderComments[table.orderUuid]?.hasUnread ? 'comment-badge' : ''}`}>
+                                                    <div className={`flex items-center justify-center w-8 h-8 rounded-full shadow-lg ${orderComments[table.orderUuid]?.hasUnread ? 'bg-yellow-500' : 'bg-gray-400'}`}>
+                                                        <BsChatLeftTextFill className="text-white text-sm" />
+                                                    </div>
+                                                </div>
+                                            )}
                                             <div className="p-4 flex-grow flex flex-col">
-                                                <div className="flex items-center mb-2 gap-2">
+                                                <div className="flex items-center mb-2 gap-2 flex-wrap">
                                                     <MdTableBar className="text-xl text-green-600" />
                                                     <p className="font-bold text-base">Mesa {table.tableNumber}</p>
                                                     {table.ticketNumber && (
@@ -1355,6 +1473,32 @@ export default function VistaCocina() {
                 .delay-500 { animation-delay: 500ms; }
                 .delay-1000 { animation-delay: 1000ms; }
                 .delay-1500 { animation-delay: 1500ms; }
+                
+                @keyframes comment-pulse {
+                    0%, 100% {
+                        transform: scale(1);
+                        box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7);
+                    }
+                    50% {
+                        transform: scale(1.05);
+                        box-shadow: 0 0 0 8px rgba(234, 179, 8, 0);
+                    }
+                }
+                
+                @keyframes comment-shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+                    20%, 40%, 60%, 80% { transform: translateX(2px); }
+                }
+                
+                .comment-notification {
+                    animation: comment-pulse 2s ease-in-out infinite;
+                }
+                
+                .comment-badge {
+                    animation: comment-shake 0.5s ease-in-out infinite;
+                    animation-delay: 1s;
+                }
             `}</style>
         </div>
     );

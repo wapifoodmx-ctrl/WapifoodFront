@@ -3,7 +3,7 @@
  * @param {string} orderUuid - UUID de la orden
  * @returns {Promise<object>} - Respuesta de la API con los comentarios
  */
-async function getOrderComments(orderUuid) {
+export async function getOrderComments(orderUuid) {
   try {
     // Intentar obtener el token del localStorage primero, luego sessionStorage
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
