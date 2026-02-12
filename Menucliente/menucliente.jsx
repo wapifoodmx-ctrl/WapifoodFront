@@ -1100,47 +1100,81 @@ export default function MenuCliente() {
                 // Obtener el comentario general del localStorage (desde CartModal)
                 const comentarioGeneral = localStorage.getItem("comentario_orden_general") || "";
                 
-                // Construir el array de details_comments
-                const detailsComments = [];
+                // Verificar si hay comentarios en el carrito antes de continuar
+                const carritoConComentarios = carrito.filter(item => item.comentario && item.comentario.trim() !== '');
                 
                 console.log('📦 Carrito actual:', carrito);
-                console.log('📦 Respuesta API products:', response.products);
+                console.log('📦 Productos con comentarios:', carritoConComentarios.length);
 
-                // Mapear los productos del carrito con los id_orders_details de la respuesta
-                if (response.products && Array.isArray(response.products)) {
-                    carrito.forEach((carritoItem, index) => {
-                        // Buscar el producto correspondiente en la respuesta de la API
-                        const productResponse = response.products[index];
+                // Solo proceder si hay comentarios que enviar
+                if (comentarioGeneral.trim() !== '' || carritoConComentarios.length > 0) {
+                    // Obtener los detalles de la orden para conseguir los id_orders_details
+                    console.log('🔍 Obteniendo detalles de la orden para mapear comentarios...');
+                    const ticketData = await getTicket(response.order_uuid);
+                    console.log('📦 Ticket data recibido:', ticketData);
+
+                    // Construir el array de details_comments
+                    const detailsComments = [];
+
+                    // La respuesta de getTicket tiene los productos con id_orders_details
+                    if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
+                        // Mapear los productos del carrito con los id_orders_details del ticket
+                        // Los productos más recientes son los últimos agregados
+                        const ticketProducts = ticketData.products;
                         
-                        if (productResponse && carritoItem.comentario && carritoItem.comentario.trim() !== '') {
-                            console.log(`✅ Agregando comentario para producto ${index}:`, {
-                                id_orders_details: productResponse.id_orders_details,
-                                comment: carritoItem.comentario.trim()
-                            });
-                            
-                            detailsComments.push({
-                                id_orders_details: productResponse.id_orders_details,
-                                comment: carritoItem.comentario.trim()
-                            });
-                        } else {
-                            console.log(`⚠️ Producto ${index} sin comentario o sin id_orders_details`);
-                        }
-                    });
-                }
+                        carrito.forEach((carritoItem) => {
+                            if (carritoItem.comentario && carritoItem.comentario.trim() !== '') {
+                                // Buscar el producto correspondiente en el ticket por id_products
+                                const productId = carritoItem.id_products || parseInt(carritoItem.id.split('-')[0]);
+                                
+                                // Buscar los productos del ticket que coincidan con este id_products
+                                // y que no hayan sido usados aún (para manejar múltiples del mismo producto)
+                                const matchingProducts = ticketProducts.filter(tp => 
+                                    tp.id_products === productId || tp.product_id === productId
+                                );
+                                
+                                console.log(`🔍 Buscando producto ${productId} (${carritoItem.nombre}):`, matchingProducts);
+                                
+                                // Tomar el último producto que coincida (el más reciente agregado)
+                                if (matchingProducts.length > 0) {
+                                    // Usar el último producto que coincida
+                                    const productMatch = matchingProducts[matchingProducts.length - 1];
+                                    
+                                    console.log(`✅ Agregando comentario para producto:`, {
+                                        id_orders_details: productMatch.id_orders_details,
+                                        comment: carritoItem.comentario.trim(),
+                                        producto: carritoItem.nombre
+                                    });
+                                    
+                                    detailsComments.push({
+                                        id_orders_details: productMatch.id_orders_details,
+                                        comment: carritoItem.comentario.trim()
+                                    });
+                                } else {
+                                    console.log(`⚠️ No se encontró id_orders_details para: ${carritoItem.nombre}`);
+                                }
+                            }
+                        });
+                    } else {
+                        console.log('⚠️ No se encontraron productos en el ticket:', ticketData);
+                    }
 
-                console.log('📝 Comentario general:', comentarioGeneral);
-                console.log('📝 Details comments:', detailsComments);
+                    console.log('📝 Comentario general:', comentarioGeneral);
+                    console.log('📝 Details comments:', detailsComments);
 
-                // Solo enviar si hay comentarios (general o por producto)
-                if (comentarioGeneral.trim() !== '' || detailsComments.length > 0) {
-                    const commentData = {
-                        general_comment: comentarioGeneral.trim(),
-                        details_comments: detailsComments
-                    };
+                    // Solo enviar si hay comentarios (general o por producto)
+                    if (comentarioGeneral.trim() !== '' || detailsComments.length > 0) {
+                        const commentData = {
+                            general_comment: comentarioGeneral.trim(),
+                            details_comments: detailsComments
+                        };
 
-                    console.log('📤 Enviando comentarios a la API:', commentData);
-                    const commentResponse = await postOrderComment(response.order_uuid, commentData);
-                    console.log('✅ Comentarios enviados exitosamente:', commentResponse);
+                        console.log('📤 Enviando comentarios a la API:', commentData);
+                        const commentResponse = await postOrderComment(response.order_uuid, commentData);
+                        console.log('✅ Comentarios enviados exitosamente:', commentResponse);
+                    } else {
+                        console.log('ℹ️ No hay comentarios válidos para enviar después de mapear');
+                    }
                 } else {
                     console.log('ℹ️ No hay comentarios para enviar');
                 }
