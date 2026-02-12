@@ -10,6 +10,9 @@ import { getProducts } from "@/useCases/getProducts";
 import { puntoVentaPostOrder } from "@/useCases/puntoVentaPostOrder";
 import { endOrderPuntoDeVenta } from "@/useCases/endOrderPuntoDeVenta";
 import { checkPayment } from "@/useCases/checkPayment";
+import { getTicket } from "@/useCases/getTicket";
+import { getRecetas } from "@/useCases/getRecetas";
+import postOrderComment from "@/useCases/postComentario";
 import TicketModal from "@/components/TicketModal";
 import CarritoModal from "./CarritoModal";
 import { ModalConfirmarPago, ModalDescuentoProducto, ModalDescuentoOrden, ModalSuscripcion, ModalOrdenCancelada } from "./ModalsPago";
@@ -46,6 +49,9 @@ export default function Pntoventa() {
     const [descuentoOrden, setDescuentoOrden] = useState({ tipo: 'porcentaje', valor: '', aplicado: false });
     const [modalDescuentoOrdenOpen, setModalDescuentoOrdenOpen] = useState(false);
     const [currentOrderUuid, setCurrentOrderUuid] = useState(null);
+
+    // Estados para comentarios de productos
+    const [comentarioGeneral, setComentarioGeneral] = useState('');
 
     // Mock para establecer permisos de ticket automáticamente
     useEffect(() => {
@@ -105,9 +111,41 @@ export default function Pntoventa() {
     };
 
     // Función para abrir la modal de detalles del producto
-    const openModal = (producto) => {
-        setProductoSeleccionado(producto);
-        setModalProductoOpen(true);
+    const openModal = async (producto) => {
+        try {
+            // Intentamos obtener las recetas desde la API y vincular por product_id
+            let productoConIngredientes = { ...producto };
+
+            try {
+                const recetas = await getRecetas();
+
+                if (Array.isArray(recetas) && recetas.length > 0) {
+                    // Buscar receta que coincida con el id del producto
+                    const productId = producto.id_products || producto.id || producto.product_id;
+                    const recetaMatch = recetas.find(r => {
+                        return r.product_id === productId || r.productId === productId || r.product_id === Number(productId);
+                    });
+
+                    if (recetaMatch && Array.isArray(recetaMatch.ingredients)) {
+                        const ingredientes = recetaMatch.ingredients.map(ing => {
+                            return ing.name || ing.ingredient_name || ing.ingredient?.name || ing.name_ingredient || String(ing.id_ingredient || ing.id || ing).toString();
+                        }).filter(Boolean);
+
+                        productoConIngredientes = { ...productoConIngredientes, ingredientes };
+                        console.log('🍕 Ingredientes encontrados para producto:', producto.name, ingredientes);
+                    }
+                }
+            } catch (err) {
+                console.error('No se pudo cargar recetas para el producto:', err);
+            }
+
+            setProductoSeleccionado(productoConIngredientes);
+            setModalProductoOpen(true);
+        } catch (error) {
+            console.error('Error al abrir modal de producto:', error);
+            setProductoSeleccionado(producto);
+            setModalProductoOpen(true);
+        }
     };
 
     // Función para cerrar la modal de detalles del producto
@@ -245,24 +283,63 @@ export default function Pntoventa() {
         setMensajeError('');
     };
 
-    const agregarAlCarrito = (producto) => {
-        const productoConPersonalizacion = {
-            ...producto,
-            id: producto.id_products,
-            descuento: null,
-        };
-
-        setCarrito((prevCarrito) => {
-            const productoExistente = prevCarrito.find((item) => item.id === productoConPersonalizacion.id);
-            if (productoExistente) {
-                return prevCarrito.map((item) =>
-                    item.id === productoConPersonalizacion.id
-                        ? { ...item, cantidad: item.cantidad + (producto.cantidad || 1) }
-                        : item
-                );
+    const agregarAlCarrito = (producto, comentario = "", ingredientesExcl = []) => {
+        // Combinar ingredientes excluidos con el comentario manual
+        let comentarioFinal = '';
+        
+        if (ingredientesExcl.length > 0) {
+            comentarioFinal = ingredientesExcl.map(ing => `Sin ${ing}`).join(', ');
+        }
+        
+        if (comentario.trim() !== '') {
+            if (comentarioFinal !== '') {
+                comentarioFinal += ', ' + comentario.trim();
+            } else {
+                comentarioFinal = comentario.trim();
             }
-            return [...prevCarrito, { ...productoConPersonalizacion, cantidad: producto.cantidad || 1 }];
-        });
+        }
+
+        // Si tiene comentario, siempre agregar como nuevo item
+        if (comentarioFinal) {
+            const productoConComentario = {
+                ...producto,
+                id: `${producto.id_products}-${Date.now()}`,
+                cantidad: producto.cantidad || 1,
+                comentario: comentarioFinal,
+                ingredientesExcluidos: ingredientesExcl,
+                descuento: null,
+            };
+            setCarrito(prevCarrito => [...prevCarrito, productoConComentario]);
+            
+            console.log('🛒 Producto agregado al carrito (PuntoVenta):', {
+                nombre: productoConComentario.name,
+                comentario: productoConComentario.comentario,
+                ingredientesExcluidos: productoConComentario.ingredientesExcluidos
+            });
+        } else {
+            // Comportamiento original: agrupar productos sin comentarios
+            const productoConPersonalizacion = {
+                ...producto,
+                id: producto.id_products,
+                descuento: null,
+                comentario: '',
+                ingredientesExcluidos: [],
+            };
+
+            setCarrito((prevCarrito) => {
+                const productoExistente = prevCarrito.find((item) => 
+                    item.id === productoConPersonalizacion.id && !item.comentario
+                );
+                if (productoExistente) {
+                    return prevCarrito.map((item) =>
+                        item.id === productoConPersonalizacion.id && !item.comentario
+                            ? { ...item, cantidad: item.cantidad + (producto.cantidad || 1) }
+                            : item
+                    );
+                }
+                return [...prevCarrito, { ...productoConPersonalizacion, cantidad: producto.cantidad || 1 }];
+            });
+        }
     };
 
     // Función para mover productos del carrito a pedidos pendientes (Enviar a Cocina)
@@ -284,6 +361,8 @@ export default function Pntoventa() {
                     cantidad: item.cantidad,
                     price: item.price,
                     descuento: item.descuento,
+                    comentario: item.comentario || '',
+                    ingredientesExcluidos: item.ingredientesExcluidos || [],
                     fechaAgregado: new Date().toISOString()
                 })),
             ]);
@@ -367,6 +446,71 @@ export default function Pntoventa() {
             const orderStatus = switchEnabled ? 'PuntoDeVenta' : 'Finalizado';
             await endOrderPuntoDeVenta(orderUuid, metodoPago, orderStatus);
 
+            // *** ENVIAR COMENTARIOS A LA API ***
+            try {
+                const pedidosConComentarios = pedidosPendientes.filter(item => item.comentario && item.comentario.trim() !== '');
+                
+                console.log('📦 Pedidos pendientes (PuntoVenta):', pedidosPendientes);
+                console.log('📦 Productos con comentarios (PuntoVenta):', pedidosConComentarios.length);
+                console.log('📝 Comentario general (PuntoVenta):', comentarioGeneral);
+
+                if (pedidosConComentarios.length > 0 || comentarioGeneral.trim() !== '') {
+                    console.log('🔍 Obteniendo detalles de la orden para mapear comentarios...');
+                    const ticketData = await getTicket(orderUuid);
+                    console.log('📦 Ticket data recibido:', ticketData);
+
+                    const detailsComments = [];
+
+                    if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
+                        const ticketProducts = ticketData.products;
+                        
+                        pedidosPendientes.forEach((pedidoItem) => {
+                            if (pedidoItem.comentario && pedidoItem.comentario.trim() !== '') {
+                                const productId = pedidoItem.id_products;
+                                
+                                const matchingProducts = ticketProducts.filter(tp => 
+                                    tp.id_products === productId || tp.product_id === productId
+                                );
+                                
+                                console.log(`🔍 Buscando producto ${productId} (${pedidoItem.name}):`, matchingProducts);
+                                
+                                if (matchingProducts.length > 0) {
+                                    const productMatch = matchingProducts[matchingProducts.length - 1];
+                                    
+                                    console.log(`✅ Agregando comentario para producto (PuntoVenta):`, {
+                                        id_orders_details: productMatch.id_orders_details,
+                                        comment: pedidoItem.comentario.trim(),
+                                        producto: pedidoItem.name
+                                    });
+                                    
+                                    detailsComments.push({
+                                        id_orders_details: productMatch.id_orders_details,
+                                        comment: pedidoItem.comentario.trim()
+                                    });
+                                } else {
+                                    console.log(`⚠️ No se encontró id_orders_details para: ${pedidoItem.name}`);
+                                }
+                            }
+                        });
+                    }
+
+                    console.log('📝 Details comments (PuntoVenta):', detailsComments);
+
+                    if (detailsComments.length > 0 || comentarioGeneral.trim() !== '') {
+                        const commentData = {
+                            general_comment: comentarioGeneral.trim(),
+                            details_comments: detailsComments
+                        };
+
+                        console.log('📤 Enviando comentarios a la API (PuntoVenta):', commentData);
+                        const commentResponse = await postOrderComment(orderUuid, commentData);
+                        console.log('✅ Comentarios enviados exitosamente (PuntoVenta):', commentResponse);
+                    }
+                }
+            } catch (commentError) {
+                console.error('⚠️ Error al enviar comentarios (PuntoVenta):', commentError);
+            }
+
             if (response && response.order_uuid) {
                 // Limpiar estados
                 setPedidosPendientes([]);
@@ -374,6 +518,7 @@ export default function Pntoventa() {
                 localStorage.removeItem("carrito");
 
                 setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
+                setComentarioGeneral('');
 
                 setModalTotalOpen(false);
                 setMetodoPago('efectivo');
@@ -690,6 +835,8 @@ export default function Pntoventa() {
                 setDescuentoOrden={setDescuentoOrden}
                 setModalDescuentoOrdenOpen={setModalDescuentoOrdenOpen}
                 setMensajeError={setMensajeError}
+                comentarioGeneral={comentarioGeneral}
+                setComentarioGeneral={setComentarioGeneral}
             />
 
             {/* Modal de Ticket */}

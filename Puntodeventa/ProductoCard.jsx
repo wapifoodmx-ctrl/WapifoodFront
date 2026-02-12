@@ -92,6 +92,8 @@ export default function ProductoCard({ producto, onAgregarAlCarrito, onOpenModal
 
 export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito }) {
     const [cantidad, setCantidad] = useState(1);
+    const [comentario, setComentario] = useState('');
+    const [ingredientesExcluidos, setIngredientesExcluidos] = useState([]);
 
     if (!isOpen || !producto) return null;
 
@@ -101,10 +103,27 @@ export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito })
     };
 
     const handleAgregar = () => {
-        onAgregarAlCarrito({ ...producto, cantidad });
+        onAgregarAlCarrito({ ...producto, cantidad }, comentario, ingredientesExcluidos);
         setCantidad(1);
+        setComentario('');
+        setIngredientesExcluidos([]);
         onClose();
     };
+
+    const toggleIngrediente = (ingrediente) => {
+        setIngredientesExcluidos(prev => 
+            prev.includes(ingrediente)
+                ? prev.filter(i => i !== ingrediente)
+                : [...prev, ingrediente]
+        );
+    };
+
+    // Normalizar ingredientes
+    const ingredientes = Array.isArray(producto.ingredientes) 
+        ? producto.ingredientes 
+        : typeof producto.ingredientes === 'string' 
+            ? producto.ingredientes.split(',').map(i => i.trim()).filter(i => i)
+            : [];
 
     // Obtener la URL de la imagen correctamente
     const imageUrl = producto.image_url?.[0] || producto.image || Default.src;
@@ -186,6 +205,56 @@ export function ModalProducto({ isOpen, onClose, producto, onAgregarAlCarrito })
                                 ${(parseFloat(producto.price) * cantidad).toFixed(2)}
                             </span>
                         </div>
+                    </div>
+
+                    {/* Ingredientes con checkboxes */}
+                    {ingredientes.length > 0 && (
+                        <div className="mb-4">
+                            <h3 className="text-sm sm:text-base font-semibold text-gray-700 mb-2">Personalizar ingredientes</h3>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                                {ingredientes.map((ingrediente, index) => (
+                                    <label 
+                                        key={index}
+                                        className="flex items-center py-2 px-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 cursor-pointer hover:from-green-100 hover:to-emerald-100 transition-all"
+                                    >
+                                        <input 
+                                            type="checkbox"
+                                            className="w-4 h-4 text-red-500 rounded border-gray-300 focus:ring-green-500 cursor-pointer accent-red-500"
+                                            checked={ingredientesExcluidos.includes(ingrediente)}
+                                            onChange={() => toggleIngrediente(ingrediente)}
+                                        />
+                                        <span className={`ml-3 text-sm font-medium ${
+                                            ingredientesExcluidos.includes(ingrediente) 
+                                                ? 'text-red-600 line-through' 
+                                                : 'text-gray-700'
+                                        }`}>
+                                            Sin {ingrediente}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                            {ingredientesExcluidos.length > 0 && (
+                                <div className="mt-2 p-2 bg-red-50 rounded-lg border border-red-200">
+                                    <p className="text-xs text-red-600 font-medium">
+                                        ❌ Se quitará: {ingredientesExcluidos.join(', ')}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Campo de comentario */}
+                    <div className="mb-4">
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-700 mb-2">Comentario especial (opcional)</h3>
+                        <textarea
+                            value={comentario}
+                            onChange={(e) => setComentario(e.target.value)}
+                            placeholder="Ej: Sin cebolla, extra salsa, poco picante..."
+                            className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
+                            rows={2}
+                            maxLength={200}
+                        />
+                        <p className="text-xs text-gray-500 text-right mt-1">{comentario.length}/200</p>
                     </div>
 
                     <button

@@ -20,7 +20,9 @@ export default function CarritoModal({
     descuentoOrden,
     setDescuentoOrden,
     setModalDescuentoOrdenOpen,
-    setMensajeError
+    setMensajeError,
+    comentarioGeneral,
+    setComentarioGeneral
 }) {
     if (!isOpen) return null;
 
@@ -114,6 +116,12 @@ export default function CarritoModal({
                                                             </span>
                                                         )}
                                                     </div>
+                                                    {/* Mostrar comentario del producto */}
+                                                    {item.comentario && (
+                                                        <p className="text-xs text-gray-600 italic mt-1 bg-yellow-50 px-2 py-1 rounded">
+                                                            💬 {item.comentario}
+                                                        </p>
+                                                    )}
                                                 </div>
                                                 <button
                                                     className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all"
@@ -198,6 +206,36 @@ export default function CarritoModal({
                             </div>
                         ) : null}
                     </div>
+
+                    {/* ========== COMENTARIO GENERAL ========== */}
+                    {(carrito.length > 0 || pedidosPendientes.length > 0) && (
+                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                💬 Comentario general de la orden (opcional)
+                            </label>
+                            <textarea
+                                value={comentarioGeneral}
+                                onChange={(e) => setComentarioGeneral(e.target.value)}
+                                placeholder="Ej: Para llevar, sin servilletas, entregar rápido..."
+                                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
+                                rows={2}
+                                maxLength={200}
+                            />
+                            <div className="flex justify-between items-center mt-1">
+                                <span className="text-xs text-gray-500">
+                                    {comentarioGeneral.length}/200 caracteres
+                                </span>
+                                {comentarioGeneral && (
+                                    <button
+                                        onClick={() => setComentarioGeneral('')}
+                                        className="text-xs text-red-500 hover:text-red-700"
+                                    >
+                                        Limpiar
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* ========== TOTAL DEL CARRITO ========== */}
                     {carrito.length > 0 && (
@@ -298,6 +336,12 @@ export default function CarritoModal({
                                                                 ${subtotalConDescuento.toFixed(2)}
                                                             </span>
                                                         </div>
+                                                    )}
+                                                    {/* Mostrar comentario del producto pendiente */}
+                                                    {item.comentario && (
+                                                        <p className="text-xs text-gray-600 italic mt-2 bg-yellow-100 px-2 py-1 rounded">
+                                                            💬 {item.comentario}
+                                                        </p>
                                                     )}
                                                 </div>
                                                 <div className="ml-3">
