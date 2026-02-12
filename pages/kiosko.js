@@ -8,6 +8,9 @@ import { IoExpandOutline } from "react-icons/io5";
 import { getProductsKiosko } from "@/useCases/getProductsKiosko";
 import { kioskoPostOrder } from "@/useCases/kioskoPostOrder";
 import { loginUser } from "@/useCases/login";
+import { getTicket } from "@/useCases/getTicket";
+import postOrderComment from "@/useCases/postComentario";
+import { getRecetas } from "@/useCases/getRecetas";
 import TicketModal from "@/components/TicketModal";
 
 export default function Kiosko() {
@@ -40,6 +43,11 @@ export default function Kiosko() {
     const [loginData, setLoginData] = useState({ email: '', password: '' });
     const [loginError, setLoginError] = useState('');
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+    // Estados para comentarios de productos
+    const [comentarioProducto, setComentarioProducto] = useState('');
+    const [ingredientesExcluidos, setIngredientesExcluidos] = useState([]);
+    const [comentarioGeneral, setComentarioGeneral] = useState('');
 
     // Verificar autenticación al cargar
     useEffect(() => {
@@ -220,17 +228,55 @@ export default function Kiosko() {
     const categoriasUnicas = [...new Set(productos.map((producto) => producto.nombre_categoria))];
 
     // Agregar producto al carrito
-    const agregarAlCarrito = (producto) => {
-        const productoEnCarrito = carrito.find((item) => item.id_products === producto.id_products);
+    const agregarAlCarrito = (producto, comentario = "", ingredientesExcl = []) => {
+        // Combinar ingredientes excluidos con el comentario manual
+        let comentarioFinal = '';
+        
+        if (ingredientesExcl.length > 0) {
+            comentarioFinal = ingredientesExcl.map(ing => `Sin ${ing}`).join(', ');
+        }
+        
+        if (comentario.trim() !== '') {
+            if (comentarioFinal !== '') {
+                comentarioFinal += ', ' + comentario.trim();
+            } else {
+                comentarioFinal = comentario.trim();
+            }
+        }
 
-        if (productoEnCarrito) {
-            setCarrito(
-                carrito.map((item) =>
-                    item.id_products === producto.id_products ? { ...item, cantidad: item.cantidad + 1 } : item
-                )
-            );
+        // Si tiene comentario final o ingredientes excluidos, siempre agregar como nuevo item
+        if (comentarioFinal || ingredientesExcl.length > 0) {
+            const productoConComentario = {
+                ...producto,
+                id: `${producto.id_products}-${Date.now()}`,
+                cantidad: 1,
+                comentario: comentarioFinal,
+                ingredientesExcluidos: ingredientesExcl
+            };
+            setCarrito([...carrito, productoConComentario]);
+            
+            console.log('🛒 Producto agregado al carrito (Kiosko):', {
+                nombre: productoConComentario.name,
+                comentario: productoConComentario.comentario,
+                ingredientesExcluidos: productoConComentario.ingredientesExcluidos
+            });
         } else {
-            setCarrito([...carrito, { ...producto, cantidad: 1 }]);
+            // Comportamiento original: agrupar productos sin comentarios
+            const productoEnCarrito = carrito.find((item) => 
+                item.id_products === producto.id_products && !item.comentario
+            );
+
+            if (productoEnCarrito) {
+                setCarrito(
+                    carrito.map((item) =>
+                        item.id_products === producto.id_products && !item.comentario 
+                            ? { ...item, cantidad: item.cantidad + 1 } 
+                            : item
+                    )
+                );
+            } else {
+                setCarrito([...carrito, { ...producto, cantidad: 1, comentario: '', ingredientesExcluidos: [] }]);
+            }
         }
     };
 
@@ -243,14 +289,14 @@ export default function Kiosko() {
 
         setCarrito(
             carrito.map((item) =>
-                item.id_products === productoId ? { ...item, cantidad: nuevaCantidad } : item
+                (item.id || item.id_products) === productoId ? { ...item, cantidad: nuevaCantidad } : item
             )
         );
     };
 
     // Eliminar producto del carrito
     const eliminarDelCarrito = (productoId) => {
-        setCarrito(carrito.filter((item) => item.id_products !== productoId));
+        setCarrito(carrito.filter((item) => (item.id || item.id_products) !== productoId));
     };
 
     // Vaciar carrito
@@ -280,12 +326,91 @@ export default function Kiosko() {
 
             const orderData = await kioskoPostOrder(productIds, quantities, metodoPago);
 
+            // *** ENVIAR COMENTARIOS A LA API ***
+            try {
+                // Verificar si hay comentarios en el carrito o comentario general
+                const carritoConComentarios = carrito.filter(item => item.comentario && item.comentario.trim() !== '');
+                
+                console.log('📦 Carrito actual (Kiosko):', carrito);
+                console.log('📦 Productos con comentarios (Kiosko):', carritoConComentarios.length);
+                console.log('📝 Comentario general (Kiosko):', comentarioGeneral);
+
+                // Solo proceder si hay comentarios que enviar (productos o general)
+                if (carritoConComentarios.length > 0 || comentarioGeneral.trim() !== '') {
+                    // Obtener los detalles de la orden para conseguir los id_orders_details
+                    console.log('🔍 Obteniendo detalles de la orden para mapear comentarios...');
+                    const ticketData = await getTicket(orderData.order_uuid);
+                    console.log('📦 Ticket data recibido:', ticketData);
+
+                    // Construir el array de details_comments
+                    const detailsComments = [];
+
+                    // La respuesta de getTicket tiene los productos con id_orders_details
+                    if (ticketData && ticketData.products && Array.isArray(ticketData.products)) {
+                        const ticketProducts = ticketData.products;
+                        
+                        carrito.forEach((carritoItem) => {
+                            if (carritoItem.comentario && carritoItem.comentario.trim() !== '') {
+                                const productId = carritoItem.id_products;
+                                
+                                // Buscar los productos del ticket que coincidan con este id_products
+                                const matchingProducts = ticketProducts.filter(tp => 
+                                    tp.id_products === productId || tp.product_id === productId
+                                );
+                                
+                                console.log(`🔍 Buscando producto ${productId} (${carritoItem.name}):`, matchingProducts);
+                                
+                                if (matchingProducts.length > 0) {
+                                    const productMatch = matchingProducts[matchingProducts.length - 1];
+                                    
+                                    console.log(`✅ Agregando comentario para producto (Kiosko):`, {
+                                        id_orders_details: productMatch.id_orders_details,
+                                        comment: carritoItem.comentario.trim(),
+                                        producto: carritoItem.name
+                                    });
+                                    
+                                    detailsComments.push({
+                                        id_orders_details: productMatch.id_orders_details,
+                                        comment: carritoItem.comentario.trim()
+                                    });
+                                } else {
+                                    console.log(`⚠️ No se encontró id_orders_details para: ${carritoItem.name}`);
+                                }
+                            }
+                        });
+                    }
+
+                    console.log('📝 Details comments (Kiosko):', detailsComments);
+
+                    // Enviar si hay comentarios válidos (productos o general)
+                    if (detailsComments.length > 0 || comentarioGeneral.trim() !== '') {
+                        const commentData = {
+                            general_comment: comentarioGeneral.trim(),
+                            details_comments: detailsComments
+                        };
+
+                        console.log('📤 Enviando comentarios a la API (Kiosko):', commentData);
+                        const commentResponse = await postOrderComment(orderData.order_uuid, commentData);
+                        console.log('✅ Comentarios enviados exitosamente (Kiosko):', commentResponse);
+                    } else {
+                        console.log('ℹ️ No hay comentarios válidos para enviar después de mapear (Kiosko)');
+                    }
+                } else {
+                    console.log('ℹ️ No hay comentarios para enviar (Kiosko)');
+                }
+            } catch (commentError) {
+                console.error('⚠️ Error al enviar comentarios (Kiosko):', commentError);
+                console.error('⚠️ Detalles del error:', commentError.message);
+                // No detenemos el flujo si falla el envío de comentarios
+            }
+
             // Mostrar ticket
             setCompletedOrderUuid(orderData.order_uuid);
             setShowTicketModal(true);
 
-            // Limpiar carrito
+            // Limpiar carrito y comentario general
             vaciarCarrito();
+            setComentarioGeneral('');
         } catch (error) {
             console.error("Error al procesar la orden:", error);
             
@@ -302,9 +427,60 @@ export default function Kiosko() {
     };
 
     // Abrir modal de producto
-    const abrirModalProducto = (producto) => {
-        setProductoSeleccionado(producto);
-        setModalProductoOpen(true);
+    const abrirModalProducto = async (producto) => {
+        try {
+            // Intentamos obtener las recetas desde la API y vincular por product_id
+            let productoConIngredientes = { ...producto };
+
+            try {
+                const recetas = await getRecetas();
+
+                if (Array.isArray(recetas) && recetas.length > 0) {
+                    // Buscar receta que coincida con el id del producto
+                    const productId = producto.id_products || producto.id || producto.product_id;
+                    const recetaMatch = recetas.find(r => {
+                        // Algunos objetos usan product_id o productId
+                        return r.product_id === productId || r.productId === productId || r.product_id === Number(productId);
+                    });
+
+                    if (recetaMatch && Array.isArray(recetaMatch.ingredients)) {
+                        // Normalizar a un array de strings con el nombre del ingrediente
+                        const ingredientes = recetaMatch.ingredients.map(ing => {
+                            return ing.name || ing.ingredient_name || ing.ingredient?.name || ing.name_ingredient || String(ing.id_ingredient || ing.id || ing).toString();
+                        }).filter(Boolean);
+
+                        productoConIngredientes = { ...productoConIngredientes, ingredientes };
+                        console.log('🍕 Ingredientes encontrados para producto:', producto.name, ingredientes);
+                    } else {
+                        console.log('⚠️ No se encontró receta para el producto:', producto.name, 'ID:', productId);
+                    }
+                }
+            } catch (err) {
+                // Si falla la obtención de recetas, no bloqueamos la apertura del modal
+                console.error('No se pudo cargar recetas para el producto:', err);
+            }
+
+            setProductoSeleccionado(productoConIngredientes);
+            setComentarioProducto('');
+            setIngredientesExcluidos([]);
+            setModalProductoOpen(true);
+        } catch (error) {
+            console.error('Error al abrir modal de producto:', error);
+            // Fallback: abrir modal sin ingredientes
+            setProductoSeleccionado(producto);
+            setComentarioProducto('');
+            setIngredientesExcluidos([]);
+            setModalProductoOpen(true);
+        }
+    };
+
+    // Toggle ingrediente excluido
+    const toggleIngredienteExcluido = (ingrediente) => {
+        setIngredientesExcluidos(prev => 
+            prev.includes(ingrediente)
+                ? prev.filter(i => i !== ingrediente)
+                : [...prev, ingrediente]
+        );
     };
 
     // Obtener imagen del producto
@@ -568,9 +744,9 @@ export default function Kiosko() {
                                             Tu carrito está vacío
                                         </p>
                                     ) : (
-                                        carrito.map((item) => (
+                                        carrito.map((item, index) => (
                                             <div
-                                                key={item.id_products}
+                                                key={item.id || `${item.id_products}-${index}`}
                                                 className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200"
                                             >
                                                 <div className="flex items-start justify-between mb-2">
@@ -578,16 +754,31 @@ export default function Kiosko() {
                                                         {item.name}
                                                     </h3>
                                                     <button
-                                                        onClick={() => eliminarDelCarrito(item.id_products)}
+                                                        onClick={() => eliminarDelCarrito(item.id || item.id_products)}
                                                         className="text-red-500 hover:text-red-700 ml-2"
                                                     >
                                                         <FaTrash size={16} />
                                                     </button>
                                                 </div>
+                                                
+                                                {/* Mostrar ingredientes excluidos */}
+                                                {item.ingredientesExcluidos && item.ingredientesExcluidos.length > 0 && (
+                                                    <p className="text-sm text-red-600 mb-1">
+                                                        Sin: {item.ingredientesExcluidos.join(', ')}
+                                                    </p>
+                                                )}
+                                                
+                                                {/* Mostrar comentario */}
+                                                {item.comentario && (
+                                                    <p className="text-sm text-gray-600 italic mb-2 bg-yellow-50 px-2 py-1 rounded">
+                                                        💬 {item.comentario}
+                                                    </p>
+                                                )}
+                                                
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
                                                         <button
-                                                            onClick={() => modificarCantidad(item.id_products, item.cantidad - 1)}
+                                                            onClick={() => modificarCantidad(item.id || item.id_products, item.cantidad - 1)}
                                                             className="bg-white border-2 border-green-300 text-green-600 w-8 h-8 rounded-lg hover:bg-green-50 font-bold"
                                                         >
                                                             <FaMinus size={12} className="mx-auto" />
@@ -596,7 +787,7 @@ export default function Kiosko() {
                                                             {item.cantidad}
                                                         </span>
                                                         <button
-                                                            onClick={() => modificarCantidad(item.id_products, item.cantidad + 1)}
+                                                            onClick={() => modificarCantidad(item.id || item.id_products, item.cantidad + 1)}
                                                             className="bg-white border-2 border-green-300 text-green-600 w-8 h-8 rounded-lg hover:bg-green-50 font-bold"
                                                         >
                                                             <FaPlus size={12} className="mx-auto" />
@@ -613,6 +804,34 @@ export default function Kiosko() {
 
                                 {carrito.length > 0 && (
                                     <>
+                                        {/* Comentario general de la orden */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                💬 Comentario general de la orden (opcional)
+                                            </label>
+                                            <textarea
+                                                value={comentarioGeneral}
+                                                onChange={(e) => setComentarioGeneral(e.target.value)}
+                                                placeholder="Ej: Para llevar, sin servilletas, entregar en mesa 5..."
+                                                className="w-full p-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
+                                                rows={2}
+                                                maxLength={200}
+                                            />
+                                            <div className="flex justify-between items-center mt-1">
+                                                <span className="text-xs text-gray-500">
+                                                    {comentarioGeneral.length}/200 caracteres
+                                                </span>
+                                                {comentarioGeneral && (
+                                                    <button
+                                                        onClick={() => setComentarioGeneral('')}
+                                                        className="text-xs text-red-500 hover:text-red-700"
+                                                    >
+                                                        Limpiar
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
                                         <div className="border-t-2 border-green-200 pt-4 mb-4">
                                             <div className="flex justify-between items-center mb-2">
                                                 <span className="text-xl font-bold text-gray-700">Total:</span>
@@ -767,9 +986,65 @@ export default function Kiosko() {
                                         {productoSeleccionado.nombre_categoria}
                                     </span>
                                 </div>
+
+                                {/* Ingredientes excluidos con checkboxes */}
+                                {productoSeleccionado.ingredientes && productoSeleccionado.ingredientes.length > 0 && (
+                                    <div className="mb-6">
+                                        <h3 className="text-lg font-bold text-gray-700 mb-3">Personalizar ingredientes</h3>
+                                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                                            {(Array.isArray(productoSeleccionado.ingredientes) 
+                                                ? productoSeleccionado.ingredientes 
+                                                : typeof productoSeleccionado.ingredientes === 'string'
+                                                    ? productoSeleccionado.ingredientes.split(',').map(i => i.trim()).filter(i => i)
+                                                    : []
+                                            ).map((ingrediente, index) => (
+                                                <label 
+                                                    key={index}
+                                                    className="flex items-center py-3 px-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 cursor-pointer hover:from-green-100 hover:to-emerald-100 transition-all"
+                                                >
+                                                    <input 
+                                                        type="checkbox"
+                                                        className="w-5 h-5 text-red-500 rounded border-gray-300 focus:ring-green-500 cursor-pointer accent-red-500"
+                                                        checked={ingredientesExcluidos.includes(ingrediente)}
+                                                        onChange={() => toggleIngredienteExcluido(ingrediente)}
+                                                    />
+                                                    <span className={`ml-3 font-medium ${
+                                                        ingredientesExcluidos.includes(ingrediente) 
+                                                            ? 'text-red-600 line-through' 
+                                                            : 'text-gray-700'
+                                                    }`}>
+                                                        Sin {ingrediente}
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {ingredientesExcluidos.length > 0 && (
+                                            <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200">
+                                                <p className="text-sm text-red-600 font-medium">
+                                                    ❌ Se quitará: {ingredientesExcluidos.join(', ')}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Campo de comentario */}
+                                <div className="mb-6">
+                                    <h3 className="text-lg font-bold text-gray-700 mb-2">Comentario especial (opcional)</h3>
+                                    <textarea
+                                        value={comentarioProducto}
+                                        onChange={(e) => setComentarioProducto(e.target.value)}
+                                        placeholder="Ej: Sin cebolla, extra salsa, poco picante..."
+                                        className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none"
+                                        rows={3}
+                                        maxLength={200}
+                                    />
+                                    <p className="text-sm text-gray-500 text-right">{comentarioProducto.length}/200</p>
+                                </div>
+
                                 <button
                                     onClick={() => {
-                                        agregarAlCarrito(productoSeleccionado);
+                                        agregarAlCarrito(productoSeleccionado, comentarioProducto, ingredientesExcluidos);
                                         setModalProductoOpen(false);
                                     }}
                                     className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 rounded-xl font-bold text-lg hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg"
