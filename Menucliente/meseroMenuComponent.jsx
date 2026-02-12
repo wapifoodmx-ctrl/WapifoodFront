@@ -18,6 +18,7 @@ import { getTicket } from "@/useCases/getTicket";
 
 import { getLatestOrdersByPlan } from "@/useCases/getLatestOrdersByPlan";
 import { vincularMeseroOrden } from "@/useCases/vincularMeseroOrden";
+import postOrderComment from "@/useCases/postComentario";
 import ProductCard from "./ ProductCard";
 import CartModalMesero from "./CartModalMesero";
 import LoginMeseroModal from "./LoginMeseroModal";
@@ -298,6 +299,9 @@ export default function MeseroMenuComponent() {
         localStorage.removeItem('ordenActiva_mesero');
         localStorage.removeItem('historialPedidos_mesero');
         localStorage.removeItem('carrito_mesero');
+        // Limpiar comentarios del localStorage
+        localStorage.removeItem('carrito_comentarios_mesero');
+        localStorage.removeItem('comentario_orden_general_mesero');
 
         setIsAuthenticated(false);
         setMeseroData(null);
@@ -329,6 +333,9 @@ export default function MeseroMenuComponent() {
                     localStorage.removeItem("ordenActiva_mesero");
                     localStorage.removeItem("historialPedidos_mesero");
                     localStorage.removeItem("carrito_mesero");
+                    // Limpiar comentarios del localStorage
+                    localStorage.removeItem("carrito_comentarios_mesero");
+                    localStorage.removeItem("comentario_orden_general_mesero");
 
                     setHistorialPedidos([]);
                     setOrdenActiva(null);
@@ -354,6 +361,9 @@ export default function MeseroMenuComponent() {
                     localStorage.removeItem("ordenActiva_mesero");
                     localStorage.removeItem("historialPedidos_mesero");
                     localStorage.removeItem("carrito_mesero");
+                    // Limpiar comentarios del localStorage
+                    localStorage.removeItem("carrito_comentarios_mesero");
+                    localStorage.removeItem("comentario_orden_general_mesero");
 
                     setHistorialPedidos([]);
                     setOrdenActiva(null);
@@ -591,13 +601,29 @@ export default function MeseroMenuComponent() {
         setProductoSeleccionado(null);
     };
 
-    const agregarAlCarrito = (producto) => {
+    const agregarAlCarrito = (producto, comentario = "", ingredientesExcluidos = []) => {
         const productoConId = {
             ...producto,
-            id: `${producto.id_products}-${Date.now()}`
+            id: `${producto.id_products}-${Date.now()}`,
+            id_products: producto.id_products || producto.id,
+            ingredientesExcluidos: ingredientesExcluidos || [],
+            comentario: comentario || "",
         };
 
-        setCarrito((prevCarrito) => [...prevCarrito, productoConId]);
+        setCarrito((prevCarrito) => {
+            const nuevoCarrito = [...prevCarrito, productoConId];
+            
+            // Guardar en localStorage
+            localStorage.setItem("carrito_comentarios_mesero", JSON.stringify(nuevoCarrito));
+            
+            console.log('🛒 Producto agregado al carrito (Mesero):', {
+                nombre: productoConId.nombre,
+                comentario: productoConId.comentario,
+                ingredientesExcluidos: productoConId.ingredientesExcluidos
+            });
+            
+            return nuevoCarrito;
+        });
         closeModal();
     };
 
@@ -704,6 +730,89 @@ export default function MeseroMenuComponent() {
                     }));
                     setHistorialPedidos(productosHistorial);
                     localStorage.setItem("historialPedidos_mesero", JSON.stringify(productosHistorial));
+
+                    // *** ENVIAR COMENTARIOS A LA API ***
+                    try {
+                        // Obtener el comentario general del localStorage (desde CartModalMesero)
+                        const comentarioGeneral = localStorage.getItem("comentario_orden_general_mesero") || "";
+                        
+                        // Verificar si hay comentarios en el carrito antes de continuar
+                        const carritoConComentarios = carrito.filter(item => item.comentario && item.comentario.trim() !== '');
+                        
+                        console.log('📦 Carrito actual (Mesero):', carrito);
+                        console.log('📦 Productos con comentarios (Mesero):', carritoConComentarios.length);
+
+                        // Solo proceder si hay comentarios que enviar
+                        if (comentarioGeneral.trim() !== '' || carritoConComentarios.length > 0) {
+                            // Construir el array de details_comments
+                            const detailsComments = [];
+
+                            // La respuesta de getTicket tiene los productos con id_orders_details
+                            if (ticketData.products && Array.isArray(ticketData.products)) {
+                                // Mapear los productos del carrito con los id_orders_details del ticket
+                                const ticketProducts = ticketData.products;
+                                
+                                carrito.forEach((carritoItem) => {
+                                    if (carritoItem.comentario && carritoItem.comentario.trim() !== '') {
+                                        // Buscar el producto correspondiente en el ticket por id_products
+                                        const productId = carritoItem.id_products || parseInt(carritoItem.id.split('-')[0]);
+                                        
+                                        // Buscar los productos del ticket que coincidan con este id_products
+                                        const matchingProducts = ticketProducts.filter(tp => 
+                                            tp.id_products === productId || tp.product_id === productId
+                                        );
+                                        
+                                        console.log(`🔍 Buscando producto ${productId} (${carritoItem.nombre}):`, matchingProducts);
+                                        
+                                        // Tomar el último producto que coincida (el más reciente agregado)
+                                        if (matchingProducts.length > 0) {
+                                            const productMatch = matchingProducts[matchingProducts.length - 1];
+                                            
+                                            console.log(`✅ Agregando comentario para producto (Mesero):`, {
+                                                id_orders_details: productMatch.id_orders_details,
+                                                comment: carritoItem.comentario.trim(),
+                                                producto: carritoItem.nombre
+                                            });
+                                            
+                                            detailsComments.push({
+                                                id_orders_details: productMatch.id_orders_details,
+                                                comment: carritoItem.comentario.trim()
+                                            });
+                                        } else {
+                                            console.log(`⚠️ No se encontró id_orders_details para: ${carritoItem.nombre}`);
+                                        }
+                                    }
+                                });
+                            }
+
+                            console.log('📝 Comentario general (Mesero):', comentarioGeneral);
+                            console.log('📝 Details comments (Mesero):', detailsComments);
+
+                            // Solo enviar si hay comentarios (general o por producto)
+                            if (comentarioGeneral.trim() !== '' || detailsComments.length > 0) {
+                                const commentData = {
+                                    general_comment: comentarioGeneral.trim(),
+                                    details_comments: detailsComments
+                                };
+
+                                console.log('📤 Enviando comentarios a la API (Mesero):', commentData);
+                                const commentResponse = await postOrderComment(response.order_uuid, commentData);
+                                console.log('✅ Comentarios enviados exitosamente (Mesero):', commentResponse);
+                            } else {
+                                console.log('ℹ️ No hay comentarios válidos para enviar después de mapear (Mesero)');
+                            }
+                        } else {
+                            console.log('ℹ️ No hay comentarios para enviar (Mesero)');
+                        }
+
+                        // Limpiar localStorage de comentarios
+                        localStorage.removeItem("carrito_comentarios_mesero");
+                        localStorage.removeItem("comentario_orden_general_mesero");
+                    } catch (commentError) {
+                        console.error('⚠️ Error al enviar comentarios (Mesero):', commentError);
+                        console.error('⚠️ Detalles del error:', commentError.message);
+                        // No detenemos el flujo si falla el envío de comentarios
+                    }
                 }
             } catch (error) {
                 console.warn('Error al recargar historial desde servidor:', error);
@@ -835,6 +944,9 @@ export default function MeseroMenuComponent() {
                 localStorage.removeItem("ordenActiva_mesero");
                 localStorage.removeItem("historialPedidos_mesero");
                 localStorage.removeItem("carrito_mesero");
+                // Limpiar comentarios del localStorage al finalizar orden
+                localStorage.removeItem("carrito_comentarios_mesero");
+                localStorage.removeItem("comentario_orden_general_mesero");
 
                 // AGREGAR ESTA LÍNEA: Resetear descuento de orden
                 setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });

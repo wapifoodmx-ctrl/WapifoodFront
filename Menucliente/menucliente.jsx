@@ -503,6 +503,9 @@ export default function MenuCliente() {
             localStorage.removeItem("carrito1");
             localStorage.removeItem("historialPedidos1");
             localStorage.removeItem("ordenActiva1");
+            // Limpiar comentarios del localStorage
+            localStorage.removeItem("carrito_comentarios");
+            localStorage.removeItem("comentario_orden_general");
 
             sessionStorage.removeItem('token');
 
@@ -1257,6 +1260,9 @@ export default function MenuCliente() {
             localStorage.removeItem("historialPedidos1");
             localStorage.removeItem("carrito1");
             localStorage.removeItem("productosCanceladosSnapshot1"); // Limpiar snapshot
+            // Limpiar comentarios del localStorage
+            localStorage.removeItem("carrito_comentarios");
+            localStorage.removeItem("comentario_orden_general");
 
             setShowCancelledOrderModal(false);
 
@@ -1345,6 +1351,9 @@ export default function MenuCliente() {
                 localStorage.removeItem("historialPedidos1");
                 localStorage.removeItem("carrito1");
                 localStorage.removeItem("productosCanceladosSnapshot1");
+                // Limpiar comentarios del localStorage al finalizar orden
+                localStorage.removeItem("carrito_comentarios");
+                localStorage.removeItem("comentario_orden_general");
 
                 setModalTotalOpen(false);
                 setModalConfirmacionCodigoOpen(false);
