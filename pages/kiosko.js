@@ -12,6 +12,7 @@ import { getTicket } from "@/useCases/getTicket";
 import postOrderComment from "@/useCases/postComentario";
 import { getRecetas } from "@/useCases/getRecetas";
 import TicketModal from "@/components/TicketModal";
+import ComponenteComentario from "@/components/componenteComentario";
 
 export default function Kiosko() {
     const router = useRouter();
@@ -727,8 +728,9 @@ export default function Kiosko() {
 
                         {/* Panel del carrito */}
                         <div className="lg:col-span-1">
-                            <div className="bg-white rounded-2xl shadow-xl p-6 border border-green-100 sticky top-24">
-                                <div className="flex items-center justify-between mb-6">
+                            <div className="bg-white rounded-2xl shadow-xl border border-green-100 sticky top-24">
+                                {/* Header del carrito */}
+                                <div className="flex items-center justify-between mb-6 p-4 border-b border-green-100">
                                     <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
                                         <FaShoppingCart className="text-green-500" />
                                         Tu Pedido
@@ -738,6 +740,7 @@ export default function Kiosko() {
                                     </span>
                                 </div>
 
+                                {/* Lista de productos en carrito */}
                                 <div className={`space-y-3 overflow-y-auto mb-6 ${isFullscreen ? 'max-h-[calc(100vh-400px)]' : 'max-h-96'}`}>
                                     {carrito.length === 0 ? (
                                         <p className="text-gray-400 text-center py-8">
@@ -804,32 +807,15 @@ export default function Kiosko() {
 
                                 {carrito.length > 0 && (
                                     <>
-                                        {/* Comentario general de la orden - Estilo Punto de Venta */}
-                                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-4">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                💬 Comentario general de la orden (opcional)
-                                            </label>
-                                            <textarea
-                                                value={comentarioGeneral}
-                                                onChange={(e) => setComentarioGeneral(e.target.value)}
-                                                placeholder="Ej: Para llevar, sin servilletas, entregar rápido..."
-                                                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
-                                                rows={2}
-                                                maxLength={200}
+                                        {/* Comentario general de la orden - COLAPSABLE */}
+                                        <div className="px-4 mb-4">
+                                            <ComponenteComentario
+                                                comentario={comentarioGeneral}
+                                                setComentario={setComentarioGeneral}
+                                                titulo="💬 Comentario general de la orden"
+                                                placeholder="Ej: Para llevar, sin servilletas, entregar en mesa 5..."
+                                                storageKey="comentario_kiosko"
                                             />
-                                            <div className="flex justify-between items-center mt-1">
-                                                <span className="text-xs text-gray-500">
-                                                    {comentarioGeneral.length}/200 caracteres
-                                                </span>
-                                                {comentarioGeneral && (
-                                                    <button
-                                                        onClick={() => setComentarioGeneral('')}
-                                                        className="text-xs text-red-500 hover:text-red-700"
-                                                    >
-                                                        Limpiar
-                                                    </button>
-                                                )}
-                                            </div>
                                         </div>
 
                                         <div className="border-t-2 border-green-200 pt-4 mb-4">

@@ -1,6 +1,7 @@
 import { FaShoppingCart, FaPercent } from "react-icons/fa";
 import { IoTrashOutline, IoClose } from "react-icons/io5";
 import { MdDelete, MdShoppingCart } from "react-icons/md";
+import ComponenteComentario from "@/components/componenteComentario";
 
 export default function CarritoModal({
     isOpen,
@@ -44,7 +45,7 @@ export default function CarritoModal({
 
     return (
         <div
-            className="fixed inset-0 backdrop-blur-sm bg-black/50 z-[99999] flex justify-end"
+            className="fixed top-16 left-0 right-0 bottom-0 backdrop-blur-sm bg-black/50 flex justify-end items-center z-[99999]"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
@@ -207,34 +208,15 @@ export default function CarritoModal({
                         ) : null}
                     </div>
 
-                    {/* ========== COMENTARIO GENERAL ========== */}
+                    {/* ========== COMENTARIO GENERAL - COLAPSABLE ========== */}
                     {(carrito.length > 0 || pedidosPendientes.length > 0) && (
-                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                💬 Comentario general de la orden (opcional)
-                            </label>
-                            <textarea
-                                value={comentarioGeneral}
-                                onChange={(e) => setComentarioGeneral(e.target.value)}
-                                placeholder="Ej: Para llevar, sin servilletas, entregar rápido..."
-                                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
-                                rows={2}
-                                maxLength={200}
-                            />
-                            <div className="flex justify-between items-center mt-1">
-                                <span className="text-xs text-gray-500">
-                                    {comentarioGeneral.length}/200 caracteres
-                                </span>
-                                {comentarioGeneral && (
-                                    <button
-                                        onClick={() => setComentarioGeneral('')}
-                                        className="text-xs text-red-500 hover:text-red-700"
-                                    >
-                                        Limpiar
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+                        <ComponenteComentario
+                            comentario={comentarioGeneral}
+                            setComentario={setComentarioGeneral}
+                            titulo="💬 Comentario general de la orden"
+                            placeholder="Ej: Para llevar, sin servilletas, entregar rápido..."
+                            storageKey="comentario_puntoventa"
+                        />
                     )}
 
                     {/* ========== TOTAL DEL CARRITO ========== */}
@@ -419,7 +401,7 @@ export default function CarritoModal({
                     )}
                 </div>
 
-                {/* ========== FOOTER CON TOTAL Y BOTONES (STICKY) ========== */}
+                {/* ========== FOOTER ========== */}
                 <div className="px-6 py-4 bg-white border-t-2 border-gray-200 flex-shrink-0 space-y-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                     {/* Total siempre visible */}
                     {carrito.length > 0 && (
