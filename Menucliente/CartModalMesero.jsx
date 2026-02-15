@@ -394,9 +394,10 @@ export default function CartModal({
                                                             Sin: {item.ingredientesExcluidos.join(", ")}
                                                         </p>
                                                     )}
+                                                    {/* Mostrar comentario del producto - Estilo Punto de Venta */}
                                                     {item.comentario && (
-                                                        <p className="text-xs text-blue-600 mt-1 bg-blue-50 px-2 py-1 rounded">
-                                                            Nota: {item.comentario}
+                                                        <p className="text-xs text-gray-600 italic mt-1 bg-yellow-50 px-2 py-1 rounded">
+                                                            💬 {item.comentario}
                                                         </p>
                                                     )}
                                                     <div className="flex items-center gap-2 flex-wrap mt-1.5">
@@ -499,17 +500,17 @@ export default function CartModal({
 
                     {/* Input de comentarios - Ahora fuera de la sección de descuento */}
                     {carrito.length > 0 && (
-                        <div className="bg-white rounded-xl p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 border-2 border-gray-200">
-                            <label className="block text-xs sm:text-sm lg:text-base font-semibold text-gray-800 mb-2">
-                                💬 Comentarios para la orden
+                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                💬 Comentario general de la orden (opcional)
                             </label>
                             <textarea
                                 value={comentarioOrden}
                                 onChange={(e) => setComentarioOrden(e.target.value)}
-                                placeholder="Ej: Sin cebolla en todos los platillos, mesa cerca de la ventana..."
-                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-100 outline-none transition-all duration-200 resize-none text-xs sm:text-sm text-gray-700 placeholder-gray-400"
-                                rows="3"
-                                maxLength="200"
+                                placeholder="Ej: Para llevar, sin servilletas, entregar rápido..."
+                                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
+                                rows={2}
+                                maxLength={200}
                             />
                             <div className="flex justify-between items-center mt-1">
                                 <span className="text-xs text-gray-500">
@@ -518,7 +519,7 @@ export default function CartModal({
                                 {comentarioOrden && (
                                     <button
                                         onClick={() => setComentarioOrden('')}
-                                        className="text-xs text-red-600 hover:text-red-800 transition-colors"
+                                        className="text-xs text-red-500 hover:text-red-700"
                                     >
                                         Limpiar
                                     </button>

@@ -768,9 +768,9 @@ export default function Kiosko() {
                                                     </p>
                                                 )}
                                                 
-                                                {/* Mostrar comentario */}
+                                                {/* Mostrar comentario - Estilo Punto de Venta */}
                                                 {item.comentario && (
-                                                    <p className="text-sm text-gray-600 italic mb-2 bg-yellow-50 px-2 py-1 rounded">
+                                                    <p className="text-xs text-gray-600 italic mt-1 bg-yellow-50 px-2 py-1 rounded">
                                                         💬 {item.comentario}
                                                     </p>
                                                 )}
@@ -804,16 +804,16 @@ export default function Kiosko() {
 
                                 {carrito.length > 0 && (
                                     <>
-                                        {/* Comentario general de la orden */}
-                                        <div className="mb-4">
+                                        {/* Comentario general de la orden - Estilo Punto de Venta */}
+                                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-4">
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                                 💬 Comentario general de la orden (opcional)
                                             </label>
                                             <textarea
                                                 value={comentarioGeneral}
                                                 onChange={(e) => setComentarioGeneral(e.target.value)}
-                                                placeholder="Ej: Para llevar, sin servilletas, entregar en mesa 5..."
-                                                className="w-full p-3 border-2 border-green-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
+                                                placeholder="Ej: Para llevar, sin servilletas, entregar rápido..."
+                                                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
                                                 rows={2}
                                                 maxLength={200}
                                             />
@@ -987,28 +987,32 @@ export default function Kiosko() {
                                     </span>
                                 </div>
 
-                                {/* Ingredientes excluidos con checkboxes */}
-                                {productoSeleccionado.ingredientes && productoSeleccionado.ingredientes.length > 0 && (
-                                    <div className="mb-6">
-                                        <h3 className="text-lg font-bold text-gray-700 mb-3">Personalizar ingredientes</h3>
-                                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {/* Ingredientes con checkboxes - Estilo Punto de Venta */}
+                                {productoSeleccionado?.ingredientes && productoSeleccionado.ingredientes.length > 0 && (
+                                    <div className="mb-4">
+                                        <h3 className="text-sm sm:text-base font-semibold text-gray-700 mb-2">Personalizar ingredientes</h3>
+                                        <div className="space-y-2 max-h-40 overflow-y-auto">
                                             {(Array.isArray(productoSeleccionado.ingredientes) 
                                                 ? productoSeleccionado.ingredientes 
-                                                : typeof productoSeleccionado.ingredientes === 'string'
-                                                    ? productoSeleccionado.ingredientes.split(',').map(i => i.trim()).filter(i => i)
-                                                    : []
+                                                : productoSeleccionado.ingredientes.split(',').map(i => i.trim()).filter(i => i)
                                             ).map((ingrediente, index) => (
                                                 <label 
                                                     key={index}
-                                                    className="flex items-center py-3 px-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 cursor-pointer hover:from-green-100 hover:to-emerald-100 transition-all"
+                                                    className="flex items-center py-2 px-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 cursor-pointer hover:from-green-100 hover:to-emerald-100 transition-all"
                                                 >
                                                     <input 
                                                         type="checkbox"
-                                                        className="w-5 h-5 text-red-500 rounded border-gray-300 focus:ring-green-500 cursor-pointer accent-red-500"
+                                                        className="w-4 h-4 text-red-500 rounded border-gray-300 focus:ring-green-500 cursor-pointer accent-red-500"
                                                         checked={ingredientesExcluidos.includes(ingrediente)}
-                                                        onChange={() => toggleIngredienteExcluido(ingrediente)}
+                                                        onChange={() => {
+                                                            setIngredientesExcluidos(prev => 
+                                                                prev.includes(ingrediente)
+                                                                    ? prev.filter(i => i !== ingrediente)
+                                                                    : [...prev, ingrediente]
+                                                            );
+                                                        }}
                                                     />
-                                                    <span className={`ml-3 font-medium ${
+                                                    <span className={`ml-3 text-sm font-medium ${
                                                         ingredientesExcluidos.includes(ingrediente) 
                                                             ? 'text-red-600 line-through' 
                                                             : 'text-gray-700'
@@ -1019,8 +1023,8 @@ export default function Kiosko() {
                                             ))}
                                         </div>
                                         {ingredientesExcluidos.length > 0 && (
-                                            <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200">
-                                                <p className="text-sm text-red-600 font-medium">
+                                            <div className="mt-2 p-2 bg-red-50 rounded-lg border border-red-200">
+                                                <p className="text-xs text-red-600 font-medium">
                                                     ❌ Se quitará: {ingredientesExcluidos.join(', ')}
                                                 </p>
                                             </div>
@@ -1028,18 +1032,18 @@ export default function Kiosko() {
                                     </div>
                                 )}
 
-                                {/* Campo de comentario */}
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-bold text-gray-700 mb-2">Comentario especial (opcional)</h3>
+                                {/* Campo de comentario - Estilo Punto de Venta */}
+                                <div className="mb-4">
+                                    <h3 className="text-sm sm:text-base font-semibold text-gray-700 mb-2">Comentario especial (opcional)</h3>
                                     <textarea
                                         value={comentarioProducto}
                                         onChange={(e) => setComentarioProducto(e.target.value)}
                                         placeholder="Ej: Sin cebolla, extra salsa, poco picante..."
-                                        className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none"
-                                        rows={3}
+                                        className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
+                                        rows={2}
                                         maxLength={200}
                                     />
-                                    <p className="text-sm text-gray-500 text-right">{comentarioProducto.length}/200</p>
+                                    <p className="text-xs text-gray-500 text-right mt-1">{comentarioProducto.length}/200</p>
                                 </div>
 
                                 <button
