@@ -3,14 +3,18 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { getwebMenu } from '@/useCases/getwebmenu';
 import { getUserUUID } from '@/useCases/getUserUUID';
+import externalOrderDelivery from '@/useCases/externalOrderDelivery';
 import Image from 'next/image';
 import { FaWhatsapp, FaPhoneAlt, FaRegEye } from "react-icons/fa";
-import { MdOutlineWatchLater } from "react-icons/md";
+import { MdOutlineWatchLater, MdDeliveryDining } from "react-icons/md";
 import { GoChecklist } from "react-icons/go";
 import { IoHomeOutline } from "react-icons/io5";
+import { FiShoppingCart, FiPlus, FiMinus, FiTrash2, FiMessageSquare } from "react-icons/fi";
 import Profile from "@/pages/assets/images/Profile.jpg";
 import { getMenuStyle } from '@/styles/menuStyles';
 import Default from "@/public/Default.png";
+import Toast from '@/components/Toast';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function MenuWebDinamico() {
     const router = useRouter();
@@ -27,6 +31,25 @@ export default function MenuWebDinamico() {
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
     const [restauranteInfo, setRestauranteInfo] = useState(null);
     const [currentStyle, setCurrentStyle] = useState(getMenuStyle('default'));
+    
+    // Estados para delivery
+    const [isDeliveryMode, setIsDeliveryMode] = useState(false);
+    const [cart, setCart] = useState([]);
+    const [isCartOpen, setIsCartOpen] = useState(false);
+    const [showCustomerForm, setShowCustomerForm] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [orderFolio, setOrderFolio] = useState(null);
+    const [isRestaurantOpen, setIsRestaurantOpen] = useState(true);
+    const [customerData, setCustomerData] = useState({
+        nombre: '',
+        telefono: '',
+        direccion: '',
+        codigo_postal: '',
+        referencias: '',
+    });
+    const [formErrors, setFormErrors] = useState({});
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://wapifood.com';
 
@@ -83,6 +106,12 @@ export default function MenuWebDinamico() {
                 // Cargar información del restaurante
                 const infoRestaurante = await getUserUUID(uuid);
                 setRestauranteInfo(infoRestaurante);
+                
+                // Verificar si el restaurante está abierto
+                if (infoRestaurante?.horario) {
+                    const isOpen = checkRestaurantHours(infoRestaurante.horario);
+                    setIsRestaurantOpen(isOpen);
+                }
             } catch (error) {
                 console.error('Error al cargar datos:', error);
                 setError('Error al cargar el menú. Por favor, intenta más tarde.');
@@ -134,6 +163,245 @@ export default function MenuWebDinamico() {
         setProductoSeleccionado(null);
     };
 
+    // Función para verificar si el restaurante está abierto
+    const checkRestaurantHours = (horarioString) => {
+        if (!horarioString) return true; // Si no hay horario, asumimos que está abierto
+        
+        try {
+            // Obtener día y hora actual del cliente
+            const now = new Date();
+            const currentDay = now.getDay(); // 0=Domingo, 1=Lunes, ..., 6=Sábado
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+            // Regex para extraer horarios: "Lun-Vie 9:00-18:00" o "Sab-Dom 9:00-14:00"
+            const horarioRegex = /([A-Za-zÁ-ú\-]+)\s+(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/g;
+            let match;
+            
+            while ((match = horarioRegex.exec(horarioString)) !== null) {
+                const [, dias, horaInicio, minInicio, horaFin, minFin] = match;
+                
+                // Convertir días a números
+                const daysMap = {
+                    'Lun': 1, 'Mar': 2, 'Mie': 3, 'Jue': 4, 'Vie': 5, 'Sab': 6, 'Dom': 0,
+                    'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6, 'Sun': 0
+                };
+                
+                let validDays = [];
+                
+                // Manejar rangos de días (Ej: "Lun-Vie")
+                if (dias.includes('-')) {
+                    const [inicio, fin] = dias.split('-');
+                    const diaInicio = daysMap[inicio];
+                    const diaFin = daysMap[fin];
+                    
+                    if (diaInicio <= diaFin) {
+                        for (let i = diaInicio; i <= diaFin; i++) {
+                            validDays.push(i);
+                        }
+                    } else {
+                        // Caso especial: Sab-Dom (6-0)
+                        for (let i = diaInicio; i <= 6; i++) {
+                            validDays.push(i);
+                        }
+                        for (let i = 0; i <= diaFin; i++) {
+                            validDays.push(i);
+                        }
+                    }
+                } else if (daysMap[dias] !== undefined) {
+                    validDays.push(daysMap[dias]);
+                }
+                
+                // Verificar si hoy está dentro de los días válidos
+                if (validDays.includes(currentDay)) {
+                    const openTime = parseInt(horaInicio) * 60 + parseInt(minInicio);
+                    const closeTime = parseInt(horaFin) * 60 + parseInt(minFin);
+                    
+                    // Verificar si la hora actual está dentro del horario
+                    if (currentTimeInMinutes >= openTime && currentTimeInMinutes <= closeTime) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false; // No está en ningún horario válido
+        } catch (error) {
+            console.error('Error al verificar horario:', error);
+            return true; // En caso de error, permitimos la orden
+        }
+    };
+
+    // ===== FUNCIONES DE DELIVERY =====
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    };
+
+    const handleAddToCart = (producto, quantity = 1, comment = '') => {
+        setCart([...cart, {
+            product_id: producto.id,
+            name: producto.nombre,
+            price: producto.precio,
+            quantity: quantity,
+            comment: comment,
+            image_url: producto.imagen,
+        }]);
+        showToast(`${producto.nombre} agregado al carrito`, 'success');
+    };
+
+    const handleUpdateQuantity = (index, newQuantity) => {
+        if (newQuantity < 1) return;
+        const updatedCart = [...cart];
+        updatedCart[index].quantity = newQuantity;
+        setCart(updatedCart);
+    };
+
+    const handleRemoveItem = (index) => {
+        const updatedCart = cart.filter((_, i) => i !== index);
+        setCart(updatedCart);
+        showToast('Producto eliminado del carrito', 'success');
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        if (!customerData.nombre.trim()) errors.nombre = 'El nombre es requerido';
+        if (!customerData.telefono.trim()) {
+            errors.telefono = 'El teléfono es requerido';
+        } else if (!/^\d{10}$/.test(customerData.telefono.replace(/\s/g, ''))) {
+            errors.telefono = 'Ingresa un teléfono válido de 10 dígitos';
+        }
+        if (!customerData.direccion.trim()) errors.direccion = 'La dirección es requerida';
+        if (!customerData.codigo_postal.trim()) {
+            errors.codigo_postal = 'El código postal es requerido';
+        }
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleConfirmOrder = async () => {
+        if (cart.length === 0) {
+            showToast('Agrega productos al carrito para continuar', 'error');
+            return;
+        }
+        
+        // Verificar horario del restaurante
+        if (!isRestaurantOpen) {
+            showToast('Lo sentimos, el restaurante está cerrado en este momento', 'error');
+            return;
+        }
+        
+        if (!validateForm()) {
+            showToast('Por favor completa todos los campos requeridos', 'error');
+            return;
+        }
+        try {
+            setIsSubmitting(true);
+            const orderData = {
+                customer: {
+                    nombre: customerData.nombre,
+                    telefono: customerData.telefono,
+                    direccion: customerData.direccion,
+                    codigo_postal: customerData.codigo_postal,
+                    referencias: customerData.referencias || '',
+                },
+                items: cart.map(item => ({
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                    comment: item.comment || '',
+                })),
+            };
+            
+            const response = await externalOrderDelivery(uuid, orderData);
+            
+            // Guardar el folio web
+            setOrderFolio(response.folio_web);
+            
+            // Mostrar modal de éxito
+            setShowSuccessModal(true);
+            
+            // Limpiar después de 5 segundos
+            setTimeout(() => {
+                setCart([]);
+                setCustomerData({ nombre: '', telefono: '', direccion: '', codigo_postal: '', referencias: '' });
+                setShowCustomerForm(false);
+                setShowSuccessModal(false);
+                setOrderFolio(null);
+                setIsDeliveryMode(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 5000);
+        } catch (error) {
+            showToast('Error al realizar el pedido. Por favor intenta de nuevo.', 'error');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const calculateTotal = () => cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const getTotalItems = () => cart.reduce((total, item) => total + item.quantity, 0);
+
+    // Componente para controles de delivery en las cards de productos
+    const DeliveryProductControls = ({ producto, onAddToCart, currentStyle, style }) => {
+        const [quantity, setQuantity] = useState(1);
+        const [comment, setComment] = useState('');
+        const [showCommentInput, setShowCommentInput] = useState(false);
+
+        const handleIncrement = () => setQuantity(prev => prev + 1);
+        const handleDecrement = () => { if (quantity > 1) setQuantity(prev => prev - 1); };
+
+        const handleAdd = () => {
+            if (producto.status !== 'activo') {
+                showToast('Este producto no está disponible', 'error');
+                return;
+            }
+            onAddToCart(producto, quantity, comment);
+            setQuantity(1);
+            setComment('');
+            setShowCommentInput(false);
+        };
+
+        return (
+            <div className="space-y-3">
+                {/* Controles de cantidad */}
+                <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">Cantidad:</span>
+                    <div className="flex items-center gap-3 bg-green-50 rounded-full px-2 py-1">
+                        <button onClick={handleDecrement} className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-green-600 hover:bg-green-100 transition-colors shadow-sm">
+                            <FiMinus size={18} />
+                        </button>
+                        <span className="text-lg font-bold text-green-700 min-w-[30px] text-center">{quantity}</span>
+                        <button onClick={handleIncrement} className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-green-600 hover:bg-green-100 transition-colors shadow-sm">
+                            <FiPlus size={18} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Botón para mostrar comentarios */}
+                <button onClick={() => setShowCommentInput(!showCommentInput)} className="w-full flex items-center justify-center gap-2 text-sm text-green-600 hover:text-green-700 font-medium py-2 transition-colors">
+                    <FiMessageSquare size={16} />
+                    {showCommentInput ? 'Ocultar comentarios' : 'Agregar comentarios'}
+                </button>
+
+                {/* Input de comentarios */}
+                {showCommentInput && (
+                    <div className="animate-fadeIn">
+                        <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Ej: Sin cebolla, extra queso..." className="w-full px-3 py-2 text-sm border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" rows="3" />
+                    </div>
+                )}
+
+                {/* Botón agregar al carrito */}
+                <button onClick={handleAdd} disabled={producto.status !== 'activo'} className={`w-full font-bold py-3 px-4 rounded-lg transition-all transform shadow-md flex items-center justify-center gap-2 ${
+                    producto.status === 'activo' 
+                        ? `bg-gradient-to-r ${currentStyle.colors.buttonGradient} hover:scale-105 text-white ${style === 'tokyo' ? currentStyle.colors.neonGlow : ''}` 
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}>
+                    <FiShoppingCart size={20} />
+                    {producto.status === 'activo' ? 'Agregar al carrito' : 'No disponible'}
+                </button>
+            </div>
+        );
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -165,6 +433,13 @@ export default function MenuWebDinamico() {
         <meta property="og:url" content={`${baseUrl}/webmenu/${uuid || ''}${style ? `?style=${style}` : ''}`} />
         <meta property="og:type" content="website" />
       </Head>
+        
+        {/* Toast */}
+        {toast.show && <Toast message={toast.message} type={toast.type} />}
+        
+        {/* Loading Overlay */}
+        {isSubmitting && <LoadingOverlay />}
+        
         <section className={`min-h-screen bg-gradient-to-br ${currentStyle.colors.background} relative pb-16 ${
             style === 'tokyo' ? currentStyle.colors.backgroundPattern : ''
         }`}>
@@ -182,27 +457,95 @@ export default function MenuWebDinamico() {
                     style === 'tokyo' ? currentStyle.colors.neonGlow : ''
                 }`}>
                     <div className="flex items-center max-w-7xl mx-auto justify-between">
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-4">
                             <GoChecklist size={36} className={`${
                                 style === 'tokyo' ? 'text-cyan-300' : 'text-yellow-300'
                             } drop-shadow-lg ${style === 'tokyo' ? currentStyle.colors.textGlow : ''}`} />
                             <button
                                 onClick={() => router.push('/')}
-                                className={`text-3xl font-bold ml-2 text-white hover:text-yellow-200 transition-colors duration-200 cursor-pointer ${
+                                className={`text-3xl font-bold text-white hover:text-yellow-200 transition-colors duration-200 cursor-pointer ${
                                     style === 'tokyo' ? currentStyle.colors.textGlow : ''
                                 }`}
                             >
                                 WapiFood
                             </button>
+                            
+                            {/* Switch Button para Delivery */}
+                            <div className="hidden md:flex items-center gap-3 ml-6 bg-white/20 rounded-full p-1">
+                                <button
+                                    onClick={() => setIsDeliveryMode(false)}
+                                    className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
+                                        !isDeliveryMode 
+                                            ? 'bg-white text-green-600 shadow-md' 
+                                            : 'text-white hover:bg-white/10'
+                                    }`}
+                                >
+                                    Ver Menú
+                                </button>
+                                <button
+                                    onClick={() => setIsDeliveryMode(true)}
+                                    className={`px-4 py-2 rounded-full font-semibold text-sm transition-all flex items-center gap-2 ${
+                                        isDeliveryMode 
+                                            ? 'bg-white text-green-600 shadow-md' 
+                                            : 'text-white hover:bg-white/10'
+                                    }`}
+                                >
+                                    <MdDeliveryDining size={20} />
+                                    Delivery
+                                </button>
+                            </div>
                         </div>
+                        
+                        <div className="flex items-center gap-3">
+                            {/* Carrito (solo en modo delivery) */}
+                            {isDeliveryMode && (
+                                <button
+                                    onClick={() => setIsCartOpen(true)}
+                                    className="relative bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-4 rounded-full transition-all shadow-lg"
+                                >
+                                    <FiShoppingCart size={24} />
+                                    {getTotalItems() > 0 && (
+                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-bounce">
+                                            {getTotalItems()}
+                                        </span>
+                                    )}
+                                </button>
+                            )}
+                            
+                            <button
+                                className="z-20 cursor-pointer py-3 hamburger-button"
+                                onClick={() => setIsOpen(!isOpen)}
+                                aria-label="Toggle menu"
+                            >
+                                <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+                                <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
+                                <div className={`w-6 h-0.5 bg-white transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Switch móvil */}
+                    <div className="flex md:hidden items-center gap-2 mt-3 bg-white/20 rounded-full p-1">
                         <button
-                            className="z-20 cursor-pointer py-3 hamburger-button"
-                            onClick={() => setIsOpen(!isOpen)}
-                            aria-label="Toggle menu"
+                            onClick={() => setIsDeliveryMode(false)}
+                            className={`flex-1 py-2 rounded-full font-semibold text-sm transition-all ${
+                                !isDeliveryMode 
+                                    ? 'bg-white text-green-600 shadow-md' 
+                                    : 'text-white'
+                            }`}
                         >
-                            <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-                            <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
-                            <div className={`w-6 h-0.5 bg-white transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                            Ver Menú
+                        </button>
+                        <button
+                            onClick={() => setIsDeliveryMode(true)}
+                            className={`flex-1 py-2 rounded-full font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                                isDeliveryMode 
+                                    ? 'bg-white text-green-600 shadow-md' 
+                                    : 'text-white'
+                            }`}
+                        >
+                            <MdDeliveryDining size={18} />
+                            Delivery
                         </button>
                     </div>
                 </nav>
@@ -332,7 +675,7 @@ export default function MenuWebDinamico() {
             </div>
 
             {/* Buscador remodelado */}
-            <div className={`sticky top-16 z-50 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6 transition-opacity duration-200 ${modalOpen ? 'hidden' : ''}`}>
+            <div className={`sticky top-16 z-50 bg-gradient-to-br from-gray-50 via-white to-green-50 w-full px-4 py-4 sm:py-6 transition-opacity duration-200 ${(modalOpen || isCartOpen || showCustomerForm) ? 'hidden' : ''}`}>
                 <div className="max-w-4xl mx-auto">
                     <div className="relative">
                     <input
@@ -526,12 +869,21 @@ export default function MenuWebDinamico() {
                                         </p>
                                     </div>
                                     <div className="mt-4">
-                                        <button
-                                            className={`flex gap-4 items-center justify-center bg-gradient-to-r ${currentStyle.colors.buttonGradient} text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full shadow-lg font-semibold transition-all duration-200 ${style === 'tokyo' ? currentStyle.colors.neonGlow : ''}`}
-                                            onClick={() => openModal(producto)}
-                                        >
-                                            <FaRegEye className="h-[20px] w-[20px]" />Detalles
-                                        </button>
+                                        {!isDeliveryMode ? (
+                                            <button
+                                                className={`flex gap-4 items-center justify-center bg-gradient-to-r ${currentStyle.colors.buttonGradient} text-white px-4 py-2 rounded-lg text-sm cursor-pointer w-full shadow-lg font-semibold transition-all duration-200 ${style === 'tokyo' ? currentStyle.colors.neonGlow : ''}`}
+                                                onClick={() => openModal(producto)}
+                                            >
+                                                <FaRegEye className="h-[20px] w-[20px]" />Detalles
+                                            </button>
+                                        ) : (
+                                            <DeliveryProductControls 
+                                                producto={producto} 
+                                                onAddToCart={handleAddToCart}
+                                                currentStyle={currentStyle}
+                                                style={style}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -544,6 +896,222 @@ export default function MenuWebDinamico() {
                     </div>
                 )}
             </section>
+
+            {/* Modal del Carrito */}
+            {isCartOpen && isDeliveryMode && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-end md:items-center justify-center">
+                    <div className="bg-white w-full md:max-w-2xl md:mx-4 rounded-t-3xl md:rounded-2xl h-[70vh] flex flex-col shadow-2xl animate-slideUp">
+                        {/* Header del carrito */}
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-3xl md:rounded-t-2xl flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <FiShoppingCart className="text-white" size={28} />
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white">Mi Carrito</h2>
+                                    <p className="text-green-100 text-sm">
+                                        {getTotalItems()} {getTotalItems() === 1 ? 'producto' : 'productos'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsCartOpen(false)}
+                                className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Items del carrito */}
+                        <div className="flex-1 overflow-y-auto p-4">
+                            {cart.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                                    <FiShoppingCart size={64} className="mb-4" />
+                                    <p className="text-lg font-semibold">Tu carrito está vacío</p>
+                                    <p className="text-sm">Agrega productos para continuar</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {cart.map((item, index) => (
+                                        <div key={index} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                                            <div className="flex gap-3">
+                                                <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                                    {item.image_url && (
+                                                        <Image src={item.image_url} alt={item.name} width={80} height={80} className="w-full h-full object-cover" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-bold text-gray-800 text-sm mb-1 truncate">{item.name}</h3>
+                                                    <p className="text-green-600 font-bold text-lg mb-2">${(item.price * item.quantity).toFixed(2)}</p>
+                                                    {item.comment && (
+                                                        <div className="bg-amber-50 border border-amber-200 rounded-md p-2 mb-2">
+                                                            <p className="text-xs text-amber-800"><span className="font-semibold">Nota:</span> {item.comment}</p>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2 bg-green-50 rounded-full px-2 py-1">
+                                                            <button onClick={() => handleUpdateQuantity(index, item.quantity - 1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-full text-green-600 hover:bg-green-100 transition-colors shadow-sm" disabled={item.quantity <= 1}>
+                                                                <FiMinus size={14} />
+                                                            </button>
+                                                            <span className="text-sm font-bold text-green-700 min-w-[25px] text-center">{item.quantity}</span>
+                                                            <button onClick={() => handleUpdateQuantity(index, item.quantity + 1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-full text-green-600 hover:bg-green-100 transition-colors shadow-sm">
+                                                                <FiPlus size={14} />
+                                                            </button>
+                                                        </div>
+                                                        <button onClick={() => handleRemoveItem(index)} className="text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors">
+                                                            <FiTrash2 size={18} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer con total */}
+                        {cart.length > 0 && (
+                            <div className="border-t border-gray-200 p-6 bg-gray-50">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-xl font-bold text-gray-700">Total:</span>
+                                    <span className="text-3xl font-bold text-green-600">${calculateTotal().toFixed(2)}</span>
+                                </div>
+                                <button onClick={() => { setIsCartOpen(false); setShowCustomerForm(true); }} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg">
+                                    Continuar con mi pedido
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Formulario del cliente */}
+            {showCustomerForm && isDeliveryMode && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4 overflow-y-auto pt-32">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-xl w-full my-8">
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-xl">
+                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                <MdDeliveryDining size={28} />
+                                Datos de entrega
+                            </h2>
+                        </div>
+                        <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto">
+                            {/* Nombre */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre completo * <span className="text-gray-500 font-normal">(máx. 30 caracteres)</span></label>
+                                <input type="text" value={customerData.nombre || ''} onChange={(e) => setCustomerData({...customerData, nombre: e.target.value})} placeholder="Juan Pérez" maxLength="30" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${formErrors.nombre ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                                {formErrors.nombre && <p className="text-red-500 text-xs mt-1">{formErrors.nombre}</p>}
+                            </div>
+                            {/* Teléfono */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Teléfono * <span className="text-gray-500 font-normal">(máx. 10 dígitos)</span></label>
+                                <input type="tel" value={customerData.telefono || ''} onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    setCustomerData({...customerData, telefono: value});
+                                }} placeholder="5512345678" maxLength="10" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${formErrors.telefono ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                                {formErrors.telefono && <p className="text-red-500 text-xs mt-1">{formErrors.telefono}</p>}
+                            </div>
+                            {/* Dirección */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Dirección completa * <span className="text-gray-500 font-normal">(máx. 120 caracteres)</span></label>
+                                <textarea value={customerData.direccion || ''} onChange={(e) => setCustomerData({...customerData, direccion: e.target.value})} placeholder="Calle, Número, Colonia" rows="3" maxLength="120" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 resize-none transition-all ${formErrors.direccion ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                                {formErrors.direccion && <p className="text-red-500 text-xs mt-1">{formErrors.direccion}</p>}
+                            </div>
+                            {/* Código Postal */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Código Postal * <span className="text-gray-500 font-normal">(máx. 10 dígitos)</span></label>
+                                <input type="text" value={customerData.codigo_postal || ''} onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    setCustomerData({...customerData, codigo_postal: value});
+                                }} placeholder="12345" maxLength="10" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${formErrors.codigo_postal ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                                {formErrors.codigo_postal && <p className="text-red-500 text-xs mt-1">{formErrors.codigo_postal}</p>}
+                            </div>
+                            {/* Referencias */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Referencias (opcional) <span className="text-gray-500 font-normal">(máx. 150 caracteres)</span></label>
+                                <textarea value={customerData.referencias || ''} onChange={(e) => setCustomerData({...customerData, referencias: e.target.value})} placeholder="Casa blanca con portón negro, entre calle X y Y" rows="3" maxLength="150" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 resize-none transition-all" />
+                            </div>
+                            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                                <p className="text-xs text-green-800"><span className="font-semibold">Nota:</span> Los campos marcados con * son obligatorios</p>
+                            </div>
+                        </div>
+                        <div className="p-6 bg-gray-50 rounded-b-xl flex gap-3">
+                            <button onClick={() => setShowCustomerForm(false)} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-xl transition-all">
+                                Volver
+                            </button>
+                            <button onClick={handleConfirmOrder} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                                <MdDeliveryDining size={24} />
+                                Confirmar Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de éxito con folio */}
+            {showSuccessModal && orderFolio && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-fadeIn">
+                        <div className="p-8 text-center">
+                            {/* Checkmark animado */}
+                            <div className="mb-6 flex justify-center">
+                                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
+                                    <svg className="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            {/* Título */}
+                            <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                                ¡Pedido Confirmado!
+                            </h3>
+                            
+                            {/* Número de folio */}
+                            <div className="mb-4 p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                                <p className="text-sm text-gray-600 mb-1">Número de Pre-Orden</p>
+                                <p className="text-4xl font-bold text-green-600">#{orderFolio}</p>
+                            </div>
+                            
+                            {/* Mensaje */}
+                            <p className="text-gray-600 leading-relaxed mb-6">
+                                Tu orden se ha mandado al restaurante, el restaurante lo contactará para validar su información
+                            </p>
+                            
+                            {/* Información adicional */}
+                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <p className="text-xs text-blue-800">
+                                    <span className="font-semibold">Importante:</span> Conserva tu número de pre-orden para seguimiento
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Botón flotante inferior (solo delivery) */}
+            {isDeliveryMode && cart.length > 0 && !showCustomerForm && (
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-[998]">
+                    <div className="max-w-7xl mx-auto px-4 py-4">
+                        <button onClick={() => { setIsCartOpen(true); }} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <FiShoppingCart size={24} />
+                                <div className="text-left">
+                                    <div className="text-sm opacity-90">{getTotalItems()} {getTotalItems() === 1 ? 'producto' : 'productos'}</div>
+                                    <div className="text-xl font-bold">${calculateTotal().toFixed(2)}</div>
+                                </div>
+                            </div>
+                            <span className="flex items-center gap-2">
+                                Ver Carrito
+                                <svg className="w-5 h-5 rotate-[-90deg]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Estilos extra para animaciones */}
             <style jsx>{`

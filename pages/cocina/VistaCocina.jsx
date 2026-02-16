@@ -7,6 +7,8 @@ import { LuCalendarDays } from "react-icons/lu";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { getTables } from "../../useCases/getTables.js";
 import getOrdersDia from "../../useCases/getOrdersDia.js";
+import getOrdersWebMenu from "../../useCases/getOrdersWebMenu.js";
+import createwebExternalOrder from "../../useCases/createwebExternalOrder.js";
 import { updateProductStatus } from "../../useCases/updateProductStatus.js";
 import { cancelOrder } from "../../useCases/cancelOrder.js";
 import { endPuntoDeVenta } from "../../useCases/endPuntoDeVenta.js";
@@ -58,6 +60,13 @@ export default function VistaCocina() {
 
     // Estado para comentarios de órdenes
     const [orderComments, setOrderComments] = useState({}); // { orderUuid: { general_comment, details_comments, hasUnread } }
+
+    // Estados para órdenes web (delivery)
+    const [webOrders, setWebOrders] = useState([]);
+    const [selectedWebOrder, setSelectedWebOrder] = useState(null);
+    const [showWebOrderModal, setShowWebOrderModal] = useState(false);
+    const [showCancelWebOrderModal, setShowCancelWebOrderModal] = useState(false);
+    const previousWebOrderCountRef = useRef(0);
 
     // Inicializar AudioContext con la primera interacción del usuario
     const initializeAudio = () => {
@@ -176,9 +185,10 @@ export default function VistaCocina() {
         try {
             setLoading(true);
 
-            const [ordersResponse, tablesData] = await Promise.all([
+            const [ordersResponse, tablesData, webOrdersData] = await Promise.all([
                 getOrdersDia(),
-                getTables()
+                getTables(),
+                getOrdersWebMenu()
             ]);
 
             // Verificar errores en la respuesta de órdenes
@@ -468,24 +478,37 @@ export default function VistaCocina() {
                 return newOrderComments;
             });
 
+            // Guardar órdenes web en el estado
+            setWebOrders(webOrdersData || []);
+
             // Detectar nuevas órdenes y reproducir sonido
             const currentPendingCount = pendingTables.filter(t => !t.isEmpty).length;
+            const currentWebOrderCount = webOrdersData?.filter(o => o.status === "PENDIENTE").length || 0;
             const previousCount = previousOrderCountRef.current;
+            const previousWebCount = previousWebOrderCountRef.current;
             
             // Si es la primera carga, solo inicializar
             if (isFirstLoadRef.current) {
                 previousOrderCountRef.current = currentPendingCount;
+                previousWebOrderCountRef.current = currentWebOrderCount;
                 setPreviousOrderCount(currentPendingCount);
                 isFirstLoadRef.current = false;
-            } else if (currentPendingCount > previousCount) {
-                // Hay nuevas órdenes, reproducir sonido
+            } else if (currentPendingCount > previousCount || currentWebOrderCount > previousWebCount) {
+                // Hay nuevas órdenes (normales o web), reproducir sonido
                 previousOrderCountRef.current = currentPendingCount;
+                previousWebOrderCountRef.current = currentWebOrderCount;
                 setPreviousOrderCount(currentPendingCount);
                 playNotificationSound();
-                toast.success('¡Nueva orden recibida!');
-            } else if (currentPendingCount < previousCount) {
+                
+                if (currentWebOrderCount > previousWebCount) {
+                    toast.success('¡Nueva pre-orden de delivery recibida!');
+                } else {
+                    toast.success('¡Nueva orden recibida!');
+                }
+            } else if (currentPendingCount < previousCount || currentWebOrderCount < previousWebCount) {
                 // Las órdenes disminuyeron (se completaron o cancelaron), actualizar contador
                 previousOrderCountRef.current = currentPendingCount;
+                previousWebOrderCountRef.current = currentWebOrderCount;
                 setPreviousOrderCount(currentPendingCount);
             }
 
@@ -1032,6 +1055,214 @@ export default function VistaCocina() {
                     </div>
                 )}
 
+                {/* Modal de detalles de orden web */}
+                {showWebOrderModal && selectedWebOrder && (
+                    <div
+                        className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[100] p-4"
+                        onClick={() => setShowWebOrderModal(false)}
+                    >
+                        <div
+                            className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl border-4 border-orange-400 max-h-[70vh] overflow-y-auto"
+                            style={{
+                                scrollbarWidth: 'thin',
+                                scrollbarColor: '#fb923c #fed7aa'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6 rounded-t-2xl text-white">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h2 className="text-2xl font-bold mb-2">Pre-Orden Delivery #{selectedWebOrder.folio_web}</h2>
+                                        <p className="text-orange-100">🚚 Requiere aprobación</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowWebOrderModal(false)}
+                                        className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                                    >
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Contenido */}
+                            <div className="p-6">
+                                {/* Información del cliente */}
+                                <div className="mb-6 bg-orange-50 rounded-xl p-4 border border-orange-200">
+                                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        Datos del Cliente
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <p className="text-gray-600 font-semibold">Nombre:</p>
+                                            <p className="text-gray-800">{selectedWebOrder.customer_name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-600 font-semibold">Teléfono:</p>
+                                            <p className="text-gray-800">{selectedWebOrder.customer_phone}</p>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <p className="text-gray-600 font-semibold">Dirección:</p>
+                                            <p className="text-gray-800">{selectedWebOrder.customer_address}</p>
+                                        </div>
+                                        {selectedWebOrder.customer_notes && (
+                                            <div className="md:col-span-2">
+                                                <p className="text-gray-600 font-semibold">Referencias:</p>
+                                                <p className="text-gray-800 italic">{selectedWebOrder.customer_notes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Productos */}
+                                <div className="mb-6">
+                                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                        Productos ({selectedWebOrder.details.length})
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {selectedWebOrder.details.map((detail, index) => (
+                                            <div key={index} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <p className="font-semibold text-gray-800">{detail.product_name}</p>
+                                                    <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm font-bold">
+                                                        x{detail.quantity}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <p className="text-gray-600">${detail.unit_price.toFixed(2)} c/u</p>
+                                                    <p className="font-bold text-gray-800">${detail.subtotal.toFixed(2)}</p>
+                                                </div>
+                                                {detail.comment && (
+                                                    <div className="mt-2 pt-2 border-t border-gray-300">
+                                                        <p className="text-xs text-gray-600 font-semibold">Comentario:</p>
+                                                        <p className="text-sm text-gray-700 italic">"{detail.comment}"</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Total */}
+                                <div className="mb-6 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl p-4 text-white">
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-lg font-semibold">Total de la Orden:</p>
+                                        <p className="text-2xl font-bold">${selectedWebOrder.total.toFixed(2)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Información adicional */}
+                                <div className="mb-6 text-sm text-gray-600">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-1">
+                                            <LuCalendarDays />
+                                            <span>{new Date(selectedWebOrder.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <BsClock />
+                                            <span>{new Date(selectedWebOrder.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Botones de acción */}
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowWebOrderModal(false);
+                                            setShowCancelWebOrderModal(true);
+                                        }}
+                                        className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Cancelar Orden
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                await createwebExternalOrder(selectedWebOrder.id_web_orders);
+                                                toast.success('¡Pre-orden aprobada exitosamente!');
+                                                setShowWebOrderModal(false);
+                                                setSelectedWebOrder(null);
+                                                fetchTablesData(); // Recargar datos
+                                            } catch (error) {
+                                                toast.error('Error al aprobar la orden');
+                                                console.error('Error:', error);
+                                            }
+                                        }}
+                                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Aprobar Orden
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Mini modal de confirmación de cancelación */}
+                {showCancelWebOrderModal && selectedWebOrder && (
+                    <div
+                        className="fixed inset-0 backdrop-brightness-30 flex items-center justify-center z-[101] p-4"
+                        onClick={() => setShowCancelWebOrderModal(false)}
+                    >
+                        <div
+                            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-red-200"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">Cancelar Pre-Orden</h3>
+                                <p className="text-gray-600">
+                                    ¿Estás seguro que deseas cancelar/desechar la orden #{selectedWebOrder.folio_web}?
+                                </p>
+                                <p className="text-sm text-gray-500 mt-2">
+                                    (Esta funcionalidad estará disponible próximamente)
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowCancelWebOrderModal(false);
+                                        setShowWebOrderModal(true);
+                                    }}
+                                    className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-colors"
+                                >
+                                    No
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        toast.info('Funcionalidad próximamente disponible');
+                                        setShowCancelWebOrderModal(false);
+                                        setShowWebOrderModal(false);
+                                        setSelectedWebOrder(null);
+                                    }}
+                                    className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-colors"
+                                >
+                                    Sí
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-sm w-full flex shadow-md p-4 overflow-x-auto whitespace-nowrap border-b rounded-t-2xl">
                     <button
                         className={`px-4 py-2 cursor-pointer ${view === "all" ? "border-b-2 border-green-600 font-bold" : ""
@@ -1183,6 +1414,91 @@ export default function VistaCocina() {
                                                             )}
                                                         </div>
                                                     )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                
+                                {/* Cards de órdenes web (delivery) */}
+                                {webOrders.filter(order => order.status === "PENDIENTE").map((order) => (
+                                    <div
+                                        key={`web-order-${order.id_web_orders}`}
+                                        className="cursor-pointer transition-transform hover:scale-105"
+                                        onClick={() => {
+                                            setSelectedWebOrder(order);
+                                            setShowWebOrderModal(true);
+                                        }}
+                                    >
+                                        <div className="border-l-8 border-orange-500 rounded-2xl shadow-xl bg-gradient-to-br from-orange-50 to-amber-50 h-44 flex flex-col transition-all duration-300 relative ring-2 ring-orange-300 overflow-hidden">
+                                            
+                                            
+                                            <div className="p-3 flex-grow flex flex-col overflow-hidden">
+                                                {/* Header compacto */}
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                                        <svg className="w-4 h-4 text-orange-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                        </svg>
+                                                        <p className="font-bold text-sm text-gray-800 truncate">{order.customer_name}</p>
+                                                    </div>
+                                                    <span className="px-2 py-0.5 text-[10px] rounded font-semibold bg-orange-100 text-orange-800 border border-orange-300 flex-shrink-0 ml-1">
+                                                        #{order.folio_web}
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Status badge */}
+                                                <div className="mb-2">
+                                                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] bg-yellow-100 text-yellow-800 rounded font-semibold border border-yellow-300">
+                                                        <GoDotFill className="text-[10px] mr-0.5" />
+                                                        Por Aprobar
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Fecha y hora más compactas */}
+                                                <div className="flex justify-between text-[10px] text-gray-600 mb-2 gap-2">
+                                                    <div className="flex items-center gap-0.5">
+                                                        <LuCalendarDays className="w-3 h-3" />
+                                                        <span className="truncate">{new Date(order.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' })}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-0.5">
+                                                        <BsClock className="w-3 h-3" />
+                                                        <span>{new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Productos */}
+                                                <div className="flex-grow overflow-hidden">
+                                                    <p className="text-[10px] text-gray-600 font-semibold mb-1">
+                                                        {order.details.length} {order.details.length === 1 ? 'producto' : 'productos'}
+                                                    </p>
+                                                    {order.details.length > 0 && (
+                                                        <div className="bg-white rounded p-1.5 shadow-sm border border-orange-200">
+                                                            <div className="flex justify-between items-center gap-1">
+                                                                <p className="font-semibold text-[11px] truncate flex-1">
+                                                                    {order.details[0].product_name}
+                                                                </p>
+                                                                <span className="bg-orange-100 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-orange-200 flex-shrink-0">
+                                                                    ×{order.details[0].quantity}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
+                                                {/* Footer con total y más info */}
+                                                <div className="mt-auto pt-2 border-t border-orange-200">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="text-xs font-bold text-orange-700">
+                                                            ${order.total.toFixed(2)}
+                                                        </p>
+                                                        {order.details.length > 1 && (
+                                                            <span className="text-[10px] text-orange-600 font-semibold flex items-center gap-0.5">
+                                                                <IoMdInformationCircleOutline className="w-3 h-3" />
+                                                                +{order.details.length - 1} más
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
