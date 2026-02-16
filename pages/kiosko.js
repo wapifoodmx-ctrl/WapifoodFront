@@ -617,8 +617,7 @@ export default function Kiosko() {
                                             value={busqueda}
                                             onChange={(e) => setBusqueda(e.target.value)}
                                             onFocus={() => setShowKeyboard(true)}
-                                            readOnly
-                                            className="w-full pl-12 pr-4 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:border-green-400 transition-all text-lg cursor-pointer"
+                                            className="w-full pl-12 pr-4 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:border-green-400 transition-all text-lg"
                                         />
                                     </div>
 
