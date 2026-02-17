@@ -1065,9 +1065,31 @@ export default function VistaCocina() {
                             className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl border-4 border-orange-400 max-h-[70vh] overflow-y-auto"
                             style={{
                                 scrollbarWidth: 'thin',
-                                scrollbarColor: '#fb923c #fed7aa'
+                                scrollbarColor: '#fb923c #fed7aa',
+                                cursor: 'grab',
+                                userSelect: 'none'
                             }}
                             onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => {
+                                const element = e.currentTarget;
+                                element.style.cursor = 'grabbing';
+                                const startY = e.pageY;
+                                const scrollTop = element.scrollTop;
+
+                                const handleMouseMove = (moveEvent) => {
+                                    const deltaY = startY - moveEvent.pageY;
+                                    element.scrollTop = scrollTop + deltaY;
+                                };
+
+                                const handleMouseUp = () => {
+                                    element.style.cursor = 'grab';
+                                    document.removeEventListener('mousemove', handleMouseMove);
+                                    document.removeEventListener('mouseup', handleMouseUp);
+                                };
+
+                                document.addEventListener('mousemove', handleMouseMove);
+                                document.addEventListener('mouseup', handleMouseUp);
+                            }}
                         >
                             {/* Header */}
                             <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6 rounded-t-2xl text-white">
