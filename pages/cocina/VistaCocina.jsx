@@ -1190,13 +1190,13 @@ export default function VistaCocina() {
                                     <button
                                         onClick={async () => {
                                             try {
-                                                await createwebExternalOrder(selectedWebOrder.id_web_orders);
-                                                toast.success('¡Pre-orden aprobada exitosamente!');
+                                                await createwebExternalOrder(selectedWebOrder.order_uuid, 'ACEPTAR');
+                                                toast.success('¡Pre-orden aceptada y enviada a cocina!');
                                                 setShowWebOrderModal(false);
                                                 setSelectedWebOrder(null);
                                                 fetchTablesData(); // Recargar datos
                                             } catch (error) {
-                                                toast.error('Error al aprobar la orden');
+                                                toast.error('Error al aceptar la orden');
                                                 console.error('Error:', error);
                                             }
                                         }}
@@ -1229,12 +1229,12 @@ export default function VistaCocina() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-800 mb-2">Cancelar Pre-Orden</h3>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">Descartar Pre-Orden</h3>
                                 <p className="text-gray-600">
-                                    ¿Estás seguro que deseas cancelar/desechar la orden #{selectedWebOrder.folio_web}?
+                                    ¿Estás seguro que deseas descartar la orden #{selectedWebOrder.folio_web}?
                                 </p>
-                                <p className="text-sm text-gray-500 mt-2">
-                                    (Esta funcionalidad estará disponible próximamente)
+                                <p className="text-sm text-red-600 mt-2 font-semibold">
+                                    Esta acción ocultará la orden de la lista
                                 </p>
                             </div>
                             <div className="flex gap-3">
@@ -1248,15 +1248,22 @@ export default function VistaCocina() {
                                     No
                                 </button>
                                 <button
-                                    onClick={() => {
-                                        toast.info('Funcionalidad próximamente disponible');
-                                        setShowCancelWebOrderModal(false);
-                                        setShowWebOrderModal(false);
-                                        setSelectedWebOrder(null);
+                                    onClick={async () => {
+                                        try {
+                                            await createwebExternalOrder(selectedWebOrder.order_uuid, 'DESCARTAR');
+                                            toast.success('Pre-orden descartada correctamente');
+                                            setShowCancelWebOrderModal(false);
+                                            setShowWebOrderModal(false);
+                                            setSelectedWebOrder(null);
+                                            fetchTablesData(); // Recargar datos
+                                        } catch (error) {
+                                            toast.error('Error al descartar la orden');
+                                            console.error('Error:', error);
+                                        }
                                     }}
                                     className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-colors"
                                 >
-                                    Sí
+                                    Sí, Descartar
                                 </button>
                             </div>
                         </div>
