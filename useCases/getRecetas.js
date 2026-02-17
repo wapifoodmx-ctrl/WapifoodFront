@@ -1,7 +1,7 @@
 export const getRecetas = async () => {
   try {
-    // Intentar obtener el token del localStorage primero, luego del sessionStorage
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    // Intentar obtener el token del localStorage primero, luego del sessionStorage, y finalmente el kioskoToken
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('kioskoToken');
     
     if (!token) {
       throw new Error('No se encontró token de autenticación');

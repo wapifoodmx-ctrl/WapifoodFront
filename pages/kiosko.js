@@ -37,6 +37,7 @@ export default function Kiosko() {
     const [scrollTop, setScrollTop] = useState(0);
     const scrollContainerRef = useRef(null);
     const [showKeyboard, setShowKeyboard] = useState(false);
+    const [keyboardMode, setKeyboardMode] = useState('busqueda'); // 'busqueda', 'comentarioProducto', 'comentarioGeneral'
     
     // Estados para autenticación
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -185,13 +186,37 @@ export default function Kiosko() {
     // Funciones del teclado virtual
     const handleKeyPress = (key) => {
         if (key === 'BORRAR') {
-            setBusqueda(busqueda.slice(0, -1));
+            if (keyboardMode === 'busqueda') {
+                setBusqueda(busqueda.slice(0, -1));
+            } else if (keyboardMode === 'comentarioProducto') {
+                setComentarioProducto(comentarioProducto.slice(0, -1));
+            } else if (keyboardMode === 'comentarioGeneral') {
+                setComentarioGeneral(comentarioGeneral.slice(0, -1));
+            }
         } else if (key === 'ESPACIO') {
-            setBusqueda(busqueda + ' ');
+            if (keyboardMode === 'busqueda') {
+                setBusqueda(busqueda + ' ');
+            } else if (keyboardMode === 'comentarioProducto') {
+                setComentarioProducto(comentarioProducto + ' ');
+            } else if (keyboardMode === 'comentarioGeneral') {
+                setComentarioGeneral(comentarioGeneral + ' ');
+            }
         } else if (key === 'LIMPIAR') {
-            setBusqueda('');
+            if (keyboardMode === 'busqueda') {
+                setBusqueda('');
+            } else if (keyboardMode === 'comentarioProducto') {
+                setComentarioProducto('');
+            } else if (keyboardMode === 'comentarioGeneral') {
+                setComentarioGeneral('');
+            }
         } else {
-            setBusqueda(busqueda + key);
+            if (keyboardMode === 'busqueda') {
+                setBusqueda(busqueda + key);
+            } else if (keyboardMode === 'comentarioProducto') {
+                setComentarioProducto(comentarioProducto + key);
+            } else if (keyboardMode === 'comentarioGeneral') {
+                setComentarioGeneral(comentarioGeneral + key);
+            }
         }
     };
 
@@ -616,7 +641,10 @@ export default function Kiosko() {
                                             placeholder="Buscar productos..."
                                             value={busqueda}
                                             onChange={(e) => setBusqueda(e.target.value)}
-                                            onFocus={() => setShowKeyboard(true)}
+                                            onFocus={() => {
+                                                setKeyboardMode('busqueda');
+                                                setShowKeyboard(true);
+                                            }}
                                             className="w-full pl-12 pr-4 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:border-green-400 transition-all text-lg"
                                         />
                                     </div>
@@ -814,6 +842,10 @@ export default function Kiosko() {
                                                 titulo="💬 Comentario general de la orden"
                                                 placeholder="Ej: Para llevar, sin servilletas, entregar en mesa 5..."
                                                 storageKey="comentario_kiosko"
+                                                onFocus={() => {
+                                                    setKeyboardMode('comentarioGeneral');
+                                                    setShowKeyboard(true);
+                                                }}
                                             />
                                         </div>
 
@@ -850,10 +882,14 @@ export default function Kiosko() {
 
                 {/* Teclado Virtual */}
                 {showKeyboard && (
-                    <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50" onClick={() => setShowKeyboard(false)}>
+                    <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-[60]" onClick={() => setShowKeyboard(false)}>
                         <div className="bg-white rounded-t-3xl w-full max-w-4xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xl font-bold text-gray-800">Buscar Producto</h3>
+                                <h3 className="text-xl font-bold text-gray-800">
+                                    {keyboardMode === 'busqueda' && 'Buscar Producto'}
+                                    {keyboardMode === 'comentarioProducto' && 'Comentario del Producto'}
+                                    {keyboardMode === 'comentarioGeneral' && 'Comentario General de la Orden'}
+                                </h3>
                                 <button
                                     onClick={() => setShowKeyboard(false)}
                                     className="bg-green-500 text-white px-6 py-2 rounded-xl font-semibold hover:bg-green-600 transition-all"
@@ -865,7 +901,9 @@ export default function Kiosko() {
                             {/* Display de búsqueda */}
                             <div className="bg-gray-100 rounded-xl p-4 mb-4 min-h-[60px] flex items-center">
                                 <p className="text-2xl font-semibold text-gray-800">
-                                    {busqueda || 'Escribe para buscar...'}
+                                    {keyboardMode === 'busqueda' && (busqueda || 'Escribe para buscar...')}
+                                    {keyboardMode === 'comentarioProducto' && (comentarioProducto || 'Escribe un comentario...')}
+                                    {keyboardMode === 'comentarioGeneral' && (comentarioGeneral || 'Escribe un comentario...')}
                                 </p>
                             </div>
 
@@ -941,7 +979,7 @@ export default function Kiosko() {
 
                 {/* Modal de detalle de producto */}
                 {modalProductoOpen && productoSeleccionado && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
                         <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                             <div className="relative">
                                 <img
@@ -1023,6 +1061,10 @@ export default function Kiosko() {
                                     <textarea
                                         value={comentarioProducto}
                                         onChange={(e) => setComentarioProducto(e.target.value)}
+                                        onFocus={() => {
+                                            setKeyboardMode('comentarioProducto');
+                                            setShowKeyboard(true);
+                                        }}
                                         placeholder="Ej: Sin cebolla, extra salsa, poco picante..."
                                         className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none resize-none text-sm"
                                         rows={2}
@@ -1047,7 +1089,7 @@ export default function Kiosko() {
 
                 {/* Modal de método de pago */}
                 {showPaymentModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[45] p-4">
                         <div className="bg-white rounded-2xl max-w-md w-full p-8">
                             <h2 className="text-2xl font-black text-gray-800 mb-6 text-center">
                                 Selecciona el método de pago

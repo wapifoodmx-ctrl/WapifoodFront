@@ -2,7 +2,7 @@ import { FaShoppingCart, FaPercent } from "react-icons/fa";
 import { IoTrashOutline, IoClose } from "react-icons/io5";
 import { MdDelete, MdShoppingCart } from "react-icons/md";
 import ComponenteComentario from "@/components/componenteComentario";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function CarritoModal({
     isOpen,
@@ -30,6 +30,47 @@ export default function CarritoModal({
     const [mostrarDescuento, setMostrarDescuento] = useState(false);
     const [mostrarComentario, setMostrarComentario] = useState(false);
 
+    // Leer el estado del switch de cocina desde localStorage
+    const [cocinaEncendida, setCocinaEncendida] = useState(false);
+
+    useEffect(() => {
+        const cocinaSwitch = localStorage.getItem('cocinaSwitch');
+        setCocinaEncendida(cocinaSwitch ? JSON.parse(cocinaSwitch) : false);
+
+        // Listener para cambios en localStorage (cuando se cambia el switch)
+        const handleStorageChange = () => {
+            const cocinaSwitch = localStorage.getItem('cocinaSwitch');
+            setCocinaEncendida(cocinaSwitch ? JSON.parse(cocinaSwitch) : false);
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        
+        // Polling para detectar cambios en la misma pestaña
+        const interval = setInterval(() => {
+            const cocinaSwitch = localStorage.getItem('cocinaSwitch');
+            const nuevoEstado = cocinaSwitch ? JSON.parse(cocinaSwitch) : false;
+            if (nuevoEstado !== cocinaEncendida) {
+                setCocinaEncendida(nuevoEstado);
+                // Si se apaga la cocina, ocultar comentarios
+                if (!nuevoEstado) {
+                    setMostrarComentario(false);
+                }
+            }
+        }, 500);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
+    }, [cocinaEncendida]);
+
+    // Efecto para cerrar el panel de comentarios cuando el carrito se vacía
+    useEffect(() => {
+        if (carrito.length === 0) {
+            setMostrarComentario(false);
+        }
+    }, [carrito.length]);
+
     if (!isOpen) return null;
 
     // Función auxiliar para calcular subtotal de un item
@@ -47,6 +88,9 @@ export default function CarritoModal({
             setTimeout(() => setMensajeError(""), 2000);
         }
     };
+
+    // Determinar si el botón de comentarios debe estar habilitado
+    const comentariosHabilitado = carrito.length > 0 && cocinaEncendida;
 
     return (
         <div
@@ -242,11 +286,15 @@ export default function CarritoModal({
                                     </span>
                                 </button>
                                 <button
-                                    onClick={() => setMostrarComentario(!mostrarComentario)}
+                                    onClick={() => comentariosHabilitado && setMostrarComentario(!mostrarComentario)}
+                                    disabled={!comentariosHabilitado}
+                                    title={!comentariosHabilitado ? (carrito.length === 0 ? "Agrega productos al carrito" : "Enciende la cocina para agregar comentarios") : ""}
                                     className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
-                                        mostrarComentario
-                                            ? 'bg-green-500 text-white border-green-600 shadow-md'
-                                            : 'bg-white text-gray-700 border-gray-300 hover:border-green-400 hover:bg-green-50'
+                                        !comentariosHabilitado
+                                            ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed opacity-50'
+                                            : mostrarComentario
+                                                ? 'bg-green-500 text-white border-green-600 shadow-md'
+                                                : 'bg-white text-gray-700 border-gray-300 hover:border-green-400 hover:bg-green-50'
                                     }`}
                                 >
                                     <span className="flex items-center justify-center gap-1">
@@ -254,6 +302,15 @@ export default function CarritoModal({
                                     </span>
                                 </button>
                             </div>
+
+                            {/* Mensaje informativo cuando cocina está apagada */}
+                            {carrito.length > 0 && !cocinaEncendida && (
+                                <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <p className="text-xs text-yellow-800 text-center">
+                                        ⚠️ Enciende la cocina para agregar comentarios a los pedidos
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Sección de Descuento General */}
                             {mostrarDescuento && (
@@ -283,8 +340,8 @@ export default function CarritoModal({
                                 </div>
                             )}
 
-                            {/* Sección de Comentario */}
-                            {mostrarComentario && (
+                            {/* Sección de Comentario - Solo se muestra si está habilitado */}
+                            {mostrarComentario && comentariosHabilitado && (
                                 <div className="mt-3">
                                     <ComponenteComentario
                                         comentario={comentarioGeneral}

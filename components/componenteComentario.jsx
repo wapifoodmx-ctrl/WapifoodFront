@@ -2,13 +2,15 @@ export default function ComponenteComentario({
     comentario, 
     setComentario, 
     placeholder = "Ej: Para llevar, sin servilletas, entregar rápido...",
-    maxLength = 200
+    maxLength = 200,
+    onFocus
 }) {
     return (
         <div className="bg-white rounded-lg border border-gray-200 p-3">
             <textarea
                 value={comentario}
                 onChange={(e) => setComentario(e.target.value)}
+                onFocus={onFocus}
                 placeholder={placeholder}
                 className="w-full p-2 border border-gray-200 rounded-lg focus:border-green-500 focus:outline-none resize-none text-sm transition-colors"
                 rows={2}
