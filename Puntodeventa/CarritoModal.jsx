@@ -2,6 +2,7 @@ import { FaShoppingCart, FaPercent } from "react-icons/fa";
 import { IoTrashOutline, IoClose } from "react-icons/io5";
 import { MdDelete, MdShoppingCart } from "react-icons/md";
 import ComponenteComentario from "@/components/componenteComentario";
+import { useState } from "react";
 
 export default function CarritoModal({
     isOpen,
@@ -25,6 +26,10 @@ export default function CarritoModal({
     comentarioGeneral,
     setComentarioGeneral
 }) {
+    // Estados para toggle de descuento y comentario
+    const [mostrarDescuento, setMostrarDescuento] = useState(false);
+    const [mostrarComentario, setMostrarComentario] = useState(false);
+
     if (!isOpen) return null;
 
     // Función auxiliar para calcular subtotal de un item
@@ -208,51 +213,84 @@ export default function CarritoModal({
                         ) : null}
                     </div>
 
-                    {/* ========== COMENTARIO GENERAL - COLAPSABLE ========== */}
+                    {/* ========== COMENTARIO Y DESCUENTO - BOTONES TOGGLE ========== */}
                     {(carrito.length > 0 || pedidosPendientes.length > 0) && (
-                        <ComponenteComentario
-                            comentario={comentarioGeneral}
-                            setComentario={setComentarioGeneral}
-                            titulo="💬 Comentario general de la orden"
-                            placeholder="Ej: Para llevar, sin servilletas, entregar rápido..."
-                            storageKey="comentario_puntoventa"
-                        />
-                    )}
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                            {/* Subtotal - Solo si hay carrito */}
+                            {carrito.length > 0 && (
+                                <div className="flex justify-between items-center mb-3">
+                                    <span className="text-base font-semibold text-gray-700">Subtotal:</span>
+                                    <span className="text-xl font-bold text-gray-800">
+                                        ${calcularTotalCarrito().toFixed(2)}
+                                    </span>
+                                </div>
+                            )}
 
-                    {/* ========== TOTAL DEL CARRITO ========== */}
-                    {carrito.length > 0 && (
-                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-200 shadow-sm">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-lg font-bold text-gray-700">Subtotal</span>
-                                <span className="text-2xl font-bold text-green-600">
-                                    ${calcularTotalCarrito().toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
+                            {/* Botones Toggle */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setMostrarDescuento(!mostrarDescuento)}
+                                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                                        mostrarDescuento
+                                            ? 'bg-green-500 text-white border-green-600 shadow-md'
+                                            : 'bg-white text-gray-700 border-gray-300 hover:border-green-400 hover:bg-green-50'
+                                    }`}
+                                >
+                                    <span className="flex items-center justify-center gap-1">
+                                        <FaPercent className="text-xs" />
+                                        Descuento
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={() => setMostrarComentario(!mostrarComentario)}
+                                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                                        mostrarComentario
+                                            ? 'bg-green-500 text-white border-green-600 shadow-md'
+                                            : 'bg-white text-gray-700 border-gray-300 hover:border-green-400 hover:bg-green-50'
+                                    }`}
+                                >
+                                    <span className="flex items-center justify-center gap-1">
+                                        💬 Comentario
+                                    </span>
+                                </button>
                             </div>
-                            
-                            <button
-                                onClick={() => setModalDescuentoOrdenOpen(true)}
-                                className="w-full bg-white hover:bg-green-100 text-green-700 px-4 py-3 rounded-lg text-sm font-semibold transition-all border-2 border-green-200 flex items-center justify-center gap-2"
-                            >
-                                <FaPercent className="text-sm" />
-                                {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Agregar Descuento General'}
-                            </button>
-                            
-                            {descuentoOrden.aplicado && (
+
+                            {/* Sección de Descuento General */}
+                            {mostrarDescuento && (
                                 <div className="mt-3 p-3 bg-white rounded-lg border border-green-200">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600 font-medium">
-                                            Descuento: {descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}
-                                        </span>
-                                        <button
-                                            onClick={() => {
-                                                setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
-                                                setMensajeError('');
-                                            }}
-                                            className="text-red-600 hover:text-red-800 text-sm font-semibold"
-                                        >
-                                            Quitar
-                                        </button>
-                                    </div>
+                                    <button
+                                        onClick={() => setModalDescuentoOrdenOpen(true)}
+                                        className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                    >
+                                        {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Agregar Descuento General'}
+                                    </button>
+                                    {descuentoOrden.aplicado && (
+                                        <div className="flex justify-between items-center mt-2 text-sm">
+                                            <span className="text-green-700 font-medium">
+                                                Dto: {descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}
+                                            </span>
+                                            <button
+                                                onClick={() => {
+                                                    setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
+                                                    setMensajeError('');
+                                                }}
+                                                className="text-red-600 hover:text-red-800 font-medium"
+                                            >
+                                                Quitar
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Sección de Comentario */}
+                            {mostrarComentario && (
+                                <div className="mt-3">
+                                    <ComponenteComentario
+                                        comentario={comentarioGeneral}
+                                        setComentario={setComentarioGeneral}
+                                        placeholder="Ej: Para llevar, sin servilletas, entregar rápido..."
+                                    />
                                 </div>
                             )}
                         </div>

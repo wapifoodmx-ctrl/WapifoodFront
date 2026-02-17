@@ -40,6 +40,10 @@ export default function CartModal({
     const [isValidandoCodigoDescuento, setIsValidandoCodigoDescuento] = useState(false);
     const [tipoDescuentoEnProceso, setTipoDescuentoEnProceso] = useState(null);
 
+    // Estados para toggle de descuento y comentario
+    const [mostrarDescuento, setMostrarDescuento] = useState(false);
+    const [mostrarComentario, setMostrarComentario] = useState(false);
+
     // *** MOVER LOS useEffect AQUÍ, ANTES DEL RETURN ***
     // Guardar comentario general en localStorage cuando cambie
     useEffect(() => {
@@ -466,47 +470,89 @@ export default function CartModal({
                             </div>
                         ) : null}
 
-                    {/* Total con descuentos */}
+                    {/* Total con descuentos y botones toggle */}
                     {carrito.length > 0 && (
-                        <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 border border-green-200">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm sm:text-lg lg:text-xl font-bold text-green-800">Total del carrito:</span>
-                                <span className="text-base sm:text-xl lg:text-2xl font-bold text-green-600">
-                                    ${calcularTotal()}
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                            {/* Subtotal */}
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-base font-semibold text-gray-700">Subtotal:</span>
+                                <span className="text-xl font-bold text-gray-800">
+                                    ${carrito.reduce((total, item) => {
+                                        const precioConDescuento = calcularPrecioConDescuento(item);
+                                        return total + (precioConDescuento * item.cantidad);
+                                    }, 0).toFixed(2)}
                                 </span>
                             </div>
-                            {/* Botón de descuento general */}
-                            <div className="pt-2 border-t border-green-200 space-y-3">
-                                <button onClick={() => {
-                                    setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
-                                    setErrorDescuento('');
-                                    setModalDescuentoOrdenOpen(true);
-                                }} className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 lg:py-3 rounded-lg text-xs sm:text-sm lg:text-base font-medium transition-colors">
-                                    {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Aplicar Descuento General'}
-                                </button>
-                                {descuentoOrden.aplicado && (
-                                    <div className="flex justify-between items-center text-xs sm:text-sm lg:text-base">
-                                        <span className="text-green-700">
-                                            Dto. aplicado: {descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}
-                                        </span>
-                                        <button onClick={() => setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false })} className="text-red-600 hover:text-red-800">
-                                            Quitar
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
 
-                    {/* Input de comentarios - COLAPSABLE */}
-                    {carrito.length > 0 && (
-                        <ComponenteComentario
-                            comentario={comentarioOrden}
-                            setComentario={setComentarioOrden}
-                            titulo="💬 Comentarios para la orden"
-                            placeholder="Ej: Sin cebolla en todos los platillos, mesa cerca de la ventana..."
-                            storageKey="comentario_menucliente"
-                        />
+                            {/* Botones Toggle */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setMostrarDescuento(!mostrarDescuento)}
+                                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                                        mostrarDescuento
+                                            ? 'bg-green-500 text-white border-green-600 shadow-md'
+                                            : 'bg-white text-gray-700 border-gray-300 hover:border-green-400 hover:bg-green-50'
+                                    }`}
+                                >
+                                    <span className="flex items-center justify-center gap-1">
+                                        <FaPercent className="text-xs" />
+                                        Descuento
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={() => setMostrarComentario(!mostrarComentario)}
+                                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                                        mostrarComentario
+                                            ? 'bg-green-500 text-white border-green-600 shadow-md'
+                                            : 'bg-white text-gray-700 border-gray-300 hover:border-green-400 hover:bg-green-50'
+                                    }`}
+                                >
+                                    <span className="flex items-center justify-center gap-1">
+                                        💬 Comentario
+                                    </span>
+                                </button>
+                            </div>
+
+                            {/* Sección de Descuento General */}
+                            {mostrarDescuento && (
+                                <div className="mt-3 p-3 bg-white rounded-lg border border-green-200">
+                                    <button
+                                        onClick={() => {
+                                            setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false });
+                                            setErrorDescuento('');
+                                            setModalDescuentoOrdenOpen(true);
+                                        }}
+                                        className="w-full bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                    >
+                                        {descuentoOrden.aplicado ? 'Editar Descuento General' : 'Aplicar Descuento General'}
+                                    </button>
+                                    {descuentoOrden.aplicado && (
+                                        <div className="flex justify-between items-center mt-2 text-sm">
+                                            <span className="text-green-700 font-medium">
+                                                Dto: {descuentoOrden.tipo === 'porcentaje' ? `${descuentoOrden.valor}%` : `$${descuentoOrden.valor}`}
+                                            </span>
+                                            <button
+                                                onClick={() => setDescuentoOrden({ tipo: 'porcentaje', valor: '', aplicado: false })}
+                                                className="text-red-600 hover:text-red-800 font-medium"
+                                            >
+                                                Quitar
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Sección de Comentario */}
+                            {mostrarComentario && (
+                                <div className="mt-3">
+                                    <ComponenteComentario
+                                        comentario={comentarioOrden}
+                                        setComentario={setComentarioOrden}
+                                        placeholder="Ej: Sin cebolla, mesa cerca de la ventana..."
+                                    />
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {/* ========== HISTORIAL DE PEDIDOS ========== */}
