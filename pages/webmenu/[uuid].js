@@ -265,16 +265,25 @@ export default function MenuWebDinamico() {
 
     const validateForm = () => {
         const errors = {};
-        if (!customerData.nombre.trim()) errors.nombre = 'El nombre es requerido';
+        
+        if (!customerData.nombre.trim()) {
+            errors.nombre = 'El nombre es requerido';
+        }
+        
         if (!customerData.telefono.trim()) {
             errors.telefono = 'El teléfono es requerido';
         } else if (!/^\d{10}$/.test(customerData.telefono.replace(/\s/g, ''))) {
             errors.telefono = 'Ingresa un teléfono válido de 10 dígitos';
         }
-        if (!customerData.direccion.trim()) errors.direccion = 'La dirección es requerida';
+        
+        if (!customerData.direccion.trim()) {
+            errors.direccion = 'La dirección es requerida';
+        }
+        
         if (!customerData.codigo_postal.trim()) {
             errors.codigo_postal = 'El código postal es requerido';
         }
+        
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -285,16 +294,11 @@ export default function MenuWebDinamico() {
             return;
         }
         
-        // Verificar horario del restaurante
-        if (!isRestaurantOpen) {
-            showToast('Lo sentimos, el restaurante está cerrado en este momento', 'error');
-            return;
-        }
-        
         if (!validateForm()) {
             showToast('Por favor completa todos los campos requeridos', 'error');
             return;
         }
+        
         try {
             setIsSubmitting(true);
             const orderData = {
@@ -331,6 +335,7 @@ export default function MenuWebDinamico() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }, 5000);
         } catch (error) {
+            console.error('Error al enviar pedido:', error);
             showToast('Error al realizar el pedido. Por favor intenta de nuevo.', 'error');
         } finally {
             setIsSubmitting(false);
@@ -476,8 +481,8 @@ export default function MenuWebDinamico() {
                                     onClick={() => setIsDeliveryMode(false)}
                                     className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
                                         !isDeliveryMode 
-                                            ? 'bg-white text-green-600 shadow-md' 
-                                            : 'text-white hover:bg-white/10'
+                                            ? currentStyle.colors.deliverySwitchActive
+                                            : currentStyle.colors.deliverySwitchInactive
                                     }`}
                                 >
                                     Ver Menú
@@ -486,8 +491,8 @@ export default function MenuWebDinamico() {
                                     onClick={() => setIsDeliveryMode(true)}
                                     className={`px-4 py-2 rounded-full font-semibold text-sm transition-all flex items-center gap-2 ${
                                         isDeliveryMode 
-                                            ? 'bg-white text-green-600 shadow-md' 
-                                            : 'text-white hover:bg-white/10'
+                                            ? currentStyle.colors.deliverySwitchActive
+                                            : currentStyle.colors.deliverySwitchInactive
                                     }`}
                                 >
                                     <MdDeliveryDining size={20} />
@@ -530,8 +535,8 @@ export default function MenuWebDinamico() {
                             onClick={() => setIsDeliveryMode(false)}
                             className={`flex-1 py-2 rounded-full font-semibold text-sm transition-all ${
                                 !isDeliveryMode 
-                                    ? 'bg-white text-green-600 shadow-md' 
-                                    : 'text-white'
+                                    ? currentStyle.colors.deliverySwitchActive
+                                    : currentStyle.colors.deliverySwitchInactive
                             }`}
                         >
                             Ver Menú
@@ -540,8 +545,8 @@ export default function MenuWebDinamico() {
                             onClick={() => setIsDeliveryMode(true)}
                             className={`flex-1 py-2 rounded-full font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
                                 isDeliveryMode 
-                                    ? 'bg-white text-green-600 shadow-md' 
-                                    : 'text-white'
+                                    ? currentStyle.colors.deliverySwitchActive
+                                    : currentStyle.colors.deliverySwitchInactive
                             }`}
                         >
                             <MdDeliveryDining size={18} />
@@ -975,9 +980,9 @@ export default function MenuWebDinamico() {
                             <div className="border-t border-gray-200 p-6 bg-gray-50">
                                 <div className="flex items-center justify-between mb-4">
                                     <span className="text-xl font-bold text-gray-700">Total:</span>
-                                    <span className="text-3xl font-bold text-green-600">${calculateTotal().toFixed(2)}</span>
+                                    <span className={`text-3xl font-bold ${currentStyle.colors.textSecondary}`}>${calculateTotal().toFixed(2)}</span>
                                 </div>
-                                <button onClick={() => { setIsCartOpen(false); setShowCustomerForm(true); }} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg">
+                                <button onClick={() => { setIsCartOpen(false); setShowCustomerForm(true); }} className={`w-full bg-gradient-to-r ${currentStyle.colors.deliveryButtonGradient} text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg`}>
                                     Continuar con mi pedido
                                 </button>
                             </div>
@@ -990,7 +995,7 @@ export default function MenuWebDinamico() {
             {showCustomerForm && isDeliveryMode && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4 overflow-y-auto pt-32">
                     <div className="bg-white rounded-xl shadow-2xl max-w-xl w-full my-8">
-                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-xl">
+                        <div className={`bg-gradient-to-r ${currentStyle.colors.deliveryButtonGradient} p-6 rounded-t-xl`}>
                             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                                 <MdDeliveryDining size={28} />
                                 Datos de entrega
@@ -1000,7 +1005,7 @@ export default function MenuWebDinamico() {
                             {/* Nombre */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre completo * <span className="text-gray-500 font-normal">(máx. 30 caracteres)</span></label>
-                                <input type="text" value={customerData.nombre || ''} onChange={(e) => setCustomerData({...customerData, nombre: e.target.value})} placeholder="Juan Pérez" maxLength="30" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${formErrors.nombre ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                                <input type="text" value={customerData.nombre || ''} onChange={(e) => setCustomerData({...customerData, nombre: e.target.value})} placeholder="Juan Pérez" maxLength="30" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${formErrors.nombre ? currentStyle.colors.deliveryInputError : currentStyle.colors.deliveryInputBorder}`} />
                                 {formErrors.nombre && <p className="text-red-500 text-xs mt-1">{formErrors.nombre}</p>}
                             </div>
                             {/* Teléfono */}
@@ -1009,13 +1014,13 @@ export default function MenuWebDinamico() {
                                 <input type="tel" value={customerData.telefono || ''} onChange={(e) => {
                                     const value = e.target.value.replace(/\D/g, '');
                                     setCustomerData({...customerData, telefono: value});
-                                }} placeholder="5512345678" maxLength="10" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${formErrors.telefono ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                                }} placeholder="5512345678" maxLength="10" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${formErrors.telefono ? currentStyle.colors.deliveryInputError : currentStyle.colors.deliveryInputBorder}`} />
                                 {formErrors.telefono && <p className="text-red-500 text-xs mt-1">{formErrors.telefono}</p>}
                             </div>
                             {/* Dirección */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">Dirección completa * <span className="text-gray-500 font-normal">(máx. 120 caracteres)</span></label>
-                                <textarea value={customerData.direccion || ''} onChange={(e) => setCustomerData({...customerData, direccion: e.target.value})} placeholder="Calle, Número, Colonia" rows="3" maxLength="120" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 resize-none transition-all ${formErrors.direccion ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                                <textarea value={customerData.direccion || ''} onChange={(e) => setCustomerData({...customerData, direccion: e.target.value})} placeholder="Calle, Número, Colonia" rows="3" maxLength="120" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 resize-none transition-all ${formErrors.direccion ? currentStyle.colors.deliveryInputError : currentStyle.colors.deliveryInputBorder}`} />
                                 {formErrors.direccion && <p className="text-red-500 text-xs mt-1">{formErrors.direccion}</p>}
                             </div>
                             {/* Código Postal */}
@@ -1024,23 +1029,23 @@ export default function MenuWebDinamico() {
                                 <input type="text" value={customerData.codigo_postal || ''} onChange={(e) => {
                                     const value = e.target.value.replace(/\D/g, '');
                                     setCustomerData({...customerData, codigo_postal: value});
-                                }} placeholder="12345" maxLength="10" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${formErrors.codigo_postal ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                                }} placeholder="12345" maxLength="10" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${formErrors.codigo_postal ? currentStyle.colors.deliveryInputError : currentStyle.colors.deliveryInputBorder}`} />
                                 {formErrors.codigo_postal && <p className="text-red-500 text-xs mt-1">{formErrors.codigo_postal}</p>}
                             </div>
                             {/* Referencias */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">Referencias (opcional) <span className="text-gray-500 font-normal">(máx. 150 caracteres)</span></label>
-                                <textarea value={customerData.referencias || ''} onChange={(e) => setCustomerData({...customerData, referencias: e.target.value})} placeholder="Casa blanca con portón negro, entre calle X y Y" rows="3" maxLength="150" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 resize-none transition-all" />
+                                <textarea value={customerData.referencias || ''} onChange={(e) => setCustomerData({...customerData, referencias: e.target.value})} placeholder="Casa blanca con portón negro, entre calle X y Y" rows="3" maxLength="150" className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 resize-none transition-all ${currentStyle.colors.deliveryInputBorder}`} />
                             </div>
-                            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                                <p className="text-xs text-green-800"><span className="font-semibold">Nota:</span> Los campos marcados con * son obligatorios</p>
+                            <div className={`p-3 rounded-lg border ${currentStyle.colors.deliveryCardBorder} ${style === 'tokyo' ? 'bg-fuchsia-950/30' : 'bg-green-50'}`}>
+                                <p className={`text-xs ${style === 'tokyo' ? 'text-cyan-300' : 'text-green-800'}`}><span className="font-semibold">Nota:</span> Los campos marcados con * son obligatorios</p>
                             </div>
                         </div>
                         <div className="p-6 bg-gray-50 rounded-b-xl flex gap-3">
                             <button onClick={() => setShowCustomerForm(false)} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-xl transition-all">
                                 Volver
                             </button>
-                            <button onClick={handleConfirmOrder} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                            <button onClick={handleConfirmOrder} className={`flex-1 bg-gradient-to-r ${currentStyle.colors.deliveryButtonGradient} text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2`}>
                                 <MdDeliveryDining size={24} />
                                 Confirmar Pedido
                             </button>
@@ -1056,8 +1061,8 @@ export default function MenuWebDinamico() {
                         <div className="p-8 text-center">
                             {/* Checkmark animado */}
                             <div className="mb-6 flex justify-center">
-                                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
-                                    <svg className="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className={`w-24 h-24 rounded-full flex items-center justify-center ${style === 'tokyo' ? 'bg-fuchsia-500/20' : 'bg-green-100'}`}>
+                                    <svg className={`w-16 h-16 ${currentStyle.colors.textSecondary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                     </svg>
                                 </div>
@@ -1069,9 +1074,9 @@ export default function MenuWebDinamico() {
                             </h3>
                             
                             {/* Número de folio */}
-                            <div className="mb-4 p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                            <div className={`mb-4 p-4 rounded-lg border-2 ${currentStyle.colors.deliveryCardBorder} ${style === 'tokyo' ? 'bg-fuchsia-950/30' : 'bg-green-50'}`}>
                                 <p className="text-sm text-gray-600 mb-1">Número de Pre-Orden</p>
-                                <p className="text-4xl font-bold text-green-600">#{orderFolio}</p>
+                                <p className={`text-4xl font-bold ${currentStyle.colors.textSecondary}`}>#{orderFolio}</p>
                             </div>
                             
                             {/* Mensaje */}
@@ -1094,7 +1099,7 @@ export default function MenuWebDinamico() {
             {isDeliveryMode && cart.length > 0 && !showCustomerForm && (
                 <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-[998]">
                     <div className="max-w-7xl mx-auto px-4 py-4">
-                        <button onClick={() => { setIsCartOpen(true); }} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-between">
+                        <button onClick={() => { setIsCartOpen(true); }} className={`w-full bg-gradient-to-r ${currentStyle.colors.deliveryButtonGradient} text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-between`}>
                             <div className="flex items-center gap-3">
                                 <FiShoppingCart size={24} />
                                 <div className="text-left">

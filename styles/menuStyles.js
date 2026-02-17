@@ -34,7 +34,14 @@ export const menuStyles = {
                 "bg-teal-100",
                 "bg-green-200"
             ],
-            overlayBg: "backdrop-brightness-50"
+            overlayBg: "backdrop-brightness-50",
+            // Colores específicos para delivery
+            deliverySwitchActive: "bg-white text-green-600 shadow-md",
+            deliverySwitchInactive: "text-white hover:bg-white/10",
+            deliveryButtonGradient: "from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700",
+            deliveryCardBorder: "border-green-200",
+            deliveryInputBorder: "border-green-300 focus:ring-green-400",
+            deliveryInputError: "border-red-300 focus:ring-red-400"
         }
     },
 
@@ -76,7 +83,14 @@ export const menuStyles = {
             neonGlow: "shadow-[0_0_20px_rgba(217,70,239,0.6),0_0_40px_rgba(217,70,239,0.3)]",
             cardGlow: "shadow-[0_0_30px_rgba(168,85,247,0.5)]",
             textGlow: "drop-shadow-[0_0_10px_rgba(34,211,238,0.9)]",
-            backgroundPattern: "bg-[radial-gradient(ellipse_at_top_right,rgba(217,70,239,0.15),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(34,211,238,0.15),transparent_50%)]"
+            backgroundPattern: "bg-[radial-gradient(ellipse_at_top_right,rgba(217,70,239,0.15),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(34,211,238,0.15),transparent_50%)]",
+            // Colores específicos para delivery
+            deliverySwitchActive: "bg-white text-fuchsia-600 shadow-md",
+            deliverySwitchInactive: "text-white hover:bg-white/10",
+            deliveryButtonGradient: "from-fuchsia-500 via-purple-600 to-cyan-500 hover:from-fuchsia-600 hover:via-purple-700 hover:to-cyan-600",
+            deliveryCardBorder: "border-fuchsia-500/40",
+            deliveryInputBorder: "border-fuchsia-500/50 focus:ring-cyan-500 focus:border-cyan-400",
+            deliveryInputError: "border-red-500/70 focus:ring-red-500"
         }
     },
 
@@ -116,7 +130,14 @@ export const menuStyles = {
             ],
             overlayBg: "backdrop-brightness-30",
             cardShadow: "shadow-[0_0_30px_rgba(99,102,241,0.1)]",
-            minimalist: true
+            minimalist: true,
+            // Colores específicos para delivery
+            deliverySwitchActive: "bg-white text-indigo-600 shadow-md",
+            deliverySwitchInactive: "text-white hover:bg-white/10",
+            deliveryButtonGradient: "from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500",
+            deliveryCardBorder: "border-zinc-700/50",
+            deliveryInputBorder: "border-zinc-700 focus:ring-indigo-500 focus:border-indigo-500",
+            deliveryInputError: "border-red-500/70 focus:ring-red-500"
         }
     },
 
@@ -155,7 +176,14 @@ export const menuStyles = {
                 "bg-yellow-200"
             ],
             overlayBg: "backdrop-brightness-50",
-            warmGlow: "shadow-[0_0_40px_rgba(249,115,22,0.3)]"
+            warmGlow: "shadow-[0_0_40px_rgba(249,115,22,0.3)]",
+            // Colores específicos para delivery
+            deliverySwitchActive: "bg-white text-red-600 shadow-md",
+            deliverySwitchInactive: "text-white hover:bg-white/10",
+            deliveryButtonGradient: "from-red-500 via-orange-500 to-amber-500 hover:from-red-600 hover:via-orange-600 hover:to-amber-600",
+            deliveryCardBorder: "border-orange-200",
+            deliveryInputBorder: "border-orange-300 focus:ring-red-500 focus:border-red-400",
+            deliveryInputError: "border-red-300 focus:ring-red-400"
         }
     },
 
@@ -195,7 +223,14 @@ export const menuStyles = {
             ],
             overlayBg: "backdrop-brightness-30",
             waterGlow: "shadow-[0_0_30px_rgba(6,182,212,0.4)]",
-            backgroundPattern: "bg-[radial-gradient(ellipse_at_bottom,rgba(6,182,212,0.15),transparent_50%)]"
+            backgroundPattern: "bg-[radial-gradient(ellipse_at_bottom,rgba(6,182,212,0.15),transparent_50%)]",
+            // Colores específicos para delivery
+            deliverySwitchActive: "bg-white text-cyan-600 shadow-md",
+            deliverySwitchInactive: "text-white hover:bg-white/10",
+            deliveryButtonGradient: "from-blue-600 via-cyan-600 to-teal-600 hover:from-blue-500 hover:via-cyan-500 hover:to-teal-500",
+            deliveryCardBorder: "border-cyan-500/30",
+            deliveryInputBorder: "border-cyan-600/50 focus:ring-teal-500 focus:border-cyan-400",
+            deliveryInputError: "border-red-500/70 focus:ring-red-500"
         }
     },
 
@@ -235,7 +270,14 @@ export const menuStyles = {
             ],
             overlayBg: "backdrop-brightness-30",
             luxuryGlow: "shadow-[0_0_30px_rgba(245,158,11,0.5)]",
-            backgroundPattern: "bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.1),transparent_50%)]"
+            backgroundPattern: "bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.1),transparent_50%)]",
+            // Colores específicos para delivery
+            deliverySwitchActive: "bg-white text-amber-600 shadow-md",
+            deliverySwitchInactive: "text-white hover:bg-white/10",
+            deliveryButtonGradient: "from-amber-600 via-yellow-600 to-amber-700 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-600",
+            deliveryCardBorder: "border-amber-500/40",
+            deliveryInputBorder: "border-amber-600/50 focus:ring-yellow-500 focus:border-amber-400",
+            deliveryInputError: "border-red-500/70 focus:ring-red-500"
         }
     },
 
@@ -274,7 +316,14 @@ export const menuStyles = {
                 "bg-teal-200"
             ],
             overlayBg: "backdrop-brightness-50",
-            freshGlow: "shadow-[0_0_40px_rgba(132,204,22,0.3)]"
+            freshGlow: "shadow-[0_0_40px_rgba(132,204,22,0.3)]",
+            // Colores específicos para delivery
+            deliverySwitchActive: "bg-white text-green-600 shadow-md",
+            deliverySwitchInactive: "text-white hover:bg-white/10",
+            deliveryButtonGradient: "from-lime-500 via-green-600 to-emerald-600 hover:from-lime-600 hover:via-green-700 hover:to-emerald-700",
+            deliveryCardBorder: "border-lime-200",
+            deliveryInputBorder: "border-lime-300 focus:ring-green-500 focus:border-lime-400",
+            deliveryInputError: "border-red-300 focus:ring-red-400"
         }
     },
 
@@ -313,7 +362,14 @@ export const menuStyles = {
                 "bg-pink-300"
             ],
             overlayBg: "backdrop-brightness-50",
-            sweetGlow: "shadow-[0_0_35px_rgba(236,72,153,0.3)]"
+            sweetGlow: "shadow-[0_0_40px_rgba(244,114,182,0.3)]",
+            // Colores específicos para delivery
+            deliverySwitchActive: "bg-white text-pink-600 shadow-md",
+            deliverySwitchInactive: "text-white hover:bg-white/10",
+            deliveryButtonGradient: "from-pink-500 via-rose-500 to-fuchsia-600 hover:from-pink-600 hover:via-rose-600 hover:to-fuchsia-700",
+            deliveryCardBorder: "border-pink-200",
+            deliveryInputBorder: "border-pink-300 focus:ring-rose-500 focus:border-pink-400",
+            deliveryInputError: "border-red-300 focus:ring-red-400"
         }
     },
 
@@ -352,7 +408,13 @@ export const menuStyles = {
                 "bg-stone-400"
             ],
             overlayBg: "backdrop-brightness-50",
-            earthyGlow: "shadow-[0_0_35px_rgba(120,113,108,0.3)]"
+            earthyGlow: "shadow-[0_0_35px_rgba(120,113,108,0.3)]",
+            deliverySwitchActive: "bg-white text-stone-700 shadow-md",
+            deliverySwitchInactive: "text-white hover:bg-white/10",
+            deliveryButtonGradient: "from-stone-700 via-amber-700 to-orange-700 hover:from-stone-800 hover:via-amber-800 hover:to-orange-800",
+            deliveryCardBorder: "border-stone-300",
+            deliveryInputBorder: "border-stone-300 focus:ring-amber-600 focus:border-amber-500",
+            deliveryInputError: "border-red-300 focus:ring-red-400"
         }
     },
 
