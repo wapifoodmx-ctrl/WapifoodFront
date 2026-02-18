@@ -312,10 +312,10 @@ export default function Pntoventa() {
             setCarrito(prevCarrito => [...prevCarrito, productoConComentario]);
             
             // console.log('🛒 Producto agregado al carrito (PuntoVenta):', {
-                nombre: productoConComentario.name,
-                comentario: productoConComentario.comentario,
-                ingredientesExcluidos: productoConComentario.ingredientesExcluidos
-            });
+            //     nombre: productoConComentario.name,
+            //     comentario: productoConComentario.comentario,
+            //     ingredientesExcluidos: productoConComentario.ingredientesExcluidos
+            // });
         } else {
             // Comportamiento original: agrupar productos sin comentarios
             const productoConPersonalizacion = {
@@ -478,10 +478,10 @@ export default function Pntoventa() {
                                     const productMatch = matchingProducts[matchingProducts.length - 1];
                                     
                                     // console.log(`✅ Agregando comentario para producto (PuntoVenta):`, {
-                                        id_orders_details: productMatch.id_orders_details,
-                                        comment: pedidoItem.comentario.trim(),
-                                        producto: pedidoItem.name
-                                    });
+                                    //     id_orders_details: productMatch.id_orders_details,
+                                    //     comment: pedidoItem.comentario.trim(),
+                                    //     producto: pedidoItem.name
+                                    // });
                                     
                                     detailsComments.push({
                                         id_orders_details: productMatch.id_orders_details,
