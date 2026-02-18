@@ -7,7 +7,7 @@
 export async function vincularMeseroOrden(orderUuid, waiterUuid) {
     const endpoint = 'https://api.wapifood.com/waiters/assign/order';
 
-    console.log('vincularMeseroOrden - Iniciando:', { orderUuid, waiterUuid });
+    // console.log('vincularMeseroOrden - Iniciando:', { orderUuid, waiterUuid });
 
     try {
         const token = localStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -15,7 +15,7 @@ export async function vincularMeseroOrden(orderUuid, waiterUuid) {
             throw new Error('No se encontró un token de autenticación');
         }
 
-        console.log('vincularMeseroOrden - Token encontrado, enviando request...');
+        // console.log('vincularMeseroOrden - Token encontrado, enviando request...');
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -29,7 +29,7 @@ export async function vincularMeseroOrden(orderUuid, waiterUuid) {
             })
         });
 
-        console.log('vincularMeseroOrden - Response status:', response.status);
+        // console.log('vincularMeseroOrden - Response status:', response.status);
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -38,7 +38,7 @@ export async function vincularMeseroOrden(orderUuid, waiterUuid) {
         }
 
         const data = await response.json();
-        console.log('vincularMeseroOrden - Éxito:', data);
+        // console.log('vincularMeseroOrden - Éxito:', data);
         return data;
     } catch (error) {
         console.error('vincularMeseroOrden - Error:', error.message);

@@ -18,14 +18,14 @@ export function ModalConfirmarPago({
     if (!isOpen) return null;
 
     const handleConfirmarPago = async () => {
-        console.log('🔵 Botón Confirmar Pago clickeado');
+        // console.log('🔵 Botón Confirmar Pago clickeado');
 
         try {
             // Ejecuta el proceso de pago original y obtiene el UUID de la orden
             const orderUuid = await confirmarPago();
 
-            console.log('🟢 confirmarPago ejecutado exitosamente');
-            console.log('🟢 orderUuid retornado:', orderUuid);
+            // console.log('🟢 confirmarPago ejecutado exitosamente');
+            // console.log('🟢 orderUuid retornado:', orderUuid);
 
             // Verificar si la cocina está activa
             const cocinaEnabled = localStorage.getItem('cocinaSwitch');
@@ -34,13 +34,13 @@ export function ModalConfirmarPago({
             // Si el pago fue exitoso y hay un orderUuid, procesar en inventario
             // SOLO si la cocina NO está activa
             if (orderUuid && !switchEnabled) {
-                console.log('🟡 Cocina desactivada - Procesando inventario inmediatamente');
-                console.log('🟡 Iniciando llamada a getTicket con UUID:', orderUuid);
+                // console.log('🟡 Cocina desactivada - Procesando inventario inmediatamente');
+                // console.log('🟡 Iniciando llamada a getTicket con UUID:', orderUuid);
 
                 // Obtener los datos del ticket
                 const ticketData = await getTicket(orderUuid);
 
-                console.log('🟡 Datos del ticket obtenidos:', ticketData);
+                // console.log('🟡 Datos del ticket obtenidos:', ticketData);
 
                 // Preparar los datos para postMermas
                 const orderData = {
@@ -49,14 +49,14 @@ export function ModalConfirmarPago({
                     is_merma: false
                 };
 
-                console.log('🟡 Enviando datos a postProcessOrder:', orderData);
+                // console.log('🟡 Enviando datos a postProcessOrder:', orderData);
 
                 // Procesar la orden en el inventario
                 const result = await postProcessOrder(orderData);
 
-                console.log('🟢 Orden procesada en inventario exitosamente:', result);
+                // console.log('🟢 Orden procesada en inventario exitosamente:', result);
             } else if (orderUuid && switchEnabled) {
-                console.log('🟡 Cocina activada - El inventario se procesará cuando se finalice la orden desde cocina');
+                // console.log('🟡 Cocina activada - El inventario se procesará cuando se finalice la orden desde cocina');
             } else {
                 console.warn('⚠️ No hay orderUuid disponible para procesar inventario');
             }

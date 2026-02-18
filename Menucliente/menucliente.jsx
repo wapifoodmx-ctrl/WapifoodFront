@@ -995,11 +995,11 @@ export default function MenuCliente() {
             // Guardar en localStorage
             localStorage.setItem("carrito_comentarios", JSON.stringify(nuevoCarrito));
             
-            console.log('🛒 Producto agregado al carrito:', {
-                nombre: productoConExclusiones.nombre,
-                comentario: productoConExclusiones.comentario,
-                ingredientesExcluidos: productoConExclusiones.ingredientesExcluidos
-            });
+            // console.log('🛒 Producto agregado al carrito:', {
+            //     nombre: productoConExclusiones.nombre,
+            //     comentario: productoConExclusiones.comentario,
+            //     ingredientesExcluidos: productoConExclusiones.ingredientesExcluidos
+            // });
             
             return nuevoCarrito;
         });
@@ -1063,7 +1063,7 @@ export default function MenuCliente() {
                 descuentoOrdenAPI
             );
 
-            console.log('✅ Respuesta de createSimpleClientOrder:', response);
+            // console.log('✅ Respuesta de createSimpleClientOrder:', response);
 
             if (!ordenActiva && numeroMesa) {
                 try {
@@ -1106,15 +1106,15 @@ export default function MenuCliente() {
                 // Verificar si hay comentarios en el carrito antes de continuar
                 const carritoConComentarios = carrito.filter(item => item.comentario && item.comentario.trim() !== '');
                 
-                console.log('📦 Carrito actual:', carrito);
-                console.log('📦 Productos con comentarios:', carritoConComentarios.length);
+                // console.log('📦 Carrito actual:', carrito);
+                // console.log('📦 Productos con comentarios:', carritoConComentarios.length);
 
                 // Solo proceder si hay comentarios que enviar
                 if (comentarioGeneral.trim() !== '' || carritoConComentarios.length > 0) {
                     // Obtener los detalles de la orden para conseguir los id_orders_details
-                    console.log('🔍 Obteniendo detalles de la orden para mapear comentarios...');
+                    // console.log('🔍 Obteniendo detalles de la orden para mapear comentarios...');
                     const ticketData = await getTicket(response.order_uuid);
-                    console.log('📦 Ticket data recibido:', ticketData);
+                    // console.log('📦 Ticket data recibido:', ticketData);
 
                     // Construir el array de details_comments
                     const detailsComments = [];
@@ -1136,34 +1136,34 @@ export default function MenuCliente() {
                                     tp.id_products === productId || tp.product_id === productId
                                 );
                                 
-                                console.log(`🔍 Buscando producto ${productId} (${carritoItem.nombre}):`, matchingProducts);
+                                // console.log(`🔍 Buscando producto ${productId} (${carritoItem.nombre}):`, matchingProducts);
                                 
                                 // Tomar el último producto que coincida (el más reciente agregado)
                                 if (matchingProducts.length > 0) {
                                     // Usar el último producto que coincida
                                     const productMatch = matchingProducts[matchingProducts.length - 1];
                                     
-                                    console.log(`✅ Agregando comentario para producto:`, {
-                                        id_orders_details: productMatch.id_orders_details,
-                                        comment: carritoItem.comentario.trim(),
-                                        producto: carritoItem.nombre
-                                    });
+                                    // console.log(`✅ Agregando comentario para producto:`, {
+                                    //     id_orders_details: productMatch.id_orders_details,
+                                    //     comment: carritoItem.comentario.trim(),
+                                    //     producto: carritoItem.nombre
+                                    // });
                                     
                                     detailsComments.push({
                                         id_orders_details: productMatch.id_orders_details,
                                         comment: carritoItem.comentario.trim()
                                     });
                                 } else {
-                                    console.log(`⚠️ No se encontró id_orders_details para: ${carritoItem.nombre}`);
+                                    // console.log(`⚠️ No se encontró id_orders_details para: ${carritoItem.nombre}`);
                                 }
                             }
                         });
                     } else {
-                        console.log('⚠️ No se encontraron productos en el ticket:', ticketData);
+                        // console.log('⚠️ No se encontraron productos en el ticket:', ticketData);
                     }
 
-                    console.log('📝 Comentario general:', comentarioGeneral);
-                    console.log('📝 Details comments:', detailsComments);
+                    // console.log('📝 Comentario general:', comentarioGeneral);
+                    // console.log('📝 Details comments:', detailsComments);
 
                     // Solo enviar si hay comentarios (general o por producto)
                     if (comentarioGeneral.trim() !== '' || detailsComments.length > 0) {
@@ -1172,14 +1172,14 @@ export default function MenuCliente() {
                             details_comments: detailsComments
                         };
 
-                        console.log('📤 Enviando comentarios a la API:', commentData);
+                        // console.log('📤 Enviando comentarios a la API:', commentData);
                         const commentResponse = await postOrderComment(response.order_uuid, commentData);
-                        console.log('✅ Comentarios enviados exitosamente:', commentResponse);
+                        // console.log('✅ Comentarios enviados exitosamente:', commentResponse);
                     } else {
-                        console.log('ℹ️ No hay comentarios válidos para enviar después de mapear');
+                        // console.log('ℹ️ No hay comentarios válidos para enviar después de mapear');
                     }
                 } else {
-                    console.log('ℹ️ No hay comentarios para enviar');
+                    // console.log('ℹ️ No hay comentarios para enviar');
                 }
 
                 // Limpiar localStorage de comentarios
@@ -1300,20 +1300,20 @@ export default function MenuCliente() {
                 // *** Marcar que la orden se finalizó en esta página ***
                 setOrderEndOnThisPage(true);
 
-                console.log('🔵 Pago confirmado exitosamente');
-                console.log('🟢 orderUuid:', currentOrderUuid);
+                // console.log('🔵 Pago confirmado exitosamente');
+                // console.log('🟢 orderUuid:', currentOrderUuid);
 
                 // Descontar inventario después de confirmar el pago
 
 
                 // Procesar orden en inventario con postMermas
                 try {
-                    console.log('🟡 Iniciando llamada a getTicket con UUID:', currentOrderUuid);
+                    // console.log('🟡 Iniciando llamada a getTicket con UUID:', currentOrderUuid);
 
                     // Obtener los datos del ticket
                     const ticketData = await getTicket(currentOrderUuid);
 
-                    console.log('🟡 Datos del ticket obtenidos:', ticketData);
+                        // console.log('🟡 Datos del ticket obtenidos:', ticketData);
 
                     // Preparar los datos para postProcessOrder
                     const orderData = {
@@ -1322,12 +1322,12 @@ export default function MenuCliente() {
                         is_merma: false
                     };
 
-                    console.log('🟡 Enviando datos a postProcessOrder:', orderData);
+                    // console.log('🟡 Enviando datos a postProcessOrder:', orderData);
 
                     // Procesar la orden en el inventario
                     const result = await postProcessOrder(orderData);
 
-                    console.log('🟢 Orden procesada en inventario exitosamente:', result);
+                    // console.log('🟢 Orden procesada en inventario exitosamente:', result);
                 } catch (postMermasError) {
                     console.error('🔴 Error al procesar orden en inventario:', postMermasError);
                     // No detenemos el flujo principal

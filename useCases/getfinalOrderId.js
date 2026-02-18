@@ -55,10 +55,10 @@ try {
     
     if (finalOrder) {
         // Procesar la orden final
-        console.log('Orden final encontrada:', finalOrder);
+        // console.log('Orden final encontrada:', finalOrder);
     } else {
         // Manejar el caso cuando no hay orden final
-        console.log('No hay orden final para este usuario');
+        // console.log('No hay orden final para este usuario');
     }
 } catch (error) {
     console.error('Error al obtener la orden final:', error);

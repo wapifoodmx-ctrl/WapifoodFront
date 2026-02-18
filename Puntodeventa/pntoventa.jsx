@@ -132,7 +132,7 @@ export default function Pntoventa() {
                         }).filter(Boolean);
 
                         productoConIngredientes = { ...productoConIngredientes, ingredientes };
-                        console.log('🍕 Ingredientes encontrados para producto:', producto.name, ingredientes);
+                        // console.log('🍕 Ingredientes encontrados para producto:', producto.name, ingredientes);
                     }
                 }
             } catch (err) {
@@ -311,7 +311,7 @@ export default function Pntoventa() {
             };
             setCarrito(prevCarrito => [...prevCarrito, productoConComentario]);
             
-            console.log('🛒 Producto agregado al carrito (PuntoVenta):', {
+            // console.log('🛒 Producto agregado al carrito (PuntoVenta):', {
                 nombre: productoConComentario.name,
                 comentario: productoConComentario.comentario,
                 ingredientesExcluidos: productoConComentario.ingredientesExcluidos
@@ -450,14 +450,14 @@ export default function Pntoventa() {
             try {
                 const pedidosConComentarios = pedidosPendientes.filter(item => item.comentario && item.comentario.trim() !== '');
                 
-                console.log('📦 Pedidos pendientes (PuntoVenta):', pedidosPendientes);
-                console.log('📦 Productos con comentarios (PuntoVenta):', pedidosConComentarios.length);
-                console.log('📝 Comentario general (PuntoVenta):', comentarioGeneral);
+                // console.log('📦 Pedidos pendientes (PuntoVenta):', pedidosPendientes);
+                // console.log('📦 Productos con comentarios (PuntoVenta):', pedidosConComentarios.length);
+                // console.log('📝 Comentario general (PuntoVenta):', comentarioGeneral);
 
                 if (pedidosConComentarios.length > 0 || comentarioGeneral.trim() !== '') {
-                    console.log('🔍 Obteniendo detalles de la orden para mapear comentarios...');
+                    // console.log('🔍 Obteniendo detalles de la orden para mapear comentarios...');
                     const ticketData = await getTicket(orderUuid);
-                    console.log('📦 Ticket data recibido:', ticketData);
+                    // console.log('📦 Ticket data recibido:', ticketData);
 
                     const detailsComments = [];
 
@@ -472,12 +472,12 @@ export default function Pntoventa() {
                                     tp.id_products === productId || tp.product_id === productId
                                 );
                                 
-                                console.log(`🔍 Buscando producto ${productId} (${pedidoItem.name}):`, matchingProducts);
+                                // console.log(`🔍 Buscando producto ${productId} (${pedidoItem.name}):`, matchingProducts);
                                 
                                 if (matchingProducts.length > 0) {
                                     const productMatch = matchingProducts[matchingProducts.length - 1];
                                     
-                                    console.log(`✅ Agregando comentario para producto (PuntoVenta):`, {
+                                    // console.log(`✅ Agregando comentario para producto (PuntoVenta):`, {
                                         id_orders_details: productMatch.id_orders_details,
                                         comment: pedidoItem.comentario.trim(),
                                         producto: pedidoItem.name
@@ -488,13 +488,13 @@ export default function Pntoventa() {
                                         comment: pedidoItem.comentario.trim()
                                     });
                                 } else {
-                                    console.log(`⚠️ No se encontró id_orders_details para: ${pedidoItem.name}`);
+                                    // console.log(`⚠️ No se encontró id_orders_details para: ${pedidoItem.name}`);
                                 }
                             }
                         });
                     }
 
-                    console.log('📝 Details comments (PuntoVenta):', detailsComments);
+                    // console.log('📝 Details comments (PuntoVenta):', detailsComments);
 
                     if (detailsComments.length > 0 || comentarioGeneral.trim() !== '') {
                         const commentData = {
@@ -502,9 +502,9 @@ export default function Pntoventa() {
                             details_comments: detailsComments
                         };
 
-                        console.log('📤 Enviando comentarios a la API (PuntoVenta):', commentData);
+                        // console.log('📤 Enviando comentarios a la API (PuntoVenta):', commentData);
                         const commentResponse = await postOrderComment(orderUuid, commentData);
-                        console.log('✅ Comentarios enviados exitosamente (PuntoVenta):', commentResponse);
+                        // console.log('✅ Comentarios enviados exitosamente (PuntoVenta):', commentResponse);
                     }
                 }
             } catch (commentError) {

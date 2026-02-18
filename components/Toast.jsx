@@ -5,17 +5,17 @@ let toastQueue = [];
 let listeners = [];
 
 export const toast = {
-  success: (message) => {
-    showToast({ type: 'success', message });
+  success: (message, duration = 4000) => {
+    showToast({ type: 'success', message, duration });
   },
-  error: (message) => {
-    showToast({ type: 'error', message });
+  error: (message, duration = 5000) => {
+    showToast({ type: 'error', message, duration });
   },
-  warning: (message) => {
-    showToast({ type: 'warning', message });
+  warning: (message, duration = 5000) => {
+    showToast({ type: 'warning', message, duration });
   },
-  info: (message) => {
-    showToast({ type: 'info', message });
+  info: (message, duration = 4000) => {
+    showToast({ type: 'info', message, duration });
   },
 };
 
@@ -25,10 +25,10 @@ const showToast = (toastData) => {
   toastQueue.push(newToast);
   listeners.forEach(listener => listener([...toastQueue]));
   
-  // Auto-remove después de 4 segundos
+  // Auto-remove después del tiempo especificado
   setTimeout(() => {
     removeToast(id);
-  }, 4000);
+  }, toastData.duration || 4000);
 };
 
 const removeToast = (id) => {
@@ -103,8 +103,13 @@ export default function ToastContainer() {
               </p>
             </div>
             <button
-              onClick={() => removeToast(toast.id)}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                removeToast(toast.id);
+              }}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              type="button"
             >
               <IoClose className="w-5 h-5" />
             </button>

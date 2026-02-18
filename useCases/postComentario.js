@@ -6,8 +6,12 @@
  */
 export default async function postOrderComment(orderUuid, commentData) {
   try {
-    // Intentar obtener el token del localStorage primero, luego sessionStorage
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    // Intentar obtener el token del localStorage/sessionStorage
+    // Soportar tanto 'token' como 'kioskoToken' para compatibilidad con diferentes módulos
+    const token = localStorage.getItem('token') || 
+                  sessionStorage.getItem('token') ||
+                  localStorage.getItem('kioskoToken') ||
+                  sessionStorage.getItem('kioskoToken');
     
     if (!token) {
       throw new Error('No se encontró el token de autenticación');

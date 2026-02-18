@@ -87,7 +87,7 @@ export default function PantallasExternal() {
                     loginSuccess = true;
                 }
             } catch (error) {
-                console.log('Login admin falló, intentando con mesero...');
+                // console.log('Login admin falló, intentando con mesero...');
             }
 
             // Si falla, intentar con login de mesero usando el password como access_code
@@ -97,7 +97,7 @@ export default function PantallasExternal() {
                     token = dataMesero.access_token;
                     loginSuccess = true;
                 } catch (error) {
-                    console.log('Login mesero también falló');
+                    // console.log('Login mesero también falló');
                 }
             }
 

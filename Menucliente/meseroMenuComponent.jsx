@@ -616,11 +616,11 @@ export default function MeseroMenuComponent() {
             // Guardar en localStorage
             localStorage.setItem("carrito_comentarios_mesero", JSON.stringify(nuevoCarrito));
             
-            console.log('🛒 Producto agregado al carrito (Mesero):', {
-                nombre: productoConId.nombre,
-                comentario: productoConId.comentario,
-                ingredientesExcluidos: productoConId.ingredientesExcluidos
-            });
+            // console.log('🛒 Producto agregado al carrito (Mesero):', {
+            //     nombre: productoConId.nombre,
+            //     comentario: productoConId.comentario,
+            //     ingredientesExcluidos: productoConId.ingredientesExcluidos
+            // });
             
             return nuevoCarrito;
         });
@@ -674,7 +674,7 @@ export default function MeseroMenuComponent() {
                 ? descuentoOrden
                 : { tipo: 'porcentaje', valor: '', aplicado: false };
 
-            console.log('🔍 Descuento de orden que se enviará a la API:', descuentoOrdenFinal);
+            // console.log('🔍 Descuento de orden que se enviará a la API:', descuentoOrdenFinal);
 
             const response = await createSimpleClientOrder(
                 productosParaEnviar,
@@ -690,12 +690,12 @@ export default function MeseroMenuComponent() {
             // Vincular mesero a la orden
             if (meseroData && meseroData.uuid) {
                 try {
-                    console.log('Vinculando mesero a orden:', {
-                        order_uuid: response.order_uuid,
-                        waiter_uuid: meseroData.uuid
-                    });
+                    // console.log('Vinculando mesero a orden:', {
+                    //     order_uuid: response.order_uuid,
+                    //     waiter_uuid: meseroData.uuid
+                    // });
                     await vincularMeseroOrden(response.order_uuid, meseroData.uuid);
-                    console.log('Mesero vinculado exitosamente');
+                    // console.log('Mesero vinculado exitosamente');
                 } catch (error) {
                     console.warn('Error al vincular mesero (continuando):', error);
                 }
@@ -739,8 +739,8 @@ export default function MeseroMenuComponent() {
                         // Verificar si hay comentarios en el carrito antes de continuar
                         const carritoConComentarios = carrito.filter(item => item.comentario && item.comentario.trim() !== '');
                         
-                        console.log('📦 Carrito actual (Mesero):', carrito);
-                        console.log('📦 Productos con comentarios (Mesero):', carritoConComentarios.length);
+                        // console.log('📦 Carrito actual (Mesero):', carrito);
+                        // console.log('📦 Productos con comentarios (Mesero):', carritoConComentarios.length);
 
                         // Solo proceder si hay comentarios que enviar
                         if (comentarioGeneral.trim() !== '' || carritoConComentarios.length > 0) {
@@ -762,31 +762,31 @@ export default function MeseroMenuComponent() {
                                             tp.id_products === productId || tp.product_id === productId
                                         );
                                         
-                                        console.log(`🔍 Buscando producto ${productId} (${carritoItem.nombre}):`, matchingProducts);
+                                        // console.log(`🔍 Buscando producto ${productId} (${carritoItem.nombre}):`, matchingProducts);
                                         
                                         // Tomar el último producto que coincida (el más reciente agregado)
                                         if (matchingProducts.length > 0) {
                                             const productMatch = matchingProducts[matchingProducts.length - 1];
                                             
-                                            console.log(`✅ Agregando comentario para producto (Mesero):`, {
-                                                id_orders_details: productMatch.id_orders_details,
-                                                comment: carritoItem.comentario.trim(),
-                                                producto: carritoItem.nombre
-                                            });
+                                            // console.log(`✅ Agregando comentario para producto (Mesero):`, {
+                                            //     id_orders_details: productMatch.id_orders_details,
+                                            //     comment: carritoItem.comentario.trim(),
+                                            //     producto: carritoItem.nombre
+                                            // });
                                             
                                             detailsComments.push({
                                                 id_orders_details: productMatch.id_orders_details,
                                                 comment: carritoItem.comentario.trim()
                                             });
                                         } else {
-                                            console.log(`⚠️ No se encontró id_orders_details para: ${carritoItem.nombre}`);
+                                            // console.log(`⚠️ No se encontró id_orders_details para: ${carritoItem.nombre}`);
                                         }
                                     }
                                 });
                             }
 
-                            console.log('📝 Comentario general (Mesero):', comentarioGeneral);
-                            console.log('📝 Details comments (Mesero):', detailsComments);
+                            // console.log('📝 Comentario general (Mesero):', comentarioGeneral);
+                            // console.log('📝 Details comments (Mesero):', detailsComments);
 
                             // Solo enviar si hay comentarios (general o por producto)
                             if (comentarioGeneral.trim() !== '' || detailsComments.length > 0) {
@@ -795,14 +795,14 @@ export default function MeseroMenuComponent() {
                                     details_comments: detailsComments
                                 };
 
-                                console.log('📤 Enviando comentarios a la API (Mesero):', commentData);
+                                // console.log('📤 Enviando comentarios a la API (Mesero):', commentData);
                                 const commentResponse = await postOrderComment(response.order_uuid, commentData);
-                                console.log('✅ Comentarios enviados exitosamente (Mesero):', commentResponse);
+                                // console.log('✅ Comentarios enviados exitosamente (Mesero):', commentResponse);
                             } else {
-                                console.log('ℹ️ No hay comentarios válidos para enviar después de mapear (Mesero)');
+                                // console.log('ℹ️ No hay comentarios válidos para enviar después de mapear (Mesero)');
                             }
                         } else {
-                            console.log('ℹ️ No hay comentarios para enviar (Mesero)');
+                            // console.log('ℹ️ No hay comentarios para enviar (Mesero)');
                         }
 
                         // Limpiar localStorage de comentarios
@@ -883,12 +883,12 @@ export default function MeseroMenuComponent() {
             // Vincular mesero a la orden antes de finalizar
             if (meseroData && meseroData.uuid) {
                 try {
-                    console.log('Vinculando mesero a orden (confirmarPago):', {
-                        order_uuid: currentOrderUuid,
-                        waiter_uuid: meseroData.uuid
-                    });
+                    // console.log('Vinculando mesero a orden (confirmarPago):', {
+                    //     order_uuid: currentOrderUuid,
+                    //     waiter_uuid: meseroData.uuid
+                    // });
                     await vincularMeseroOrden(currentOrderUuid, meseroData.uuid);
-                    console.log('Mesero vinculado exitosamente (confirmarPago)');
+                    // console.log('Mesero vinculado exitosamente (confirmarPago)');
                 } catch (error) {
                     console.warn('Error al vincular mesero (continuando):', error);
                 }
@@ -902,20 +902,20 @@ export default function MeseroMenuComponent() {
             const response = await endOrder(currentOrderUuid, metodoPago);
 
             if (response && (response.success !== false)) {
-                console.log('🔵 Pago confirmado exitosamente');
-                console.log('🟢 orderUuid:', currentOrderUuid);
+                // console.log('🔵 Pago confirmado exitosamente');
+                // console.log('🟢 orderUuid:', currentOrderUuid);
 
                 // Descontar inventario después de confirmar el pago
 
 
                 // Procesar orden en inventario con postMermas
                 try {
-                    console.log('🟡 Iniciando llamada a getTicket con UUID:', currentOrderUuid);
+                    // console.log('🟡 Iniciando llamada a getTicket con UUID:', currentOrderUuid);
 
                     // Obtener los datos del ticket
                     const ticketData = await getTicket(currentOrderUuid);
 
-                    console.log('🟡 Datos del ticket obtenidos:', ticketData);
+                    //  console.log('🟡 Datos del ticket obtenidos:', ticketData);
 
                     // Preparar los datos para postProcessOrder
                     const orderData = {
@@ -924,12 +924,11 @@ export default function MeseroMenuComponent() {
                         is_merma: false
                     };
 
-                    console.log('🟡 Enviando datos a postProcessOrder:', orderData);
-
+                    // console.log('🟡 Enviando datos a postProcessOrder:', orderData); 
                     // Procesar la orden en el inventario
                     const result = await postProcessOrder(orderData);
 
-                    console.log('🟢 Orden procesada en inventario exitosamente:', result);
+                    // console.log('🟢 Orden procesada en inventario exitosamente:', result);
                 } catch (postMermasError) {
                     console.error('🔴 Error al procesar orden en inventario:', postMermasError);
                     // No detenemos el flujo principal

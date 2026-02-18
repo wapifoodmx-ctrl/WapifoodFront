@@ -281,11 +281,11 @@ export default function Kiosko() {
             };
             setCarrito([...carrito, productoConComentario]);
             
-            console.log('🛒 Producto agregado al carrito (Kiosko):', {
-                nombre: productoConComentario.name,
-                comentario: productoConComentario.comentario,
-                ingredientesExcluidos: productoConComentario.ingredientesExcluidos
-            });
+            // console.log('🛒 Producto agregado al carrito (Kiosko):', {
+            //     nombre: productoConComentario.name,
+            //     comentario: productoConComentario.comentario,
+            //     ingredientesExcluidos: productoConComentario.ingredientesExcluidos
+            // });
         } else {
             // Comportamiento original: agrupar productos sin comentarios
             const productoEnCarrito = carrito.find((item) => 
@@ -357,16 +357,16 @@ export default function Kiosko() {
                 // Verificar si hay comentarios en el carrito o comentario general
                 const carritoConComentarios = carrito.filter(item => item.comentario && item.comentario.trim() !== '');
                 
-                console.log('📦 Carrito actual (Kiosko):', carrito);
-                console.log('📦 Productos con comentarios (Kiosko):', carritoConComentarios.length);
-                console.log('📝 Comentario general (Kiosko):', comentarioGeneral);
+                // console.log('📦 Carrito actual (Kiosko):', carrito);
+                // console.log('📦 Productos con comentarios (Kiosko):', carritoConComentarios.length);
+                // console.log('📝 Comentario general (Kiosko):', comentarioGeneral);
 
                 // Solo proceder si hay comentarios que enviar (productos o general)
                 if (carritoConComentarios.length > 0 || comentarioGeneral.trim() !== '') {
                     // Obtener los detalles de la orden para conseguir los id_orders_details
-                    console.log('🔍 Obteniendo detalles de la orden para mapear comentarios...');
+                    // console.log('🔍 Obteniendo detalles de la orden para mapear comentarios...');
                     const ticketData = await getTicket(orderData.order_uuid);
-                    console.log('📦 Ticket data recibido:', ticketData);
+                    // console.log('📦 Ticket data recibido:', ticketData);
 
                     // Construir el array de details_comments
                     const detailsComments = [];
@@ -384,29 +384,29 @@ export default function Kiosko() {
                                     tp.id_products === productId || tp.product_id === productId
                                 );
                                 
-                                console.log(`🔍 Buscando producto ${productId} (${carritoItem.name}):`, matchingProducts);
+                                // console.log(`🔍 Buscando producto ${productId} (${carritoItem.name}):`, matchingProducts);
                                 
                                 if (matchingProducts.length > 0) {
                                     const productMatch = matchingProducts[matchingProducts.length - 1];
                                     
-                                    console.log(`✅ Agregando comentario para producto (Kiosko):`, {
-                                        id_orders_details: productMatch.id_orders_details,
-                                        comment: carritoItem.comentario.trim(),
-                                        producto: carritoItem.name
-                                    });
+                                    // console.log(`✅ Agregando comentario para producto (Kiosko):`, {
+                                    //     id_orders_details: productMatch.id_orders_details,
+                                    //     comment: carritoItem.comentario.trim(),
+                                    //     producto: carritoItem.name
+                                    // });
                                     
                                     detailsComments.push({
                                         id_orders_details: productMatch.id_orders_details,
                                         comment: carritoItem.comentario.trim()
                                     });
                                 } else {
-                                    console.log(`⚠️ No se encontró id_orders_details para: ${carritoItem.name}`);
+                                    // console.log(`⚠️ No se encontró id_orders_details para: ${carritoItem.name}`);
                                 }
                             }
                         });
                     }
 
-                    console.log('📝 Details comments (Kiosko):', detailsComments);
+                    // console.log('📝 Details comments (Kiosko):', detailsComments);
 
                     // Enviar si hay comentarios válidos (productos o general)
                     if (detailsComments.length > 0 || comentarioGeneral.trim() !== '') {
@@ -415,14 +415,14 @@ export default function Kiosko() {
                             details_comments: detailsComments
                         };
 
-                        console.log('📤 Enviando comentarios a la API (Kiosko):', commentData);
+                        // console.log('📤 Enviando comentarios a la API (Kiosko):', commentData);
                         const commentResponse = await postOrderComment(orderData.order_uuid, commentData);
-                        console.log('✅ Comentarios enviados exitosamente (Kiosko):', commentResponse);
+                        // console.log('✅ Comentarios enviados exitosamente (Kiosko):', commentResponse);
                     } else {
-                        console.log('ℹ️ No hay comentarios válidos para enviar después de mapear (Kiosko)');
+                        // console.log('ℹ️ No hay comentarios válidos para enviar después de mapear (Kiosko)');');
                     }
                 } else {
-                    console.log('ℹ️ No hay comentarios para enviar (Kiosko)');
+                    // console.log('ℹ️ No hay comentarios para enviar (Kiosko)');
                 }
             } catch (commentError) {
                 console.error('⚠️ Error al enviar comentarios (Kiosko):', commentError);
@@ -476,9 +476,9 @@ export default function Kiosko() {
                         }).filter(Boolean);
 
                         productoConIngredientes = { ...productoConIngredientes, ingredientes };
-                        console.log('🍕 Ingredientes encontrados para producto:', producto.name, ingredientes);
+                        // console.log('🍕 Ingredientes encontrados para producto:', producto.name, ingredientes);
                     } else {
-                        console.log('⚠️ No se encontró receta para el producto:', producto.name, 'ID:', productId);
+                        // console.log('⚠️ No se encontró receta para el producto:', producto.name, 'ID:', productId);
                     }
                 }
             } catch (err) {

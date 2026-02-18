@@ -147,15 +147,15 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
     };
 
     const handleSaveRecipe = async (ingredients) => {
-        console.log('✅ Guardando receta personalizada con ingredientes:', ingredients);
+        // console.log('✅ Guardando receta personalizada con ingredientes:', ingredients);
         setPendingRecipeData(ingredients);
         setIsRecipeModalOpen(false);
         // Marcar el checkbox de agregar receta
         if (formikSetFieldValue) {
             formikSetFieldValue("agregarReceta", true);
-            console.log('✅ Campo agregarReceta marcado como true');
+            // console.log('✅ Campo agregarReceta marcado como true');
         } else {
-            console.log('⚠️ formikSetFieldValue no disponible');
+            // console.log('⚠️ formikSetFieldValue no disponible');
         }
         setModalMessage("Receta guardada. Presiona 'Guardar' para confirmar.");
     };
@@ -260,12 +260,12 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
             }
 
             // Si hay datos de receta personalizada
-            console.log('⚠️ Verificando creación de receta personalizada');
-            console.log('pendingRecipeData:', pendingRecipeData);
-            console.log('values.agregarReceta:', values.agregarReceta);
+            // console.log('⚠️ Verificando creación de receta personalizada');
+            // console.log('pendingRecipeData:', pendingRecipeData);
+            // console.log('values.agregarReceta:', values.agregarReceta);
             
             if (pendingRecipeData && values.agregarReceta) {
-                console.log('✅ Se creará receta personalizada');
+                // console.log('✅ Se creará receta personalizada');
                 const recipeData = {
                     name: productName,
                     product_id: productId,
@@ -274,7 +274,7 @@ export default function Cards({ products, searchTerm, selectedCategory, categori
 
                 await postRecetas(recipeData);
             } else {
-                console.log('⚠️ No se creará receta personalizada');
+                // console.log('⚠️ No se creará receta personalizada');
             }
 
             const successMessage = tempInventoryData && values.agregarInventario
