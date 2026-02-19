@@ -16,6 +16,7 @@ import { updateTableStatus } from "../../useCases/tablesStatus.js";
 import { getTicket } from "../../useCases/getTicket.js";
 import postProcessOrder from "../../useCases/postMermas.js";
 import { getOrderComments } from "../../useCases/getComentario.js";
+import getWebOrderDeliveryInfo from "../../useCases/getWebOrderUuid.js";
 import { toast } from "@/components/Toast";
 import ModalCocina from "./modalCocina.jsx";
 
@@ -67,6 +68,9 @@ export default function VistaCocina() {
     const [showWebOrderModal, setShowWebOrderModal] = useState(false);
     const [showCancelWebOrderModal, setShowCancelWebOrderModal] = useState(false);
     const previousWebOrderCountRef = useRef(0);
+    
+    // Estado para información de entrega de órdenes web
+    const [webOrdersDeliveryInfo, setWebOrdersDeliveryInfo] = useState({});
 
     // Inicializar AudioContext con la primera interacción del usuario
     const initializeAudio = () => {
@@ -170,6 +174,25 @@ export default function VistaCocina() {
             ...prev,
             [orderUuid]: { ...prev[orderUuid], hasUnread: false }
         }));
+    };
+
+    // Función para obtener información de entrega de una orden web
+    const fetchWebOrderDeliveryInfo = async (webOrderUuid) => {
+        try {
+            const deliveryInfo = await getWebOrderDeliveryInfo(webOrderUuid);
+            
+            // Si la respuesta contiene customer_data, es una respuesta exitosa
+            if (deliveryInfo && deliveryInfo.customer_data) {
+                return deliveryInfo;
+            }
+            
+            // Si no tiene customer_data o el mensaje indica que no se encontró, retornar null
+            return null;
+        } catch (error) {
+            // No mostrar error al usuario, solo silenciosamente ignorar
+            console.log(`No se pudo obtener info de entrega para ${webOrderUuid}`);
+            return null;
+        }
     };
 
     // Función para verificar si una orden tiene comentarios
@@ -422,6 +445,24 @@ export default function VistaCocina() {
             });
 
             const commentsResults = await Promise.all(commentPromises);
+            
+            // Obtener información de entrega para todas las órdenes activas de getOrdersDia
+            const deliveryInfoPromises = Array.from(allActiveOrderUuids).map(async (orderUuid) => {
+                const deliveryInfo = await fetchWebOrderDeliveryInfo(orderUuid);
+                return { orderUuid, deliveryInfo };
+            });
+
+            const deliveryResults = await Promise.all(deliveryInfoPromises);
+            
+            // Actualizar estado con la información de entrega de las órdenes de getOrdersDia
+            const newDeliveryInfo = {};
+            deliveryResults.forEach(({ orderUuid, deliveryInfo }) => {
+                if (deliveryInfo && deliveryInfo.customer_data) {
+                    newDeliveryInfo[orderUuid] = deliveryInfo;
+                }
+            });
+            
+            setWebOrdersDeliveryInfo(newDeliveryInfo);
             
             // Actualizar estado de comentarios detectando nuevos comentarios
             setOrderComments(prev => {
@@ -1010,6 +1051,7 @@ export default function VistaCocina() {
                     handleUndoProductToPending={handleUndoProductToPending}
                     handleFinalizeCompletedOrder={handleFinalizeCompletedOrder}
                     orderComments={selectedTable?.orderUuid ? orderComments[selectedTable.orderUuid] : null}
+                    deliveryInfo={selectedTable?.orderUuid ? webOrdersDeliveryInfo[selectedTable.orderUuid] : null}
                 />
 
                 {/* Modal de confirmación para cancelar orden finalizada */}
@@ -1111,35 +1153,46 @@ export default function VistaCocina() {
 
                             {/* Contenido */}
                             <div className="p-6">
-                                {/* Información del cliente */}
-                                <div className="mb-6 bg-orange-50 rounded-xl p-4 border border-orange-200">
-                                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        Datos del Cliente
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                        <div>
-                                            <p className="text-gray-600 font-semibold">Nombre:</p>
-                                            <p className="text-gray-800">{selectedWebOrder.customer_name}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-gray-600 font-semibold">Teléfono:</p>
-                                            <p className="text-gray-800">{selectedWebOrder.customer_phone}</p>
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <p className="text-gray-600 font-semibold">Dirección:</p>
-                                            <p className="text-gray-800">{selectedWebOrder.customer_address}</p>
-                                        </div>
-                                        {selectedWebOrder.customer_notes && (
-                                            <div className="md:col-span-2">
-                                                <p className="text-gray-600 font-semibold">Referencias:</p>
-                                                <p className="text-gray-800 italic">{selectedWebOrder.customer_notes}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                {(() => {
+                                    const deliveryInfo = webOrdersDeliveryInfo[selectedWebOrder.order_uuid];
+                                    const hasDeliveryInfo = deliveryInfo && deliveryInfo.customer_data;
+                                    
+                                    return (
+                                        <>
+                                            {/* Información del cliente - solo si NO hay deliveryInfo para evitar duplicados */}
+                                            {!hasDeliveryInfo && (
+                                                <div className="mb-6 bg-orange-50 rounded-xl p-4 border border-orange-200">
+                                                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                        </svg>
+                                                        Datos del Cliente
+                                                    </h3>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                                        <div>
+                                                            <p className="text-gray-600 font-semibold">Nombre:</p>
+                                                            <p className="text-gray-800">{selectedWebOrder.customer_name}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-gray-600 font-semibold">Teléfono:</p>
+                                                            <p className="text-gray-800">{selectedWebOrder.customer_phone}</p>
+                                                        </div>
+                                                        <div className="md:col-span-2">
+                                                            <p className="text-gray-600 font-semibold">Dirección:</p>
+                                                            <p className="text-gray-800">{selectedWebOrder.customer_address}</p>
+                                                        </div>
+                                                        {selectedWebOrder.customer_notes && (
+                                                            <div className="md:col-span-2">
+                                                                <p className="text-gray-600 font-semibold">Referencias:</p>
+                                                                <p className="text-gray-800 italic">{selectedWebOrder.customer_notes}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
 
                                 {/* Productos */}
                                 <div className="mb-6">
@@ -1413,6 +1466,7 @@ export default function VistaCocina() {
                                                         <span>{new Date(table.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                     </div>
                                                 </div>
+                                                
                                                 <div className="flex-grow">
                                                     {table.isEmpty ? (
                                                         <div className="text-center py-2">
@@ -1450,89 +1504,96 @@ export default function VistaCocina() {
                                 ))}
                                 
                                 {/* Cards de órdenes web (delivery) */}
-                                {webOrders.filter(order => order.status === "PENDIENTE").map((order) => (
-                                    <div
-                                        key={`web-order-${order.id_web_orders}`}
-                                        className="cursor-pointer transition-transform hover:scale-105"
-                                        onClick={() => {
-                                            setSelectedWebOrder(order);
-                                            setShowWebOrderModal(true);
-                                        }}
-                                    >
-                                        <div className="border-l-8 border-orange-500 rounded-2xl shadow-xl bg-gradient-to-br from-orange-50 to-amber-50 h-44 flex flex-col transition-all duration-300 relative ring-2 ring-orange-300 overflow-hidden">
-                                            
-                                            
-                                            <div className="p-3 flex-grow flex flex-col overflow-hidden">
-                                                {/* Header compacto */}
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                                        <svg className="w-4 h-4 text-orange-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                        </svg>
-                                                        <p className="font-bold text-sm text-gray-800 truncate">{order.customer_name}</p>
-                                                    </div>
-                                                    <span className="px-2 py-0.5 text-[10px] rounded font-semibold bg-orange-100 text-orange-800 border border-orange-300 flex-shrink-0 ml-1">
-                                                        #{order.folio_web}
-                                                    </span>
-                                                </div>
+                                {webOrders.filter(order => order.status === "PENDIENTE").map((order) => {
+                                    const deliveryInfo = webOrdersDeliveryInfo[order.order_uuid];
+                                    const hasDeliveryInfo = deliveryInfo && deliveryInfo.customer_data;
+                                    
+                                    return (
+                                        <div
+                                            key={`web-order-${order.id_web_orders}`}
+                                            className="cursor-pointer transition-transform hover:scale-105"
+                                            onClick={() => {
+                                                setSelectedWebOrder(order);
+                                                setShowWebOrderModal(true);
+                                            }}
+                                        >
+                                            <div className="border-l-8 border-orange-500 rounded-2xl shadow-xl bg-gradient-to-br from-orange-50 to-amber-50 h-44 flex flex-col transition-all duration-300 relative ring-2 ring-orange-300 overflow-hidden">
                                                 
-                                                {/* Status badge */}
-                                                <div className="mb-2">
-                                                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] bg-yellow-100 text-yellow-800 rounded font-semibold border border-yellow-300">
-                                                        <GoDotFill className="text-[10px] mr-0.5" />
-                                                        Por Aprobar
-                                                    </span>
-                                                </div>
                                                 
-                                                {/* Fecha y hora más compactas */}
-                                                <div className="flex justify-between text-[10px] text-gray-600 mb-2 gap-2">
-                                                    <div className="flex items-center gap-0.5">
-                                                        <LuCalendarDays className="w-3 h-3" />
-                                                        <span className="truncate">{new Date(order.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' })}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-0.5">
-                                                        <BsClock className="w-3 h-3" />
-                                                        <span>{new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                    </div>
-                                                </div>
-                                                
-                                                {/* Productos */}
-                                                <div className="flex-grow overflow-hidden">
-                                                    <p className="text-[10px] text-gray-600 font-semibold mb-1">
-                                                        {order.details.length} {order.details.length === 1 ? 'producto' : 'productos'}
-                                                    </p>
-                                                    {order.details.length > 0 && (
-                                                        <div className="bg-white rounded p-1.5 shadow-sm border border-orange-200">
-                                                            <div className="flex justify-between items-center gap-1">
-                                                                <p className="font-semibold text-[11px] truncate flex-1">
-                                                                    {order.details[0].product_name}
-                                                                </p>
-                                                                <span className="bg-orange-100 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-orange-200 flex-shrink-0">
-                                                                    ×{order.details[0].quantity}
-                                                                </span>
-                                                            </div>
+                                                <div className="p-3 flex-grow flex flex-col overflow-hidden">
+                                                    {/* Header compacto */}
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                                            <svg className="w-4 h-4 text-orange-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                            </svg>
+                                                            <p className="font-bold text-sm text-gray-800 truncate">
+                                                                {hasDeliveryInfo ? deliveryInfo.customer_data.nombre : order.customer_name}
+                                                            </p>
                                                         </div>
-                                                    )}
-                                                </div>
-                                                
-                                                {/* Footer con total y más info */}
-                                                <div className="mt-auto pt-2 border-t border-orange-200">
-                                                    <div className="flex justify-between items-center">
-                                                        <p className="text-xs font-bold text-orange-700">
-                                                            ${order.total.toFixed(2)}
+                                                        <span className="px-2 py-0.5 text-[10px] rounded font-semibold bg-orange-100 text-orange-800 border border-orange-300 flex-shrink-0 ml-1">
+                                                            #{order.folio_web}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {/* Status badge */}
+                                                    <div className="mb-2">
+                                                        <span className="inline-flex items-center px-2 py-0.5 text-[10px] bg-yellow-100 text-yellow-800 rounded font-semibold border border-yellow-300">
+                                                            <GoDotFill className="text-[10px] mr-0.5" />
+                                                            Por Aprobar
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {/* Fecha y hora */}
+                                                    <div className="flex justify-between text-[10px] text-gray-600 mb-2 gap-2">
+                                                        <div className="flex items-center gap-0.5">
+                                                            <LuCalendarDays className="w-3 h-3" />
+                                                            <span className="truncate">{new Date(order.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' })}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-0.5">
+                                                            <BsClock className="w-3 h-3" />
+                                                            <span>{new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Productos */}
+                                                    <div className="flex-grow overflow-hidden">
+                                                        <p className="text-[10px] text-gray-600 font-semibold mb-1">
+                                                            {order.details.length} {order.details.length === 1 ? 'producto' : 'productos'}
                                                         </p>
-                                                        {order.details.length > 1 && (
-                                                            <span className="text-[10px] text-orange-600 font-semibold flex items-center gap-0.5">
-                                                                <IoMdInformationCircleOutline className="w-3 h-3" />
-                                                                +{order.details.length - 1} más
-                                                            </span>
+                                                        {order.details.length > 0 && (
+                                                            <div className="bg-white rounded p-1.5 shadow-sm border border-orange-200">
+                                                                <div className="flex justify-between items-center gap-1">
+                                                                    <p className="font-semibold text-[11px] truncate flex-1">
+                                                                        {order.details[0].product_name}
+                                                                    </p>
+                                                                    <span className="bg-orange-100 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-orange-200 flex-shrink-0">
+                                                                        ×{order.details[0].quantity}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
                                                         )}
+                                                    </div>
+                                                    
+                                                    {/* Footer con total y más info */}
+                                                    <div className="mt-auto pt-2 border-t border-orange-200">
+                                                        <div className="flex justify-between items-center">
+                                                            <p className="text-xs font-bold text-orange-700">
+                                                                ${order.total.toFixed(2)}
+                                                            </p>
+                                                            {order.details.length > 1 && (
+                                                                <span className="text-[10px] text-orange-600 font-semibold flex items-center gap-0.5">
+                                                                    <IoMdInformationCircleOutline className="w-3 h-3" />
+                                                                    +{order.details.length - 1} más
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

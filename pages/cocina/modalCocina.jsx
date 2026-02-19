@@ -26,7 +26,8 @@ export default function ModalCocina({
     handleMarkProductPrepared,
     handleUndoProductToPending,
     handleFinalizeCompletedOrder,
-    orderComments
+    orderComments,
+    deliveryInfo
 }) {
     const dropdownRef = useRef(null);
     const buttonRef = useRef(null);
@@ -99,6 +100,60 @@ export default function ModalCocina({
                                 <span>{new Date(selectedTable.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                         </div>
+
+                        {/* Información de Entrega (si está disponible) */}
+                        {deliveryInfo && deliveryInfo.customer_data && (
+                            <div className="mb-6 bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
+                                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    Información de Entrega
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <p className="text-gray-600 font-semibold flex items-center gap-1">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            Nombre:
+                                        </p>
+                                        <p className="text-gray-800 font-medium">{deliveryInfo.customer_data.nombre}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 font-semibold flex items-center gap-1">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                            </svg>
+                                            Teléfono:
+                                        </p>
+                                        <p className="text-gray-800 font-medium">{deliveryInfo.customer_data.telefono}</p>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <p className="text-gray-600 font-semibold flex items-center gap-1">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            Dirección:
+                                        </p>
+                                        <p className="text-gray-800 font-medium">{deliveryInfo.customer_data.direccion}</p>
+                                    </div>
+                                    {deliveryInfo.customer_data.referencias && (
+                                        <div className="md:col-span-2">
+                                            <p className="text-gray-600 font-semibold flex items-center gap-1">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                Referencias:
+                                            </p>
+                                            <p className="text-gray-800 italic font-medium">{deliveryInfo.customer_data.referencias}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {selectedTable.isEmpty ? (
                             <div className="text-center py-8">
@@ -193,7 +248,7 @@ export default function ModalCocina({
                                 </div>
 
                                 {/* Sección de Comentarios del Cliente */}
-                                {orderComments && (orderComments.general_comment || (orderComments.details_comments && orderComments.details_comments.length > 0)) && (
+                                {orderComments && !deliveryInfo && (orderComments.general_comment || (orderComments.details_comments && orderComments.details_comments.length > 0)) && (
                                     <div className="mb-6">
                                         <div className="flex items-center gap-2 mb-3">
                                             <HiOutlineChatAlt2 className="text-xl text-yellow-600" />
