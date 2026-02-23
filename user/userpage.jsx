@@ -12,6 +12,7 @@ import { patchUserInfo } from "@/useCases/patchUserInfo";
 import { checkPayment } from "@/useCases/checkPayment";
 import getPinInventario from "@/useCases/getPinInventario";
 import actualizarPinInventario from "@/useCases/patchPinInventario";
+import putDeliveryOnOff from "@/useCases/putDeliveryOnOff";
 import Profile from "@/pages/assets/images/Profile.jpg";
 import { useRouter } from 'next/router';
 import Navbar from "@/dashboardComponents/navbar";
@@ -143,6 +144,7 @@ export default function UserPage() {
   const [showStyleSuccessModal, setShowStyleSuccessModal] = useState(false);
   const [showStyleErrorModal, setShowStyleErrorModal] = useState(false);
   const [styleModalMessage, setStyleModalMessage] = useState('');
+  const [isDeliveryActive, setIsDeliveryActive] = useState(false);
   
   // NUEVOS ESTADOS PARA TOAST
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
@@ -281,6 +283,14 @@ export default function UserPage() {
         
         // Actualizar el estado local del PIN
         setPinInventario(values.pinInventory);
+      }
+
+      // Actualizar estado de delivery
+      try {
+        await putDeliveryOnOff(isDeliveryActive);
+      } catch (deliveryError) {
+        console.error('Error al actualizar delivery:', deliveryError);
+        showToast('Información guardada, pero hubo un error al actualizar el estado de delivery', 'error');
       }
 
       setShowSuccessModal(true);
@@ -1058,6 +1068,56 @@ export default function UserPage() {
                             <span>Se actualizará el PIN de inventario</span>
                           </p>
                         )}
+                      </div>
+
+                      {/* Delivery Toggle */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Delivery (Este boton es para indicar si tienes Delivery o no)
+                        </label>
+                        <div className="relative h-[52px] bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-gray-300 flex items-center justify-between px-4">
+                          <div className="flex items-center gap-2">
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className={`h-5 w-5 ${isDeliveryActive ? 'text-green-500' : 'text-gray-400'} transition-colors duration-300`}
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              stroke="currentColor"
+                            >
+                              <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2} 
+                                d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" 
+                              />
+                            </svg>
+                            <span className="text-sm font-medium text-gray-700">
+                              {isDeliveryActive ? (
+                                <span className="text-green-600">Activo</span>
+                              ) : (
+                                <span className="text-gray-500">Inactivo</span>
+                              )}
+                            </span>
+                          </div>
+                          
+                          {/* Toggle Switch */}
+                          <button
+                            type="button"
+                            onClick={() => setIsDeliveryActive(!isDeliveryActive)}
+                            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                              isDeliveryActive ? 'bg-green-500' : 'bg-gray-300'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                                isDeliveryActive ? 'translate-x-8' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                        <p className="text-gray-500 text-xs mt-1">
+                          {isDeliveryActive ? 'Servicio de delivery habilitado' : 'Servicio de delivery deshabilitado'}
+                        </p>
                       </div>
                       
                       {/* Imagen de perfil */}

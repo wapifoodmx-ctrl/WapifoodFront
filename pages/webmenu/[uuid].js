@@ -904,7 +904,7 @@ export default function MenuWebDinamico() {
 
             {/* Modal del Carrito */}
             {isCartOpen && isDeliveryMode && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-end md:items-center justify-center">
+                <div className="fixed inset-0 backdrop-brightness-50 bg-opacity-50 z-[9999] flex items-end md:items-center justify-center">
                     <div className="bg-white w-full md:max-w-2xl md:mx-4 rounded-t-3xl md:rounded-2xl h-[70vh] flex flex-col shadow-2xl animate-slideUp">
                         {/* Header del carrito */}
                         <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-3xl md:rounded-t-2xl flex items-center justify-between">
