@@ -1,6 +1,6 @@
-async function getDeliveryOnOff() {
+async function getDeliveryOnOff(uuid) {
   try {
-    const response = await fetch('https://api.wapifood.com/orders/web/status/delivery', {
+    const response = await fetch(`https://api.wapifood.com/orders/web/status/delivery?restaurant_uuid=${uuid}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

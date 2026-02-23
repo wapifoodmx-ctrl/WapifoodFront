@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { getwebMenu } from '@/useCases/getwebmenu';
 import { getUserUUID } from '@/useCases/getUserUUID';
 import externalOrderDelivery from '@/useCases/externalOrderDelivery';
+import getDeliveryOnOff from '@/useCases/getDeliveryOnOff';
 import Image from 'next/image';
 import { FaWhatsapp, FaPhoneAlt, FaRegEye } from "react-icons/fa";
 import { MdOutlineWatchLater, MdDeliveryDining } from "react-icons/md";
@@ -42,6 +43,7 @@ export default function MenuWebDinamico() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [orderFolio, setOrderFolio] = useState(null);
     const [isRestaurantOpen, setIsRestaurantOpen] = useState(true);
+    const [showDeliveryWarningModal, setShowDeliveryWarningModal] = useState(false);
     const [customerData, setCustomerData] = useState({
         nombre: '',
         telefono: '',
@@ -286,6 +288,62 @@ export default function MenuWebDinamico() {
         
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
+    };
+
+    const handleContinueWithOrder = async () => {
+        if (cart.length === 0) {
+            showToast('Agrega productos al carrito para continuar', 'error');
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            
+            // Obtener el UUID directamente de los query params
+            const restaurantUuid = uuid;
+            
+            if (!restaurantUuid) {
+                showToast('Error: No se encontró el UUID del restaurante', 'error');
+                setIsSubmitting(false);
+                return;
+            }
+            
+            // Verificar el estado del delivery
+            const deliveryStatus = await getDeliveryOnOff(restaurantUuid);
+            
+            setIsSubmitting(false);
+            
+            // Si el delivery está activo (true), abrir el formulario directamente
+            if (deliveryStatus.is_delivery_active) {
+                setIsCartOpen(false);
+                setShowCustomerForm(true);
+                return;
+            }
+            
+            // Si el delivery está desactivado (false), mostrar modal de advertencia
+            setShowDeliveryWarningModal(true);
+        } catch (error) {
+            console.error('Error al verificar estado de delivery:', error);
+            setIsSubmitting(false);
+            // En caso de error, continuar con el flujo normal
+            setIsCartOpen(false);
+            setShowCustomerForm(true);
+        }
+    };
+
+    const handleAcceptPickup = () => {
+        // Usuario acepta recoger en el restaurante
+        setShowDeliveryWarningModal(false);
+        setIsCartOpen(false);
+        setShowCustomerForm(true);
+    };
+
+    const handleCancelOrder = () => {
+        // Usuario cancela, cerrar modal y limpiar carrito
+        setShowDeliveryWarningModal(false);
+        setIsCartOpen(false);
+        setCart([]);
+        showToast('Carrito vaciado', 'success');
     };
 
     const handleConfirmOrder = async () => {
@@ -982,7 +1040,7 @@ export default function MenuWebDinamico() {
                                     <span className="text-xl font-bold text-gray-700">Total:</span>
                                     <span className={`text-3xl font-bold ${currentStyle.colors.textSecondary}`}>${calculateTotal().toFixed(2)}</span>
                                 </div>
-                                <button onClick={() => { setIsCartOpen(false); setShowCustomerForm(true); }} className={`w-full bg-gradient-to-r ${currentStyle.colors.deliveryButtonGradient} text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg`}>
+                                <button onClick={handleContinueWithOrder} className={`w-full bg-gradient-to-r ${currentStyle.colors.deliveryButtonGradient} text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg`}>
                                     Continuar con mi pedido
                                 </button>
                             </div>
@@ -993,7 +1051,7 @@ export default function MenuWebDinamico() {
 
             {/* Formulario del cliente */}
             {showCustomerForm && isDeliveryMode && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4 overflow-y-auto pt-32">
+                <div className="fixed inset-0 backdrop-brightness-50 bg-opacity-50 z-[9999] flex items-center justify-center p-4 overflow-y-auto pt-32">
                     <div className="bg-white rounded-xl shadow-2xl max-w-xl w-full my-8">
                         <div className={`bg-gradient-to-r ${currentStyle.colors.deliveryButtonGradient} p-6 rounded-t-xl`}>
                             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -1089,6 +1147,48 @@ export default function MenuWebDinamico() {
                                 <p className="text-xs text-blue-800">
                                     <span className="font-semibold">Importante:</span> Conserva tu número de pre-orden para seguimiento
                                 </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de advertencia de delivery desactivado */}
+            {showDeliveryWarningModal && (
+                <div className="fixed inset-0 backdrop-brightness-50 bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+                    <div className={`${style === 'tokyo' ? 'bg-slate-800 border-pink-500/30' : 'bg-white'} rounded-2xl shadow-2xl max-w-md w-full animate-fadeIn border ${currentStyle.colors.cardBorder} ${style === 'tokyo' ? currentStyle.colors.cardGlow : ''}`}>
+                        <div className="p-8 text-center">
+                            {/* Icono de advertencia */}
+                            <div className="mb-6 flex justify-center">
+                                <div className={`w-24 h-24 rounded-full flex items-center justify-center ${style === 'tokyo' ? 'bg-pink-500/20' : 'bg-amber-100'}`}>
+                                    <MdDeliveryDining className={`w-16 h-16 ${style === 'tokyo' ? 'text-pink-400' : 'text-amber-600'}`} />
+                                </div>
+                            </div>
+                            
+                            {/* Título */}
+                            <h3 className={`text-2xl font-bold mb-4 ${style === 'tokyo' ? `text-cyan-300 ${currentStyle.colors.textGlow}` : 'text-gray-800'}`}>
+                                Información importante
+                            </h3>
+                            
+                            {/* Mensaje */}
+                            <p className={`leading-relaxed mb-6 text-lg ${style === 'tokyo' ? 'text-pink-300' : 'text-gray-600'}`}>
+                                <span className="font-semibold">{restauranteInfo?.nombre_restaurante || 'Este restaurante'}</span> no cuenta con envío a domicilio, sin embargo puedes pedir y recoger en el Restaurante
+                            </p>
+                            
+                            {/* Botones */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleCancelOrder}
+                                    className={`flex-1 ${style === 'tokyo' ? 'bg-slate-700 hover:bg-slate-600 text-pink-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'} font-bold py-3 px-6 rounded-xl transition-all`}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleAcceptPickup}
+                                    className={`flex-1 bg-gradient-to-r ${currentStyle.colors.deliveryButtonGradient} text-white font-bold py-3 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg ${style === 'tokyo' ? currentStyle.colors.neonGlow : ''}`}
+                                >
+                                    Aceptar
+                                </button>
                             </div>
                         </div>
                     </div>
