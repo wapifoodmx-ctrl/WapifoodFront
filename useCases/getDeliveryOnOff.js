@@ -19,4 +19,4 @@ async function getDeliveryOnOff(uuid) {
   }
 }
 
-module.exports = getDeliveryOnOff;
+export default getDeliveryOnOff;

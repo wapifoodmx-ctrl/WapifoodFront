@@ -13,6 +13,7 @@ import { checkPayment } from "@/useCases/checkPayment";
 import getPinInventario from "@/useCases/getPinInventario";
 import actualizarPinInventario from "@/useCases/patchPinInventario";
 import putDeliveryOnOff from "@/useCases/putDeliveryOnOff";
+import getDeliveryOnOff from "@/useCases/getDeliveryOnOff";
 import Profile from "@/pages/assets/images/Profile.jpg";
 import { useRouter } from 'next/router';
 import Navbar from "@/dashboardComponents/navbar";
@@ -159,12 +160,28 @@ export default function UserPage() {
     }, 2000);
   };
 
+  // Función para obtener el estado del delivery
+  const fetchDeliveryStatus = async (userUuid) => {
+    try {
+      const response = await getDeliveryOnOff(userUuid);
+      setIsDeliveryActive(response.is_delivery_active || false);
+    } catch (error) {
+      console.error('Error al obtener el estado de delivery:', error);
+      setIsDeliveryActive(false);
+    }
+  };
+
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
         const data = await getUserInfo();
         const user = data.user_info;
         setUserInfo(user);
+        
+        // Obtener el estado del delivery después de obtener la info del usuario
+        if (user?.user_uuid) {
+          await fetchDeliveryStatus(user.user_uuid);
+        }
       } catch (error) {
         console.error('Error al cargar información del usuario:', error);
       } finally {
@@ -288,6 +305,11 @@ export default function UserPage() {
       // Actualizar estado de delivery
       try {
         await putDeliveryOnOff(isDeliveryActive);
+        
+        // Obtener el estado actualizado del delivery después de guardar
+        if (userInfo?.user_uuid) {
+          await fetchDeliveryStatus(userInfo.user_uuid);
+        }
       } catch (deliveryError) {
         console.error('Error al actualizar delivery:', deliveryError);
         showToast('Información guardada, pero hubo un error al actualizar el estado de delivery', 'error');
