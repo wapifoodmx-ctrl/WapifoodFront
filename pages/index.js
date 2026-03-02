@@ -10,6 +10,7 @@ import Header from "@/components/Header";
 import Main from "@/components/Main";
 import AppTickets from "@/components/appTickets";
 import PaginaWeb from "@/components/paginaWeb";
+import Paquetes from "@/components/paquetes";
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
@@ -168,6 +169,25 @@ export default function Home() {
           <section className="relative py-8 md:py-16 bg-white">
             <div className="animate-fade-in-up delay-400">
               <PaginaWeb />
+            </div>
+          </section>
+
+          {/* Separador con patrón */}
+          <div className="relative py-8">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-200 to-transparent h-px top-1/2"></div>
+            <div className="relative flex justify-center">
+              <div className="flex space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce delay-100"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce delay-200"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección de Paquetes */}
+          <section className="relative">
+            <div className="animate-fade-in-up delay-450">
+              <Paquetes />
             </div>
           </section>
 
