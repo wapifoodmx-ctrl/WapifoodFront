@@ -1,4 +1,163 @@
 import { IoClose } from "react-icons/io5";
+import { useState, useCallback, useRef, useMemo, memo } from "react";
+
+const QuantityInput = memo(({ ingredientId, cantidadesInsumos, unitsInKg, onCantidadChange, toggleUnit, className = "", insumo }) => {
+  const inputRef = useRef(null);
+  
+  // Determinar el tipo de unidad del insumo
+  const unitType = useMemo(() => {
+    if (!insumo || !insumo.unit) return null;
+    
+    const unit = insumo.unit.toLowerCase();
+    
+    // Unidades de peso
+    if (unit.includes('g') || unit.includes('gramo') || unit.includes('kilo') || unit.includes('kg')) {
+      return 'weight';
+    }
+    // Unidades de volumen
+    if (unit.includes('ml') || unit.includes('mililitro') || unit.includes('l') || unit.includes('litro')) {
+      return 'volume';
+    }
+    // Unidades de cantidad
+    if (unit.includes('pz') || unit.includes('pieza') || unit.includes('unidad') || unit.includes('ud')) {
+      return 'quantity';
+    }
+    
+    return null;
+  }, [insumo]);
+  
+  const isLargeUnit = unitsInKg[ingredientId];
+  const currentValue = cantidadesInsumos[ingredientId] || '';
+  
+  // Obtener las unidades según el tipo
+  const getUnits = () => {
+    if (unitType === 'weight') {
+      return { small: 'g', large: 'kg' };
+    }
+    if (unitType === 'volume') {
+      return { small: 'ml', large: 'L' };
+    }
+    return null; // No hay conversión para cantidades
+  };
+  
+  const units = getUnits();
+  
+  const handleChange = (e) => {
+    let value = e.target.value;
+
+    if (value === '') {
+      onCantidadChange(ingredientId, '');
+      return;
+    }
+
+    value = value.replace(',', '.');
+
+    if (/^\d*\.?\d*$/.test(value)) {
+      if (value.includes('.')) {
+        const [, decimals = ''] = value.split('.');
+        const maxDecimals = isLargeUnit ? 3 : 2;
+        if (decimals.length > maxDecimals) return;
+      }
+
+      onCantidadChange(ingredientId, value);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 
+      'Home', 'End', 'Tab', 'Enter', 'Escape'
+    ];
+    
+    if (allowedKeys.includes(e.key)) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.target.blur();
+      }
+      return;
+    }
+
+    if (!/[\d.,]/.test(e.key)) {
+      e.preventDefault();
+      return;
+    }
+
+    if ((e.key === '.' || e.key === ',') && e.target.value.includes('.')) {
+      e.preventDefault();
+      return;
+    }
+  };
+
+  const handleToggleUnit = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    toggleUnit(ingredientId, unitType);
+    
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 0);
+  };
+  
+  // Si no hay conversión disponible, solo mostrar el input sin botón
+  if (!units) {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="relative flex-1">
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="decimal"
+            placeholder="0"
+            value={currentValue}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            className={`w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 pr-8 ${className}`}
+            autoComplete="off"
+            maxLength="10"
+          />
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-600 pointer-events-none select-none">
+            {insumo?.unit || ''}
+          </span>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex items-center gap-1">
+      <div className="relative flex-1">
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="decimal"
+          placeholder="0"
+          value={currentValue}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          className={`w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 pr-10 ${className}`}
+          autoComplete="off"
+          maxLength="10"
+        />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-600 pointer-events-none select-none">
+          {isLargeUnit ? units.large : units.small}
+        </span>
+      </div>
+      <button
+        onClick={handleToggleUnit}
+        type="button"
+        className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs font-semibold transition-colors flex-shrink-0"
+        title={isLargeUnit ? `Convertir a ${units.small}` : `Convertir a ${units.large}`}
+      >
+        {isLargeUnit ? units.small : units.large}
+      </button>
+    </div>
+  );
+});
+
+QuantityInput.displayName = 'QuantityInput';
 
 export default function EditRecipeModal({
   isOpen,
@@ -18,6 +177,38 @@ export default function EditRecipeModal({
   onCantidadChange,
   onRemoveIngredient
 }) {
+  const [unitsInKg, setUnitsInKg] = useState({});
+
+  const toggleUnit = useCallback((ingredientId, unitType) => {
+    const currentValue = parseFloat(cantidadesInsumos[ingredientId]) || 0;
+    const isCurrentlyLarge = unitsInKg[ingredientId];
+
+    if (unitType === 'weight') {
+      // Conversión kg <-> g
+      if (isCurrentlyLarge) {
+        const gramos = currentValue * 1000;
+        onCantidadChange(ingredientId, gramos.toString());
+      } else {
+        const kilos = currentValue / 1000;
+        onCantidadChange(ingredientId, kilos.toFixed(3));
+      }
+    } else if (unitType === 'volume') {
+      // Conversión L <-> ml
+      if (isCurrentlyLarge) {
+        const mililitros = currentValue * 1000;
+        onCantidadChange(ingredientId, mililitros.toString());
+      } else {
+        const litros = currentValue / 1000;
+        onCantidadChange(ingredientId, litros.toFixed(3));
+      }
+    }
+
+    setUnitsInKg(prev => ({
+      ...prev,
+      [ingredientId]: !isCurrentlyLarge
+    }));
+  }, [cantidadesInsumos, unitsInKg, onCantidadChange]);
+
   if (!isOpen) return null;
 
   const handleBackdropClick = (e) => {
@@ -130,13 +321,14 @@ export default function EditRecipeModal({
                               Stock: {insumo.stock} {insumo.unit}
                             </p>
                           </div>
-                          <div className="w-20">
-                            <input
-                              type="text"
-                              placeholder="0"
-                              value={cantidadesInsumos[ingredientId] || ''}
-                              onChange={(e) => onCantidadChange(ingredientId, e.target.value)}
-                              className="w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                          <div className="w-28">
+                            <QuantityInput 
+                              ingredientId={ingredientId}
+                              cantidadesInsumos={cantidadesInsumos}
+                              unitsInKg={unitsInKg}
+                              onCantidadChange={onCantidadChange}
+                              toggleUnit={toggleUnit}
+                              insumo={insumo}
                             />
                           </div>
                           <button
@@ -223,13 +415,15 @@ export default function EditRecipeModal({
                             Stock: {insumo.stock} {insumo.unit}
                           </p>
                         </div>
-                        <div className="w-16">
-                          <input
-                            type="text"
-                            placeholder="0"
-                            value={cantidadesInsumos[ingredientId] || ''}
-                            onChange={(e) => onCantidadChange(ingredientId, e.target.value)}
-                            className="w-full text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                        <div className="w-24">
+                          <QuantityInput 
+                            ingredientId={ingredientId}
+                            cantidadesInsumos={cantidadesInsumos}
+                            unitsInKg={unitsInKg}
+                            onCantidadChange={onCantidadChange}
+                            toggleUnit={toggleUnit}
+                            className="text-xs py-1.5"
+                            insumo={insumo}
                           />
                         </div>
                         <button
