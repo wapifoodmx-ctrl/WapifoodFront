@@ -32,6 +32,7 @@ export default function Recipes() {
   const [products, setProducts] = useState([]);
   const [insumosSeleccionados, setInsumosSeleccionados] = useState([]);
   const [cantidadesInsumos, setCantidadesInsumos] = useState({});
+  const [isDisplayableInsumos, setIsDisplayableInsumos] = useState({});
   const [terminoBusquedaInsumos, setTerminoBusquedaInsumos] = useState("");
   const [terminoBusquedaProductos, setTerminoBusquedaProductos] = useState("");
   const [isLoadingInsumos, setIsLoadingInsumos] = useState(false);
@@ -75,6 +76,7 @@ export default function Recipes() {
       setTotalCost("");
       setInsumosSeleccionados([]);
       setCantidadesInsumos({});
+      setIsDisplayableInsumos({});
       setTerminoBusquedaProductos("");
       setErrorMessage("");
       setSuccessMessage("");
@@ -180,6 +182,17 @@ export default function Recipes() {
           delete nuevasCantidades[insumoId];
           return nuevasCantidades;
         });
+        setIsDisplayableInsumos(prevDisplayable => {
+          const nuevosDisplayable = { ...prevDisplayable };
+          delete nuevosDisplayable[insumoId];
+          return nuevosDisplayable;
+        });
+      } else {
+        // Por defecto, los ingredientes NO son removibles (is_displayable = false)
+        setIsDisplayableInsumos(prev => ({
+          ...prev,
+          [insumoId]: false
+        }));
       }
       
       return nuevaSeleccion;
@@ -192,6 +205,14 @@ export default function Recipes() {
     setCantidadesInsumos(prev => ({
       ...prev,
       [insumoId]: valorLimpio
+    }));
+  };
+
+  // Manejar cambio de is_displayable (checkbox removible)
+  const handleIsDisplayableChange = (insumoId, value) => {
+    setIsDisplayableInsumos(prev => ({
+      ...prev,
+      [insumoId]: value
     }));
   };
 
@@ -247,7 +268,8 @@ export default function Recipes() {
         product_id: parseInt(selectedProductId),
         ingredients: insumosSeleccionados.map(insumoId => ({
           ingredient_id: parseInt(insumoId),
-          quantity: parseFloat(cantidadesInsumos[insumoId])
+          quantity: parseFloat(cantidadesInsumos[insumoId]),
+          is_displayable: isDisplayableInsumos[insumoId] || false
         }))
       };
 
@@ -267,6 +289,7 @@ export default function Recipes() {
         setTotalCost("");
         setInsumosSeleccionados([]);
         setCantidadesInsumos({});
+        setIsDisplayableInsumos({});
         setSuccessMessage("");
       }, 1500);
       
@@ -310,12 +333,15 @@ export default function Recipes() {
       
       const ingredientIds = recipeDetails.ingredients.map(ing => ing.ingredient_id);
       const quantities = {};
+      const displayableValues = {};
       recipeDetails.ingredients.forEach(ing => {
         quantities[ing.ingredient_id] = ing.quantity.toString();
+        displayableValues[ing.ingredient_id] = ing.is_displayable || false;
       });
       
       setInsumosSeleccionados(ingredientIds);
       setCantidadesInsumos(quantities);
+      setIsDisplayableInsumos(displayableValues);
       
       await cargarInsumos();
       
@@ -334,6 +360,11 @@ export default function Recipes() {
       const newQuantities = { ...prev };
       delete newQuantities[ingredientId];
       return newQuantities;
+    });
+    setIsDisplayableInsumos(prev => {
+      const newDisplayable = { ...prev };
+      delete newDisplayable[ingredientId];
+      return newDisplayable;
     });
   };
 
@@ -369,7 +400,8 @@ export default function Recipes() {
         product_id: parseInt(editingRecipe.product_id),
         ingredients: insumosSeleccionados.map(ingredientId => ({
           ingredient_id: parseInt(ingredientId),
-          quantity: parseFloat(cantidadesInsumos[ingredientId])
+          quantity: parseFloat(cantidadesInsumos[ingredientId]),
+          is_displayable: isDisplayableInsumos[ingredientId] || false
         }))
       };
 
@@ -387,6 +419,7 @@ export default function Recipes() {
         setRecipeName("");
         setInsumosSeleccionados([]);
         setCantidadesInsumos({});
+        setIsDisplayableInsumos({});
         setSuccessMessage("");
       }, 1500);
       
@@ -591,6 +624,7 @@ export default function Recipes() {
         insumosSeleccionados={insumosSeleccionados}
         insumos={insumos}
         cantidadesInsumos={cantidadesInsumos}
+        isDisplayableInsumos={isDisplayableInsumos}
         isSubmittingRecipe={isSubmittingRecipe}
         errorMessage={errorMessage}
         successMessage={successMessage}
@@ -598,6 +632,7 @@ export default function Recipes() {
         onSelectSupplies={handleSelectSupplies}
         onSaveRecipe={handleSaveRecipe}
         onCantidadChange={handleCantidadChange}
+        onIsDisplayableChange={handleIsDisplayableChange}
         onRemoveIngredient={handleRemoveIngredient}
       />
 
@@ -609,6 +644,7 @@ export default function Recipes() {
         insumosSeleccionados={insumosSeleccionados}
         insumos={insumos}
         cantidadesInsumos={cantidadesInsumos}
+        isDisplayableInsumos={isDisplayableInsumos}
         isLoadingRecipeDetails={isLoadingRecipeDetails}
         isSubmittingRecipe={isSubmittingRecipe}
         errorMessage={errorMessage}
@@ -617,6 +653,7 @@ export default function Recipes() {
         onSelectSupplies={handleSelectSupplies}
         onUpdateRecipe={handleUpdateRecipe}
         onCantidadChange={handleCantidadChange}
+        onIsDisplayableChange={handleIsDisplayableChange}
         onRemoveIngredient={handleRemoveIngredient}
       />
 

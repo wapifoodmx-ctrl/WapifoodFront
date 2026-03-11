@@ -127,9 +127,13 @@ export default function Pntoventa() {
                     });
 
                     if (recetaMatch && Array.isArray(recetaMatch.ingredients)) {
-                        const ingredientes = recetaMatch.ingredients.map(ing => {
-                            return ing.name || ing.ingredient_name || ing.ingredient?.name || ing.name_ingredient || String(ing.id_ingredient || ing.id || ing).toString();
-                        }).filter(Boolean);
+                        // Filtrar solo ingredientes con is_displayable = true
+                        const ingredientes = recetaMatch.ingredients
+                            .filter(ing => ing.is_displayable === true)
+                            .map(ing => {
+                                return ing.name || ing.ingredient_name || ing.ingredient?.name || ing.name_ingredient || String(ing.id_ingredient || ing.id || ing).toString();
+                            })
+                            .filter(Boolean);
 
                         productoConIngredientes = { ...productoConIngredientes, ingredientes };
                         // console.log('🍕 Ingredientes encontrados para producto:', producto.name, ingredientes);

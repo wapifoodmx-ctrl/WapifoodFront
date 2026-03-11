@@ -168,6 +168,7 @@ export default function AddRecipeModal({
   insumosSeleccionados,
   insumos,
   cantidadesInsumos,
+  isDisplayableInsumos,
   isSubmittingRecipe,
   errorMessage,
   successMessage,
@@ -175,6 +176,7 @@ export default function AddRecipeModal({
   onSelectSupplies,
   onSaveRecipe,
   onCantidadChange,
+  onIsDisplayableChange,
   onRemoveIngredient
 }) {
   const [unitsInKg, setUnitsInKg] = useState({});
@@ -315,6 +317,13 @@ export default function AddRecipeModal({
               Insumos Seleccionados ({insumosSeleccionados.length})
             </h3>
             
+            {/* Nota informativa */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-800">
+                <span className="font-semibold">Nota:</span> Selecciona los ingredientes que se pueden quitar de la receta, ej: "sin cebolla", "sin jitomate".
+              </p>
+            </div>
+            
             {insumosSeleccionados.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
                 <p className="text-sm">Selecciona insumos para la receta</p>
@@ -344,6 +353,15 @@ export default function AddRecipeModal({
                             onCantidadChange={onCantidadChange}
                             toggleUnit={toggleUnit}
                             insumo={insumo}
+                          />
+                        </div>
+                        {/* Checkbox removible */}
+                        <div className="flex items-center" title="¿Se puede quitar?">
+                          <input
+                            type="checkbox"
+                            checked={isDisplayableInsumos[ingredientId] || false}
+                            onChange={(e) => onIsDisplayableChange(ingredientId, e.target.checked)}
+                            className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer"
                           />
                         </div>
                         <button
@@ -432,6 +450,14 @@ export default function AddRecipeModal({
               <h3 className="text-sm font-semibold text-gray-700 mb-3">
                 Insumos Seleccionados ({insumosSeleccionados.length})
               </h3>
+              
+              {/* Nota informativa */}
+              <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-800">
+                  <span className="font-semibold">Nota:</span> Marca los ingredientes que se pueden quitar, ej: "sin cebolla", "sin jitomate".
+                </p>
+              </div>
+              
               <div className="space-y-3 max-h-48 overflow-y-auto">
                 {insumosSeleccionados.map((ingredientId) => {
                   const insumo = insumos.find(i => i.id_ingredient === ingredientId);
@@ -456,6 +482,15 @@ export default function AddRecipeModal({
                           toggleUnit={toggleUnit}
                           className="text-xs py-1.5"
                           insumo={insumo}
+                        />
+                      </div>
+                      {/* Checkbox removible */}
+                      <div className="flex items-center" title="¿Se puede quitar?">
+                        <input
+                          type="checkbox"
+                          checked={isDisplayableInsumos[ingredientId] || false}
+                          onChange={(e) => onIsDisplayableChange(ingredientId, e.target.checked)}
+                          className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer"
                         />
                       </div>
                       <button
