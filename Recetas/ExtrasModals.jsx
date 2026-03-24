@@ -127,11 +127,26 @@ export const AddExtrasModal = ({
 }) => {
   if (!isOpen) return null;
 
-  const getUnitLabel = (ingredientId) => {
-    const insumo = insumos?.find(i => i.id_ingredient === ingredientId);
-    if (!insumo) return '';
+  const toNumberId = (value) => Number(value);
 
-    const unit = insumo.unit?.toLowerCase();
+  const getInsumoByIngredientId = (ingredientId) => {
+    const normalizedId = toNumberId(ingredientId);
+    return insumos?.find(i => toNumberId(i.id_ingredient) === normalizedId);
+  };
+
+  const getExtraByIngredientId = (ingredientId) => {
+    const normalizedId = toNumberId(ingredientId);
+    return extrasExistentes?.find(e => toNumberId(e.ingredient_id) === normalizedId);
+  };
+
+  const getUnitLabel = (ingredientId) => {
+    const insumo = getInsumoByIngredientId(ingredientId);
+    const extra = getExtraByIngredientId(ingredientId);
+
+    const rawUnit = insumo?.unit || extra?.unit;
+    if (!rawUnit) return 'Unidad';
+
+    const unit = rawUnit.toLowerCase();
     if (unit === 'gramos' || unit === 'gramo' || unit === 'grams' || unit === 'gram' || unit === 'g') {
       return 'Gramos';
     } else if (unit === 'mililitros' || unit === 'mililitro' || unit === 'milliliters' || unit === 'milliliter' || unit === 'ml') {
@@ -139,12 +154,13 @@ export const AddExtrasModal = ({
     } else if (unit === 'piezas' || unit === 'pieza' || unit === 'pieces' || unit === 'piece' || unit === 'pz') {
       return 'Piezas';
     }
-    return insumo.unit || 'Unidad';
+    return rawUnit;
   };
 
   const getIngredientName = (ingredientId) => {
-    const insumo = insumos?.find(i => i.id_ingredient === ingredientId);
-    return insumo?.name || 'Ingrediente';
+    const insumo = getInsumoByIngredientId(ingredientId);
+    const extra = getExtraByIngredientId(ingredientId);
+    return insumo?.name || extra?.ingredient_name || `Ingrediente #${ingredientId}`;
   };
 
   const handleBackdropClick = (e) => {

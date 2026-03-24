@@ -21,6 +21,7 @@ import RecetasExtras from "./recetasExtras";
 import { AddExtrasModal, SelectExtrasIngredientsModal } from "./ExtrasModals";
 import getExtras from "@/useCases/getExtras";
 import { postExtras } from "@/useCases/postExtras";
+import { patchExtras } from "@/useCases/patchExtras";
 
 export default function Recipes() {
   const [isAddRecipeModalOpen, setIsAddRecipeModalOpen] = useState(false);
@@ -512,6 +513,10 @@ export default function Recipes() {
       return;
     }
 
+    if (insumos.length === 0) {
+      cargarInsumos();
+    }
+
     setSelectedRecetaForExtras(receta);
     setErrorMessageExtras("");
     setSuccessMessageExtras("");
@@ -641,16 +646,44 @@ export default function Recipes() {
     setSuccessMessageExtras("");
 
     try {
-      // Crear el array de extras
-      const extrasData = insumosSeleccionadosExtras.map(insumoId => ({
-        ingredient_id: parseInt(insumoId),
-        recipe_id: parseInt(selectedRecetaForExtras.id_recipe),
-        quantity: parseFloat(cantidadesExtras[insumoId]),
-        price: parseFloat(preciosExtras[insumoId])
-      }));
+      const normalizeId = (value) => Number(value);
 
-      // Enviar cada extra individualmente
-      for (const extraData of extrasData) {
+      const extrasExistentesPorInsumo = (extrasExistentes || []).reduce((acc, extra) => {
+        acc[normalizeId(extra.ingredient_id)] = extra;
+        return acc;
+      }, {});
+
+      const extrasParaActualizar = [];
+      const extrasParaCrear = [];
+
+      insumosSeleccionadosExtras.forEach((insumoId) => {
+        const ingredientId = normalizeId(insumoId);
+        const extraExistente = extrasExistentesPorInsumo[ingredientId];
+
+        if (extraExistente?.id_extra) {
+          extrasParaActualizar.push({
+            id_extra: parseInt(extraExistente.id_extra),
+            price: parseFloat(preciosExtras[insumoId]),
+            quantity: parseFloat(cantidadesExtras[insumoId]),
+            recipe_id: parseInt(selectedRecetaForExtras.id_recipe)
+          });
+        } else {
+          extrasParaCrear.push({
+            ingredient_id: parseInt(insumoId),
+            recipe_id: parseInt(selectedRecetaForExtras.id_recipe),
+            quantity: parseFloat(cantidadesExtras[insumoId]),
+            price: parseFloat(preciosExtras[insumoId])
+          });
+        }
+      });
+
+      // Actualizar extras existentes en una sola petición (si es 1 o varios se envía arreglo)
+      if (extrasParaActualizar.length > 0) {
+        await patchExtras(extrasParaActualizar);
+      }
+
+      // Mantener creación de extras nuevos para no romper funcionalidad actual
+      for (const extraData of extrasParaCrear) {
         await postExtras(extraData);
       }
 
