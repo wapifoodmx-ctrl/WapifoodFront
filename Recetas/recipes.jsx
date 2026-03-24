@@ -17,6 +17,10 @@ import RecipeCard from "./RecipeCard";
 import AddRecipeModal from "./AddRecipeModal";
 import EditRecipeModal from "./EditRecipeModal";
 import { SelectSuppliesModal, SelectProductModal, SubscriptionModal } from "./SelectionModals";
+import RecetasExtras from "./recetasExtras";
+import { AddExtrasModal, SelectExtrasIngredientsModal } from "./ExtrasModals";
+import getExtras from "@/useCases/getExtras";
+import { postExtras } from "@/useCases/postExtras";
 
 export default function Recipes() {
   const [isAddRecipeModalOpen, setIsAddRecipeModalOpen] = useState(false);
@@ -55,7 +59,24 @@ export default function Recipes() {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(true);
-  
+
+  // Estado para controlar qué tab está activo (recetas o extras)
+  const [activeTab, setActiveTab] = useState('recetas');
+
+  // Estados para extras
+  const [isAddExtrasModalOpen, setIsAddExtrasModalOpen] = useState(false);
+  const [isSelectExtrasIngredientsModalOpen, setIsSelectExtrasIngredientsModalOpen] = useState(false);
+  const [selectedRecetaForExtras, setSelectedRecetaForExtras] = useState(null);
+  const [extrasExistentes, setExtrasExistentes] = useState([]);
+  const [todosLosExtras, setTodosLosExtras] = useState([]); // Todos los extras para mapear
+  const [insumosSeleccionadosExtras, setInsumosSeleccionadosExtras] = useState([]);
+  const [cantidadesExtras, setCantidadesExtras] = useState({});
+  const [preciosExtras, setPreciosExtras] = useState({});
+  const [terminoBusquedaExtras, setTerminoBusquedaExtras] = useState("");
+  const [isSubmittingExtras, setIsSubmittingExtras] = useState(false);
+  const [errorMessageExtras, setErrorMessageExtras] = useState("");
+  const [successMessageExtras, setSuccessMessageExtras] = useState("");
+
   const router = useRouter();
 
   // Cargar insumos cuando se abre el modal
@@ -89,6 +110,23 @@ export default function Recipes() {
   useEffect(() => {
     cargarRecetas();
   }, []);
+
+  // Cargar todos los extras cuando se monta el componente
+  useEffect(() => {
+    cargarTodosLosExtras();
+  }, []);
+
+  const cargarTodosLosExtras = async () => {
+    try {
+      const response = await getExtras();
+      if (response.success && response.data) {
+        setTodosLosExtras(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar todos los extras:', error);
+      setTodosLosExtras([]);
+    }
+  };
 
   // Chequear suscripción al montar
   useEffect(() => {
@@ -467,6 +505,185 @@ export default function Recipes() {
     router.push('/payments');
   };
 
+  // Handlers para extras
+  const handleOpenExtrasModal = async (receta) => {
+    if (!hasActiveSubscription) {
+      setShowSubscriptionModal(true);
+      return;
+    }
+
+    setSelectedRecetaForExtras(receta);
+    setErrorMessageExtras("");
+    setSuccessMessageExtras("");
+
+    // Cargar extras existentes para esta receta
+    try {
+      const response = await getExtras();
+      if (response.success && response.data) {
+        const extrasDeReceta = response.data.filter(
+          extra => extra.recipe_id === receta.id_recipe
+        );
+        setExtrasExistentes(extrasDeReceta);
+
+        // Pre-cargar los extras existentes en los inputs para editar
+        if (extrasDeReceta.length > 0) {
+          const ingredientIds = extrasDeReceta.map(extra => extra.ingredient_id);
+          const quantities = {};
+          const prices = {};
+
+          extrasDeReceta.forEach(extra => {
+            quantities[extra.ingredient_id] = extra.quantity.toString();
+            prices[extra.ingredient_id] = extra.price.toString();
+          });
+
+          setInsumosSeleccionadosExtras(ingredientIds);
+          setCantidadesExtras(quantities);
+          setPreciosExtras(prices);
+        } else {
+          // Si no hay extras, limpiar los estados
+          setInsumosSeleccionadosExtras([]);
+          setCantidadesExtras({});
+          setPreciosExtras({});
+        }
+      }
+    } catch (error) {
+      console.error('Error al cargar extras:', error);
+      setExtrasExistentes([]);
+      setInsumosSeleccionadosExtras([]);
+      setCantidadesExtras({});
+      setPreciosExtras({});
+    }
+
+    setIsAddExtrasModalOpen(true);
+  };
+
+  const handleSelectExtrasIngredients = () => {
+    setIsSelectExtrasIngredientsModalOpen(true);
+    if (insumos.length === 0) {
+      cargarInsumos();
+    }
+  };
+
+  const toggleSeleccionInsumoExtra = (insumoId) => {
+    setInsumosSeleccionadosExtras(prev => {
+      const nuevaSeleccion = prev.includes(insumoId)
+        ? prev.filter(id => id !== insumoId)
+        : [...prev, insumoId];
+
+      if (prev.includes(insumoId)) {
+        setCantidadesExtras(prevCantidades => {
+          const nuevasCantidades = { ...prevCantidades };
+          delete nuevasCantidades[insumoId];
+          return nuevasCantidades;
+        });
+        setPreciosExtras(prevPrecios => {
+          const nuevosPrecios = { ...prevPrecios };
+          delete nuevosPrecios[insumoId];
+          return nuevosPrecios;
+        });
+      }
+
+      return nuevaSeleccion;
+    });
+  };
+
+  const handleCantidadExtraChange = (insumoId, cantidad) => {
+    const valorLimpio = cantidad.replace(/[^0-9.]/g, '');
+    setCantidadesExtras(prev => ({
+      ...prev,
+      [insumoId]: valorLimpio
+    }));
+  };
+
+  const handlePrecioExtraChange = (insumoId, precio) => {
+    const valorLimpio = precio.replace(/[^0-9.]/g, '');
+    setPreciosExtras(prev => ({
+      ...prev,
+      [insumoId]: valorLimpio
+    }));
+  };
+
+  const handleRemoveIngredientExtra = (ingredientId) => {
+    setInsumosSeleccionadosExtras(prev => prev.filter(id => id !== ingredientId));
+    setCantidadesExtras(prev => {
+      const newQuantities = { ...prev };
+      delete newQuantities[ingredientId];
+      return newQuantities;
+    });
+    setPreciosExtras(prev => {
+      const newPrices = { ...prev };
+      delete newPrices[ingredientId];
+      return newPrices;
+    });
+  };
+
+  const handleSaveExtras = async () => {
+    if (!selectedRecetaForExtras) return;
+
+    if (insumosSeleccionadosExtras.length === 0) {
+      setErrorMessageExtras("Debe seleccionar al menos un insumo");
+      return;
+    }
+
+    // Validar que todos los insumos tengan cantidad y precio
+    const insumosInvalidos = insumosSeleccionadosExtras.filter(id =>
+      !cantidadesExtras[id] || parseFloat(cantidadesExtras[id]) <= 0 ||
+      !preciosExtras[id] || parseFloat(preciosExtras[id]) < 0
+    );
+
+    if (insumosInvalidos.length > 0) {
+      setErrorMessageExtras("Todos los extras deben tener cantidad y precio válidos");
+      return;
+    }
+
+    setIsSubmittingExtras(true);
+    setErrorMessageExtras("");
+    setSuccessMessageExtras("");
+
+    try {
+      // Crear el array de extras
+      const extrasData = insumosSeleccionadosExtras.map(insumoId => ({
+        ingredient_id: parseInt(insumoId),
+        recipe_id: parseInt(selectedRecetaForExtras.id_recipe),
+        quantity: parseFloat(cantidadesExtras[insumoId]),
+        price: parseFloat(preciosExtras[insumoId])
+      }));
+
+      // Enviar cada extra individualmente
+      for (const extraData of extrasData) {
+        await postExtras(extraData);
+      }
+
+      setSuccessMessageExtras("Extras guardados exitosamente");
+
+      // Recargar extras existentes
+      const response = await getExtras();
+      if (response.success && response.data) {
+        const extrasDeReceta = response.data.filter(
+          extra => extra.recipe_id === selectedRecetaForExtras.id_recipe
+        );
+        setExtrasExistentes(extrasDeReceta);
+        // También actualizar todos los extras
+        setTodosLosExtras(response.data);
+      }
+
+      setTimeout(() => {
+        setIsAddExtrasModalOpen(false);
+        setSelectedRecetaForExtras(null);
+        setInsumosSeleccionadosExtras([]);
+        setCantidadesExtras({});
+        setPreciosExtras({});
+        setSuccessMessageExtras("");
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error al guardar extras:', error);
+      setErrorMessageExtras(error.message || "Error al guardar los extras");
+    } finally {
+      setIsSubmittingExtras(false);
+    }
+  };
+
   return (
     <section>
       <Toaster 
@@ -519,101 +736,55 @@ export default function Recipes() {
             {/* Barra de búsqueda */}
             <input
               type="text"
-              placeholder="Buscar receta..."
+              placeholder={activeTab === 'recetas' ? 'Buscar receta...' : 'Buscar extra...'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="border border-gray-300 rounded-lg p-3 w-full lg:w-1/2 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
             />
-            
-            {/* Botones de acción */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:w-1/2 lg:justify-center lg:items-center">
-              {/* Botón Añadir */}
-              <button 
-                onClick={handleOpenAddRecipe}
-                className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-orange-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base"
-              >
-                <IoAddOutline className="text-lg" />
-                <span>Agregar Receta</span>
-              </button>
-              
-              {/* Botón Modificar */}
-              <button 
-                onClick={handleEditRecipe}
-                disabled={!selectedRecipeId}
-                className={`flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform lg:text-base ${
-                  selectedRecipeId 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:scale-105 active:scale-95'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                <FiEdit className="text-lg" />
-                <span>Modificar Receta</span>
-              </button>
-            </div>
+
+            {/* Botones de acción - Solo se muestran en la pestaña de recetas */}
+            {activeTab === 'recetas' && (
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:w-1/2 lg:justify-center lg:items-center">
+                {/* Botón Añadir */}
+                <button
+                  onClick={handleOpenAddRecipe}
+                  className="flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-orange-50 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 lg:text-base"
+                >
+                  <IoAddOutline className="text-lg" />
+                  <span>Agregar Receta</span>
+                </button>
+
+                {/* Botón Modificar */}
+                <button
+                  onClick={handleEditRecipe}
+                  disabled={!selectedRecipeId}
+                  className={`flex items-center gap-3 px-6 py-3 lg:px-6 lg:py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform lg:text-base ${
+                    selectedRecipeId
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:scale-105 active:scale-95'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  <FiEdit className="text-lg" />
+                  <span>Modificar Receta</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Contenido principal - Cards de recetas */}
-        {/* Contenedor centrado para las recetas */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {isLoadingRecetas ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-              <span className="ml-4 text-lg text-gray-600">Cargando recetas...</span>
-            </div>
-          ) : recetasFiltradas.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-gray-500 text-lg">
-                {searchTerm ? (
-                  <>
-                    <p className="mb-2">No se encontraron recetas con "{searchTerm}"</p>
-                    <button 
-                      onClick={() => setSearchTerm("")}
-                      className="text-green-500 hover:text-green-600 font-medium"
-                    >
-                      Limpiar búsqueda
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="mb-4">No hay recetas disponibles</p>
-                    <button 
-                      onClick={handleOpenAddRecipe}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors"
-                    >
-                      <IoAddOutline className="text-lg" />
-                      Crear tu primera receta
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Header con contador de resultados */}
-              <div className="mb-6 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">
-                  Recetas {searchTerm && `- "${searchTerm}"`}
-                </h2>
-                <span className="text-sm text-gray-500">
-                  {recetasFiltradas.length} receta{recetasFiltradas.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-
-              {/* Grid de cards de recetas */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-                {recetasFiltradas.map((receta) => (
-                  <RecipeCard
-                    key={receta.id_recipe}
-                    receta={receta}
-                    isSelected={selectedRecipeId === receta.id_recipe}
-                    onSelect={handleSelectRecipe}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        {/* Contenido: componente de Recetas y Extras (presentacional) */}
+        <RecetasExtras
+          recetas={recetas}
+          recetasFiltradas={recetasFiltradas}
+          isLoadingRecetas={isLoadingRecetas}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          selectedRecipeId={selectedRecipeId}
+          onSelectRecipe={handleSelectRecipe}
+          onTabChange={setActiveTab}
+          onOpenExtrasModal={handleOpenExtrasModal}
+          todosLosExtras={todosLosExtras}
+        />
       </div>
 
       {/* Modales */}
@@ -683,6 +854,37 @@ export default function Recipes() {
         isOpen={showSubscriptionModal}
         countdown={countdown}
         onGoToPayments={handleGoToPayments}
+      />
+
+      {/* Modales de Extras */}
+      <AddExtrasModal
+        isOpen={isAddExtrasModalOpen}
+        onClose={() => setIsAddExtrasModalOpen(false)}
+        receta={selectedRecetaForExtras}
+        extrasExistentes={extrasExistentes}
+        insumosSeleccionados={insumosSeleccionadosExtras}
+        insumos={insumos}
+        cantidadesExtras={cantidadesExtras}
+        preciosExtras={preciosExtras}
+        isSubmitting={isSubmittingExtras}
+        errorMessage={errorMessageExtras}
+        successMessage={successMessageExtras}
+        onSelectExtrasIngredients={handleSelectExtrasIngredients}
+        onCantidadChange={handleCantidadExtraChange}
+        onPrecioChange={handlePrecioExtraChange}
+        onSaveExtras={handleSaveExtras}
+        onRemoveIngredient={handleRemoveIngredientExtra}
+      />
+
+      <SelectExtrasIngredientsModal
+        isOpen={isSelectExtrasIngredientsModalOpen}
+        onClose={() => setIsSelectExtrasIngredientsModalOpen(false)}
+        insumos={insumos}
+        insumosSeleccionados={insumosSeleccionadosExtras}
+        terminoBusqueda={terminoBusquedaExtras}
+        isLoading={isLoadingInsumos}
+        onSearchChange={setTerminoBusquedaExtras}
+        onToggleInsumo={toggleSeleccionInsumoExtra}
       />
     </section>
   );
